@@ -16,7 +16,7 @@ type FakeExtensionClient struct {
 func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	o := testing.NewObjectTracker(api.Scheme, api.Codecs.UniversalDecoder())
 	for _, obj := range objects {
-		if obj.GetObjectKind().GroupVersionKind().Group == "appscode.com" {
+		if obj.GetObjectKind().GroupVersionKind().Group == "k8sdb.com" {
 			if err := o.Add(obj); err != nil {
 				panic(err)
 			}
@@ -31,6 +31,6 @@ func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	return &FakeExtensionClient{&fakePtr}
 }
 
-func (m *FakeExtensionClient) Certificates(ns string) client.CertificateInterface {
-	return &FakeCertificate{m.Fake, ns}
+func (m *FakeExtensionClient) Elasticsearch(ns string) client.ElasticsearchInterface {
+	return &FakeElasticsearch{m.Fake, ns}
 }

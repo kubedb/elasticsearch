@@ -19,7 +19,7 @@ func NewCmdRun() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "Run ElasticSearch in Kubernetes",
+		Short: "Run Elasticsearch in Kubernetes",
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {

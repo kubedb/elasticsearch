@@ -7,7 +7,7 @@ import (
 )
 
 // GroupName is the group name use in this package
-const GroupName = "appscode.com"
+const GroupName = "k8sdb.com"
 
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: runtime.APIVersionInternal}
@@ -30,8 +30,8 @@ var (
 // Adds the list of known types to api.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Certificate{},
-		&CertificateList{},
+		&Elasticsearch{},
+		&ElasticsearchList{},
 
 		&api.ListOptions{},
 		&api.DeleteOptions{},
@@ -39,5 +39,5 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	return nil
 }
 
-func (obj *Certificate) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
-func (obj *CertificateList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
+func (obj *Elasticsearch) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
+func (obj *ElasticsearchList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
