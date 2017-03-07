@@ -23,13 +23,13 @@ if [ -f "$DIST/.tag" ]; then
 fi
 
 clean() {
-    pushd $GOPATH/src/github.com/k8sdb/elasticsearch/hack/docker
-    rm k8ses Dockerfile
+    pushd $REPO_ROOT/hack/docker/controller
+    rm -f k8ses Dockerfile
     popd
 }
 
 build_binary() {
-    pushd $GOPATH/src/github.com/k8sdb/elasticsearch
+    pushd $REPO_ROOT
     ./hack/builddeps.sh
     ./hack/make.py build k8ses
     detect_tag $DIST/.tag
@@ -37,7 +37,7 @@ build_binary() {
 }
 
 build_docker() {
-    pushd $GOPATH/src/github.com/k8sdb/elasticsearch/hack/docker
+    pushd $REPO_ROOT/hack/docker/controller
     cp $DIST/k8ses/k8ses-linux-amd64 k8ses
     chmod 755 k8ses
 
