@@ -17,7 +17,7 @@ spec:
           {
             "name": "discover",
             "image": "appscode/k8ses:0.1",
-            "imagePullPolicy": "Always",
+            "imagePullPolicy": "IfNotPresent",
             "args": ["discover", "--service=elasticsearch-demo"],
             "env": [
               {
@@ -44,7 +44,7 @@ spec:
     spec:
       containers:
       - image: appscode/elasticsearch:2.3.1-v2.2
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: pg-test
         ports:
         - containerPort: 9200
