@@ -1,5 +1,5 @@
 metadata:
-  name: elasticsearch.k8sdb.com
+  name: elastic.k8sdb.com
 apiVersion: extensions/v1beta1
 kind: ThirdPartyResource
 description: "Elasticsearch Database in Kubernetes by appscode.com"
