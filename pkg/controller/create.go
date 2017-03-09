@@ -1,9 +1,8 @@
 package controller
 
 import (
-	"fmt"
-
 	"encoding/json"
+	"fmt"
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/elasticsearch/api"
@@ -42,11 +41,11 @@ func (w *Controller) create(elasticsearch *tapi.Elasticsearch) {
 	if elasticsearch.Labels == nil {
 		elasticsearch.Labels = make(map[string]string)
 	}
+	elasticsearch.Labels[serviceSelector] = elasticsearch.Name
+
 	if elasticsearch.Annotations == nil {
 		elasticsearch.Annotations = make(map[string]string)
 	}
-
-	elasticsearch.Labels[serviceSelector] = elasticsearch.Name
 	elasticsearch.Annotations["k8sdb.com/type"] = databaseType
 
 	dockerImage := fmt.Sprintf("%v:%v", dockerImage, elasticsearch.Spec.Version)
@@ -82,6 +81,41 @@ func (w *Controller) create(elasticsearch *tapi.Elasticsearch) {
 									ContainerPort: 9300,
 								},
 							},
+							VolumeMounts: []kapi.VolumeMount{
+								{
+									Name:      "discovery",
+									MountPath: "/tmp/discovery",
+								},
+							},
+						},
+					},
+					InitContainers: []kapi.Container{
+						{
+							Name:            "discover",
+							Image:           "appscode/k8ses:" + operatorImageTag,
+							ImagePullPolicy: "IfNotPresent",
+							Args: []string{
+								"discover",
+								fmt.Sprintf("--service=%v", elasticsearch.Name),
+								fmt.Sprintf("--namespace=%v", elasticsearch.Namespace),
+							},
+							Env: []kapi.EnvVar{
+								{
+									Name: "POD_NAME",
+									ValueFrom: &kapi.EnvVarSource{
+										FieldRef: &kapi.ObjectFieldSelector{
+											APIVersion: "v1",
+											FieldPath:  "metadata.name",
+										},
+									},
+								},
+							},
+							VolumeMounts: []kapi.VolumeMount{
+								{
+									Name:      "discovery",
+									MountPath: "/tmp/discovery",
+								},
+							},
 						},
 					},
 					NodeSelector: elasticsearch.Spec.NodeSelector,
@@ -98,45 +132,11 @@ func (w *Controller) create(elasticsearch *tapi.Elasticsearch) {
 		},
 	}
 
-	initContainer := []kapi.Container{
-		{
-			Name:            "discover",
-			Image:           "appscode/k8ses:" + operatorImageTag,
-			ImagePullPolicy: "IfNotPresent",
-			Args: []string{
-				"discover",
-				fmt.Sprintf("--service=%v", elasticsearch.Name),
-				fmt.Sprintf("--namespace=%v", elasticsearch.Namespace),
-			},
-			Env: []kapi.EnvVar{
-				{
-					Name: "POD_NAME",
-					ValueFrom: &kapi.EnvVarSource{
-						FieldRef: &kapi.ObjectFieldSelector{
-							APIVersion: "v1",
-							FieldPath:  "metadata.name",
-						},
-					},
-				},
-			},
-			VolumeMounts: []kapi.VolumeMount{
-				{
-					Name:      "discovery",
-					MountPath: "/tmp/discovery",
-				},
-			},
-		},
-	}
-
-	initContainerDataByte, err := json.MarshalIndent(initContainer, "", "	")
-	if err != nil {
-		log.Errorln(err)
-		return
-	}
-	statefulSet.Spec.Template.Annotations["pod.beta.kubernetes.io/init-containers"] = string(initContainerDataByte)
-
 	// Add PersistentVolumeClaim for StatefulSet
 	w.addPersistentVolumeClaim(statefulSet, elasticsearch.Spec.Storage)
+
+	data, _ := json.MarshalIndent(statefulSet, "", "	")
+	fmt.Println(string(data))
 
 	if _, err := w.Client.Apps().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
 		log.Errorln(err)
