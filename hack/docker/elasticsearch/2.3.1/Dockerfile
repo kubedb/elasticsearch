@@ -1,9 +1,9 @@
-############################################
-#      Image for elasticsearch basic       #
-#  Image: appscode/elasticsearch:basic   #
-############################################
+#########################################
+#      Image for Elasticsearch          #
+#  Image: appscode/elasticsearch:<tag>  #
+#########################################
 
-FROM appscode/py-java:1.0
+FROM appscode/oracle-jdk:8
 
 ## elasticsearch version
 ENV ES_PKG_NAME elasticsearch-2.3.1
@@ -17,7 +17,7 @@ RUN groupadd -r es --gid=999 && useradd -r -g es --uid=999 es
 ##### Install ElasticSearch ######
 RUN set -x \
   && apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates \
+  && apt-get install -y --no-install-recommends ca-certificates wget \
   && wget https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME.tar.gz \
   && tar xvzf $ES_PKG_NAME.tar.gz \
   && rm -f $ES_PKG_NAME.tar.gz \
@@ -34,48 +34,16 @@ RUN set -x \
   && gosu nobody true
 ##################################
 
-########## Install cloud tools ##########
-RUN apt-get update \
-	&& apt-get install -y python-pip \
-	&& pip install awscli \
-	&& pip2 install gsutil \
-#########################################
-###### Elasticsearch python plugin ######
-	&& pip install elasticsearch
-#########################################
-
-###### Remove unnecessary things ######
-# Run set -x \
-#   && apt-get purge -y --auto-remove ca-certificates \
-#	  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
-#######################################
-
-###### install cloud-aws & cloud-gce plugin ######
-RUN set -x \
-  && /elasticsearch/bin/plugin install cloud-aws url file:target/releases/elasticsearch-cloud-aws-2.7.1-SNAPSHOT.zip
-##################################################
-
 ###### runit service ######
 COPY lib/sv /etc/sv
 RUN ln -s /etc/sv /etc/service
 RUN chmod +x /etc/service/*/run
 ###########################
 
-###### Copy elasticsearch_discovery ######
-COPY elasticsearch_discovery /elasticsearch_discovery
-##########################################
-
-## Python script to backup & restore
-ADD lib/execute.py /
-ADD lib/utils.sh /
-
 ## elasticsearch config file
 COPY lib/elasticsearch.yml /elasticsearch/config/elasticsearch.yml
 
 VOLUME ["/var/pv"]
-VOLUME ["/mount/snapshots"]
-RUN chown -R es:es /mount/snapshots
-
 
 EXPOSE 9200
 EXPOSE 9300

@@ -11,7 +11,8 @@ export NODE_MASTER=${NODE_MASTER:-true}
 export NODE_DATA=${NODE_DATA:-true}
 export HTTP_PORT=${HTTP_PORT:-9200}
 export TRANSPORT_PORT=${TRANSPORT_PORT:-9300}
-/elasticsearch_discovery ${CLUSTER_NAME} ${KUBE_NAMESPACE}>> /elasticsearch/config/elasticsearch.yml
+
+cat /tmp/discovery/unicast-hosts >> /elasticsearch/config/elasticsearch.yml
 
 chown -R es:es /elasticsearch
 chown -R es:es /var/pv
