@@ -49,7 +49,8 @@ func (w *Controller) RunAndHold() {
 			return w.ExtClient.Elasticsearch(kapi.NamespaceAll).Watch(kapi.ListOptions{})
 		},
 	}
-	_, controller := cache.NewInformer(lw,
+	_, controller := cache.NewInformer(
+		lw,
 		&tapi.Elasticsearch{},
 		w.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
