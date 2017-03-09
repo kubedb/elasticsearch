@@ -8,7 +8,7 @@ spec:
   selector:
     matchLabels:
       k8sdb.com/type: elasticsearch
-      db.appscode.com/name: elasticsearch-demo
+      es.k8sdb.com/name: elasticsearch-demo
   serviceName: governing-elasticsearch
   template:
     metadata:
@@ -40,7 +40,7 @@ spec:
         ]'
       labels:
         k8sdb.com/type: elasticsearch
-        db.appscode.com/name: elasticsearch-demo
+        es.k8sdb.com/name: elasticsearch-demo
     spec:
       containers:
       - image: appscode/elasticsearch:2.3.1-v2.2

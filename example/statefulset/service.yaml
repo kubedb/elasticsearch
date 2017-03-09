@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    db.appscode.com/name: elasticsearch-demo
+    es.k8sdb.com/name: elasticsearch-demo
   name: elasticsearch-demo
   namespace: default
 spec:
@@ -16,4 +16,4 @@ spec:
     protocol: TCP
     targetPort: 9300
   selector:
-    db.appscode.com/name: elasticsearch-demo
+    es.k8sdb.com/name: elasticsearch-demo

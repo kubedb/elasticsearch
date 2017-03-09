@@ -14,7 +14,7 @@ type FakeElasticsearch struct {
 	ns   string
 }
 
-var elasticsearchResource = schema.GroupVersionResource{Group: "k8sdb.com", Version: "v1beta1", Resource: "elastics"}
+var elasticsearchResource = schema.GroupVersionResource{Group: "k8sdb.com", Version: "v1beta1", Resource: "elasticsearchs"}
 
 // Get returns the Elasticsearch by name.
 func (mock *FakeElasticsearch) Get(name string) (*aci.Elasticsearch, error) {
