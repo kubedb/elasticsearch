@@ -78,7 +78,7 @@ func (w *Controller) RunAndHold() {
 }
 
 func (w *Controller) ensureThirdPartyResource() {
-	resourceName := "elasticsearch" + "." + tapi.V1beta1SchemeGroupVersion.Group
+	resourceName := "elastic" + "." + tapi.V1beta1SchemeGroupVersion.Group
 
 	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
 		if !errors.IsNotFound(err) {

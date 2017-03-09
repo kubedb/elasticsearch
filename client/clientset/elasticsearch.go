@@ -34,7 +34,7 @@ func (c *ElasticsearchImpl) List(opts api.ListOptions) (result *aci.Elasticsearc
 	result = &aci.ElasticsearchList{}
 	err = c.r.Get().
 		Namespace(c.ns).
-		Resource("elasticsearches").
+		Resource("elastics").
 		VersionedParams(&opts, ExtendedCodec).
 		Do().
 		Into(result)
@@ -45,7 +45,7 @@ func (c *ElasticsearchImpl) Get(name string) (result *aci.Elasticsearch, err err
 	result = &aci.Elasticsearch{}
 	err = c.r.Get().
 		Namespace(c.ns).
-		Resource("elasticsearches").
+		Resource("elastics").
 		Name(name).
 		Do().
 		Into(result)
@@ -56,7 +56,7 @@ func (c *ElasticsearchImpl) Create(elasticsearch *aci.Elasticsearch) (result *ac
 	result = &aci.Elasticsearch{}
 	err = c.r.Post().
 		Namespace(c.ns).
-		Resource("elasticsearches").
+		Resource("elastics").
 		Body(elasticsearch).
 		Do().
 		Into(result)
@@ -67,7 +67,7 @@ func (c *ElasticsearchImpl) Update(elasticsearch *aci.Elasticsearch) (result *ac
 	result = &aci.Elasticsearch{}
 	err = c.r.Put().
 		Namespace(c.ns).
-		Resource("elasticsearches").
+		Resource("elastics").
 		Name(elasticsearch.Name).
 		Body(elasticsearch).
 		Do().
@@ -78,7 +78,7 @@ func (c *ElasticsearchImpl) Update(elasticsearch *aci.Elasticsearch) (result *ac
 func (c *ElasticsearchImpl) Delete(name string, options *api.DeleteOptions) (err error) {
 	return c.r.Delete().
 		Namespace(c.ns).
-		Resource("elasticsearches").
+		Resource("elastics").
 		Name(name).
 		Body(options).
 		Do().
@@ -89,7 +89,7 @@ func (c *ElasticsearchImpl) Watch(opts api.ListOptions) (watch.Interface, error)
 	return c.r.Get().
 		Prefix("watch").
 		Namespace(c.ns).
-		Resource("elasticsearches").
+		Resource("elastics").
 		VersionedParams(&opts, ExtendedCodec).
 		Watch()
 }
@@ -98,7 +98,7 @@ func (c *ElasticsearchImpl) UpdateStatus(elasticsearch *aci.Elasticsearch) (resu
 	result = &aci.Elasticsearch{}
 	err = c.r.Put().
 		Namespace(c.ns).
-		Resource("elasticsearches").
+		Resource("elastics").
 		Name(elasticsearch.Name).
 		SubResource("status").
 		Body(elasticsearch).
