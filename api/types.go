@@ -5,15 +5,15 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-// Elasticsearch defines a Elasticsearch database.
-type Elasticsearch struct {
+// Elastic defines a Elasticsearch database.
+type Elastic struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`
-	Spec                 ElasticsearchSpec    `json:"spec,omitempty"`
-	Status               *ElasticsearchStatus `json:"status,omitempty"`
+	Spec                 ElasticSpec    `json:"spec,omitempty"`
+	Status               *ElasticStatus `json:"status,omitempty"`
 }
 
-type ElasticsearchSpec struct {
+type ElasticSpec struct {
 	// Version of Elasticsearch to be deployed.
 	Version string `json:"version,omitempty"`
 	// Number of instances to deploy for a Elasticsearch database.
@@ -36,16 +36,16 @@ type StorageSpec struct {
 	api.PersistentVolumeClaimSpec `json:",inline,omitempty"`
 }
 
-type ElasticsearchStatus struct {
-	// Total number of non-terminated pods targeted by this Elasticsearch TPR
+type ElasticStatus struct {
+	// Total number of non-terminated pods targeted by this Elastic TPR
 	Replicas int32 `json:"replicas"`
-	// Total number of available pods targeted by this Elasticsearch TPR.
+	// Total number of available pods targeted by this Elastic TPR.
 	AvailableReplicas int32 `json:"availableReplicas"`
 }
 
-type ElasticsearchList struct {
+type ElasticList struct {
 	unversioned.TypeMeta `json:",inline"`
 	unversioned.ListMeta `json:"metadata,omitempty"`
-	// Items is a list of Elasticsearch TPR objects
-	Items []*Elasticsearch `json:"items,omitempty"`
+	// Items is a list of Elastic TPR objects
+	Items []*Elastic `json:"items,omitempty"`
 }
