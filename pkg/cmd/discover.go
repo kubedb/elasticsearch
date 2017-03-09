@@ -39,7 +39,7 @@ func NewCmdDiscover() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&namespace, "namespace", "default", "Kubernetes service namespace for Postgres database. Default: default")
-	cmd.Flags().StringVar(&service, "service", "", "Kubernetes service for Postgres database")
+	cmd.Flags().StringVar(&namespace, "namespace", "default", "Kubernetes service namespace for Elasticsearch database. Default: default")
+	cmd.Flags().StringVar(&service, "service", "", "Kubernetes service for Elasticsearch database")
 	return cmd
 }
