@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    db.appscode.com/name: elasticsearch-demo
+  name: elasticsearch-demo
+  namespace: default
+spec:
+  ports:
+  - name: http1
+    port: 9200
+    protocol: TCP
+    targetPort: 9200
+  - name: http2
+    port: 9300
+    protocol: TCP
+    targetPort: 9300
+  selector:
+    db.appscode.com/name: elasticsearch-demo
