@@ -3,9 +3,12 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
+	kapps "k8s.io/kubernetes/pkg/apis/apps"
+	"k8s.io/kubernetes/pkg/labels"
 )
 
 func (w *Controller) checkService(namespace, serviceName string) (bool, error) {
@@ -21,7 +24,7 @@ func (w *Controller) checkService(namespace, serviceName string) (bool, error) {
 		return false, nil
 	}
 
-	if service.Spec.Selector[serviceSelector] != serviceName {
+	if service.Spec.Selector[SelectorDatabaseName] != serviceName {
 		return false, errors.New(fmt.Sprintf(`Intended service "%v" already exists`, serviceName))
 	}
 
@@ -40,7 +43,7 @@ func (w *Controller) createService(namespace, serviceName string) error {
 	}
 
 	label := map[string]string{
-		serviceSelector: serviceName,
+		SelectorDatabaseName: serviceName,
 	}
 	service := &kapi.Service{
 		ObjectMeta: kapi.ObjectMeta{
@@ -67,6 +70,26 @@ func (w *Controller) createService(namespace, serviceName string) error {
 	}
 
 	return nil
+}
+
+func (w *Controller) deleteService(namespace, serviceName string) error {
+	service, err := w.Client.Core().Services(namespace).Get(serviceName)
+	if err != nil {
+		if k8serr.IsNotFound(err) {
+			return nil
+		} else {
+			return err
+		}
+	}
+	if service == nil {
+		return nil
+	}
+
+	if service.Spec.Selector[SelectorDatabaseName] != serviceName {
+		return nil
+	}
+
+	return w.Client.Core().Services(namespace).Delete(serviceName, nil)
 }
 
 func (w *Controller) checkGoverningServiceAccount(namespace, name string) (bool, error) {
@@ -107,4 +130,36 @@ func (w *Controller) createGoverningServiceAccount(namespace, name string) error
 
 	}
 	return nil
+}
+
+func (c *Controller) deleteStatefulSet(statefulSet *kapps.StatefulSet) error {
+	// Update StatefulSet
+	statefulSet.Spec.Replicas = 0
+	if _, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Update(statefulSet); err != nil {
+		return err
+	}
+
+	labelSelector := labels.SelectorFromSet(statefulSet.Spec.Selector.MatchLabels)
+
+	check := 1
+	for {
+		time.Sleep(time.Second * 30)
+		podList, err := c.Client.Core().Pods(kapi.NamespaceAll).List(kapi.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err != nil {
+			return err
+		}
+		if len(podList.Items) == 0 {
+			break
+		}
+
+		if check == 5 {
+			return errors.New("Fail to delete StatefulSet Pods")
+		}
+		check++
+	}
+
+	// Delete StatefulSet
+	return c.Client.Apps().StatefulSets(statefulSet.Namespace).Delete(statefulSet.Name, nil)
 }

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/appscode/log"
@@ -11,64 +10,68 @@ import (
 )
 
 const (
-	databasePrefix       = "k8sdb"
-	databaseType         = "elasticsearch"
-	dockerImage          = "appscode/elasticsearch"
-	governingServiceName = "governing-elasticsearch"
-	operatorImageTag     = "0.1"
-	serviceSelector      = "es.k8sdb.com/name"
+	DatabaseElasticsearch      = "elasticsearch"
+	DatabaseNamePrefix         = "k8sdb"
+	GoverningElasticsearch     = "governing-elasticsearch"
+	imageElasticsearch         = "appscode/elasticsearch"
+	imageOperatorElasticsearch = "appscode/k8ses"
+	LabelDatabaseType          = "k8sdb.com/type"
+	SelectorDatabaseName       = "es.k8sdb.com/name"
+	tagOperatorElasticsearch   = "0.1"
 )
 
-func (w *Controller) create(elasticsearch *tapi.Elasticsearch) {
-	if !w.validateElasticsearch(elasticsearch) {
+func (w *Controller) create(elastic *tapi.Elastic) {
+	if !w.validateElastic(elastic) {
 		return
 	}
 
-	governingService := governingServiceName
-	if elasticsearch.Spec.ServiceAccountName != "" {
-		governingService = elasticsearch.Spec.ServiceAccountName
+	governingService := GoverningElasticsearch
+	if elastic.Spec.ServiceAccountName != "" {
+		governingService = elastic.Spec.ServiceAccountName
 	}
-	if err := w.createGoverningServiceAccount(elasticsearch.Namespace, governingService); err != nil {
+	if err := w.createGoverningServiceAccount(elastic.Namespace, governingService); err != nil {
 		log.Errorln(err)
 		return
 	}
 
-	if err := w.createService(elasticsearch.Namespace, elasticsearch.Name); err != nil {
+	if err := w.createService(elastic.Namespace, elastic.Name); err != nil {
 		log.Errorln(err)
 		return
 	}
 
-	if elasticsearch.Labels == nil {
-		elasticsearch.Labels = make(map[string]string)
+	if elastic.Labels == nil {
+		elastic.Labels = make(map[string]string)
 	}
-	elasticsearch.Labels[serviceSelector] = elasticsearch.Name
+	elastic.Labels[SelectorDatabaseName] = elastic.Name
 
-	if elasticsearch.Annotations == nil {
-		elasticsearch.Annotations = make(map[string]string)
+	if elastic.Annotations == nil {
+		elastic.Annotations = make(map[string]string)
 	}
-	elasticsearch.Annotations["k8sdb.com/type"] = databaseType
+	elastic.Annotations[LabelDatabaseType] = DatabaseElasticsearch
 
-	dockerImage := fmt.Sprintf("%v:%v", dockerImage, elasticsearch.Spec.Version)
+	dockerImage := fmt.Sprintf("%v:%v", imageElasticsearch, elastic.Spec.Version)
+	initContainerImage := fmt.Sprintf("%v:%v", imageOperatorElasticsearch, tagOperatorElasticsearch)
 
+	statefulSetName := fmt.Sprintf("%v-%v", DatabaseNamePrefix, elastic.Name)
 	statefulSet := &kapps.StatefulSet{
 		ObjectMeta: kapi.ObjectMeta{
-			Name:        fmt.Sprintf("%v-%v", databasePrefix, elasticsearch.Name),
-			Namespace:   elasticsearch.Namespace,
-			Labels:      elasticsearch.Labels,
-			Annotations: elasticsearch.Annotations,
+			Name:        statefulSetName,
+			Namespace:   elastic.Namespace,
+			Labels:      elastic.Labels,
+			Annotations: elastic.Annotations,
 		},
 		Spec: kapps.StatefulSetSpec{
-			Replicas:    elasticsearch.Spec.Replicas,
+			Replicas:    elastic.Spec.Replicas,
 			ServiceName: governingService,
 			Template: kapi.PodTemplateSpec{
 				ObjectMeta: kapi.ObjectMeta{
-					Labels:      elasticsearch.Labels,
-					Annotations: elasticsearch.Annotations,
+					Labels:      elastic.Labels,
+					Annotations: elastic.Annotations,
 				},
 				Spec: kapi.PodSpec{
 					Containers: []kapi.Container{
 						{
-							Name:            databaseType,
+							Name:            DatabaseElasticsearch,
 							Image:           dockerImage,
 							ImagePullPolicy: kapi.PullIfNotPresent,
 							Ports: []kapi.ContainerPort{
@@ -92,12 +95,12 @@ func (w *Controller) create(elasticsearch *tapi.Elasticsearch) {
 					InitContainers: []kapi.Container{
 						{
 							Name:            "discover",
-							Image:           "appscode/k8ses:" + operatorImageTag,
-							ImagePullPolicy: "IfNotPresent",
+							Image:           initContainerImage,
+							ImagePullPolicy: kapi.PullIfNotPresent,
 							Args: []string{
 								"discover",
-								fmt.Sprintf("--service=%v", elasticsearch.Name),
-								fmt.Sprintf("--namespace=%v", elasticsearch.Namespace),
+								fmt.Sprintf("--service=%v", elastic.Name),
+								fmt.Sprintf("--namespace=%v", elastic.Namespace),
 							},
 							Env: []kapi.EnvVar{
 								{
@@ -118,7 +121,7 @@ func (w *Controller) create(elasticsearch *tapi.Elasticsearch) {
 							},
 						},
 					},
-					NodeSelector: elasticsearch.Spec.NodeSelector,
+					NodeSelector: elastic.Spec.NodeSelector,
 					Volumes: []kapi.Volume{
 						{
 							Name: "discovery",
@@ -133,10 +136,7 @@ func (w *Controller) create(elasticsearch *tapi.Elasticsearch) {
 	}
 
 	// Add PersistentVolumeClaim for StatefulSet
-	w.addPersistentVolumeClaim(statefulSet, elasticsearch.Spec.Storage)
-
-	data, _ := json.MarshalIndent(statefulSet, "", "	")
-	fmt.Println(string(data))
+	w.addPersistentVolumeClaim(statefulSet, elastic.Spec.Storage)
 
 	if _, err := w.Client.Apps().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
 		log.Errorln(err)
@@ -144,13 +144,13 @@ func (w *Controller) create(elasticsearch *tapi.Elasticsearch) {
 	}
 }
 
-func (w *Controller) validateElasticsearch(elasticsearch *tapi.Elasticsearch) bool {
-	if elasticsearch.Spec.Version == "" {
-		log.Errorln(fmt.Sprintf(`Object 'Version' is missing in '%v'`, elasticsearch.Spec))
+func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
+	if elastic.Spec.Version == "" {
+		log.Errorln(fmt.Sprintf(`Object 'Version' is missing in '%v'`, elastic.Spec))
 		return false
 	}
 
-	storage := elasticsearch.Spec.Storage
+	storage := elastic.Spec.Storage
 	if storage != nil {
 		if storage.Class == "" {
 			log.Errorln(fmt.Sprintf(`Object 'Class' is missing in '%v'`, *storage))
