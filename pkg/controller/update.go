@@ -4,4 +4,4 @@ import (
 	tapi "github.com/k8sdb/elasticsearch/api"
 )
 
-func (w *Controller) update(elasticsearch *tapi.Elasticsearch) {}
+func (w *Controller) update(elastic *tapi.Elastic) {}

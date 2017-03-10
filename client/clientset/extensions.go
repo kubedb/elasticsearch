@@ -14,7 +14,7 @@ const (
 
 type ExtensionInterface interface {
 	RESTClient() rest.Interface
-	ElasticsearchNamespacer
+	ElasticNamespacer
 }
 
 // AppsCodeExtensionsClient is used to interact with experimental Kubernetes features.
@@ -24,8 +24,8 @@ type AppsCodeExtensionsClient struct {
 	restClient rest.Interface
 }
 
-func (a *AppsCodeExtensionsClient) Elasticsearch(namespace string) ElasticsearchInterface {
-	return newElasticsearch(a, namespace)
+func (a *AppsCodeExtensionsClient) Elastic(namespace string) ElasticInterface {
+	return newElastic(a, namespace)
 }
 
 // NewAppsCodeExtensions creates a new AppsCodeExtensionsClient for the given config. This client

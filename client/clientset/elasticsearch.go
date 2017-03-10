@@ -7,31 +7,31 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
-type ElasticsearchNamespacer interface {
-	Elasticsearch(namespace string) ElasticsearchInterface
+type ElasticNamespacer interface {
+	Elastic(namespace string) ElasticInterface
 }
 
-type ElasticsearchInterface interface {
-	List(opts api.ListOptions) (*aci.ElasticsearchList, error)
-	Get(name string) (*aci.Elasticsearch, error)
-	Create(elasticsearch *aci.Elasticsearch) (*aci.Elasticsearch, error)
-	Update(elasticsearch *aci.Elasticsearch) (*aci.Elasticsearch, error)
+type ElasticInterface interface {
+	List(opts api.ListOptions) (*aci.ElasticList, error)
+	Get(name string) (*aci.Elastic, error)
+	Create(elastic *aci.Elastic) (*aci.Elastic, error)
+	Update(elastic *aci.Elastic) (*aci.Elastic, error)
 	Delete(name string, options *api.DeleteOptions) error
 	Watch(opts api.ListOptions) (watch.Interface, error)
-	UpdateStatus(elasticsearch *aci.Elasticsearch) (*aci.Elasticsearch, error)
+	UpdateStatus(elastic *aci.Elastic) (*aci.Elastic, error)
 }
 
-type ElasticsearchImpl struct {
+type ElasticImpl struct {
 	r  rest.Interface
 	ns string
 }
 
-func newElasticsearch(c *AppsCodeExtensionsClient, namespace string) *ElasticsearchImpl {
-	return &ElasticsearchImpl{c.restClient, namespace}
+func newElastic(c *AppsCodeExtensionsClient, namespace string) *ElasticImpl {
+	return &ElasticImpl{c.restClient, namespace}
 }
 
-func (c *ElasticsearchImpl) List(opts api.ListOptions) (result *aci.ElasticsearchList, err error) {
-	result = &aci.ElasticsearchList{}
+func (c *ElasticImpl) List(opts api.ListOptions) (result *aci.ElasticList, err error) {
+	result = &aci.ElasticList{}
 	err = c.r.Get().
 		Namespace(c.ns).
 		Resource("elastics").
@@ -41,8 +41,8 @@ func (c *ElasticsearchImpl) List(opts api.ListOptions) (result *aci.Elasticsearc
 	return
 }
 
-func (c *ElasticsearchImpl) Get(name string) (result *aci.Elasticsearch, err error) {
-	result = &aci.Elasticsearch{}
+func (c *ElasticImpl) Get(name string) (result *aci.Elastic, err error) {
+	result = &aci.Elastic{}
 	err = c.r.Get().
 		Namespace(c.ns).
 		Resource("elastics").
@@ -52,30 +52,30 @@ func (c *ElasticsearchImpl) Get(name string) (result *aci.Elasticsearch, err err
 	return
 }
 
-func (c *ElasticsearchImpl) Create(elasticsearch *aci.Elasticsearch) (result *aci.Elasticsearch, err error) {
-	result = &aci.Elasticsearch{}
+func (c *ElasticImpl) Create(elastic *aci.Elastic) (result *aci.Elastic, err error) {
+	result = &aci.Elastic{}
 	err = c.r.Post().
 		Namespace(c.ns).
 		Resource("elastics").
-		Body(elasticsearch).
+		Body(elastic).
 		Do().
 		Into(result)
 	return
 }
 
-func (c *ElasticsearchImpl) Update(elasticsearch *aci.Elasticsearch) (result *aci.Elasticsearch, err error) {
-	result = &aci.Elasticsearch{}
+func (c *ElasticImpl) Update(elastic *aci.Elastic) (result *aci.Elastic, err error) {
+	result = &aci.Elastic{}
 	err = c.r.Put().
 		Namespace(c.ns).
 		Resource("elastics").
-		Name(elasticsearch.Name).
-		Body(elasticsearch).
+		Name(elastic.Name).
+		Body(elastic).
 		Do().
 		Into(result)
 	return
 }
 
-func (c *ElasticsearchImpl) Delete(name string, options *api.DeleteOptions) (err error) {
+func (c *ElasticImpl) Delete(name string, options *api.DeleteOptions) (err error) {
 	return c.r.Delete().
 		Namespace(c.ns).
 		Resource("elastics").
@@ -85,7 +85,7 @@ func (c *ElasticsearchImpl) Delete(name string, options *api.DeleteOptions) (err
 		Error()
 }
 
-func (c *ElasticsearchImpl) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (c *ElasticImpl) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return c.r.Get().
 		Prefix("watch").
 		Namespace(c.ns).
@@ -94,14 +94,14 @@ func (c *ElasticsearchImpl) Watch(opts api.ListOptions) (watch.Interface, error)
 		Watch()
 }
 
-func (c *ElasticsearchImpl) UpdateStatus(elasticsearch *aci.Elasticsearch) (result *aci.Elasticsearch, err error) {
-	result = &aci.Elasticsearch{}
+func (c *ElasticImpl) UpdateStatus(elastic *aci.Elastic) (result *aci.Elastic, err error) {
+	result = &aci.Elastic{}
 	err = c.r.Put().
 		Namespace(c.ns).
 		Resource("elastics").
-		Name(elasticsearch.Name).
+		Name(elastic.Name).
 		SubResource("status").
-		Body(elasticsearch).
+		Body(elastic).
 		Do().
 		Into(result)
 	return

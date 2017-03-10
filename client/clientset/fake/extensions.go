@@ -31,6 +31,6 @@ func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	return &FakeExtensionClient{&fakePtr}
 }
 
-func (m *FakeExtensionClient) Elasticsearch(ns string) client.ElasticsearchInterface {
-	return &FakeElasticsearch{m.Fake, ns}
+func (m *FakeExtensionClient) Elastic(ns string) client.ElasticInterface {
+	return &FakeElastic{m.Fake, ns}
 }

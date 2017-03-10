@@ -43,29 +43,28 @@ func (w *Controller) RunAndHold() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
-			return w.ExtClient.Elasticsearch(kapi.NamespaceAll).List(kapi.ListOptions{})
+			return w.ExtClient.Elastic(kapi.NamespaceAll).List(kapi.ListOptions{})
 		},
 		WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-			return w.ExtClient.Elasticsearch(kapi.NamespaceAll).Watch(kapi.ListOptions{})
+			return w.ExtClient.Elastic(kapi.NamespaceAll).Watch(kapi.ListOptions{})
 		},
 	}
-	_, controller := cache.NewInformer(
-		lw,
-		&tapi.Elasticsearch{},
+	_, controller := cache.NewInformer(lw,
+		&tapi.Elastic{},
 		w.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				w.create(obj.(*tapi.Elasticsearch))
+				w.create(obj.(*tapi.Elastic))
 			},
 			DeleteFunc: func(obj interface{}) {
-				w.delete(obj.(*tapi.Elasticsearch))
+				w.delete(obj.(*tapi.Elastic))
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*tapi.Elasticsearch)
+				oldObj, ok := old.(*tapi.Elastic)
 				if !ok {
 					return
 				}
-				newObj, ok := new.(*tapi.Elasticsearch)
+				newObj, ok := new.(*tapi.Elastic)
 				if !ok {
 					return
 				}

@@ -30,8 +30,8 @@ var (
 // Adds the list of known types to api.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Elasticsearch{},
-		&ElasticsearchList{},
+		&Elastic{},
+		&ElasticList{},
 
 		&api.ListOptions{},
 		&api.DeleteOptions{},
@@ -39,5 +39,5 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	return nil
 }
 
-func (obj *Elasticsearch) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
-func (obj *ElasticsearchList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
+func (obj *Elastic) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
+func (obj *ElasticList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
