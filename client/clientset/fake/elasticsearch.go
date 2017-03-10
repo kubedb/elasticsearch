@@ -72,7 +72,7 @@ func (mock *FakeElastic) Update(svc *aci.Elastic) (*aci.Elastic, error) {
 }
 
 // Delete deletes a Elastic by name.
-func (mock *FakeElastic) Delete(name string, _ *api.DeleteOptions) error {
+func (mock *FakeElastic) Delete(name string) error {
 	_, err := mock.Fake.
 		Invokes(testing.NewDeleteAction(elasticResource, mock.ns, name), &aci.Elastic{})
 
