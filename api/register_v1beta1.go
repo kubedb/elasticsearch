@@ -22,7 +22,6 @@ func v1addKnownTypes(scheme *runtime.Scheme) error {
 		&ElasticList{},
 
 		&v1.ListOptions{},
-		&v1.DeleteOptions{},
 	)
 	versionedwatch.AddToGroupVersion(scheme, V1beta1SchemeGroupVersion)
 	return nil

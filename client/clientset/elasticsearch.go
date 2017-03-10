@@ -16,7 +16,7 @@ type ElasticInterface interface {
 	Get(name string) (*aci.Elastic, error)
 	Create(elastic *aci.Elastic) (*aci.Elastic, error)
 	Update(elastic *aci.Elastic) (*aci.Elastic, error)
-	Delete(name string, options *api.DeleteOptions) error
+	Delete(name string) error
 	Watch(opts api.ListOptions) (watch.Interface, error)
 	UpdateStatus(elastic *aci.Elastic) (*aci.Elastic, error)
 }
@@ -75,12 +75,11 @@ func (c *ElasticImpl) Update(elastic *aci.Elastic) (result *aci.Elastic, err err
 	return
 }
 
-func (c *ElasticImpl) Delete(name string, options *api.DeleteOptions) (err error) {
+func (c *ElasticImpl) Delete(name string) (err error) {
 	return c.r.Delete().
 		Namespace(c.ns).
 		Resource("elastics").
 		Name(name).
-		Body(options).
 		Do().
 		Error()
 }

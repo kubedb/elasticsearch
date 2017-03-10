@@ -34,7 +34,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ElasticList{},
 
 		&api.ListOptions{},
-		&api.DeleteOptions{},
 	)
 	return nil
 }
