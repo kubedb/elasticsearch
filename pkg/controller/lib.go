@@ -24,7 +24,7 @@ func (w *Controller) checkService(namespace, serviceName string) (bool, error) {
 		return false, nil
 	}
 
-	if service.Spec.Selector[SelectorDatabaseName] != serviceName {
+	if service.Spec.Selector[LabelDatabaseName] != serviceName {
 		return false, errors.New(fmt.Sprintf(`Intended service "%v" already exists`, serviceName))
 	}
 
@@ -43,7 +43,7 @@ func (w *Controller) createService(namespace, serviceName string) error {
 	}
 
 	label := map[string]string{
-		SelectorDatabaseName: serviceName,
+		LabelDatabaseName: serviceName,
 	}
 	service := &kapi.Service{
 		ObjectMeta: kapi.ObjectMeta{
@@ -85,7 +85,7 @@ func (w *Controller) deleteService(namespace, serviceName string) error {
 		return nil
 	}
 
-	if service.Spec.Selector[SelectorDatabaseName] != serviceName {
+	if service.Spec.Selector[LabelDatabaseName] != serviceName {
 		return nil
 	}
 

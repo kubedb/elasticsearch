@@ -10,13 +10,14 @@ import (
 )
 
 const (
+	annotationDatabaseVersion  = "elastic.k8sdb.com/version"
 	DatabaseElasticsearch      = "elasticsearch"
 	DatabaseNamePrefix         = "k8sdb"
 	GoverningElasticsearch     = "governing-elasticsearch"
 	imageElasticsearch         = "appscode/elasticsearch"
 	imageOperatorElasticsearch = "appscode/k8ses"
 	LabelDatabaseType          = "k8sdb.com/type"
-	SelectorDatabaseName       = "es.k8sdb.com/name"
+	LabelDatabaseName          = "elastic.k8sdb.com/name"
 	tagOperatorElasticsearch   = "0.1"
 )
 
@@ -42,12 +43,18 @@ func (w *Controller) create(elastic *tapi.Elastic) {
 	if elastic.Labels == nil {
 		elastic.Labels = make(map[string]string)
 	}
-	elastic.Labels[SelectorDatabaseName] = elastic.Name
+	elastic.Labels[LabelDatabaseType] = DatabaseElasticsearch
 
 	if elastic.Annotations == nil {
 		elastic.Annotations = make(map[string]string)
 	}
-	elastic.Annotations[LabelDatabaseType] = DatabaseElasticsearch
+	elastic.Annotations[annotationDatabaseVersion] = elastic.Spec.Version
+
+	podLabels := make(map[string]string)
+	for key, val := range elastic.Labels {
+		podLabels[key] = val
+	}
+	podLabels[LabelDatabaseName] = elastic.Name
 
 	dockerImage := fmt.Sprintf("%v:%v", imageElasticsearch, elastic.Spec.Version)
 	initContainerImage := fmt.Sprintf("%v:%v", imageOperatorElasticsearch, tagOperatorElasticsearch)
@@ -65,7 +72,7 @@ func (w *Controller) create(elastic *tapi.Elastic) {
 			ServiceName: governingService,
 			Template: kapi.PodTemplateSpec{
 				ObjectMeta: kapi.ObjectMeta{
-					Labels:      elastic.Labels,
+					Labels:      podLabels,
 					Annotations: elastic.Annotations,
 				},
 				Spec: kapi.PodSpec{
