@@ -1,5 +1,5 @@
-hash: dbae4b5a66aea7e394352ea5a8d57a9c79af9ff3cb4c6819bf4ce641b60747ce
-updated: 2017-03-14T15:20:23.401829504+06:00
+hash: 2578ed8bcbdb50d93cc36b2b795c897089b8b8dcc331cad14cec29ea87f47adb
+updated: 2017-03-14T15:55:36.650358613+06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
