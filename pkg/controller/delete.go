@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/log"
-	tapi "github.com/k8sdb/elasticsearch/api"
+	tapi "github.com/k8sdb/apimachinery/api"
 )
 
 func (w *Controller) delete(elastic *tapi.Elastic) {

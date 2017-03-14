@@ -5,33 +5,28 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	tapi "github.com/k8sdb/elasticsearch/api"
-	tcs "github.com/k8sdb/elasticsearch/client/clientset"
+	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/wait"
 	"k8s.io/kubernetes/pkg/watch"
+	tapi "github.com/k8sdb/apimachinery/api"
 )
 
 type Controller struct {
-	// Kubernetes client to apiserver
-	Client clientset.Interface
-	// ThirdPartyExtension client to apiserver
-	ExtClient tcs.ExtensionInterface
+	*amc.Controller
 	// sync time to sync the list.
 	SyncPeriod time.Duration
 }
 
 func New(c *rest.Config) *Controller {
 	return &Controller{
-		Client:     clientset.NewForConfigOrDie(c),
-		ExtClient:  tcs.NewExtensionsForConfigOrDie(c),
+		Controller: amc.New(c),
 		SyncPeriod: time.Minute * 2,
 	}
 }

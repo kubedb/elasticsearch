@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/flags"
-	_ "github.com/k8sdb/elasticsearch/api/install"
 	"github.com/k8sdb/elasticsearch/pkg/discover"
 	"github.com/spf13/cobra"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"

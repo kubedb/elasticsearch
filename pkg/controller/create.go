@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/log"
-	tapi "github.com/k8sdb/elasticsearch/api"
+	tapi "github.com/k8sdb/apimachinery/api"
 	kapi "k8s.io/kubernetes/pkg/api"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
 )

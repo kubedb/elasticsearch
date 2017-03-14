@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	_ "github.com/k8sdb/elasticsearch/api/install"
 	kapi "k8s.io/kubernetes/pkg/api"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
