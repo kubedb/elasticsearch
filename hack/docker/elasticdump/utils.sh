@@ -7,7 +7,7 @@ RETVAL=0
 
 backup(){
   # 1 - host
-  # 2 - snap-name
+  # 2 - snapshot-name
   # 3 - index
 
   path=/var/dump-backup/$2/$3
@@ -41,7 +41,7 @@ backup(){
 
 restore(){
   # 1 - host
-  # 2 - snap-name
+  # 2 - snapshot-name
   # 3 - index
   path=/var/dump-restore/$2/$3
   cd $path
@@ -72,68 +72,36 @@ restore(){
 }
 
 push() {
-  # 1 - cloud
-  # 2 - bucket
-  # 3 - database
-  # 4 - snap-name
+  # 1 - bucket
+  # 2 - folder
+  # 3 - snapshot-name
 
-  path=/var/dump-backup/$4
-
-  if [ "$1" = 'gce' ]; then
-    gsutil -m cp -r $path gs://$2/$3/$4
-    retval=$?
-    if [ "$retval" -ne 0 ]; then
+  src_path="/var/dump-backup/$3"
+  osm push -c "$1" "$src_path" "$2/$3"
+  retval=$?
+  if [ "$retval" -ne 0 ]; then
         exit 1
-    fi
   fi
 
-  if [ "$1" = 'aws' ]; then
-    region=$(aws s3api get-bucket-location --bucket=$2 --output=text)
-    if [ $region = "None" ]; then
-        aws s3 cp --recursive $path s3://$2/$3/$4
-    else
-        aws s3 cp --region $region --recursive $path s3://$2/$3/$4
-    fi
-    retval=$?
-    if [ "$retval" -ne 0 ]; then
-        exit 1
-      fi
-  fi
   exit 0
 }
 
-
 pull() {
-  # 1 - cloud
-  # 2 - bucket
-  # 3 - database
-  # 4 - snap-name
+  # 1 - bucket
+  # 2 - folder
+  # 3 - snapshot-name
 
-  path=/var/dump-restore
-  mkdir -p $path
-  cd $path
-  rm -rf *
+  dst_path="/var/dump-restore/$3"
+  mkdir -p "$dst_path"
+  rm -rf "$dst_path"
 
-  if [ "$1" = 'gce' ]; then
-      gsutil -m cp -r gs://$2/$3/$4 .
-      retval=$?
-      if [ "$retval" -ne 0 ]; then
-          exit 1
-      fi
+  osm pull -c "$1" "$2/$3" "$dst_path"
+  retval=$?
+  if [ "$retval" -ne 0 ]; then
+        exit 1
   fi
 
-  if [ "$1" = 'aws' ]; then
-      region=$(aws s3api get-bucket-location --bucket=$2 --output=text)
-      if [ $region = "None" ]; then
-            aws s3 cp --recursive s3://$2/$3/$4 $path
-      else
-            aws s3 cp --region $region --recursive s3://$2/$3/$4 $path
-      fi
-      retval=$?
-      if [ "$retval" -ne 0 ]; then
-          exit 1
-      fi
-  fi
+  exit 0
 }
 
 
@@ -156,4 +124,4 @@ case "$process" in
 		echo $"Unknown process!"
 		RETVAL=1
 esac
-exit $RETVAL
+exit "$RETVAL"

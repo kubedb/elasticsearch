@@ -1,67 +1,46 @@
-import sys, os, subprocess, json, shutil
+import sys, os, subprocess, json, shutil, yaml
 from elasticsearch import Elasticsearch
 
 Flag = {}
-aws_cred_dir = "/root/.aws"
 
-#############################################
-# this will be written in /root/.boto for gce
-gce_cred_data = '''[Credentials]
-gs_service_key_file = /var/credentials/gce
-
-[Boto]
-https_validate_certificates = True
-
-[GSUtil]
-content_language = en
-default_api_version = 2
-default_project_id = %s
-'''
-#############################################
-
-#############################################
-# this will be written in /root/.aws/credentials for aws
-aws_cred_data = '''[default]
-aws_access_key_id = %s
-aws_secret_access_key = %s
-'''
-#############################################
+secret_data_dir = "/var/credentials"
 
 
-#######################################
-# this func write .boto file for gsutil
-def gce_cred_file():
-    print "Setting GCE credential.."
-    with open('/var/credentials/gce') as data_file:
-        json_data = json.load(data_file)
+def set_osm_config():
+    with open(secret_data_dir+"/provider") as f:
+        lines = f.readlines()
+        if len(lines) == 0:
+            print "Provider missing"
+            exit(1)
+        provider = lines[0].rstrip('\n')
 
-    f = open('/root/.boto', 'w+')
-    f.write(gce_cred_data%json_data['project_id'])
-    f.close()
-    return True
-#######################################
+    with open(secret_data_dir + "/config") as f:
+        config = json.load(f)
 
-#######################################
-# this func write .aws/credentials file for aws
-def aws_cred_file():
-    print "Setting AWS credential.."
-    with open('/var/credentials/aws/keyid') as data_file:
-        key = data_file.read().rstrip()
-    with open('/var/credentials/aws/secret') as data_file:
-        secret = data_file.read().rstrip()
+    context = dict(
+        config=config,
+        name="cloud",
+        provider=provider,
+    )
 
-    if not os.path.exists(aws_cred_dir):
-        os.makedirs(aws_cred_dir)
-    f = open(aws_cred_dir+'/credentials', 'w+')
-    f.write(aws_cred_data%(key,secret))
-    f.close()
-#######################################
+    data = {
+        "contexts": [context],
+        "current-context": "cloud",
+    }
+
+    home = os.environ['HOME']
+    osm_config_path = home + '/.osm'
+    if not os.path.exists(osm_config_path):
+        os.makedirs(osm_config_path)
+    with open(osm_config_path+"/config", 'w') as outfile:
+        yaml.safe_dump(data, outfile, default_flow_style=False)
+
 
 def backup_process():
     print "Backup process starting..."
 
     es = Elasticsearch(hosts=[{'host': Flag["host"], 'port': 9200}], timeout=120)
-    indices=es.indices.get_alias()
+    indices = es.indices.get_alias()
 
     print "Total indices: " + str(len(indices))
     path = '/var/dump-backup/'+Flag["snapshot"]
@@ -76,28 +55,28 @@ def backup_process():
             print "Fail to take backup for index: "+index
             exit(1)
 
-    filep = open(path+"/indices.txt", "wb")
+    file_pointer = open(path+"/indices.txt", "wb")
     for index in indices:
-        print>>filep, index
-    filep.close()
+        print>>file_pointer, index
+    file_pointer.close()
 
-    code = subprocess.call(['./utils.sh', "push", Flag["cloud"], Flag["bucket"], Flag["database"], Flag["snapshot"]])
+    code = subprocess.call(['./utils.sh', "push", Flag["bucket"], Flag["folder"], Flag["snapshot"]])
     if code != 0:
         print "Fail to push backup files to cloud..."
         exit(1)
 
+
 def restore_process():
     print "Restore process starting..."
 
-    code = subprocess.call(['./utils.sh', "pull", Flag["cloud"], Flag["bucket"], Flag["database"], Flag["snapshot"]])
+    code = subprocess.call(['./utils.sh', "pull", Flag["bucket"], Flag["folder"], Flag["snapshot"]])
     if code != 0:
         print "Fail to pull backup files from cloud..."
         exit(1)
 
     path = '/var/dump-restore/'+Flag["snapshot"]
-    fileP = open(path+"/indices.txt", "r")
-
-    for index in fileP.readlines():
+    file_pointer = open(path+"/indices.txt", "r")
+    for index in file_pointer.readlines():
         index = index.rstrip("\n")
         code = subprocess.call(['./utils.sh', "restore", Flag["host"], Flag["snapshot"], index])
         if code != 0:
@@ -112,19 +91,13 @@ def main(argv):
         v = flag.split("=", 1)
         Flag[v[0][2:]]=v[1]
 
-    for flag in ["process", "host", "cloud", "bucket", "snapshot", "database"]:
+    for flag in ["process", "host", "bucket", "folder", "snapshot"]:
         if flag not in Flag:
             print '--%s is required'%flag
+            exit(1)
             return
 
-    if Flag["cloud"] == "gce":
-        gce_cred_file()
-    elif Flag["cloud"] == "aws":
-        aws_cred_file()
-    else:
-        print "Invalid Cloud"
-        exit(1)
-        return
+    set_osm_config()
 
     if Flag["process"] == "backup":
         backup_process()
@@ -132,7 +105,6 @@ def main(argv):
         restore_process()
 
     exit(0)
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])
