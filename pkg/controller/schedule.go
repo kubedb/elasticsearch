@@ -89,7 +89,7 @@ func (b *backup) createDatabaseSnapshot() {
 // Backup schedule process with internal cron job.
 func (w *Controller) ScheduleBackup(elastic *tapi.Elastic) error {
 	// Remove previous cron job if exist
-	if id, found := w.cronEntryIDs.Get(elastic.Name); found {
+	if id, exists := w.cronEntryIDs.Pop(elastic.Name); exists {
 		w.cron.Remove(id.(cron.EntryID))
 	}
 
@@ -105,6 +105,6 @@ func (w *Controller) ScheduleBackup(elastic *tapi.Elastic) error {
 	}
 
 	// Update job entryID
-	w.cronEntryIDs.Upsert(elastic.Name, entryID)
+	w.cronEntryIDs.Set(elastic.Name, entryID)
 	return nil
 }
