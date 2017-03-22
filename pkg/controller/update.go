@@ -48,8 +48,7 @@ func (w *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 			}
 		} else {
 			// Remove previous cron job if exist
-			if id, found := w.cronEntryIDs.Get(updatedElastic.Name); found {
-				w.cronEntryIDs.Remove(updatedElastic.Name)
+			if id, exists := w.cronEntryIDs.Pop(updatedElastic.Name); exists {
 				w.cron.Remove(id.(cron.EntryID))
 			}
 		}
