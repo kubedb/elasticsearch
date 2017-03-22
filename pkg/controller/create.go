@@ -194,8 +194,10 @@ func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 		}
 
 		if len(storage.AccessModes) == 0 {
-			log.Errorln("Spec.Storage.AccessModes: Required value: at least 1 access mode is required")
-			return false
+			storage.AccessModes = []kapi.PersistentVolumeAccessMode{
+				kapi.ReadWriteOnce,
+			}
+			log.Infoln(fmt.Sprintf(`Using "%v" as AccessModes in "%v"`, kapi.ReadWriteOnce, *storage))
 		}
 
 		if val, found := storage.Resources.Requests[kapi.ResourceStorage]; found {
