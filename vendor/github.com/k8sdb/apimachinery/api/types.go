@@ -17,18 +17,15 @@ type InitialScriptSpec struct {
 
 type BackupScheduleSpec struct {
 	CronExpression string `json:"cronExpression,omitempty"`
-	BackupSpec     `json:",inline,omitempty"`
+	SnapshotSpec   `json:",inline,omitempty"`
 }
 
-type BackupSpec struct {
-	// Cloud credential secret
-	CredSecret *api.SecretVolumeSource `json:"credSecret,omitempty"`
+type SnapshotSpec struct {
+	// Snapshot storage secret
+	StorageSecret *api.SecretVolumeSource `json:"storageSecret,omitempty"`
 	// Database authentication secret
 	// +optional
-	AuthSecret *api.SecretVolumeSource `json:"authSecret,omitempty"`
+	DatabaseSecret *api.SecretVolumeSource `json:"databaseSecret,omitempty"`
 	// Cloud bucket name
 	BucketName string `json:"bucketName,omitempty"`
-	// Database snapshot id
-	// +optional
-	SnapshotID string `json:"snapshotID,omitempty"`
 }

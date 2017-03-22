@@ -4,38 +4,55 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/appscode/go/hold"
 	"github.com/appscode/log"
+	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
+	"gopkg.in/robfig/cron.v2"
 	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
+	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/wait"
 	"k8s.io/kubernetes/pkg/watch"
-	tapi "github.com/k8sdb/apimachinery/api"
 )
 
 type Controller struct {
 	*amc.Controller
+	// For Internal Cron Job
+	cron *cron.Cron
+	// Store Cron Job EntryID for further use
+	cronEntryIDs map[string]cron.EntryID
 	// sync time to sync the list.
 	SyncPeriod time.Duration
 }
 
 func New(c *rest.Config) *Controller {
 	return &Controller{
-		Controller: amc.New(c),
-		SyncPeriod: time.Minute * 2,
+		Controller:   amc.New(c),
+		cron:         cron.New(),
+		cronEntryIDs: make(map[string]cron.EntryID),
+		SyncPeriod:   time.Minute * 2,
 	}
 }
 
 // Blocks caller. Intended to be called as a Go routine.
 func (w *Controller) RunAndHold() {
-	log.Infoln("Ensuring ThirdPartyResource...")
+	// Ensure all related ThirdPartyResource
 	w.ensureThirdPartyResource()
+	// Start Cron
+	w.cron.Start()
+	defer w.cron.Stop()
+	// Watch Elastic TPR objects
+	go w.watchElastic()
+	// Watch DatabaseSnapshot with labelSelector only for Elastic
+	go w.watchDatabaseSnapshot()
 
+	hold.Hold()
+}
+
+func (w *Controller) watchElastic() {
 	lw := &cache.ListWatch{
 		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
 			return w.ExtClient.Elastic(kapi.NamespaceAll).List(kapi.ListOptions{})
@@ -44,7 +61,7 @@ func (w *Controller) RunAndHold() {
 			return w.ExtClient.Elastic(kapi.NamespaceAll).Watch(kapi.ListOptions{})
 		},
 	}
-	_, controller := cache.NewInformer(lw,
+	_, cacheController := cache.NewInformer(lw,
 		&tapi.Elastic{},
 		w.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
@@ -64,41 +81,57 @@ func (w *Controller) RunAndHold() {
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					w.update(newObj)
+					w.update(oldObj, newObj)
 				}
 			},
 		},
 	)
-	controller.Run(wait.NeverStop)
+	cacheController.Run(wait.NeverStop)
+}
+
+func (w *Controller) watchDatabaseSnapshot() {
+	labelMap := map[string]string{
+		LabelDatabaseType: DatabaseElasticsearch,
+	}
+	// Watch with label selector
+	lw := &cache.ListWatch{
+		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
+			return w.Controller.ExtClient.DatabaseSnapshot(kapi.NamespaceAll).List(
+				kapi.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+				})
+		},
+		WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			return w.Controller.ExtClient.DatabaseSnapshot(kapi.NamespaceAll).Watch(
+				kapi.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+				})
+		},
+	}
+
+	_, cacheController := cache.NewInformer(lw,
+		&tapi.DatabaseSnapshot{},
+		w.SyncPeriod,
+		cache.ResourceEventHandlerFuncs{
+			// Only add operation is handled
+			AddFunc: func(obj interface{}) {
+				databaseSnapshot := obj.(*tapi.DatabaseSnapshot)
+				if databaseSnapshot.Status.StartTime == nil {
+					w.backup(databaseSnapshot)
+				}
+			},
+		},
+	)
+
+	cacheController.Run(wait.NeverStop)
 }
 
 func (w *Controller) ensureThirdPartyResource() {
-	resourceName := "elastic" + "." + tapi.V1beta1SchemeGroupVersion.Group
+	log.Infoln("Ensuring ThirdPartyResource...")
 
-	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
-		if !errors.IsNotFound(err) {
-			log.Fatalln(err)
-		}
-	} else {
-		return
-	}
+	// Ensure Elastic TPR
+	w.ensureElastic()
 
-	thirdPartyResource := &extensions.ThirdPartyResource{
-		TypeMeta: unversioned.TypeMeta{
-			APIVersion: "extensions/v1beta1",
-			Kind:       "ThirdPartyResource",
-		},
-		ObjectMeta: kapi.ObjectMeta{
-			Name: resourceName,
-		},
-		Versions: []extensions.APIVersion{
-			{
-				Name: tapi.V1beta1SchemeGroupVersion.Version,
-			},
-		},
-	}
-
-	if _, err := w.Client.Extensions().ThirdPartyResources().Create(thirdPartyResource); err != nil {
-		log.Fatalln(err)
-	}
+	// Ensure DatabaseSnapshot TPR
+	w.Controller.EnsureDatabaseSnapshot()
 }

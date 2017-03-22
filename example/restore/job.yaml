@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restore-elasticsearch
+  namespace: default
+spec:
+  template:
+    metadata:
+      labels:
+        job-name: restore-elasticsearch
+        job.k8sdb.com/type: restore
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: restore
+        image: appscode/elasticdump:2.4.2-v2
+        args:
+        - --process=restore
+        - --host=""
+        - --bucket=""
+        - --snapshot=""
+        - --folder=""
+        volumeMounts:
+        - mountPath: /var/credentials/
+          name: cloud
+        - mountPath: /var/dump-backup/
+          name: util-volume
+      volumes:
+      - name: cloud
+        secret:
+          secretName: aws-cred
+      - name: util-volume
+        emptyDir: {}

@@ -5,11 +5,47 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/appscode/log"
+	tapi "github.com/k8sdb/apimachinery/api"
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/api/unversioned"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/util/intstr"
 )
+
+func (w *Controller) ensureElastic() {
+	resourceName := "elastic" + "." + tapi.V1beta1SchemeGroupVersion.Group
+
+	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
+		if !k8serr.IsNotFound(err) {
+			log.Fatalln(err)
+		}
+	} else {
+		return
+	}
+
+	thirdPartyResource := &extensions.ThirdPartyResource{
+		TypeMeta: unversioned.TypeMeta{
+			APIVersion: "extensions/v1beta1",
+			Kind:       "ThirdPartyResource",
+		},
+		ObjectMeta: kapi.ObjectMeta{
+			Name: resourceName,
+		},
+		Versions: []extensions.APIVersion{
+			{
+				Name: tapi.V1beta1SchemeGroupVersion.Version,
+			},
+		},
+	}
+
+	if _, err := w.Client.Extensions().ThirdPartyResources().Create(thirdPartyResource); err != nil {
+		log.Fatalln(err)
+	}
+}
 
 func (w *Controller) checkService(namespace, serviceName string) (bool, error) {
 	service, err := w.Client.Core().Services(namespace).Get(serviceName)
@@ -32,7 +68,6 @@ func (w *Controller) checkService(namespace, serviceName string) (bool, error) {
 }
 
 func (w *Controller) createService(namespace, serviceName string) error {
-
 	// Check if service name exists
 	found, err := w.checkService(namespace, serviceName)
 	if err != nil {
@@ -53,12 +88,14 @@ func (w *Controller) createService(namespace, serviceName string) error {
 		Spec: kapi.ServiceSpec{
 			Ports: []kapi.ServicePort{
 				{
-					Name: "api",
-					Port: 9200,
+					Name:       "api",
+					Port:       9200,
+					TargetPort: intstr.FromString("api"),
 				},
 				{
-					Name: "tcp",
-					Port: 9300,
+					Name:       "tcp",
+					Port:       9300,
+					TargetPort: intstr.FromString("tcp"),
 				},
 			},
 			Selector: label,
@@ -114,7 +151,6 @@ func (w *Controller) createGoverningServiceAccount(namespace, name string) error
 		return err
 
 	}
-
 	if found {
 		return nil
 	}

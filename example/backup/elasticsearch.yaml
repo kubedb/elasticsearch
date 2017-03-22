@@ -1,0 +1,19 @@
+apiVersion: k8sdb.com/v1beta1
+kind: Elastic
+metadata:
+  name: elasticsearch-demo
+spec:
+  Version: 2.3.1-v2.2
+  Replicas: 1
+  BackupSchedule:
+    CronExpression: "@every 6h"
+    BucketName: ""
+    StorageSecret:
+      SecretName: ""
+  Storage:
+    Class: ""
+    AccessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ""

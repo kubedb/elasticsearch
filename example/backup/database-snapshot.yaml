@@ -1,0 +1,11 @@
+apiVersion: k8sdb.com/v1beta1
+kind: DatabaseSnapshot
+metadata:
+  name: snapshot-xyz
+  labels:
+    "k8sdb.com/type": "elasticsearch"
+spec:
+  DatabaseName: test
+  BucketName: ""
+  StorageSecret:
+    SecretName: ""

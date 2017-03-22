@@ -32,7 +32,7 @@ type ElasticSpec struct {
 	// If DoNotDelete is true, controller will prevent to delete this Elastic object.
 	// Controller will create same Elastic object and ignore other process.
 	// +optional
-	DoNotDelete *bool `json:"doNotDelete,omitempty"`
+	DoNotDelete bool `json:"doNotDelete,omitempty"`
 }
 
 type ElasticStatus struct {

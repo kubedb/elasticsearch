@@ -6,6 +6,7 @@ import (
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	kapi "k8s.io/kubernetes/pkg/api"
+	k8serr "k8s.io/kubernetes/pkg/api/errors"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
 )
 
@@ -19,6 +20,10 @@ const (
 	LabelDatabaseType          = "k8sdb.com/type"
 	LabelDatabaseName          = "elastic.k8sdb.com/name"
 	tagOperatorElasticsearch   = "0.1"
+	// Duration in Minute
+	// Check whether pod under StatefulSet is running or not
+	// Continue checking for this duration until failure
+	durationCheckStatefulSet = 30.0
 )
 
 func (w *Controller) create(elastic *tapi.Elastic) {
@@ -96,6 +101,10 @@ func (w *Controller) create(elastic *tapi.Elastic) {
 									Name:      "discovery",
 									MountPath: "/tmp/discovery",
 								},
+								{
+									Name:      "volume",
+									MountPath: "/var/pv",
+								},
 							},
 						},
 					},
@@ -142,12 +151,23 @@ func (w *Controller) create(elastic *tapi.Elastic) {
 		},
 	}
 
-	// Add PersistentVolumeClaim for StatefulSet
-	w.addPersistentVolumeClaim(statefulSet, elastic.Spec.Storage)
+	// Add Data volume for StatefulSet
+	w.addDataVolume(statefulSet, elastic.Spec.Storage)
 
 	if _, err := w.Client.Apps().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
 		log.Errorln(err)
 		return
+	}
+
+	if err := w.CheckStatefulSets(statefulSet, durationCheckStatefulSet); err != nil {
+		log.Errorln(err)
+		return
+	}
+
+	if elastic.Spec.BackupSchedule != nil {
+		if err := w.ScheduleBackup(elastic); err != nil {
+			log.Errorln(err)
+		}
 	}
 }
 
@@ -163,13 +183,43 @@ func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 			log.Errorln(fmt.Sprintf(`Object 'Class' is missing in '%v'`, *storage))
 			return false
 		}
-		storageClass, err := w.Client.Storage().StorageClasses().Get(storage.Class)
-		if err != nil {
-			log.Errorln(err)
+
+		if _, err := w.Client.Storage().StorageClasses().Get(storage.Class); err != nil {
+			if k8serr.IsNotFound(err) {
+				log.Errorln(fmt.Sprintf(`Spec.Storage.Class "%v" not found`, storage.Class))
+			} else {
+				log.Errorln(err)
+			}
 			return false
 		}
-		if storageClass == nil {
-			log.Errorln(fmt.Sprintf(`Spec.Storage.Class "%v" not found`, storage.Class))
+
+		if len(storage.AccessModes) == 0 {
+			log.Errorln("Spec.Storage.AccessModes: Required value: at least 1 access mode is required")
+			return false
+		}
+
+		if val, found := storage.Resources.Requests[kapi.ResourceStorage]; found {
+			if val.Value() <= 0 {
+				log.Errorln("Invalid ResourceStorage request")
+				return false
+			}
+		} else {
+			log.Errorln("Missing ResourceStorage request")
+			return false
+		}
+	}
+
+	if elastic.Spec.BackupSchedule != nil {
+		// CronExpression can't be empty
+		backupSchedule := elastic.Spec.BackupSchedule
+		if backupSchedule.CronExpression == "" {
+			log.Errorln("Invalid cron expression")
+			return false
+		}
+
+		// Validate backup spec
+		if err := w.validateBackupSpec(backupSchedule.SnapshotSpec, elastic.Namespace); err != nil {
+			log.Errorln(err)
 			return false
 		}
 	}
@@ -177,9 +227,10 @@ func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 	return true
 }
 
-func (w *Controller) addPersistentVolumeClaim(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
+func (w *Controller) addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 	if storage != nil {
 		// volume claim templates
+		// Dynamically attach volume
 		storageClassName := storage.Class
 		statefulSet.Spec.VolumeClaimTemplates = []kapi.PersistentVolumeClaim{
 			{
@@ -192,5 +243,16 @@ func (w *Controller) addPersistentVolumeClaim(statefulSet *kapps.StatefulSet, st
 				Spec: storage.PersistentVolumeClaimSpec,
 			},
 		}
+	} else {
+		// Attach Empty directory
+		statefulSet.Spec.Template.Spec.Volumes = append(
+			statefulSet.Spec.Template.Spec.Volumes,
+			kapi.Volume{
+				Name: "volume",
+				VolumeSource: kapi.VolumeSource{
+					EmptyDir: &kapi.EmptyDirVolumeSource{},
+				},
+			},
+		)
 	}
 }

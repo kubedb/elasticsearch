@@ -22,7 +22,7 @@ type DeletedDatabaseSpec struct {
 	AuthSecret *api.SecretVolumeSource `json:"authSecret,omitempty"`
 	// If true, invoke destroy operation
 	// +optional
-	Destroy *bool `json:"destroy,omitempty"`
+	Destroy bool `json:"destroy,omitempty"`
 }
 
 type DeletedDatabaseStatus struct {
