@@ -87,12 +87,11 @@ const (
 	LabelSnapshotActive = "elastic.k8sdb.com/status"
 )
 
-func (w *Controller) CheckDatabaseSnapshotJob(snapshot *tapi.DatabaseSnapshot, jobName string, checkTime float64) {
+func (w *Controller) CheckDatabaseSnapshotJob(snapshot *tapi.DatabaseSnapshot, jobName string, checkDuration time.Duration) {
 
 	unversionedNow := unversioned.Now()
 	snapshot.Status.StartTime = &unversionedNow
 	snapshot.Status.Status = tapi.SnapshotRunning
-
 	snapshot.Labels[LabelSnapshotActive] = string(tapi.SnapshotRunning)
 	var err error
 	if snapshot, err = w.ExtClient.DatabaseSnapshot(snapshot.Namespace).Update(snapshot); err != nil {
@@ -104,7 +103,7 @@ func (w *Controller) CheckDatabaseSnapshotJob(snapshot *tapi.DatabaseSnapshot, j
 
 	then := time.Now()
 	now := time.Now()
-	for now.Sub(then).Minutes() < checkTime {
+	for now.Sub(then) < checkDuration {
 		log.Debugln("Checking for Job ", jobName)
 		job, err = w.Client.Batch().Jobs(snapshot.Namespace).Get(jobName)
 		if err != nil {
@@ -174,13 +173,13 @@ func (w *Controller) CheckDatabaseSnapshotJob(snapshot *tapi.DatabaseSnapshot, j
 	}
 }
 
-func (w *Controller) CheckStatefulSets(statefulSet *kapps.StatefulSet, checkTime float64) error {
+func (w *Controller) CheckStatefulSets(statefulSet *kapps.StatefulSet, checkDuration time.Duration) error {
 	podName := fmt.Sprintf("%v-%v", statefulSet.Name, 0)
 
 	podReady := false
 	then := time.Now()
 	now := time.Now()
-	for now.Sub(then).Minutes() < checkTime {
+	for now.Sub(then) < checkDuration {
 		pod, err := w.Client.Core().Pods(statefulSet.Namespace).Get(podName)
 		if err != nil {
 			if k8serr.IsNotFound(err) {

@@ -21,7 +21,7 @@ func (w *Controller) ensureElastic() {
 
 	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
 		if !k8serr.IsNotFound(err) {
-			log.Fatalln(err)
+			log.Fatal(err)
 		}
 	} else {
 		return
@@ -43,7 +43,7 @@ func (w *Controller) ensureElastic() {
 	}
 
 	if _, err := w.Client.Extensions().ThirdPartyResources().Create(thirdPartyResource); err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 }
 

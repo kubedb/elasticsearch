@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
@@ -23,7 +24,7 @@ const (
 	// Duration in Minute
 	// Check whether pod under StatefulSet is running or not
 	// Continue checking for this duration until failure
-	durationCheckStatefulSet = 30.0
+	durationCheckStatefulSet = time.Minute * 30
 )
 
 func (w *Controller) create(elastic *tapi.Elastic) {
@@ -36,12 +37,12 @@ func (w *Controller) create(elastic *tapi.Elastic) {
 		governingService = elastic.Spec.ServiceAccountName
 	}
 	if err := w.createGoverningServiceAccount(elastic.Namespace, governingService); err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		return
 	}
 
 	if err := w.createService(elastic.Namespace, elastic.Name); err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		return
 	}
 
@@ -155,40 +156,40 @@ func (w *Controller) create(elastic *tapi.Elastic) {
 	w.addDataVolume(statefulSet, elastic.Spec.Storage)
 
 	if _, err := w.Client.Apps().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		return
 	}
 
 	if err := w.CheckStatefulSets(statefulSet, durationCheckStatefulSet); err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		return
 	}
 
 	if elastic.Spec.BackupSchedule != nil {
 		if err := w.ScheduleBackup(elastic); err != nil {
-			log.Errorln(err)
+			log.Error(err)
 		}
 	}
 }
 
 func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 	if elastic.Spec.Version == "" {
-		log.Errorln(fmt.Sprintf(`Object 'Version' is missing in '%v'`, elastic.Spec))
+		log.Errorf(`Object 'Version' is missing in '%v'`, elastic.Spec)
 		return false
 	}
 
 	storage := elastic.Spec.Storage
 	if storage != nil {
 		if storage.Class == "" {
-			log.Errorln(fmt.Sprintf(`Object 'Class' is missing in '%v'`, *storage))
+			log.Errorf(`Object 'Class' is missing in '%v'`, *storage)
 			return false
 		}
 
 		if _, err := w.Client.Storage().StorageClasses().Get(storage.Class); err != nil {
 			if k8serr.IsNotFound(err) {
-				log.Errorln(fmt.Sprintf(`Spec.Storage.Class "%v" not found`, storage.Class))
+				log.Errorf(`Spec.Storage.Class "%v" not found`, storage.Class)
 			} else {
-				log.Errorln(err)
+				log.Error(err)
 			}
 			return false
 		}
@@ -197,16 +198,16 @@ func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 			storage.AccessModes = []kapi.PersistentVolumeAccessMode{
 				kapi.ReadWriteOnce,
 			}
-			log.Infoln(fmt.Sprintf(`Using "%v" as AccessModes in "%v"`, kapi.ReadWriteOnce, *storage))
+			log.Infof(`Using "%v" as AccessModes in "%v"`, kapi.ReadWriteOnce, *storage)
 		}
 
 		if val, found := storage.Resources.Requests[kapi.ResourceStorage]; found {
 			if val.Value() <= 0 {
-				log.Errorln("Invalid ResourceStorage request")
+				log.Error("Invalid ResourceStorage request")
 				return false
 			}
 		} else {
-			log.Errorln("Missing ResourceStorage request")
+			log.Error("Missing ResourceStorage request")
 			return false
 		}
 	}
@@ -215,13 +216,13 @@ func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 		// CronExpression can't be empty
 		backupSchedule := elastic.Spec.BackupSchedule
 		if backupSchedule.CronExpression == "" {
-			log.Errorln("Invalid cron expression")
+			log.Error("Invalid cron expression")
 			return false
 		}
 
 		// Validate backup spec
 		if err := w.validateBackupSpec(backupSchedule.SnapshotSpec, elastic.Namespace); err != nil {
-			log.Errorln(err)
+			log.Error(err)
 			return false
 		}
 	}

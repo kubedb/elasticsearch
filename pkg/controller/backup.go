@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/log"
@@ -22,7 +23,7 @@ const (
 	snapshotType_DumpBackup  = "dump-backup"
 	storageSecretMountPath   = "/var/credentials/"
 	tagElasticDump           = "2.4.2-v2"
-	durationCheckSnapshotJob = 30.0
+	durationCheckSnapshotJob = time.Minute * 30
 )
 
 func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
@@ -37,10 +38,10 @@ func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
 	var err error
 	if elastic, err = w.ExtClient.Elastic(snapshot.Namespace).Get(databaseName); err != nil {
 		if !k8serr.IsNotFound(err) {
-			log.Errorln(err)
+			log.Error(err)
 			return
 		} else {
-			log.Errorln(fmt.Sprintf(`thirdpartyresource Elastic "%v" not found`, databaseName))
+			log.Errorf(`thirdpartyresource Elastic "%v" not found`, databaseName)
 			return
 		}
 	}
@@ -59,7 +60,7 @@ func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
 	// Get PersistentVolume object for Backup Util pod.
 	persistentVolume, err := w.GetVolumeForSnapshot(elastic.Spec.Storage, jobName, snapshot.Namespace)
 	if err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		return
 	}
 
@@ -119,7 +120,7 @@ func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
 	}
 
 	if _, err := w.Client.Batch().Jobs(snapshot.Namespace).Create(job); err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		return
 	}
 
@@ -132,7 +133,7 @@ func (w *Controller) validateDatabaseSnapshot(snapshot *tapi.DatabaseSnapshot) b
 	// Database name can't empty
 	databaseName := snapshot.Spec.DatabaseName
 	if databaseName == "" {
-		log.Errorln(fmt.Sprintf(`Object 'DatabaseName' is missing in '%v'`, snapshot.Spec))
+		log.Errorf(`Object 'DatabaseName' is missing in '%v'`, snapshot.Spec)
 		return false
 	}
 
@@ -146,7 +147,7 @@ func (w *Controller) validateDatabaseSnapshot(snapshot *tapi.DatabaseSnapshot) b
 		LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
 	})
 	if err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		return false
 	}
 
@@ -157,13 +158,13 @@ func (w *Controller) validateDatabaseSnapshot(snapshot *tapi.DatabaseSnapshot) b
 		snapshot.Status.Status = tapi.SnapshotFailed
 		snapshot.Status.Reason = "One DatabaseSnapshot is already Running"
 		if _, err := w.ExtClient.DatabaseSnapshot(snapshot.Namespace).Update(snapshot); err != nil {
-			log.Errorln(err)
+			log.Error(err)
 		}
 		return false
 	}
 
 	if err := w.validateBackupSpec(snapshot.Spec.SnapshotSpec, snapshot.Namespace); err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		return false
 	}
 
