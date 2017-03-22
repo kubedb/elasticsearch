@@ -16,12 +16,13 @@ import (
 )
 
 const (
-	imageElasticDump        = "appscode/elasticdump"
-	LabelJobType            = "job.k8sdb.com/type"
-	SnapshotProcess_Backup  = "backup"
-	snapshotType_DumpBackup = "dump-backup"
-	storageSecretMountPath  = "/var/credentials/"
-	tagElasticDump          = "2.4.2-v2"
+	imageElasticDump         = "appscode/elasticdump"
+	LabelJobType             = "job.k8sdb.com/type"
+	SnapshotProcess_Backup   = "backup"
+	snapshotType_DumpBackup  = "dump-backup"
+	storageSecretMountPath   = "/var/credentials/"
+	tagElasticDump           = "2.4.2-v2"
+	durationCheckSnapshotJob = 30.0
 )
 
 func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
@@ -124,7 +125,7 @@ func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
 
 	snapshot.Labels[LabelDatabaseName] = snapshot.Spec.DatabaseName
 	// Check Job for Backup process
-	go w.Controller.CheckDatabaseSnapshotJob(snapshot, job.Name, 30.0)
+	go w.Controller.CheckDatabaseSnapshotJob(snapshot, job.Name, durationCheckSnapshotJob)
 }
 
 func (w *Controller) validateDatabaseSnapshot(snapshot *tapi.DatabaseSnapshot) bool {

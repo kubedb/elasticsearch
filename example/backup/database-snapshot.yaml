@@ -5,7 +5,7 @@ metadata:
   labels:
     "k8sdb.com/type": "elasticsearch"
 spec:
-  DatabaseName: test
+  DatabaseName: elasticsearch-demo
   BucketName: ""
   StorageSecret:
     SecretName: ""
