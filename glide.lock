@@ -1,5 +1,5 @@
 hash: e448268a923a6927b56d1395cb217b459bf7daa5a86a788bce364742e9c44297
-updated: 2017-03-22T10:43:46.832346824+06:00
+updated: 2017-03-22T11:45:56.08526274+06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -166,6 +166,8 @@ imports:
   - autoinc
   - idgen
   - signal
+- name: github.com/orcaman/concurrent-map
+  version: 6ebc666e129e5ea0416b75f4da96a9e8de147195
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pkg/errors

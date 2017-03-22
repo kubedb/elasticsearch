@@ -8,6 +8,7 @@ import (
 	tapi "github.com/k8sdb/apimachinery/api"
 	amcs "github.com/k8sdb/apimachinery/client/clientset"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
+	"gopkg.in/robfig/cron.v2"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/labels"
 )
@@ -88,8 +89,9 @@ func (b *backup) createDatabaseSnapshot() {
 // Backup schedule process with internal cron job.
 func (w *Controller) ScheduleBackup(elastic *tapi.Elastic) error {
 	// Remove previous cron job if exist
-	if id, found := w.cronEntryIDs[elastic.Name]; found {
-		w.cron.Remove(id)
+	if id, found := w.cronEntryIDs.Get(elastic.Name); found {
+		w.cronEntryIDs.Remove(elastic.Name)
+		w.cron.Remove(id.(cron.EntryID))
 	}
 
 	b := &backup{
@@ -104,6 +106,6 @@ func (w *Controller) ScheduleBackup(elastic *tapi.Elastic) error {
 	}
 
 	// Add job entryID for future
-	w.cronEntryIDs[elastic.Name] = entryID
+	w.cronEntryIDs.Set(elastic.Name, entryID)
 	return nil
 }

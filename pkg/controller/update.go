@@ -6,6 +6,7 @@ import (
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
+	"gopkg.in/robfig/cron.v2"
 )
 
 func (w *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
@@ -47,8 +48,9 @@ func (w *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 			}
 		} else {
 			// Remove previous cron job if exist
-			if id, found := w.cronEntryIDs[updatedElastic.Name]; found {
-				w.cron.Remove(id)
+			if id, found := w.cronEntryIDs.Get(updatedElastic.Name); found {
+				w.cronEntryIDs.Remove(updatedElastic.Name)
+				w.cron.Remove(id.(cron.EntryID))
 			}
 		}
 	}

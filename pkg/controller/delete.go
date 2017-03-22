@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
+	"gopkg.in/robfig/cron.v2"
 )
 
 func (w *Controller) delete(elastic *tapi.Elastic) {
@@ -26,7 +27,8 @@ func (w *Controller) delete(elastic *tapi.Elastic) {
 	}
 
 	// Remove previous cron job if exist
-	if id, found := w.cronEntryIDs[elastic.Name]; found {
-		w.cron.Remove(id)
+	if id, found := w.cronEntryIDs.Get(elastic.Name); found {
+		w.cronEntryIDs.Remove(elastic.Name)
+		w.cron.Remove(id.(cron.EntryID))
 	}
 }

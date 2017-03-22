@@ -8,6 +8,7 @@ import (
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
+	cmap "github.com/orcaman/concurrent-map"
 	"gopkg.in/robfig/cron.v2"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/cache"
@@ -23,7 +24,7 @@ type Controller struct {
 	// For Internal Cron Job
 	cron *cron.Cron
 	// Store Cron Job EntryID for further use
-	cronEntryIDs map[string]cron.EntryID
+	cronEntryIDs cmap.ConcurrentMap
 	// sync time to sync the list.
 	SyncPeriod time.Duration
 }
@@ -32,7 +33,7 @@ func New(c *rest.Config) *Controller {
 	return &Controller{
 		Controller:   amc.New(c),
 		cron:         cron.New(),
-		cronEntryIDs: make(map[string]cron.EntryID),
+		cronEntryIDs: cmap.New(),
 		SyncPeriod:   time.Minute * 2,
 	}
 }
