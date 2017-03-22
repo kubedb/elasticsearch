@@ -104,7 +104,7 @@ func (w *Controller) ScheduleBackup(elastic *tapi.Elastic) error {
 		return err
 	}
 
-	// Update job entryID
+	// Add job entryID
 	w.cronEntryIDs.Set(elastic.Name, entryID)
 	return nil
 }
