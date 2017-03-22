@@ -128,7 +128,7 @@ func (w *Controller) watchDatabaseSnapshot() {
 }
 
 func (w *Controller) ensureThirdPartyResource() {
-	log.Info("Ensuring ThirdPartyResource...")
+	log.Infoln("Ensuring ThirdPartyResource...")
 
 	// Ensure Elastic TPR
 	w.ensureElastic()

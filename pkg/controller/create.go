@@ -37,12 +37,12 @@ func (w *Controller) create(elastic *tapi.Elastic) {
 		governingService = elastic.Spec.ServiceAccountName
 	}
 	if err := w.createGoverningServiceAccount(elastic.Namespace, governingService); err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return
 	}
 
 	if err := w.createService(elastic.Namespace, elastic.Name); err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return
 	}
 
@@ -156,18 +156,18 @@ func (w *Controller) create(elastic *tapi.Elastic) {
 	w.addDataVolume(statefulSet, elastic.Spec.Storage)
 
 	if _, err := w.Client.Apps().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return
 	}
 
 	if err := w.CheckStatefulSets(statefulSet, durationCheckStatefulSet); err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return
 	}
 
 	if elastic.Spec.BackupSchedule != nil {
 		if err := w.ScheduleBackup(elastic); err != nil {
-			log.Error(err)
+			log.Errorln(err)
 		}
 	}
 }
@@ -189,7 +189,7 @@ func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 			if k8serr.IsNotFound(err) {
 				log.Errorf(`Spec.Storage.Class "%v" not found`, storage.Class)
 			} else {
-				log.Error(err)
+				log.Errorln(err)
 			}
 			return false
 		}
@@ -203,11 +203,11 @@ func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 
 		if val, found := storage.Resources.Requests[kapi.ResourceStorage]; found {
 			if val.Value() <= 0 {
-				log.Error("Invalid ResourceStorage request")
+				log.Errorln("Invalid ResourceStorage request")
 				return false
 			}
 		} else {
-			log.Error("Missing ResourceStorage request")
+			log.Errorln("Missing ResourceStorage request")
 			return false
 		}
 	}
@@ -216,13 +216,13 @@ func (w *Controller) validateElastic(elastic *tapi.Elastic) bool {
 		// CronExpression can't be empty
 		backupSchedule := elastic.Spec.BackupSchedule
 		if backupSchedule.CronExpression == "" {
-			log.Error("Invalid cron expression")
+			log.Errorln("Invalid cron expression")
 			return false
 		}
 
 		// Validate backup spec
 		if err := w.validateBackupSpec(backupSchedule.SnapshotSpec, elastic.Namespace); err != nil {
-			log.Error(err)
+			log.Errorln(err)
 			return false
 		}
 	}

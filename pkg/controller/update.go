@@ -15,13 +15,13 @@ func (w *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 		statefulSetName := fmt.Sprintf("%v-%v", DatabaseNamePrefix, updatedElastic.Name)
 		statefulSet, err := w.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
 		if err != nil {
-			log.Error(err)
+			log.Errorln(err)
 			return
 		}
 
 		statefulSet.Spec.Replicas = newReplicas
 		if _, err := w.Client.Apps().StatefulSets(statefulSet.Namespace).Update(statefulSet); err != nil {
-			log.Error(err)
+			log.Errorln(err)
 			return
 		}
 	}
@@ -32,18 +32,18 @@ func (w *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 			// CronExpression can't be empty
 			backupSchedule := updatedElastic.Spec.BackupSchedule
 			if backupSchedule.CronExpression == "" {
-				log.Error("Invalid cron expression")
+				log.Errorln("Invalid cron expression")
 				return
 			}
 
 			// Validate backup spec
 			if err := w.validateBackupSpec(backupSchedule.SnapshotSpec, updatedElastic.Namespace); err != nil {
-				log.Error(err)
+				log.Errorln(err)
 				return
 			}
 
 			if err := w.ScheduleBackup(updatedElastic); err != nil {
-				log.Error(err)
+				log.Errorln(err)
 				return
 			}
 		} else {

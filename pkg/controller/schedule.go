@@ -49,12 +49,12 @@ func (b *backup) createDatabaseSnapshot() {
 		LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
 	})
 	if err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return
 	}
 
 	if len(snapshotList.Items) > 0 {
-		log.Debugln("Skipping scheduled Backup.", "One is still active.")
+		log.Debugln("Skipping scheduled Backup. One is still active.")
 		return
 	}
 
@@ -66,7 +66,7 @@ func (b *backup) createDatabaseSnapshot() {
 
 	snapshotName, err := getSnapshotID(b.extClient, b.elastic.Name, b.elastic.Namespace)
 	if err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return
 	}
 	snapshot := &tapi.DatabaseSnapshot{
@@ -82,7 +82,7 @@ func (b *backup) createDatabaseSnapshot() {
 	}
 
 	if _, err := b.extClient.DatabaseSnapshot(snapshot.Namespace).Create(snapshot); err != nil {
-		log.Error(err)
+		log.Errorln(err)
 	}
 }
 

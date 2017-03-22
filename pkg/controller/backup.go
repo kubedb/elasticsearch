@@ -38,7 +38,7 @@ func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
 	var err error
 	if elastic, err = w.ExtClient.Elastic(snapshot.Namespace).Get(databaseName); err != nil {
 		if !k8serr.IsNotFound(err) {
-			log.Error(err)
+			log.Errorln(err)
 			return
 		} else {
 			log.Errorf(`thirdpartyresource Elastic "%v" not found`, databaseName)
@@ -60,7 +60,7 @@ func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
 	// Get PersistentVolume object for Backup Util pod.
 	persistentVolume, err := w.GetVolumeForSnapshot(elastic.Spec.Storage, jobName, snapshot.Namespace)
 	if err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return
 	}
 
@@ -120,7 +120,7 @@ func (w *Controller) backup(snapshot *tapi.DatabaseSnapshot) {
 	}
 
 	if _, err := w.Client.Batch().Jobs(snapshot.Namespace).Create(job); err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return
 	}
 
@@ -147,7 +147,7 @@ func (w *Controller) validateDatabaseSnapshot(snapshot *tapi.DatabaseSnapshot) b
 		LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
 	})
 	if err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return false
 	}
 
@@ -158,13 +158,13 @@ func (w *Controller) validateDatabaseSnapshot(snapshot *tapi.DatabaseSnapshot) b
 		snapshot.Status.Status = tapi.SnapshotFailed
 		snapshot.Status.Reason = "One DatabaseSnapshot is already Running"
 		if _, err := w.ExtClient.DatabaseSnapshot(snapshot.Namespace).Update(snapshot); err != nil {
-			log.Error(err)
+			log.Errorln(err)
 		}
 		return false
 	}
 
 	if err := w.validateBackupSpec(snapshot.Spec.SnapshotSpec, snapshot.Namespace); err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		return false
 	}
 
