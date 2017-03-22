@@ -5,6 +5,12 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
+const (
+	ResourceKindDatabaseSnapshot = "DatabaseSnapshot"
+	ResourceNameDatabaseSnapshot = "database-snapshot"
+	ResourceTypeDatabaseSnapshot = "databasesnapshots"
+)
+
 type DatabaseSnapshot struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`

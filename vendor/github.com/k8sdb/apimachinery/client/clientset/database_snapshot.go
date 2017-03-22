@@ -34,7 +34,7 @@ func (c *DatabaseSnapshotImpl) List(opts api.ListOptions) (result *aci.DatabaseS
 	result = &aci.DatabaseSnapshotList{}
 	err = c.r.Get().
 		Namespace(c.ns).
-		Resource("databasesnapshots").
+		Resource(aci.ResourceTypeDatabaseSnapshot).
 		VersionedParams(&opts, ExtendedCodec).
 		Do().
 		Into(result)
@@ -45,7 +45,7 @@ func (c *DatabaseSnapshotImpl) Get(name string) (result *aci.DatabaseSnapshot, e
 	result = &aci.DatabaseSnapshot{}
 	err = c.r.Get().
 		Namespace(c.ns).
-		Resource("databasesnapshots").
+		Resource(aci.ResourceTypeDatabaseSnapshot).
 		Name(name).
 		Do().
 		Into(result)
@@ -56,7 +56,7 @@ func (c *DatabaseSnapshotImpl) Create(databasesnapshot *aci.DatabaseSnapshot) (r
 	result = &aci.DatabaseSnapshot{}
 	err = c.r.Post().
 		Namespace(c.ns).
-		Resource("databasesnapshots").
+		Resource(aci.ResourceTypeDatabaseSnapshot).
 		Body(databasesnapshot).
 		Do().
 		Into(result)
@@ -67,7 +67,7 @@ func (c *DatabaseSnapshotImpl) Update(databasesnapshot *aci.DatabaseSnapshot) (r
 	result = &aci.DatabaseSnapshot{}
 	err = c.r.Put().
 		Namespace(c.ns).
-		Resource("databasesnapshots").
+		Resource(aci.ResourceTypeDatabaseSnapshot).
 		Name(databasesnapshot.Name).
 		Body(databasesnapshot).
 		Do().
@@ -78,7 +78,7 @@ func (c *DatabaseSnapshotImpl) Update(databasesnapshot *aci.DatabaseSnapshot) (r
 func (c *DatabaseSnapshotImpl) Delete(name string) (err error) {
 	return c.r.Delete().
 		Namespace(c.ns).
-		Resource("databasesnapshots").
+		Resource(aci.ResourceTypeDatabaseSnapshot).
 		Name(name).
 		Do().
 		Error()
@@ -88,7 +88,7 @@ func (c *DatabaseSnapshotImpl) Watch(opts api.ListOptions) (watch.Interface, err
 	return c.r.Get().
 		Prefix("watch").
 		Namespace(c.ns).
-		Resource("databasesnapshots").
+		Resource(aci.ResourceTypeDatabaseSnapshot).
 		VersionedParams(&opts, ExtendedCodec).
 		Watch()
 }
@@ -97,7 +97,7 @@ func (c *DatabaseSnapshotImpl) UpdateStatus(databasesnapshot *aci.DatabaseSnapsh
 	result = &aci.DatabaseSnapshot{}
 	err = c.r.Put().
 		Namespace(c.ns).
-		Resource("databasesnapshots").
+		Resource(aci.ResourceTypeDatabaseSnapshot).
 		Name(databasesnapshot.Name).
 		SubResource("status").
 		Body(databasesnapshot).

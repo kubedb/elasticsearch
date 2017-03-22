@@ -5,6 +5,12 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
+const (
+	ResourceKindElastic = "Elastic"
+	ResourceNameElastic = "elastic"
+	ResourceTypeElastic = "elastics"
+)
+
 // Elastic defines a Elasticsearch database.
 type Elastic struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`

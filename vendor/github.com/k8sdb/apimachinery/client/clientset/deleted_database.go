@@ -34,7 +34,7 @@ func (c *DeletedDatabaseImpl) List(opts api.ListOptions) (result *aci.DeletedDat
 	result = &aci.DeletedDatabaseList{}
 	err = c.r.Get().
 		Namespace(c.ns).
-		Resource("deleteddatabases").
+		Resource(aci.ResourceTypeDeletedDatabase).
 		VersionedParams(&opts, ExtendedCodec).
 		Do().
 		Into(result)
@@ -45,7 +45,7 @@ func (c *DeletedDatabaseImpl) Get(name string) (result *aci.DeletedDatabase, err
 	result = &aci.DeletedDatabase{}
 	err = c.r.Get().
 		Namespace(c.ns).
-		Resource("deleteddatabases").
+		Resource(aci.ResourceTypeDeletedDatabase).
 		Name(name).
 		Do().
 		Into(result)
@@ -56,7 +56,7 @@ func (c *DeletedDatabaseImpl) Create(deleteddatabase *aci.DeletedDatabase) (resu
 	result = &aci.DeletedDatabase{}
 	err = c.r.Post().
 		Namespace(c.ns).
-		Resource("deleteddatabases").
+		Resource(aci.ResourceTypeDeletedDatabase).
 		Body(deleteddatabase).
 		Do().
 		Into(result)
@@ -67,7 +67,7 @@ func (c *DeletedDatabaseImpl) Update(deleteddatabase *aci.DeletedDatabase) (resu
 	result = &aci.DeletedDatabase{}
 	err = c.r.Put().
 		Namespace(c.ns).
-		Resource("deleteddatabases").
+		Resource(aci.ResourceTypeDeletedDatabase).
 		Name(deleteddatabase.Name).
 		Body(deleteddatabase).
 		Do().
@@ -78,7 +78,7 @@ func (c *DeletedDatabaseImpl) Update(deleteddatabase *aci.DeletedDatabase) (resu
 func (c *DeletedDatabaseImpl) Delete(name string) (err error) {
 	return c.r.Delete().
 		Namespace(c.ns).
-		Resource("deleteddatabases").
+		Resource(aci.ResourceTypeDeletedDatabase).
 		Name(name).
 		Do().
 		Error()
@@ -88,7 +88,7 @@ func (c *DeletedDatabaseImpl) Watch(opts api.ListOptions) (watch.Interface, erro
 	return c.r.Get().
 		Prefix("watch").
 		Namespace(c.ns).
-		Resource("deleteddatabases").
+		Resource(aci.ResourceTypeDeletedDatabase).
 		VersionedParams(&opts, ExtendedCodec).
 		Watch()
 }
@@ -97,7 +97,7 @@ func (c *DeletedDatabaseImpl) UpdateStatus(deleteddatabase *aci.DeletedDatabase)
 	result = &aci.DeletedDatabase{}
 	err = c.r.Put().
 		Namespace(c.ns).
-		Resource("deleteddatabases").
+		Resource(aci.ResourceTypeDeletedDatabase).
 		Name(deleteddatabase.Name).
 		SubResource("status").
 		Body(deleteddatabase).

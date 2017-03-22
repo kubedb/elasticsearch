@@ -17,7 +17,7 @@ import (
 )
 
 func (w *Controller) ensureElastic() {
-	resourceName := "elastic" + "." + tapi.V1beta1SchemeGroupVersion.Group
+	resourceName := tapi.ResourceNameElastic + "." + tapi.V1beta1SchemeGroupVersion.Group
 
 	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
 		if !k8serr.IsNotFound(err) {

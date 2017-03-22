@@ -7,6 +7,12 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
+const (
+	ResourceKindDeletedDatabase = "DeletedDatabase"
+	ResourceNameDeletedDatabase = "deleted-database"
+	ResourceTypeDeletedDatabase = "deleteddatabases"
+)
+
 type DeletedDatabase struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`

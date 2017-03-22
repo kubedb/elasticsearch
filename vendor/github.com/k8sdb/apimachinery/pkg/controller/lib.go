@@ -22,7 +22,7 @@ import (
 )
 
 func (w *Controller) EnsureDatabaseSnapshot() {
-	resourceName := "database-snapshot" + "." + tapi.V1beta1SchemeGroupVersion.Group
+	resourceName := tapi.ResourceNameDatabaseSnapshot + "." + tapi.V1beta1SchemeGroupVersion.Group
 
 	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
 		if !k8serr.IsNotFound(err) {
@@ -53,7 +53,7 @@ func (w *Controller) EnsureDatabaseSnapshot() {
 }
 
 func (w *Controller) EnsureDeletedDatabase() {
-	resourceName := "deleted-database" + "." + tapi.V1beta1SchemeGroupVersion.Group
+	resourceName := tapi.ResourceNameDeletedDatabase + "." + tapi.V1beta1SchemeGroupVersion.Group
 
 	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
 		if !k8serr.IsNotFound(err) {

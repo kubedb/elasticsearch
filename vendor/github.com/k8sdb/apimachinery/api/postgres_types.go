@@ -5,6 +5,12 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
+const (
+	ResourceKindPostgres = "Postgres"
+	ResourceNamePostgres = "postgres"
+	ResourceTypePostgres = "postgreses"
+)
+
 // Postgres defines a Postgres database.
 type Postgres struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`

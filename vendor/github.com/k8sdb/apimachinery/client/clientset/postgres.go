@@ -34,7 +34,7 @@ func (c *PostgresImpl) List(opts api.ListOptions) (result *aci.PostgresList, err
 	result = &aci.PostgresList{}
 	err = c.r.Get().
 		Namespace(c.ns).
-		Resource("postgreses").
+		Resource(aci.ResourceTypePostgres).
 		VersionedParams(&opts, ExtendedCodec).
 		Do().
 		Into(result)
@@ -45,7 +45,7 @@ func (c *PostgresImpl) Get(name string) (result *aci.Postgres, err error) {
 	result = &aci.Postgres{}
 	err = c.r.Get().
 		Namespace(c.ns).
-		Resource("postgreses").
+		Resource(aci.ResourceTypePostgres).
 		Name(name).
 		Do().
 		Into(result)
@@ -56,7 +56,7 @@ func (c *PostgresImpl) Create(postgres *aci.Postgres) (result *aci.Postgres, err
 	result = &aci.Postgres{}
 	err = c.r.Post().
 		Namespace(c.ns).
-		Resource("postgreses").
+		Resource(aci.ResourceTypePostgres).
 		Body(postgres).
 		Do().
 		Into(result)
@@ -67,7 +67,7 @@ func (c *PostgresImpl) Update(postgres *aci.Postgres) (result *aci.Postgres, err
 	result = &aci.Postgres{}
 	err = c.r.Put().
 		Namespace(c.ns).
-		Resource("postgreses").
+		Resource(aci.ResourceTypePostgres).
 		Name(postgres.Name).
 		Body(postgres).
 		Do().
@@ -78,7 +78,7 @@ func (c *PostgresImpl) Update(postgres *aci.Postgres) (result *aci.Postgres, err
 func (c *PostgresImpl) Delete(name string) (err error) {
 	return c.r.Delete().
 		Namespace(c.ns).
-		Resource("postgreses").
+		Resource(aci.ResourceTypePostgres).
 		Name(name).
 		Do().
 		Error()
@@ -88,7 +88,7 @@ func (c *PostgresImpl) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return c.r.Get().
 		Prefix("watch").
 		Namespace(c.ns).
-		Resource("postgreses").
+		Resource(aci.ResourceTypePostgres).
 		VersionedParams(&opts, ExtendedCodec).
 		Watch()
 }
@@ -97,7 +97,7 @@ func (c *PostgresImpl) UpdateStatus(postgres *aci.Postgres) (result *aci.Postgre
 	result = &aci.Postgres{}
 	err = c.r.Put().
 		Namespace(c.ns).
-		Resource("postgreses").
+		Resource(aci.ResourceTypePostgres).
 		Name(postgres.Name).
 		SubResource("status").
 		Body(postgres).
