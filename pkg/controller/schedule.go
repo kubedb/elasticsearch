@@ -18,15 +18,6 @@ type backup struct {
 	elastic   *tapi.Elastic
 }
 
-func getSnapshotID(extClient amcs.ExtensionInterface, elasticName, elasticNamespace string) (string, error) {
-	current := time.Now().UTC()
-	snapshotName := fmt.Sprintf("%v-%d%02d%02d-%02d%02d%02d", elasticName,
-		current.Year(), current.Month(), current.Day(),
-		current.Hour(), current.Minute(), current.Second())
-
-	return snapshotName, nil
-}
-
 func (b *backup) createDatabaseSnapshot() {
 	labelMap := map[string]string{
 		LabelDatabaseType:       DatabaseElasticsearch,
@@ -53,11 +44,9 @@ func (b *backup) createDatabaseSnapshot() {
 		LabelDatabaseName: b.elastic.Name,
 	}
 
-	snapshotName, err := getSnapshotID(b.extClient, b.elastic.Name, b.elastic.Namespace)
-	if err != nil {
-		log.Errorln(err)
-		return
-	}
+	now := time.Now().UTC()
+	snapshotName := fmt.Sprintf("%v-%v", b.elastic.Name, now.Format("20060102-150405"))
+
 	snapshot := &tapi.DatabaseSnapshot{
 		ObjectMeta: kapi.ObjectMeta{
 			Name:      snapshotName,
