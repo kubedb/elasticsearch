@@ -19,21 +19,10 @@ type backup struct {
 }
 
 func getSnapshotID(extClient amcs.ExtensionInterface, elasticName, elasticNamespace string) (string, error) {
-	labelMap := map[string]string{
-		LabelDatabaseType: DatabaseElasticsearch,
-		LabelDatabaseName: elasticName,
-	}
-
-	snapshotList, err := extClient.DatabaseSnapshot(elasticNamespace).List(kapi.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
-	})
-	if err != nil {
-		return "", err
-	}
-
 	current := time.Now().UTC()
-	snapshotName := fmt.Sprintf("snapshot-%d%02d%02d-%d",
-		current.Year(), current.Month(), current.Day(), len(snapshotList.Items)+1)
+	snapshotName := fmt.Sprintf("%v-%d%02d%02d-%02d%02d%02d", elasticName,
+		current.Year(), current.Month(), current.Day(),
+		current.Hour(), current.Minute(), current.Second())
 
 	return snapshotName, nil
 }
