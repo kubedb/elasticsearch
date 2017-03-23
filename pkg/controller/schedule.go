@@ -18,7 +18,7 @@ type backup struct {
 	elastic   *tapi.Elastic
 }
 
-func (b *backup) createDatabaseSnapshot() {
+func (b *backup) createDatabaseSnapshotObject() {
 	labelMap := map[string]string{
 		LabelDatabaseType:       DatabaseElasticsearch,
 		LabelDatabaseName:       b.elastic.Name,
@@ -65,7 +65,7 @@ func (b *backup) createDatabaseSnapshot() {
 }
 
 // Backup schedule process with internal cron job.
-func (w *Controller) ScheduleBackup(elastic *tapi.Elastic) error {
+func (w *Controller) scheduleBackup(elastic *tapi.Elastic) error {
 	// Remove previous cron job if exist
 	if id, exists := w.cronEntryIDs.Pop(elastic.Name); exists {
 		w.cron.Remove(id.(cron.EntryID))
@@ -77,7 +77,7 @@ func (w *Controller) ScheduleBackup(elastic *tapi.Elastic) error {
 	}
 
 	// Set cron job
-	entryID, err := w.cron.AddFunc(elastic.Spec.BackupSchedule.CronExpression, b.createDatabaseSnapshot)
+	entryID, err := w.cron.AddFunc(elastic.Spec.BackupSchedule.CronExpression, b.createDatabaseSnapshotObject)
 	if err != nil {
 		return err
 	}

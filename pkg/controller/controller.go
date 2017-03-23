@@ -62,15 +62,17 @@ func (w *Controller) watchElastic() {
 			return w.ExtClient.Elastic(kapi.NamespaceAll).Watch(kapi.ListOptions{})
 		},
 	}
+
+	db := &dbController{w}
 	_, cacheController := cache.NewInformer(lw,
 		&tapi.Elastic{},
 		w.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				w.create(obj.(*tapi.Elastic))
+				db.create(obj.(*tapi.Elastic))
 			},
 			DeleteFunc: func(obj interface{}) {
-				w.delete(obj.(*tapi.Elastic))
+				db.delete(obj.(*tapi.Elastic))
 			},
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*tapi.Elastic)
@@ -82,7 +84,7 @@ func (w *Controller) watchElastic() {
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					w.update(oldObj, newObj)
+					db.update(oldObj, newObj)
 				}
 			},
 		},
@@ -110,6 +112,7 @@ func (w *Controller) watchDatabaseSnapshot() {
 		},
 	}
 
+	snapshot := &snapshotController{w}
 	_, cacheController := cache.NewInformer(lw,
 		&tapi.DatabaseSnapshot{},
 		w.SyncPeriod,
@@ -118,7 +121,7 @@ func (w *Controller) watchDatabaseSnapshot() {
 			AddFunc: func(obj interface{}) {
 				databaseSnapshot := obj.(*tapi.DatabaseSnapshot)
 				if databaseSnapshot.Status.StartTime == nil {
-					w.backup(databaseSnapshot)
+					snapshot.create(databaseSnapshot)
 				}
 			},
 		},
