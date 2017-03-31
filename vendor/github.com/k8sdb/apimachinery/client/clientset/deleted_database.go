@@ -1,4 +1,4 @@
-package client
+package clientset
 
 import (
 	aci "github.com/k8sdb/apimachinery/api"
@@ -8,7 +8,7 @@ import (
 )
 
 type DeletedDatabaseNamespacer interface {
-	DeletedDatabase(namespace string) DeletedDatabaseInterface
+	DeletedDatabases(namespace string) DeletedDatabaseInterface
 }
 
 type DeletedDatabaseInterface interface {

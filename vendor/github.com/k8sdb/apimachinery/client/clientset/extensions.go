@@ -1,4 +1,4 @@
-package client
+package clientset
 
 import (
 	"fmt"
@@ -27,19 +27,21 @@ type AppsCodeExtensionsClient struct {
 	restClient rest.Interface
 }
 
-func (a *AppsCodeExtensionsClient) DatabaseSnapshot(namespace string) DatabaseSnapshotInterface {
+var _ ExtensionInterface = &AppsCodeExtensionsClient{}
+
+func (a *AppsCodeExtensionsClient) DatabaseSnapshots(namespace string) DatabaseSnapshotInterface {
 	return newDatabaseSnapshot(a, namespace)
 }
 
-func (a *AppsCodeExtensionsClient) DeletedDatabase(namespace string) DeletedDatabaseInterface {
+func (a *AppsCodeExtensionsClient) DeletedDatabases(namespace string) DeletedDatabaseInterface {
 	return newDeletedDatabase(a, namespace)
 }
 
-func (a *AppsCodeExtensionsClient) Elastic(namespace string) ElasticInterface {
+func (a *AppsCodeExtensionsClient) Elastics(namespace string) ElasticInterface {
 	return newElastic(a, namespace)
 }
 
-func (a *AppsCodeExtensionsClient) Postgres(namespace string) PostgresInterface {
+func (a *AppsCodeExtensionsClient) Postgreses(namespace string) PostgresInterface {
 	return newPostgres(a, namespace)
 }
 

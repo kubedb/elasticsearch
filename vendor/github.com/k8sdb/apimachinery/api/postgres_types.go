@@ -42,7 +42,7 @@ type PostgresSpec struct {
 	// If DoNotDelete is true, controller will prevent to delete this Postgres object.
 	// Controller will create same Postgres object and ignore other process.
 	// +optional
-	DoNotDelete *bool `json:"doNotDelete,omitempty"`
+	DoNotDelete bool `json:"doNotDelete,omitempty"`
 }
 
 type PostgresStatus struct {

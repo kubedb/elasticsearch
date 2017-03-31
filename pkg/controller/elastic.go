@@ -6,15 +6,17 @@ import (
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
-	"gopkg.in/robfig/cron.v2"
 )
 
 type dbController struct {
 	*Controller
 }
 
-func (e *dbController) create(elastic *tapi.Elastic) {
-	if err := e.validateElastic(elastic); err != nil {
+func (c *dbController) create(elastic *tapi.Elastic) {
+	if err := c.validateElastic(elastic); err != nil {
+		/*
+			TODO: Event
+		*/
 		log.Errorln(err)
 		return
 	}
@@ -24,97 +26,124 @@ func (e *dbController) create(elastic *tapi.Elastic) {
 	if elastic.Spec.ServiceAccountName != "" {
 		governingService = elastic.Spec.ServiceAccountName
 	}
-	if err := e.createGoverningServiceAccount(governingService, elastic.Namespace); err != nil {
+
+	if err := c.CreateGoverningServiceAccount(governingService, elastic.Namespace); err != nil {
+		/*
+			TODO: Event
+		*/
 		log.Errorln(err)
 		return
 	}
 	elastic.Spec.ServiceAccountName = governingService
 
 	// create database Service
-	if err := e.createService(elastic.Name, elastic.Namespace); err != nil {
+	if err := c.createService(elastic.Name, elastic.Namespace); err != nil {
+		/*
+			TODO: Event
+		*/
 		log.Errorln(err)
 		return
 	}
 
 	// Create statefulSet for Elastic database
-	statefulSet, err := e.createStatefulSet(elastic)
+	statefulSet, err := c.createStatefulSet(elastic)
 	if err != nil {
+		/*
+			TODO: Event
+		*/
 		log.Errorln(err)
 		return
 	}
 
 	// Check StatefulSet Pod status
-	if err := e.CheckStatefulSets(statefulSet, durationCheckStatefulSet); err != nil {
+	if err := c.CheckStatefulSets(statefulSet, durationCheckStatefulSet); err != nil {
+		/*
+			TODO: Event
+		*/
 		log.Errorln(err)
 		return
 	}
 
 	// Setup Schedule backup
 	if elastic.Spec.BackupSchedule != nil {
-		if err := e.scheduleBackup(elastic); err != nil {
+		err := c.cronController.ScheduleBackup(elastic, elastic.ObjectMeta, elastic.Spec.BackupSchedule)
+		if err != nil {
+			/*
+				TODO: Event
+			*/
 			log.Errorln(err)
-			return
 		}
 	}
 }
 
-func (e *dbController) delete(elastic *tapi.Elastic) {
+func (c *dbController) delete(elastic *tapi.Elastic) {
 	// Delete Service
-	if err := e.deleteService(elastic.Namespace, elastic.Name); err != nil {
+	if err := c.deleteService(elastic.Namespace, elastic.Name); err != nil {
+		/*
+			TODO: Event
+		*/
 		log.Errorln(err)
 	}
 
 	statefulSetName := fmt.Sprintf("%v-%v", DatabaseNamePrefix, elastic.Name)
-	if err := e.deleteStatefulSet(statefulSetName, elastic.Namespace); err != nil {
+	if err := c.deleteStatefulSet(statefulSetName, elastic.Namespace); err != nil {
+		/*
+			TODO: Event
+		*/
 		log.Errorln(err)
 	}
 
-	// Remove previous cron job if exist
-	if id, exists := e.cronEntryIDs.Pop(elastic.Name); exists {
-		e.cron.Remove(id.(cron.EntryID))
-	}
+	c.cronController.StopScheduleBackup(elastic.ObjectMeta)
 }
 
-func (e *dbController) update(oldElastic, updatedElastic *tapi.Elastic) {
+func (c *dbController) update(oldElastic, updatedElastic *tapi.Elastic) {
 	if (updatedElastic.Spec.Replicas != oldElastic.Spec.Replicas) && oldElastic.Spec.Replicas >= 0 {
 		statefulSetName := fmt.Sprintf("%v-%v", DatabaseNamePrefix, updatedElastic.Name)
-		statefulSet, err := e.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
+		statefulSet, err := c.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
 		if err != nil {
+			/*
+				TODO: Event
+			*/
 			log.Errorln(err)
 			return
 		}
 		statefulSet.Spec.Replicas = oldElastic.Spec.Replicas
-		if err := e.updateStatefulSet(statefulSet); err != nil {
+		if _, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Update(statefulSet); err != nil {
+			/*
+				TODO: Event
+			*/
 			log.Errorln(err)
 			return
 		}
 	}
 
 	if !reflect.DeepEqual(updatedElastic.Spec.BackupSchedule, oldElastic.Spec.BackupSchedule) {
-		if updatedElastic.Spec.BackupSchedule != nil {
-
-			// CronExpression can't be empty
-			backupSchedule := updatedElastic.Spec.BackupSchedule
-			if backupSchedule.CronExpression == "" {
-				log.Errorln("Invalid cron expression")
+		backupScheduleSpec := updatedElastic.Spec.BackupSchedule
+		if backupScheduleSpec != nil {
+			if err := c.ValidateBackupSchedule(backupScheduleSpec); err != nil {
+				/*
+					TODO: Event
+				*/
 				return
 			}
 
-			// Validate backup spec
-			if err := e.validateBackupSpec(backupSchedule.SnapshotSpec, updatedElastic.Namespace); err != nil {
-				log.Errorln(err)
+			if err := c.CheckBucketAccess(
+				backupScheduleSpec.BucketName, backupScheduleSpec.StorageSecret,
+				updatedElastic.Namespace); err != nil {
+				/*
+					TODO: Event
+				*/
 				return
 			}
 
-			if err := e.scheduleBackup(updatedElastic); err != nil {
-				log.Errorln(err)
-				return
+			if err := c.cronController.ScheduleBackup(
+				oldElastic, oldElastic.ObjectMeta, oldElastic.Spec.BackupSchedule); err != nil {
+				/*
+					TODO: Event
+				*/
 			}
 		} else {
-			// Remove previous cron job if exist
-			if id, exists := e.cronEntryIDs.Pop(updatedElastic.Name); exists {
-				e.cron.Remove(id.(cron.EntryID))
-			}
+			c.cronController.StopScheduleBackup(oldElastic.ObjectMeta)
 		}
 	}
 }

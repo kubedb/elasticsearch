@@ -14,226 +14,74 @@ import (
 	tapi "github.com/k8sdb/apimachinery/api"
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/api/unversioned"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
-	"k8s.io/kubernetes/pkg/apis/batch"
-	"k8s.io/kubernetes/pkg/apis/extensions"
-	"k8s.io/kubernetes/pkg/labels"
 )
 
-func (w *Controller) EnsureDatabaseSnapshot() {
-	resourceName := tapi.ResourceNameDatabaseSnapshot + "." + tapi.V1beta1SchemeGroupVersion.Group
+func (c *Controller) ValidateStorageSpec(spec *tapi.StorageSpec) (*tapi.StorageSpec, error) {
+	if spec == nil {
+		return nil, nil
+	}
 
-	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
-		if !k8serr.IsNotFound(err) {
-			log.Fatalln(err)
+	if spec.Class == "" {
+		return nil, fmt.Errorf(`Object 'Class' is missing in '%v'`, *spec)
+	}
+
+	if _, err := c.Client.Storage().StorageClasses().Get(spec.Class); err != nil {
+		if k8serr.IsNotFound(err) {
+			return nil, fmt.Errorf(`Spec.Storage.Class "%v" not found`, spec.Class)
+		}
+		return nil, err
+	}
+
+	if len(spec.AccessModes) == 0 {
+		spec.AccessModes = []kapi.PersistentVolumeAccessMode{
+			kapi.ReadWriteOnce,
+		}
+		log.Infof(`Using "%v" as AccessModes in "%v"`, kapi.ReadWriteOnce, *spec)
+	}
+
+	if val, found := spec.Resources.Requests[kapi.ResourceStorage]; found {
+		if val.Value() <= 0 {
+			return nil, errors.New("Invalid ResourceStorage request")
 		}
 	} else {
-		return
+		return nil, errors.New("Missing ResourceStorage request")
 	}
 
-	thirdPartyResource := &extensions.ThirdPartyResource{
-		TypeMeta: unversioned.TypeMeta{
-			APIVersion: "extensions/v1beta1",
-			Kind:       "ThirdPartyResource",
-		},
-		ObjectMeta: kapi.ObjectMeta{
-			Name: resourceName,
-		},
-		Versions: []extensions.APIVersion{
-			{
-				Name: tapi.V1beta1SchemeGroupVersion.Version,
-			},
-		},
-	}
-
-	if _, err := w.Client.Extensions().ThirdPartyResources().Create(thirdPartyResource); err != nil {
-		log.Fatalln(err)
-	}
+	return spec, nil
 }
 
-func (w *Controller) EnsureDeletedDatabase() {
-	resourceName := tapi.ResourceNameDeletedDatabase + "." + tapi.V1beta1SchemeGroupVersion.Group
-
-	if _, err := w.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
-		if !k8serr.IsNotFound(err) {
-			log.Fatalln(err)
-		}
-	} else {
-		return
+func (c *Controller) ValidateBackupSchedule(spec *tapi.BackupScheduleSpec) error {
+	if spec == nil {
+		return nil
+	}
+	// CronExpression can't be empty
+	if spec.CronExpression == "" {
+		return errors.New("Invalid cron expression")
 	}
 
-	thirdPartyResource := &extensions.ThirdPartyResource{
-		TypeMeta: unversioned.TypeMeta{
-			APIVersion: "extensions/v1beta1",
-			Kind:       "ThirdPartyResource",
-		},
-		ObjectMeta: kapi.ObjectMeta{
-			Name: resourceName,
-		},
-		Versions: []extensions.APIVersion{
-			{
-				Name: tapi.V1beta1SchemeGroupVersion.Version,
-			},
-		},
-	}
-
-	if _, err := w.Client.Extensions().ThirdPartyResources().Create(thirdPartyResource); err != nil {
-		log.Fatalln(err)
-	}
+	return c.ValidateSnapshotSpec(spec.SnapshotSpec)
 }
 
-const (
-	LabelSnapshotActive = "elastic.k8sdb.com/status"
-)
-
-func (w *Controller) CheckDatabaseSnapshotJob(snapshot *tapi.DatabaseSnapshot, jobName string, checkDuration time.Duration) {
-
-	unversionedNow := unversioned.Now()
-	snapshot.Status.StartTime = &unversionedNow
-	snapshot.Status.Status = tapi.SnapshotRunning
-	snapshot.Labels[LabelSnapshotActive] = string(tapi.SnapshotRunning)
-	var err error
-	if snapshot, err = w.ExtClient.DatabaseSnapshot(snapshot.Namespace).Update(snapshot); err != nil {
-		log.Errorln(err)
+func (c *Controller) ValidateSnapshotSpec(spec tapi.SnapshotSpec) error {
+	// BucketName can't be empty
+	bucketName := spec.BucketName
+	if bucketName == "" {
+		return fmt.Errorf(`Object 'BucketName' is missing in '%v'`, spec)
 	}
 
-	var jobSuccess bool = false
-	var job *batch.Job
-
-	then := time.Now()
-	now := time.Now()
-	for now.Sub(then) < checkDuration {
-		log.Debugln("Checking for Job ", jobName)
-		job, err = w.Client.Batch().Jobs(snapshot.Namespace).Get(jobName)
-		if err != nil {
-			break
-		}
-		log.Debugf("Pods Statuses:	%d Running / %d Succeeded / %d Failed",
-			job.Status.Active, job.Status.Succeeded, job.Status.Failed)
-		// If job is success
-		if job.Status.Succeeded > 0 {
-			jobSuccess = true
-			break
-		} else if job.Status.Failed > 0 {
-			break
-		}
-
-		time.Sleep(time.Minute)
-		now = time.Now()
+	// Need to provide Storage credential secret
+	storageSecret := spec.StorageSecret
+	if storageSecret == nil {
+		return fmt.Errorf(`Object 'StorageSecret' is missing in '%v'`, spec)
 	}
 
-	podList, err := w.Client.Core().Pods(job.Namespace).List(
-		kapi.ListOptions{
-			LabelSelector: labels.SelectorFromSet(job.Spec.Selector.MatchLabels),
-		},
-	)
-	if err != nil {
-		log.Errorln(err)
-		return
-	}
-
-	for _, pod := range podList.Items {
-		if err := w.Client.Core().Pods(pod.Namespace).Delete(pod.Name, nil); err != nil {
-			log.Errorln(err)
-		}
-	}
-
-	for _, volume := range job.Spec.Template.Spec.Volumes {
-		claim := volume.PersistentVolumeClaim
-		if claim != nil {
-			err := w.Client.Core().PersistentVolumeClaims(job.Namespace).Delete(claim.ClaimName, nil)
-			if err != nil {
-				log.Errorln(err)
-			}
-		}
-	}
-
-	if err := w.Client.Batch().Jobs(job.Namespace).Delete(job.Name, nil); err != nil {
-		log.Errorln(err)
-	}
-
-	if snapshot, err = w.ExtClient.DatabaseSnapshot(snapshot.Namespace).Get(snapshot.Name); err != nil {
-		log.Errorln(err)
-		return
-	}
-
-	unversionedNow = unversioned.Now()
-	snapshot.Status.CompletionTime = &unversionedNow
-	if jobSuccess {
-		snapshot.Status.Status = tapi.SnapshotSuccessed
-	} else {
-		snapshot.Status.Status = tapi.SnapshotFailed
-	}
-
-	delete(snapshot.Labels, LabelSnapshotActive)
-
-	if _, err := w.ExtClient.DatabaseSnapshot(snapshot.Namespace).Update(snapshot); err != nil {
-		log.Errorln(err)
-	}
-}
-
-func (w *Controller) CheckStatefulSets(statefulSet *kapps.StatefulSet, checkDuration time.Duration) error {
-	podName := fmt.Sprintf("%v-%v", statefulSet.Name, 0)
-
-	podReady := false
-	then := time.Now()
-	now := time.Now()
-	for now.Sub(then) < checkDuration {
-		pod, err := w.Client.Core().Pods(statefulSet.Namespace).Get(podName)
-		if err != nil {
-			if k8serr.IsNotFound(err) {
-				time.Sleep(time.Second * 10)
-				now = time.Now()
-				continue
-			} else {
-				return err
-			}
-		}
-		log.Debugf("Pod Phase: %v", pod.Status.Phase)
-
-		// If job is success
-		if pod.Status.Phase == kapi.PodRunning {
-			podReady = true
-			break
-		}
-
-		time.Sleep(time.Minute)
-		now = time.Now()
-	}
-	if !podReady {
-		return errors.New("Database fails to be Ready")
+	// Credential SecretName  can't be empty
+	storageSecretName := storageSecret.SecretName
+	if storageSecretName == "" {
+		return fmt.Errorf(`Object 'SecretName' is missing in '%v'`, *spec.StorageSecret)
 	}
 	return nil
-}
-
-func (w *Controller) GetVolumeForSnapshot(storage *tapi.StorageSpec, jobName, namespace string) (*kapi.Volume, error) {
-	volume := &kapi.Volume{
-		Name: "util-volume",
-	}
-	if storage != nil {
-		claim := &kapi.PersistentVolumeClaim{
-			ObjectMeta: kapi.ObjectMeta{
-				Name:      jobName,
-				Namespace: namespace,
-				Annotations: map[string]string{
-					"volume.beta.kubernetes.io/storage-class": storage.Class,
-				},
-			},
-			Spec: storage.PersistentVolumeClaimSpec,
-		}
-
-		if _, err := w.Client.Core().PersistentVolumeClaims(claim.Namespace).Create(claim); err != nil {
-			return nil, err
-		}
-
-		volume.PersistentVolumeClaim = &kapi.PersistentVolumeClaimVolumeSource{
-			ClaimName: claim.Name,
-		}
-	} else {
-		volume.EmptyDir = &kapi.EmptyDirVolumeSource{}
-	}
-	return volume, nil
 }
 
 const (
@@ -241,8 +89,8 @@ const (
 	keyConfig   = "config"
 )
 
-func (w *Controller) CheckBucketAccess(bucketName, secretName, namespace string) error {
-	secret, err := w.Client.Core().Secrets(namespace).Get(secretName)
+func (c *Controller) CheckBucketAccess(bucketName string, secretSource *kapi.SecretVolumeSource, namespace string) error {
+	secret, err := c.Client.Core().Secrets(namespace).Get(secretSource.SecretName)
 	if err != nil {
 		return err
 	}
@@ -279,6 +127,56 @@ func (w *Controller) CheckBucketAccess(bucketName, secretName, namespace string)
 
 	if err := container.RemoveItem(item.ID()); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (c *Controller) CreateGoverningServiceAccount(name, namespace string) error {
+	if _, err := c.Client.Core().ServiceAccounts(namespace).Get(name); err != nil {
+		if !k8serr.IsNotFound(err) {
+			return err
+		}
+	}
+
+	serviceAccount := &kapi.ServiceAccount{
+		ObjectMeta: kapi.ObjectMeta{
+			Name: name,
+		},
+	}
+	_, err := c.Client.Core().ServiceAccounts(namespace).Create(serviceAccount)
+	return err
+}
+
+func (c *Controller) CheckStatefulSets(statefulSet *kapps.StatefulSet, checkDuration time.Duration) error {
+	podName := fmt.Sprintf("%v-%v", statefulSet.Name, 0)
+
+	podReady := false
+	then := time.Now()
+	now := time.Now()
+	for now.Sub(then) < checkDuration {
+		pod, err := c.Client.Core().Pods(statefulSet.Namespace).Get(podName)
+		if err != nil {
+			if k8serr.IsNotFound(err) {
+				time.Sleep(time.Second * 10)
+				now = time.Now()
+				continue
+			} else {
+				return err
+			}
+		}
+		log.Debugf("Pod Phase: %v", pod.Status.Phase)
+
+		// If job is success
+		if pod.Status.Phase == kapi.PodRunning {
+			podReady = true
+			break
+		}
+
+		time.Sleep(time.Minute)
+		now = time.Now()
+	}
+	if !podReady {
+		return errors.New("Database fails to be Ready")
 	}
 	return nil
 }

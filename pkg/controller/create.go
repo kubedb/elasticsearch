@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appscode/go/crypto/rand"
 	tapi "github.com/k8sdb/apimachinery/api"
 	kapi "k8s.io/kubernetes/pkg/api"
+	k8serr "k8s.io/kubernetes/pkg/api/errors"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
-	"k8s.io/kubernetes/pkg/apis/batch"
 	"k8s.io/kubernetes/pkg/util/intstr"
 )
 
@@ -20,7 +19,7 @@ const (
 	imageElasticsearch         = "appscode/elasticsearch"
 	imageOperatorElasticsearch = "appscode/k8ses"
 	LabelDatabaseType          = "k8sdb.com/type"
-	LabelDatabaseName          = "elastic.k8sdb.com/name"
+	LabelDatabaseName          = "k8sdb.com/name"
 	tagOperatorElasticsearch   = "0.1"
 	// Duration in Minute
 	// Check whether pod under StatefulSet is running or not
@@ -28,29 +27,29 @@ const (
 	durationCheckStatefulSet = time.Minute * 30
 )
 
-func (w *Controller) createGoverningServiceAccount(name, namespace string) error {
-	found, err := w.checkGoverningServiceAccount(name, namespace)
+func (c *Controller) checkService(namespace, serviceName string) (bool, error) {
+	service, err := c.Client.Core().Services(namespace).Get(serviceName)
 	if err != nil {
-		return err
-
+		if k8serr.IsNotFound(err) {
+			return false, nil
+		} else {
+			return false, err
+		}
 	}
-	if found {
-		return nil
-	}
-
-	serviceAccount := &kapi.ServiceAccount{
-		ObjectMeta: kapi.ObjectMeta{
-			Name: name,
-		},
+	if service == nil {
+		return false, nil
 	}
 
-	_, err = w.Client.Core().ServiceAccounts(namespace).Create(serviceAccount)
-	return err
+	if service.Spec.Selector[LabelDatabaseName] != serviceName {
+		return false, fmt.Errorf(`Intended service "%v" already exists`, serviceName)
+	}
+
+	return true, nil
 }
 
-func (w *Controller) createService(name, namespace string) error {
+func (c *Controller) createService(name, namespace string) error {
 	// Check if service name exists
-	found, err := w.checkService(namespace, name)
+	found, err := c.checkService(namespace, name)
 	if err != nil {
 		return err
 	}
@@ -83,14 +82,14 @@ func (w *Controller) createService(name, namespace string) error {
 		},
 	}
 
-	if _, err := w.Client.Core().Services(namespace).Create(service); err != nil {
+	if _, err := c.Client.Core().Services(namespace).Create(service); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (w *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
+func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
 	// Set labels
 	if elastic.Labels == nil {
 		elastic.Labels = make(map[string]string)
@@ -212,7 +211,7 @@ func (w *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 	// Add Data volume for StatefulSet
 	addDataVolume(statefulSet, elastic.Spec.Storage)
 
-	if _, err := w.Client.Apps().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
+	if _, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
 		return nil, err
 	}
 
@@ -247,87 +246,4 @@ func addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 			},
 		)
 	}
-}
-
-func (w *Controller) createBackupJob(snapshot *tapi.DatabaseSnapshot, elastic *tapi.Elastic) (*batch.Job, error) {
-
-	databaseName := snapshot.Spec.DatabaseName
-
-	// Generate job name for backup
-	// TODO: Use more accurate Job name
-	jobName := rand.WithUniqSuffix(SnapshotProcess_Backup + "-" + databaseName)
-
-	jobLabel := map[string]string{
-		LabelDatabaseName: databaseName,
-		LabelJobType:      SnapshotProcess_Backup,
-	}
-
-	backupSpec := snapshot.Spec.SnapshotSpec
-
-	// Get PersistentVolume object for Backup Util pod.
-	persistentVolume, err := w.GetVolumeForSnapshot(elastic.Spec.Storage, jobName, snapshot.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	// Folder name inside Cloud bucket where backup will be uploaded
-	folderName := DatabaseElasticsearch + "-" + databaseName
-
-	job := &batch.Job{
-		ObjectMeta: kapi.ObjectMeta{
-			Name:   jobName,
-			Labels: jobLabel,
-		},
-		Spec: batch.JobSpec{
-			Template: kapi.PodTemplateSpec{
-				ObjectMeta: kapi.ObjectMeta{
-					Labels: jobLabel,
-				},
-				Spec: kapi.PodSpec{
-					Containers: []kapi.Container{
-						{
-							Name:  SnapshotProcess_Backup,
-							Image: imageElasticDump + ":" + tagElasticDump,
-							Args: []string{
-								fmt.Sprintf(`--process=%s`, SnapshotProcess_Backup),
-								fmt.Sprintf(`--host=%s`, databaseName),
-								fmt.Sprintf(`--bucket=%s`, backupSpec.BucketName),
-								fmt.Sprintf(`--folder=%s`, folderName),
-								fmt.Sprintf(`--snapshot=%s`, snapshot.Name),
-							},
-							VolumeMounts: []kapi.VolumeMount{
-								{
-									Name:      "cloud",
-									MountPath: storageSecretMountPath,
-								},
-								{
-									Name:      persistentVolume.Name,
-									MountPath: "/var/" + snapshotType_DumpBackup + "/",
-								},
-							},
-						},
-					},
-					Volumes: []kapi.Volume{
-						{
-							Name: "cloud",
-							VolumeSource: kapi.VolumeSource{
-								Secret: backupSpec.StorageSecret,
-							},
-						},
-						{
-							Name:         persistentVolume.Name,
-							VolumeSource: persistentVolume.VolumeSource,
-						},
-					},
-					RestartPolicy: kapi.RestartPolicyNever,
-				},
-			},
-		},
-	}
-
-	if _, err := w.Client.Batch().Jobs(snapshot.Namespace).Create(job); err != nil {
-		return nil, err
-	}
-
-	return job, nil
 }

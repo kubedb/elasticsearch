@@ -1,4 +1,4 @@
-package client
+package clientset
 
 import (
 	aci "github.com/k8sdb/apimachinery/api"
@@ -8,7 +8,7 @@ import (
 )
 
 type DatabaseSnapshotNamespacer interface {
-	DatabaseSnapshot(namespace string) DatabaseSnapshotInterface
+	DatabaseSnapshots(namespace string) DatabaseSnapshotInterface
 }
 
 type DatabaseSnapshotInterface interface {

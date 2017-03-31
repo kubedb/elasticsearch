@@ -9,8 +9,8 @@ import (
 	"k8s.io/kubernetes/pkg/labels"
 )
 
-func (w *Controller) deleteService(name, namespace string) error {
-	service, err := w.Client.Core().Services(namespace).Get(name)
+func (c *Controller) deleteService(name, namespace string) error {
+	service, err := c.Client.Core().Services(namespace).Get(name)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
 			return nil
@@ -26,7 +26,7 @@ func (w *Controller) deleteService(name, namespace string) error {
 		return nil
 	}
 
-	return w.Client.Core().Services(namespace).Delete(name, nil)
+	return c.Client.Core().Services(namespace).Delete(name, nil)
 }
 
 func (c *Controller) deleteStatefulSet(name, namespace string) error {
