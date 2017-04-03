@@ -50,6 +50,8 @@ func (c *Controller) RunAndHold() {
 	go c.watchElastic()
 	// Watch DatabaseSnapshot with labelSelector only for Elastic
 	go c.watchDatabaseSnapshot()
+	// Watch DeletedDatabase with labelSelector only for Elastic
+	go c.watchDeletedDatabase()
 	hold.Hold()
 }
 
@@ -63,8 +65,9 @@ func (c *Controller) watchElastic() {
 		},
 	}
 
-	db := &dbController{c}
-	_, cacheController := cache.NewInformer(lw,
+	eController := &elasticController{c}
+	_, cacheController := cache.NewInformer(
+		lw,
 		&tapi.Elastic{},
 		c.syncPeriod,
 		cache.ResourceEventHandlerFuncs{
@@ -75,11 +78,11 @@ func (c *Controller) watchElastic() {
 					We do not want to handle same TPR objects multiple times
 				*/
 				if true {
-					db.create(elastic)
+					eController.create(elastic)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				db.delete(obj.(*tapi.Elastic))
+				eController.delete(obj.(*tapi.Elastic))
 			},
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*tapi.Elastic)
@@ -91,7 +94,7 @@ func (c *Controller) watchElastic() {
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					db.update(oldObj, newObj)
+					eController.update(oldObj, newObj)
 				}
 			},
 		},
@@ -119,8 +122,32 @@ func (c *Controller) watchDatabaseSnapshot() {
 		},
 	}
 
-	snapshotter := NewSnapshotter(c)
+	snapshotter := NewSnapshotter(c.Controller)
 	amc.NewDatabaseSnapshotController(c.Client, c.ExtClient, snapshotter, lw, c.syncPeriod).Run()
+}
+
+func (c *Controller) watchDeletedDatabase() {
+	labelMap := map[string]string{
+		LabelDatabaseType: DatabaseElasticsearch,
+	}
+	// Watch with label selector
+	lw := &cache.ListWatch{
+		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
+			return c.ExtClient.DeletedDatabases(kapi.NamespaceAll).List(
+				kapi.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+				})
+		},
+		WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
+			return c.ExtClient.DeletedDatabases(kapi.NamespaceAll).Watch(
+				kapi.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+				})
+		},
+	}
+
+	deleter := NewDeleter(c.Controller)
+	amc.NewDeletedDbController(c.Client, c.ExtClient, deleter, lw, c.syncPeriod).Run()
 }
 
 func (c *Controller) ensureThirdPartyResource() {

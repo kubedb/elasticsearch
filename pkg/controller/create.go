@@ -27,7 +27,7 @@ const (
 	durationCheckStatefulSet = time.Minute * 30
 )
 
-func (c *Controller) checkService(namespace, serviceName string) (bool, error) {
+func (c *elasticController) checkService(namespace, serviceName string) (bool, error) {
 	service, err := c.Client.Core().Services(namespace).Get(serviceName)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
@@ -47,7 +47,7 @@ func (c *Controller) checkService(namespace, serviceName string) (bool, error) {
 	return true, nil
 }
 
-func (c *Controller) createService(name, namespace string) error {
+func (c *elasticController) createService(name, namespace string) error {
 	// Check if service name exists
 	found, err := c.checkService(namespace, name)
 	if err != nil {
@@ -89,7 +89,7 @@ func (c *Controller) createService(name, namespace string) error {
 	return nil
 }
 
-func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
+func (c *elasticController) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
 	// Set labels
 	if elastic.Labels == nil {
 		elastic.Labels = make(map[string]string)
@@ -246,4 +246,36 @@ func addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 			},
 		)
 	}
+}
+
+func (w *elasticController) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.DeletedDatabase, error) {
+	deletedDb := &tapi.DeletedDatabase{
+		ObjectMeta: kapi.ObjectMeta{
+			Name:      elastic.Name,
+			Namespace: elastic.Namespace,
+			Labels: map[string]string{
+				LabelDatabaseType: DatabaseElasticsearch,
+			},
+		},
+	}
+	return w.ExtClient.DeletedDatabases(deletedDb.Namespace).Create(deletedDb)
+}
+
+func (w *elasticController) reCreateElastic(elastic *tapi.Elastic) error {
+	_elastic := &tapi.Elastic{
+		ObjectMeta: kapi.ObjectMeta{
+			Name:        elastic.Name,
+			Namespace:   elastic.Namespace,
+			Labels:      elastic.Labels,
+			Annotations: elastic.Annotations,
+		},
+		Spec:   elastic.Spec,
+		Status: elastic.Status,
+	}
+
+	if _, err := w.ExtClient.Elastics(_elastic.Namespace).Create(_elastic); err != nil {
+		return err
+	}
+
+	return nil
 }

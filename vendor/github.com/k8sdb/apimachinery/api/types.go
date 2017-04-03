@@ -29,3 +29,14 @@ type SnapshotSpec struct {
 	// Cloud bucket name
 	BucketName string `json:"bucketName,omitempty"`
 }
+
+type DatabaseStatus string
+
+const (
+	// used for Databases that are currently running
+	StatusDatabaseRunning DatabaseStatus = "Running"
+	// used for Databases that are currently creating
+	StatusDatabaseCreating DatabaseStatus = "Creating"
+	// used for Databases that are Failed
+	StatusDatabaseFailed DatabaseStatus = "Failed"
+)

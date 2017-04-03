@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	EventReasonCreating           string = "Creating"
 	EventReasonDeleting           string = "Deleting"
 	EventReasonDestroying         string = "Destroying"
 	EventReasonFailedToCreate     string = "Failed"
@@ -16,14 +17,19 @@ const (
 	EventReasonFailedToDestroy    string = "Failed"
 	EventReasonFailedToGet        string = "Failed"
 	EventReasonFailedToList       string = "Failed"
+	EventReasonFailedToSchedule   string = "Failed"
+	EventReasonFailedToStart      string = "Failed"
 	EventReasonFailedToUpdate     string = "Failed"
+	EventReasonIgnoredSnapshot    string = "IgnoredSnapshot"
 	EventReasonInvalid            string = "Invalid"
+	EventReasonInvalidUpdate      string = "InvalidUpdate"
 	EventReasonSnapshotFailed     string = "SnapshotFailed"
 	EventReasonStarting           string = "Starting"
+	EventReasonSuccessfulCreate   string = "SuccessfulCreate"
 	EventReasonSuccessfulDelete   string = "SuccessfulDelete"
 	EventReasonSuccessfulDestroy  string = "SuccessfulDestroy"
 	EventReasonSuccessfulSnapshot string = "SuccessfulSnapshot"
-	EventReasonIngoredSnapshot    string = "IngoredSnapshot"
+	EventReasonSuccessfulValidate string = "SuccessfulValidate"
 )
 
 type EventRecorderInterface interface {

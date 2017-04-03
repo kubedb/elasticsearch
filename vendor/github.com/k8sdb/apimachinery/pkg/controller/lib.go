@@ -15,6 +15,7 @@ import (
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
+	"k8s.io/kubernetes/pkg/labels"
 )
 
 func (c *Controller) ValidateStorageSpec(spec *tapi.StorageSpec) (*tapi.StorageSpec, error) {
@@ -157,6 +158,11 @@ func (c *Controller) CheckStatefulSets(statefulSet *kapps.StatefulSet, checkDura
 		pod, err := c.Client.Core().Pods(statefulSet.Namespace).Get(podName)
 		if err != nil {
 			if k8serr.IsNotFound(err) {
+				_, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Get(statefulSet.Name)
+				if k8serr.IsNotFound(err) {
+					break
+				}
+
 				time.Sleep(time.Second * 10)
 				now = time.Now()
 				continue
@@ -177,6 +183,24 @@ func (c *Controller) CheckStatefulSets(statefulSet *kapps.StatefulSet, checkDura
 	}
 	if !podReady {
 		return errors.New("Database fails to be Ready")
+	}
+	return nil
+}
+
+func (c *Controller) DeletePersistentVolumeClaims(namespace string, selector labels.Selector) error {
+	pvcList, err := c.Client.Core().PersistentVolumeClaims(namespace).List(
+		kapi.ListOptions{
+			LabelSelector: selector,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, pvc := range pvcList.Items {
+		if err := c.Client.Core().PersistentVolumeClaims(pvc.Namespace).Delete(pvc.Name, nil); err != nil {
+			return err
+		}
 	}
 	return nil
 }

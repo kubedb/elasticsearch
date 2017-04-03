@@ -15,8 +15,8 @@ const (
 type Elastic struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`
-	Spec                 ElasticSpec    `json:"spec,omitempty"`
-	Status               *ElasticStatus `json:"status,omitempty"`
+	Spec                 ElasticSpec   `json:"spec,omitempty"`
+	Status               ElasticStatus `json:"status,omitempty"`
 }
 
 type ElasticSpec struct {
@@ -42,10 +42,9 @@ type ElasticSpec struct {
 }
 
 type ElasticStatus struct {
-	// Total number of non-terminated pods targeted by this Elastic TPR
-	Replicas int32 `json:"replicas"`
-	// Total number of available pods targeted by this Elastic TPR.
-	AvailableReplicas int32 `json:"availableReplicas"`
+	Created        *unversioned.Time `json:"created,omitempty"`
+	DatabaseStatus `json:",inline,omitempty"`
+	Reason         string `json:"reason,omitempty"`
 }
 
 type ElasticList struct {

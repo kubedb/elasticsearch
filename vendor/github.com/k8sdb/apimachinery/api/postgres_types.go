@@ -15,8 +15,8 @@ const (
 type Postgres struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`
-	Spec                 PostgresSpec    `json:"spec,omitempty"`
-	Status               *PostgresStatus `json:"status,omitempty"`
+	Spec                 PostgresSpec   `json:"spec,omitempty"`
+	Status               PostgresStatus `json:"status,omitempty"`
 }
 
 type PostgresSpec struct {

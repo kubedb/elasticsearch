@@ -24,10 +24,10 @@ const (
 )
 
 type Snapshotter struct {
-	*Controller
+	*amc.Controller
 }
 
-func NewSnapshotter(c *Controller) amc.Snapshotter {
+func NewSnapshotter(c *amc.Controller) amc.Snapshotter {
 	return &Snapshotter{c}
 }
 

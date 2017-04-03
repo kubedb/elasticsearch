@@ -129,7 +129,7 @@ func (s *snapshotInvoker) createDatabaseSnapshot() {
 
 	if len(snapshotList.Items) > 0 {
 		s.eventRecorder.PushEvent(
-			kapi.EventTypeNormal, eventer.EventReasonIngoredSnapshot,
+			kapi.EventTypeNormal, eventer.EventReasonIgnoredSnapshot,
 			"Skipping scheduled Backup. One is still active.",
 			s.runtimeObject,
 		)
