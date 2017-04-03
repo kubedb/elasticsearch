@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/aerokite/log"
 	"github.com/appscode/go/hold"
+	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/eventer"

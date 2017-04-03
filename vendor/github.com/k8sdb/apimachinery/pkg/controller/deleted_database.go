@@ -22,9 +22,9 @@ type Deleter interface {
 	// Check Database TPR
 	Exists(*tapi.DeletedDatabase) (bool, error)
 	// Delete operation
-	Delete(*tapi.DeletedDatabase) error
+	DeleteDatabase(*tapi.DeletedDatabase) error
 	// Destroy operation
-	Destroy(*tapi.DeletedDatabase) error
+	DestroyDatabase(*tapi.DeletedDatabase) error
 }
 
 type DeletedDatabaseController struct {
@@ -161,7 +161,7 @@ func (c *DeletedDatabaseController) create(deletedDb *tapi.DeletedDatabase) {
 	c.eventRecorder.PushEvent(kapi.EventTypeNormal, eventer.EventReasonDeleting, "Deleting Database", deletedDb)
 
 	// Delete Database workload
-	if err := c.deleter.Delete(deletedDb); err != nil {
+	if err := c.deleter.DeleteDatabase(deletedDb); err != nil {
 		message := fmt.Sprintf(`Failed to delete. Reason: %v`, err)
 		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToDelete, message, deletedDb)
 		log.Errorln(err)
@@ -210,7 +210,7 @@ func (c *DeletedDatabaseController) update(deletedDb *tapi.DeletedDatabase) {
 		c.eventRecorder.PushEvent(
 			kapi.EventTypeNormal, eventer.EventReasonDestroying, "Destroying Database", deletedDb,
 		)
-		if err := c.deleter.Destroy(deletedDb); err != nil {
+		if err := c.deleter.DestroyDatabase(deletedDb); err != nil {
 			message := fmt.Sprintf(`Failed to destroy. Reason: %v`, err)
 			c.eventRecorder.PushEvent(
 				kapi.EventTypeWarning, eventer.EventReasonFailedToDestroy, message, deletedDb,

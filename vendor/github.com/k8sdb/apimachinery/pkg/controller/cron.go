@@ -111,7 +111,7 @@ func (s *snapshotInvoker) createDatabaseSnapshot() {
 	labelMap := map[string]string{
 		LabelDatabaseType:   typeLabel,
 		LabelDatabaseName:   nameLabel,
-		LabelSnapshotStatus: string(tapi.SnapshotRunning),
+		LabelSnapshotStatus: string(tapi.StatusSnapshotRunning),
 	}
 
 	snapshotList, err := s.extClient.DatabaseSnapshots(s.om.Namespace).List(kapi.ListOptions{

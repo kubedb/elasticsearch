@@ -16,7 +16,6 @@ import (
 
 const (
 	imageElasticDump        = "appscode/elasticdump"
-	LabelJobType            = "job.k8sdb.com/type"
 	SnapshotProcess_Backup  = "backup"
 	snapshotType_DumpBackup = "dump-backup"
 	storageSecretMountPath  = "/var/credentials/"

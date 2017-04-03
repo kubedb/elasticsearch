@@ -14,12 +14,9 @@ import (
 const (
 	annotationDatabaseVersion  = "elastic.k8sdb.com/version"
 	DatabaseElasticsearch      = "elasticsearch"
-	DatabaseNamePrefix         = "k8sdb"
 	GoverningElasticsearch     = "governing-elasticsearch"
 	imageElasticsearch         = "appscode/elasticsearch"
 	imageOperatorElasticsearch = "appscode/k8ses"
-	LabelDatabaseType          = "k8sdb.com/type"
-	LabelDatabaseName          = "k8sdb.com/name"
 	tagOperatorElasticsearch   = "0.1"
 	// Duration in Minute
 	// Check whether pod under StatefulSet is running or not
