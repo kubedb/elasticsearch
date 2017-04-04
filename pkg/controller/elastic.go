@@ -223,7 +223,7 @@ func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
 		if backupScheduleSpec != nil {
 			if err := c.ValidateBackupSchedule(backupScheduleSpec); err != nil {
 				c.eventRecorder.PushEvent(
-					kapi.EventTypeNormal, eventer.EventReasonInvalid, err, updatedElastic,
+					kapi.EventTypeNormal, eventer.EventReasonInvalid, err.Error(), updatedElastic,
 				)
 				log.Errorln(err)
 				return
@@ -233,7 +233,7 @@ func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
 				backupScheduleSpec.BucketName, backupScheduleSpec.StorageSecret,
 				updatedElastic.Namespace); err != nil {
 				c.eventRecorder.PushEvent(
-					kapi.EventTypeNormal, eventer.EventReasonInvalid, err, updatedElastic,
+					kapi.EventTypeNormal, eventer.EventReasonInvalid, err.Error(), updatedElastic,
 				)
 				log.Errorln(err)
 				return

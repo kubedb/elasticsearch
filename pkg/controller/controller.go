@@ -52,6 +52,7 @@ func (c *Controller) RunAndHold() {
 	go c.watchDatabaseSnapshot()
 	// Watch DeletedDatabase with labelSelector only for Elastic
 	go c.watchDeletedDatabase()
+	// hold
 	hold.Hold()
 }
 

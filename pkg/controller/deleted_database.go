@@ -30,7 +30,7 @@ func (d *Deleter) Exists(deletedDb *tapi.DeletedDatabase) (bool, error) {
 	return true, nil
 }
 
-func (d *Deleter) Delete(deletedDb *tapi.DeletedDatabase) error {
+func (d *Deleter) DeleteDatabase(deletedDb *tapi.DeletedDatabase) error {
 	// Delete Service
 	if err := d.deleteService(deletedDb.Namespace, deletedDb.Name); err != nil {
 		/*
@@ -49,7 +49,7 @@ func (d *Deleter) Delete(deletedDb *tapi.DeletedDatabase) error {
 	return nil
 }
 
-func (d *Deleter) Destroy(deletedDb *tapi.DeletedDatabase) error {
+func (d *Deleter) DestroyDatabase(deletedDb *tapi.DeletedDatabase) error {
 
 	labelMap := map[string]string{
 		amc.LabelDatabaseName: deletedDb.Name,

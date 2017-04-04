@@ -24,7 +24,7 @@ import (
 type Snapshotter interface {
 	Validate(*tapi.DatabaseSnapshot) error
 	GetDatabase(*tapi.DatabaseSnapshot) (runtime.Object, error)
-	GetSnapshotJob(*tapi.DatabaseSnapshot) (*kbatch.Job, error)
+	GetSnapshotter(*tapi.DatabaseSnapshot) (*kbatch.Job, error)
 	DestroySnapshot(*tapi.DatabaseSnapshot) error
 }
 
@@ -154,7 +154,7 @@ func (c *DatabaseSnapshotController) create(dbSnapshot *tapi.DatabaseSnapshot) {
 		runtimeObj, dbSnapshot,
 	)
 
-	job, err := c.snapshoter.GetSnapshotJob(dbSnapshot)
+	job, err := c.snapshoter.GetSnapshotter(dbSnapshot)
 	if err != nil {
 		message := fmt.Sprintf(`Failed to take snapshot. Reason: %v`, err)
 		c.eventRecorder.PushEvent(
@@ -197,14 +197,14 @@ func (c *DatabaseSnapshotController) delete(dbSnapshot *tapi.DatabaseSnapshot) {
 
 	if runtimeObj != nil {
 		message := fmt.Sprintf(`Destroying DatabaseSnapshot: "%v"`, dbSnapshot.Name)
-		c.eventRecorder.PushEvent(kapi.EventTypeNormal, eventer.EventReasonDestroying, message, dbSnapshot)
+		c.eventRecorder.PushEvent(kapi.EventTypeNormal, eventer.EventReasonDestroying, message, runtimeObj)
 	}
 
 	if err := c.snapshoter.DestroySnapshot(dbSnapshot); err != nil {
 		if runtimeObj != nil {
-			message := fmt.Sprintf(`Failed to  destroying. Reason: %v`, err)
+			message := fmt.Sprintf(`Failed to  destroy. Reason: %v`, err)
 			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToDestroy, message, dbSnapshot,
+				kapi.EventTypeWarning, eventer.EventReasonFailedToDestroy, message, runtimeObj,
 			)
 		}
 		log.Errorln(err)
@@ -214,7 +214,7 @@ func (c *DatabaseSnapshotController) delete(dbSnapshot *tapi.DatabaseSnapshot) {
 	if runtimeObj != nil {
 		message := fmt.Sprintf(`Successfully destroyed DatabaseSnapshot: "%v"`, dbSnapshot.Name)
 		c.eventRecorder.PushEvent(
-			kapi.EventTypeNormal, eventer.EventReasonSuccessfulDestroy, message, dbSnapshot,
+			kapi.EventTypeNormal, eventer.EventReasonSuccessfulDestroy, message, runtimeObj,
 		)
 	}
 }

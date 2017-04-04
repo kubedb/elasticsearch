@@ -204,3 +204,56 @@ func (c *Controller) DeletePersistentVolumeClaims(namespace string, selector lab
 	}
 	return nil
 }
+
+func (c *Controller) DeleteSnapshotData(
+	bucketName, folderName, snapshotName string,
+	secretSource *kapi.SecretVolumeSource,
+	namespace string) error {
+
+	secret, err := c.Client.Core().Secrets(namespace).Get(secretSource.SecretName)
+	if err != nil {
+		return err
+	}
+
+	provider := secret.Data[keyProvider]
+	if provider == nil {
+		return errors.New("Missing provider key")
+	}
+	configData := secret.Data[keyConfig]
+	if configData == nil {
+		return errors.New("Missing config key")
+	}
+
+	var config stow.ConfigMap
+	if err := json.Unmarshal(configData, &config); err != nil {
+		return errors.New("Fail to Unmarshal config data")
+	}
+
+	loc, err := stow.Dial(string(provider), config)
+	if err != nil {
+		return err
+	}
+
+	container, err := loc.Container(bucketName)
+	if err != nil {
+		return err
+	}
+
+	prefix := fmt.Sprintf("%v/%v", folderName, snapshotName)
+	cursor := stow.CursorStart
+	for {
+		items, next, err := container.Items(prefix, cursor, 50)
+		if err != nil {
+			return err
+		}
+		for _, item := range items {
+			container.RemoveItem(item.ID())
+		}
+		cursor = next
+		if stow.IsCursorEnd(cursor) {
+			break
+		}
+	}
+
+	return nil
+}

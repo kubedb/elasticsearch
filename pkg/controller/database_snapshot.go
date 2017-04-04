@@ -74,11 +74,11 @@ func (s *Snapshotter) Validate(snapshot *tapi.DatabaseSnapshot) error {
 	return nil
 }
 
-func (s *Snapshotter) GetDatabaseRuntimeObject(snapshot *tapi.DatabaseSnapshot) (runtime.Object, error) {
+func (s *Snapshotter) GetDatabase(snapshot *tapi.DatabaseSnapshot) (runtime.Object, error) {
 	return s.ExtClient.Elastics(snapshot.Namespace).Get(snapshot.Spec.DatabaseName)
 }
 
-func (s *Snapshotter) GetSnapshotObjects(snapshot *tapi.DatabaseSnapshot) (*kbatch.Job, error) {
+func (s *Snapshotter) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.Job, error) {
 	databaseName := snapshot.Spec.DatabaseName
 	jobName := rand.WithUniqSuffix(SnapshotProcess_Backup + "-" + databaseName)
 	jobLabel := map[string]string{
@@ -155,7 +155,14 @@ func (s *Snapshotter) GetSnapshotObjects(snapshot *tapi.DatabaseSnapshot) (*kbat
 	return job, nil
 }
 
-func (s *Snapshotter) Destroy(*tapi.DatabaseSnapshot) error {
+func (s *Snapshotter) DestroySnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {
+	folderName := DatabaseElasticsearch + "-" + dbSnapshot.Spec.DatabaseName
+	snapshotName := dbSnapshot.Namespace
+	bucketName := dbSnapshot.Spec.BucketName
+	if err := s.DeleteSnapshotData(
+		bucketName, folderName, snapshotName, dbSnapshot.Spec.StorageSecret, dbSnapshot.Namespace); err != nil {
+		return err
+	}
 	return nil
 }
 
