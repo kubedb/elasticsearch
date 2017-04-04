@@ -98,12 +98,6 @@ type snapshotInvoker struct {
 	eventRecorder eventer.EventRecorderInterface
 }
 
-const (
-	LabelDatabaseType   = "k8sdb.com/type"
-	LabelDatabaseName   = "k8sdb.com/name"
-	LabelSnapshotStatus = "snapshot.k8sdb.com/status"
-)
-
 func (s *snapshotInvoker) createDatabaseSnapshot() {
 	typeLabel := s.om.Labels[LabelDatabaseType]
 	nameLabel := s.om.Labels[LabelDatabaseName]

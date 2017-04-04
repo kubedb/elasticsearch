@@ -6,6 +6,7 @@ import (
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
+	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
@@ -44,7 +45,7 @@ func (c *elasticController) create(elastic *tapi.Elastic) {
 			Destroy previous database and delete DeletedDatabase object
 			Or use different name for your new Elastic database
 		*/
-		if deletedDb.Labels[LabelDatabaseType] != DatabaseElasticsearch {
+		if deletedDb.Labels[amc.LabelDatabaseType] != DatabaseElasticsearch {
 			message := fmt.Sprintf(`Invalid Elastic: "%v". Exists irrelevent DeletedDatabase: "%v"`,
 				elastic.Name, deletedDb.Name)
 			// Set status to Failed
@@ -196,7 +197,7 @@ func (c *elasticController) delete(elastic *tapi.Elastic) {
 
 func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
 	if (updatedElastic.Spec.Replicas != oldElastic.Spec.Replicas) && oldElastic.Spec.Replicas >= 0 {
-		statefulSetName := fmt.Sprintf("%v-%v", DatabaseNamePrefix, updatedElastic.Name)
+		statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, updatedElastic.Name)
 		statefulSet, err := c.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
 		if err != nil {
 			message := fmt.Sprintf(`Failed to get StatefulSet: "%v". Reason: %v`, statefulSetName, err)

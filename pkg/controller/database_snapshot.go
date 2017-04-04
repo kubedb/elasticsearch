@@ -38,9 +38,9 @@ func (s *Snapshotter) Validate(snapshot *tapi.DatabaseSnapshot) error {
 	}
 
 	labelMap := map[string]string{
-		LabelDatabaseType:       DatabaseElasticsearch,
-		LabelDatabaseName:       snapshot.Spec.DatabaseName,
-		amc.LabelSnapshotStatus: string(tapi.SnapshotRunning),
+		amc.LabelDatabaseType:   DatabaseElasticsearch,
+		amc.LabelDatabaseName:   snapshot.Spec.DatabaseName,
+		amc.LabelSnapshotStatus: string(tapi.StatusSnapshotRunning),
 	}
 
 	snapshotList, err := s.ExtClient.DatabaseSnapshots(snapshot.Namespace).List(kapi.ListOptions{
@@ -54,7 +54,7 @@ func (s *Snapshotter) Validate(snapshot *tapi.DatabaseSnapshot) error {
 		unversionedNow := unversioned.Now()
 		snapshot.Status.StartTime = &unversionedNow
 		snapshot.Status.CompletionTime = &unversionedNow
-		snapshot.Status.Status = tapi.SnapshotFailed
+		snapshot.Status.Status = tapi.StatusSnapshotFailed
 		snapshot.Status.Reason = "One DatabaseSnapshot is already Running"
 		if _, err := s.ExtClient.DatabaseSnapshots(snapshot.Namespace).Update(snapshot); err != nil {
 			return err
@@ -82,8 +82,8 @@ func (s *Snapshotter) GetSnapshotObjects(snapshot *tapi.DatabaseSnapshot) (*kbat
 	databaseName := snapshot.Spec.DatabaseName
 	jobName := rand.WithUniqSuffix(SnapshotProcess_Backup + "-" + databaseName)
 	jobLabel := map[string]string{
-		LabelDatabaseName: databaseName,
-		LabelJobType:      SnapshotProcess_Backup,
+		amc.LabelDatabaseName: databaseName,
+		amc.LabelJobType:      SnapshotProcess_Backup,
 	}
 	backupSpec := snapshot.Spec.SnapshotSpec
 

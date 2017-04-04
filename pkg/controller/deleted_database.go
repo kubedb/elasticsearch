@@ -39,7 +39,7 @@ func (d *Deleter) Delete(deletedDb *tapi.DeletedDatabase) error {
 		log.Errorln(err)
 	}
 
-	statefulSetName := fmt.Sprintf("%v-%v", DatabaseNamePrefix, deletedDb.Name)
+	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, deletedDb.Name)
 	if err := d.deleteStatefulSet(statefulSetName, deletedDb.Namespace); err != nil {
 		/*
 			TODO: Event
@@ -52,8 +52,8 @@ func (d *Deleter) Delete(deletedDb *tapi.DeletedDatabase) error {
 func (d *Deleter) Destroy(deletedDb *tapi.DeletedDatabase) error {
 
 	labelMap := map[string]string{
-		LabelDatabaseName: deletedDb.Name,
-		LabelDatabaseType: DatabaseElasticsearch,
+		amc.LabelDatabaseName: deletedDb.Name,
+		amc.LabelDatabaseType: DatabaseElasticsearch,
 	}
 
 	labelSelector := labels.SelectorFromSet(labelMap)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/labels"
@@ -22,7 +23,7 @@ func (c *Deleter) deleteService(name, namespace string) error {
 		return nil
 	}
 
-	if service.Spec.Selector[LabelDatabaseName] != name {
+	if service.Spec.Selector[amc.LabelDatabaseName] != name {
 		return nil
 	}
 

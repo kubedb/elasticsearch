@@ -5,6 +5,7 @@ import (
 	"time"
 
 	tapi "github.com/k8sdb/apimachinery/api"
+	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
@@ -37,7 +38,7 @@ func (c *elasticController) checkService(namespace, serviceName string) (bool, e
 		return false, nil
 	}
 
-	if service.Spec.Selector[LabelDatabaseName] != serviceName {
+	if service.Spec.Selector[amc.LabelDatabaseName] != serviceName {
 		return false, fmt.Errorf(`Intended service "%v" already exists`, serviceName)
 	}
 
@@ -55,7 +56,7 @@ func (c *elasticController) createService(name, namespace string) error {
 	}
 
 	label := map[string]string{
-		LabelDatabaseName: name,
+		amc.LabelDatabaseName: name,
 	}
 	service := &kapi.Service{
 		ObjectMeta: kapi.ObjectMeta{
@@ -91,7 +92,7 @@ func (c *elasticController) createStatefulSet(elastic *tapi.Elastic) (*kapps.Sta
 	if elastic.Labels == nil {
 		elastic.Labels = make(map[string]string)
 	}
-	elastic.Labels[LabelDatabaseType] = DatabaseElasticsearch
+	elastic.Labels[amc.LabelDatabaseType] = DatabaseElasticsearch
 	// Set Annotations
 	if elastic.Annotations == nil {
 		elastic.Annotations = make(map[string]string)
@@ -102,13 +103,13 @@ func (c *elasticController) createStatefulSet(elastic *tapi.Elastic) (*kapps.Sta
 	for key, val := range elastic.Labels {
 		podLabels[key] = val
 	}
-	podLabels[LabelDatabaseName] = elastic.Name
+	podLabels[amc.LabelDatabaseName] = elastic.Name
 
 	dockerImage := fmt.Sprintf("%v:%v", imageElasticsearch, elastic.Spec.Version)
 	initContainerImage := fmt.Sprintf("%v:%v", imageOperatorElasticsearch, tagOperatorElasticsearch)
 
 	// SatatefulSet for Elastic database
-	statefulSetName := fmt.Sprintf("%v-%v", DatabaseNamePrefix, elastic.Name)
+	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, elastic.Name)
 	statefulSet := &kapps.StatefulSet{
 		ObjectMeta: kapi.ObjectMeta{
 			Name:        statefulSetName,
@@ -251,7 +252,7 @@ func (w *elasticController) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.
 			Name:      elastic.Name,
 			Namespace: elastic.Namespace,
 			Labels: map[string]string{
-				LabelDatabaseType: DatabaseElasticsearch,
+				amc.LabelDatabaseType: DatabaseElasticsearch,
 			},
 		},
 	}

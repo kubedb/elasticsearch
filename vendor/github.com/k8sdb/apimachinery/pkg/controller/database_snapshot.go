@@ -43,6 +43,11 @@ type DatabaseSnapshotController struct {
 	syncPeriod time.Duration
 }
 
+const (
+	LabelJobType        = "job.k8sdb.com/type"
+	LabelSnapshotStatus = "snapshot.k8sdb.com/status"
+)
+
 // NewDatabaseSnapshotController creates a new NewDatabaseSnapshot Controller
 func NewDatabaseSnapshotController(
 	client clientset.Interface,

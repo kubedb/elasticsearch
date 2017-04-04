@@ -13,6 +13,12 @@ type Controller struct {
 	ExtClient tcs.ExtensionInterface
 }
 
+const (
+	DatabaseNamePrefix = "k8sdb"
+	LabelDatabaseType  = "k8sdb.com/type"
+	LabelDatabaseName  = "k8sdb.com/name"
+)
+
 func NewController(c *rest.Config) *Controller {
 	client := clientset.NewForConfigOrDie(c)
 	extClient := tcs.NewExtensionsForConfigOrDie(c)
