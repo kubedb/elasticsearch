@@ -25,8 +25,8 @@ const (
 	durationCheckStatefulSet = time.Minute * 30
 )
 
-func (c *elasticController) checkService(namespace, serviceName string) (bool, error) {
-	service, err := c.Client.Core().Services(namespace).Get(serviceName)
+func (c *elasticController) checkService(name, namespace string) (bool, error) {
+	service, err := c.Client.Core().Services(namespace).Get(name)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
 			return false, nil
@@ -38,8 +38,8 @@ func (c *elasticController) checkService(namespace, serviceName string) (bool, e
 		return false, nil
 	}
 
-	if service.Spec.Selector[amc.LabelDatabaseName] != serviceName {
-		return false, fmt.Errorf(`Intended service "%v" already exists`, serviceName)
+	if service.Spec.Selector[amc.LabelDatabaseName] != name {
+		return false, fmt.Errorf(`Intended service "%v" already exists`, name)
 	}
 
 	return true, nil
