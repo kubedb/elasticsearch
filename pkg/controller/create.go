@@ -47,7 +47,7 @@ func (c *elasticController) checkService(name, namespace string) (bool, error) {
 
 func (c *elasticController) createService(name, namespace string) error {
 	// Check if service name exists
-	found, err := c.checkService(namespace, name)
+	found, err := c.checkService(name, namespace)
 	if err != nil {
 		return err
 	}
