@@ -46,10 +46,9 @@ type PostgresSpec struct {
 }
 
 type PostgresStatus struct {
-	// Total number of non-terminated pods targeted by this Postgres TPR
-	Replicas int32 `json:"replicas"`
-	// Total number of available pods targeted by this Postgres TPR.
-	AvailableReplicas int32 `json:"availableReplicas"`
+	Created        *unversioned.Time `json:"created,omitempty"`
+	DatabaseStatus `json:",inline,omitempty"`
+	Reason         string `json:"reason,omitempty"`
 }
 
 type PostgresList struct {
