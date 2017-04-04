@@ -33,7 +33,11 @@ func (c *Deleter) deleteService(name, namespace string) error {
 func (c *Deleter) deleteStatefulSet(name, namespace string) error {
 	statefulSet, err := c.Client.Apps().StatefulSets(namespace).Get(name)
 	if err != nil {
-		return err
+		if k8serr.IsNotFound(err) {
+			return nil
+		} else {
+			return err
+		}
 	}
 
 	// Update StatefulSet

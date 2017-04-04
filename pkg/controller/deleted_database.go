@@ -33,18 +33,14 @@ func (d *Deleter) Exists(deletedDb *tapi.DeletedDatabase) (bool, error) {
 func (d *Deleter) DeleteDatabase(deletedDb *tapi.DeletedDatabase) error {
 	// Delete Service
 	if err := d.deleteService(deletedDb.Namespace, deletedDb.Name); err != nil {
-		/*
-			TODO: Event
-		*/
 		log.Errorln(err)
+		return err
 	}
 
 	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, deletedDb.Name)
 	if err := d.deleteStatefulSet(statefulSetName, deletedDb.Namespace); err != nil {
-		/*
-			TODO: Event
-		*/
 		log.Errorln(err)
+		return err
 	}
 	return nil
 }
@@ -59,10 +55,8 @@ func (d *Deleter) DestroyDatabase(deletedDb *tapi.DeletedDatabase) error {
 	labelSelector := labels.SelectorFromSet(labelMap)
 
 	if err := d.DeletePersistentVolumeClaims(deletedDb.Namespace, labelSelector); err != nil {
-		/*
-			TODO: Event
-		*/
 		log.Errorln(err)
+		return err
 	}
 	return nil
 }
