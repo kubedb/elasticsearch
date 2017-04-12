@@ -1,4 +1,4 @@
-import sys, os, subprocess, json, shutil, yaml
+import sys, os, subprocess, shutil, yaml
 from elasticsearch import Elasticsearch
 
 Flag = {}
@@ -15,16 +15,16 @@ def set_osm_config():
         provider = lines[0].rstrip('\n')
 
     with open(secret_data_dir + "/config") as f:
-        config = json.load(f)
-
-    context = dict(
-        config=config,
-        name="cloud",
-        provider=provider,
-    )
+        config = yaml.safe_load(f)
 
     data = {
-        "contexts": [context],
+        "contexts": [
+            dict(
+                config=config,
+                name="cloud",
+                provider=provider,
+            )
+        ],
         "current-context": "cloud",
     }
 
@@ -32,8 +32,9 @@ def set_osm_config():
     osm_config_path = home + '/.osm'
     if not os.path.exists(osm_config_path):
         os.makedirs(osm_config_path)
+
     with open(osm_config_path+"/config", 'w') as outfile:
-        yaml.safe_dump(data, outfile, default_flow_style=False)
+        yaml.dump(data, outfile, default_flow_style=False)
 
 
 def backup_process():
