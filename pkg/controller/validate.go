@@ -25,9 +25,7 @@ func (c *elasticController) validateElastic(elastic *tapi.Elastic) error {
 			return err
 		}
 
-		if err := c.CheckBucketAccess(
-			backupScheduleSpec.BucketName, backupScheduleSpec.StorageSecret,
-			elastic.Namespace); err != nil {
+		if err := c.CheckBucketAccess(backupScheduleSpec.SnapshotSpec, elastic.Namespace); err != nil {
 			return err
 		}
 	}

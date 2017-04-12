@@ -46,6 +46,11 @@ func (c *Controller) RunAndHold() {
 	// Ensure Elastic TPR
 	c.ensureThirdPartyResource()
 
+	// Start Cron
+	c.cronController.StartCron()
+	// Stop Cron
+	defer c.cronController.StopCron()
+
 	// Watch Elastic TPR objects
 	go c.watchElastic()
 	// Watch DatabaseSnapshot with labelSelector only for Elastic
@@ -74,11 +79,7 @@ func (c *Controller) watchElastic() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				elastic := obj.(*tapi.Elastic)
-				/*
-					TODO: set appropriate checking
-					We do not want to handle same TPR objects multiple times
-				*/
-				if true {
+				if elastic.Status.Created == nil {
 					eController.create(elastic)
 				}
 			},

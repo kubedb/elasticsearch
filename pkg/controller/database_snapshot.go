@@ -30,20 +30,20 @@ func NewSnapshotter(c *amc.Controller) amc.Snapshotter {
 	return &Snapshotter{c}
 }
 
-func (s *Snapshotter) Validate(snapshot *tapi.DatabaseSnapshot) error {
+func (s *Snapshotter) Validate(dbSnapshot *tapi.DatabaseSnapshot) error {
 	// Database name can't empty
-	databaseName := snapshot.Spec.DatabaseName
+	databaseName := dbSnapshot.Spec.DatabaseName
 	if databaseName == "" {
-		return fmt.Errorf(`Object 'DatabaseName' is missing in '%v'`, snapshot.Spec)
+		return fmt.Errorf(`Object 'DatabaseName' is missing in '%v'`, dbSnapshot.Spec)
 	}
 
 	labelMap := map[string]string{
 		amc.LabelDatabaseType:   DatabaseElasticsearch,
-		amc.LabelDatabaseName:   snapshot.Spec.DatabaseName,
+		amc.LabelDatabaseName:   dbSnapshot.Spec.DatabaseName,
 		amc.LabelSnapshotStatus: string(tapi.StatusSnapshotRunning),
 	}
 
-	snapshotList, err := s.ExtClient.DatabaseSnapshots(snapshot.Namespace).List(kapi.ListOptions{
+	snapshotList, err := s.ExtClient.DatabaseSnapshots(dbSnapshot.Namespace).List(kapi.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
 	})
 	if err != nil {
@@ -52,23 +52,22 @@ func (s *Snapshotter) Validate(snapshot *tapi.DatabaseSnapshot) error {
 
 	if len(snapshotList.Items) > 0 {
 		unversionedNow := unversioned.Now()
-		snapshot.Status.StartTime = &unversionedNow
-		snapshot.Status.CompletionTime = &unversionedNow
-		snapshot.Status.Status = tapi.StatusSnapshotFailed
-		snapshot.Status.Reason = "One DatabaseSnapshot is already Running"
-		if _, err := s.ExtClient.DatabaseSnapshots(snapshot.Namespace).Update(snapshot); err != nil {
+		dbSnapshot.Status.StartTime = &unversionedNow
+		dbSnapshot.Status.CompletionTime = &unversionedNow
+		dbSnapshot.Status.Status = tapi.StatusSnapshotFailed
+		dbSnapshot.Status.Reason = "One DatabaseSnapshot is already Running"
+		if _, err := s.ExtClient.DatabaseSnapshots(dbSnapshot.Namespace).Update(dbSnapshot); err != nil {
 			return err
 		}
 		return errors.New("One DatabaseSnapshot is already Running")
 	}
 
-	snapshotSpec := snapshot.Spec.SnapshotSpec
+	snapshotSpec := dbSnapshot.Spec.SnapshotSpec
 	if err := s.ValidateSnapshotSpec(snapshotSpec); err != nil {
 		return err
 	}
 
-	if err := s.CheckBucketAccess(snapshotSpec.BucketName, snapshotSpec.StorageSecret,
-		snapshot.Namespace); err != nil {
+	if err := s.CheckBucketAccess(dbSnapshot.Spec.SnapshotSpec, dbSnapshot.Namespace); err != nil {
 		return err
 	}
 	return nil
@@ -87,7 +86,7 @@ func (s *Snapshotter) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.J
 	}
 	backupSpec := snapshot.Spec.SnapshotSpec
 
-	elastic, err := s.ExtClient.Elastics(snapshot.Namespace).Get(snapshot.Name)
+	elastic, err := s.ExtClient.Elastics(snapshot.Namespace).Get(databaseName)
 	if err != nil {
 		return nil, err
 	}
@@ -156,14 +155,7 @@ func (s *Snapshotter) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.J
 }
 
 func (s *Snapshotter) DestroySnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {
-	folderName := DatabaseElasticsearch + "-" + dbSnapshot.Spec.DatabaseName
-	snapshotName := dbSnapshot.Namespace
-	bucketName := dbSnapshot.Spec.BucketName
-	if err := s.DeleteSnapshotData(
-		bucketName, folderName, snapshotName, dbSnapshot.Spec.StorageSecret, dbSnapshot.Namespace); err != nil {
-		return err
-	}
-	return nil
+	return s.DeleteSnapshotData(dbSnapshot)
 }
 
 func (s *Snapshotter) getVolumeForSnapshot(storage *tapi.StorageSpec, jobName, namespace string) (*kapi.Volume, error) {

@@ -2,12 +2,12 @@ package controller
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/appscode/log"
+	"github.com/ghodss/yaml"
 	"github.com/graymeta/stow"
 	_ "github.com/graymeta/stow/google"
 	_ "github.com/graymeta/stow/s3"
@@ -90,8 +90,8 @@ const (
 	keyConfig   = "config"
 )
 
-func (c *Controller) CheckBucketAccess(bucketName string, secretSource *kapi.SecretVolumeSource, namespace string) error {
-	secret, err := c.Client.Core().Secrets(namespace).Get(secretSource.SecretName)
+func (c *Controller) CheckBucketAccess(snapshotSpec tapi.SnapshotSpec, namespace string) error {
+	secret, err := c.Client.Core().Secrets(namespace).Get(snapshotSpec.StorageSecret.SecretName)
 	if err != nil {
 		return err
 	}
@@ -106,8 +106,8 @@ func (c *Controller) CheckBucketAccess(bucketName string, secretSource *kapi.Sec
 	}
 
 	var config stow.ConfigMap
-	if err := json.Unmarshal(configData, &config); err != nil {
-		return errors.New("Fail to Unmarshal config data")
+	if err := yaml.Unmarshal(configData, &config); err != nil {
+		return err
 	}
 
 	loc, err := stow.Dial(string(provider), config)
@@ -115,7 +115,7 @@ func (c *Controller) CheckBucketAccess(bucketName string, secretSource *kapi.Sec
 		return err
 	}
 
-	container, err := loc.Container(bucketName)
+	container, err := loc.Container(snapshotSpec.BucketName)
 	if err != nil {
 		return err
 	}
@@ -133,10 +133,12 @@ func (c *Controller) CheckBucketAccess(bucketName string, secretSource *kapi.Sec
 }
 
 func (c *Controller) CreateGoverningServiceAccount(name, namespace string) error {
-	if _, err := c.Client.Core().ServiceAccounts(namespace).Get(name); err != nil {
-		if !k8serr.IsNotFound(err) {
-			return err
-		}
+	var err error
+	if _, err = c.Client.Core().ServiceAccounts(namespace).Get(name); err == nil {
+		return nil
+	}
+	if !k8serr.IsNotFound(err) {
+		return err
 	}
 
 	serviceAccount := &kapi.ServiceAccount{
@@ -144,11 +146,11 @@ func (c *Controller) CreateGoverningServiceAccount(name, namespace string) error
 			Name: name,
 		},
 	}
-	_, err := c.Client.Core().ServiceAccounts(namespace).Create(serviceAccount)
+	_, err = c.Client.Core().ServiceAccounts(namespace).Create(serviceAccount)
 	return err
 }
 
-func (c *Controller) CheckStatefulSets(statefulSet *kapps.StatefulSet, checkDuration time.Duration) error {
+func (c *Controller) CheckStatefulSetPodStatus(statefulSet *kapps.StatefulSet, checkDuration time.Duration) error {
 	podName := fmt.Sprintf("%v-%v", statefulSet.Name, 0)
 
 	podReady := false
@@ -205,12 +207,8 @@ func (c *Controller) DeletePersistentVolumeClaims(namespace string, selector lab
 	return nil
 }
 
-func (c *Controller) DeleteSnapshotData(
-	bucketName, folderName, snapshotName string,
-	secretSource *kapi.SecretVolumeSource,
-	namespace string) error {
-
-	secret, err := c.Client.Core().Secrets(namespace).Get(secretSource.SecretName)
+func (c *Controller) DeleteSnapshotData(dbSnapshot *tapi.DatabaseSnapshot) error {
+	secret, err := c.Client.Core().Secrets(dbSnapshot.Namespace).Get(dbSnapshot.Spec.StorageSecret.SecretName)
 	if err != nil {
 		return err
 	}
@@ -225,8 +223,8 @@ func (c *Controller) DeleteSnapshotData(
 	}
 
 	var config stow.ConfigMap
-	if err := json.Unmarshal(configData, &config); err != nil {
-		return errors.New("Fail to Unmarshal config data")
+	if err := yaml.Unmarshal(configData, &config); err != nil {
+		return err
 	}
 
 	loc, err := stow.Dial(string(provider), config)
@@ -234,12 +232,13 @@ func (c *Controller) DeleteSnapshotData(
 		return err
 	}
 
-	container, err := loc.Container(bucketName)
+	container, err := loc.Container(dbSnapshot.Spec.BucketName)
 	if err != nil {
 		return err
 	}
 
-	prefix := fmt.Sprintf("%v/%v", folderName, snapshotName)
+	folderName := dbSnapshot.Labels[LabelDatabaseType] + "-" + dbSnapshot.Spec.DatabaseName
+	prefix := fmt.Sprintf("%v/%v", folderName, dbSnapshot.Name)
 	cursor := stow.CursorStart
 	for {
 		items, next, err := container.Items(prefix, cursor, 50)
@@ -247,7 +246,9 @@ func (c *Controller) DeleteSnapshotData(
 			return err
 		}
 		for _, item := range items {
-			container.RemoveItem(item.ID())
+			if err := container.RemoveItem(item.ID()); err != nil {
+				return err
+			}
 		}
 		cursor = next
 		if stow.IsCursorEnd(cursor) {
@@ -255,5 +256,23 @@ func (c *Controller) DeleteSnapshotData(
 		}
 	}
 
+	return nil
+}
+
+func (c *Controller) DeleteDatabaseSnapshots(namespace string, selector labels.Selector) error {
+	dbSnapshotList, err := c.ExtClient.DatabaseSnapshots(namespace).List(
+		kapi.ListOptions{
+			LabelSelector: selector,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, dbsnapshot := range dbSnapshotList.Items {
+		if err := c.ExtClient.DatabaseSnapshots(dbsnapshot.Namespace).Delete(dbsnapshot.Name); err != nil {
+			return err
+		}
+	}
 	return nil
 }

@@ -46,8 +46,9 @@ func NewEventRecorder(client clientset.Interface, component string) EventRecorde
 	broadcaster := record.NewBroadcaster()
 	broadcaster.StartEventWatcher(
 		func(event *kapi.Event) {
-			_, err := client.Core().Events(event.Namespace).Create(event)
-			log.Errorln(err)
+			if _, err := client.Core().Events(event.Namespace).Create(event); err != nil {
+				log.Errorln(err)
+			}
 		},
 	)
 	// Event Recorder

@@ -1,6 +1,6 @@
 ############################################
 #      Image for elasticsearch dump        #
-#  Image: appscode/elasticsearch:dump    #
+#  Image: appscode/elasticsearch:dump      #
 ############################################
 
 FROM appscode/python:2.7

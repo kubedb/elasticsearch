@@ -19,7 +19,6 @@ func NewDeleter(c *amc.Controller) amc.Deleter {
 }
 
 func (d *Deleter) Exists(deletedDb *tapi.DeletedDatabase) (bool, error) {
-
 	if _, err := d.ExtClient.Elastics(deletedDb.Namespace).Get(deletedDb.Name); err != nil {
 		if !k8serr.IsNotFound(err) {
 			return false, err
@@ -32,7 +31,7 @@ func (d *Deleter) Exists(deletedDb *tapi.DeletedDatabase) (bool, error) {
 
 func (d *Deleter) DeleteDatabase(deletedDb *tapi.DeletedDatabase) error {
 	// Delete Service
-	if err := d.deleteService(deletedDb.Namespace, deletedDb.Name); err != nil {
+	if err := d.deleteService(deletedDb.Name, deletedDb.Namespace); err != nil {
 		log.Errorln(err)
 		return err
 	}
@@ -46,13 +45,17 @@ func (d *Deleter) DeleteDatabase(deletedDb *tapi.DeletedDatabase) error {
 }
 
 func (d *Deleter) DestroyDatabase(deletedDb *tapi.DeletedDatabase) error {
-
 	labelMap := map[string]string{
 		amc.LabelDatabaseName: deletedDb.Name,
 		amc.LabelDatabaseType: DatabaseElasticsearch,
 	}
 
 	labelSelector := labels.SelectorFromSet(labelMap)
+
+	if err := d.DeleteDatabaseSnapshots(deletedDb.Namespace, labelSelector); err != nil {
+		log.Errorln(err)
+		return err
+	}
 
 	if err := d.DeletePersistentVolumeClaims(deletedDb.Namespace, labelSelector); err != nil {
 		log.Errorln(err)

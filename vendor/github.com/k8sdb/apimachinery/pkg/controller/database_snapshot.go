@@ -80,29 +80,30 @@ func (c *DatabaseSnapshotController) ensureThirdPartyResource() {
 	log.Infoln("Ensuring DatabaseSnapshot ThirdPartyResource")
 
 	resourceName := tapi.ResourceNameDatabaseSnapshot + "." + tapi.V1beta1SchemeGroupVersion.Group
+	var err error
+	if _, err = c.client.Extensions().ThirdPartyResources().Get(resourceName); err == nil {
+		return
+	}
+	if !k8serr.IsNotFound(err) {
+		log.Fatalln(err)
+	}
 
-	if _, err := c.client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
-		if !k8serr.IsNotFound(err) {
-			log.Fatalln(err)
-		}
-	} else {
-		thirdPartyResource := &extensions.ThirdPartyResource{
-			TypeMeta: unversioned.TypeMeta{
-				APIVersion: "extensions/v1beta1",
-				Kind:       "ThirdPartyResource",
+	thirdPartyResource := &extensions.ThirdPartyResource{
+		TypeMeta: unversioned.TypeMeta{
+			APIVersion: "extensions/v1beta1",
+			Kind:       "ThirdPartyResource",
+		},
+		ObjectMeta: kapi.ObjectMeta{
+			Name: resourceName,
+		},
+		Versions: []extensions.APIVersion{
+			{
+				Name: tapi.V1beta1SchemeGroupVersion.Version,
 			},
-			ObjectMeta: kapi.ObjectMeta{
-				Name: resourceName,
-			},
-			Versions: []extensions.APIVersion{
-				{
-					Name: tapi.V1beta1SchemeGroupVersion.Version,
-				},
-			},
-		}
-		if _, err := c.client.Extensions().ThirdPartyResources().Create(thirdPartyResource); err != nil {
-			log.Fatalln(err)
-		}
+		},
+	}
+	if _, err := c.client.Extensions().ThirdPartyResources().Create(thirdPartyResource); err != nil {
+		log.Fatalln(err)
 	}
 }
 
@@ -113,11 +114,7 @@ func (c *DatabaseSnapshotController) watch() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				dbSnapshot := obj.(*tapi.DatabaseSnapshot)
-				/*
-					TODO: set appropriate checking
-					We do not want to handle same TPR objects multiple times
-				*/
-				if true {
+				if dbSnapshot.Status.StartTime == nil {
 					c.create(dbSnapshot)
 				}
 			},
@@ -149,8 +146,15 @@ func (c *DatabaseSnapshotController) create(dbSnapshot *tapi.DatabaseSnapshot) {
 		return
 	}
 
+	dbSnapshot.Labels[LabelDatabaseName] = dbSnapshot.Spec.DatabaseName
+	if dbSnapshot, err = c.extClient.DatabaseSnapshots(dbSnapshot.Namespace).Update(dbSnapshot); err != nil {
+		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToGet, err.Error(), dbSnapshot)
+		log.Errorln(err)
+		return
+	}
+
 	c.eventRecorder.PushEvent(
-		kapi.EventTypeNormal, eventer.EventReasonStarting, "Starting backup",
+		kapi.EventTypeNormal, eventer.EventReasonStarting, "Backup running",
 		runtimeObj, dbSnapshot,
 	)
 
@@ -174,11 +178,6 @@ func (c *DatabaseSnapshotController) create(dbSnapshot *tapi.DatabaseSnapshot) {
 		log.Errorln(err)
 		return
 	}
-
-	c.eventRecorder.PushEvent(
-		kapi.EventTypeNormal, eventer.EventReasonSuccessfulSnapshot, "Successfully completed snapshot",
-		runtimeObj, dbSnapshot,
-	)
 
 	go c.checkDatabaseSnapshotJob(dbSnapshot, job.Name, durationCheckSnapshotJob)
 }
@@ -306,12 +305,27 @@ func (c *DatabaseSnapshotController) checkDatabaseSnapshotJob(dbSnapshot *tapi.D
 		return
 	}
 
+	runtimeObj, err := c.snapshoter.GetDatabase(dbSnapshot)
+	if err != nil {
+		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToGet, err.Error(), dbSnapshot)
+		log.Errorln(err)
+		return
+	}
+
 	unversionedNow = unversioned.Now()
 	dbSnapshot.Status.CompletionTime = &unversionedNow
 	if jobSuccess {
 		dbSnapshot.Status.Status = tapi.StatusSnapshotSuccessed
+		c.eventRecorder.PushEvent(
+			kapi.EventTypeNormal, eventer.EventReasonSuccessfulSnapshot, "Successfully completed snapshot",
+			runtimeObj, dbSnapshot,
+		)
 	} else {
 		dbSnapshot.Status.Status = tapi.StatusSnapshotFailed
+		c.eventRecorder.PushEvent(
+			kapi.EventTypeWarning, eventer.EventReasonSnapshotFailed, "Failed to complete snapshot",
+			runtimeObj, dbSnapshot,
+		)
 	}
 
 	delete(dbSnapshot.Labels, LabelSnapshotStatus)

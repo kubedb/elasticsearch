@@ -10,6 +10,7 @@ import (
 	"github.com/k8sdb/apimachinery/pkg/eventer"
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
 type elasticController struct {
@@ -17,8 +18,32 @@ type elasticController struct {
 }
 
 func (c *elasticController) create(elastic *tapi.Elastic) {
+	unversionedNow := unversioned.Now()
+	elastic.Status.Created = &unversionedNow
+	elastic.Status.DatabaseStatus = tapi.StatusDatabaseCreating
+	var err error
+	if elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+		message := fmt.Sprintf(`Fail to update Postgres: "%v". Reason: %v`, elastic.Name, err)
+		c.eventRecorder.PushEvent(
+			kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
+		)
+		log.Errorln(err)
+		return
+	}
+
 	if err := c.validateElastic(elastic); err != nil {
 		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonInvalid, err.Error(), elastic)
+
+		elastic.Status.DatabaseStatus = tapi.StatusDatabaseFailed
+		elastic.Status.Reason = err.Error()
+		if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+			message := fmt.Sprintf(`Fail to update Postgres: "%v". Reason: %v`, elastic.Name, err)
+			c.eventRecorder.PushEvent(
+				kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
+			)
+			log.Errorln(err)
+		}
+
 		log.Errorln(err)
 		return
 	}
@@ -28,6 +53,7 @@ func (c *elasticController) create(elastic *tapi.Elastic) {
 	)
 
 	// Check if DeletedDatabase exists or not
+	foundDeleteDb := false
 	deletedDb, err := c.ExtClient.DeletedDatabases(elastic.Namespace).Get(elastic.Name)
 	if err != nil {
 		if !k8serr.IsNotFound(err) {
@@ -64,6 +90,7 @@ func (c *elasticController) create(elastic *tapi.Elastic) {
 			log.Infoln(message)
 			return
 		}
+		foundDeleteDb = true
 	}
 
 	// Event for notification that kubernetes objects are creating
@@ -104,7 +131,7 @@ func (c *elasticController) create(elastic *tapi.Elastic) {
 
 	// Check StatefulSet Pod status
 	if elastic.Spec.Replicas > 0 {
-		if err := c.CheckStatefulSets(statefulSet, durationCheckStatefulSet); err != nil {
+		if err := c.CheckStatefulSetPodStatus(statefulSet, durationCheckStatefulSet); err != nil {
 			message := fmt.Sprintf(`Failed to create StatefulSet. Reason: %v`, err)
 			c.eventRecorder.PushEvent(
 				kapi.EventTypeWarning, eventer.EventReasonFailedToStart, message, elastic,
@@ -119,7 +146,7 @@ func (c *elasticController) create(elastic *tapi.Elastic) {
 		}
 	}
 
-	if deletedDb != nil {
+	if foundDeleteDb {
 		// Delete DeletedDatabase instance
 		if err := c.ExtClient.DeletedDatabases(deletedDb.Namespace).Delete(deletedDb.Name); err != nil {
 			message := fmt.Sprintf(`Failed to delete DeletedDatabase: "%v". Reason: %v`, deletedDb.Name, err)
@@ -192,7 +219,7 @@ func (c *elasticController) delete(elastic *tapi.Elastic) {
 		kapi.EventTypeNormal, eventer.EventReasonSuccessfulCreate, message, elastic,
 	)
 
-	c.cronController.StopScheduleBackup(elastic.ObjectMeta)
+	c.cronController.StopScheduledBackup(elastic.ObjectMeta)
 }
 
 func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
@@ -230,8 +257,7 @@ func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
 			}
 
 			if err := c.CheckBucketAccess(
-				backupScheduleSpec.BucketName, backupScheduleSpec.StorageSecret,
-				updatedElastic.Namespace); err != nil {
+				backupScheduleSpec.SnapshotSpec, updatedElastic.Namespace); err != nil {
 				c.eventRecorder.PushEvent(
 					kapi.EventTypeNormal, eventer.EventReasonInvalid, err.Error(), updatedElastic,
 				)
@@ -248,7 +274,7 @@ func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
 				log.Errorln(err)
 			}
 		} else {
-			c.cronController.StopScheduleBackup(oldElastic.ObjectMeta)
+			c.cronController.StopScheduledBackup(oldElastic.ObjectMeta)
 		}
 	}
 }

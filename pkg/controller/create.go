@@ -34,9 +34,6 @@ func (c *elasticController) checkService(name, namespace string) (bool, error) {
 			return false, err
 		}
 	}
-	if service == nil {
-		return false, nil
-	}
 
 	if service.Spec.Selector[amc.LabelDatabaseName] != name {
 		return false, fmt.Errorf(`Intended service "%v" already exists`, name)
@@ -87,7 +84,34 @@ func (c *elasticController) createService(name, namespace string) error {
 	return nil
 }
 
+func (c *elasticController) checkStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
+	// SatatefulSet for Postgres database
+	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, elastic.Name)
+	statefulSet, err := c.Client.Apps().StatefulSets(elastic.Namespace).Get(statefulSetName)
+	if err != nil {
+		if k8serr.IsNotFound(err) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	if statefulSet.Labels[amc.LabelDatabaseType] != DatabaseElasticsearch {
+		return nil, fmt.Errorf(`Intended statefulSet "%v" already exists`, statefulSetName)
+	}
+
+	return statefulSet, nil
+}
+
 func (c *elasticController) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
+	_statefulSet, err := c.checkStatefulSet(elastic)
+	if err != nil {
+		return nil, err
+	}
+	if _statefulSet != nil {
+		return _statefulSet, nil
+	}
+
 	// Set labels
 	if elastic.Labels == nil {
 		elastic.Labels = make(map[string]string)
