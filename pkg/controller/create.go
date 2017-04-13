@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ghodss/yaml"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	kapi "k8s.io/kubernetes/pkg/api"
@@ -279,6 +280,20 @@ func (w *elasticController) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.
 				amc.LabelDatabaseType: DatabaseElasticsearch,
 			},
 		},
+	}
+
+	_elastic := &tapi.Elastic{
+		ObjectMeta: kapi.ObjectMeta{
+			Labels:      elastic.Labels,
+			Annotations: elastic.Annotations,
+		},
+		Spec: elastic.Spec,
+	}
+	yamlDataByte, _ := yaml.Marshal(_elastic)
+	if yamlDataByte != nil {
+		deletedDb.Annotations = map[string]string{
+			DatabaseElasticsearch: string(yamlDataByte),
+		}
 	}
 	return w.ExtClient.DeletedDatabases(deletedDb.Namespace).Create(deletedDb)
 }
