@@ -22,15 +22,7 @@ const (
 	tagElasticDump          = "2.4.2-v2"
 )
 
-type Snapshotter struct {
-	*amc.Controller
-}
-
-func NewSnapshotter(c *amc.Controller) amc.Snapshotter {
-	return &Snapshotter{c}
-}
-
-func (s *Snapshotter) Validate(dbSnapshot *tapi.DatabaseSnapshot) error {
+func (c *Controller) Validate(dbSnapshot *tapi.DatabaseSnapshot) error {
 	// Database name can't empty
 	databaseName := dbSnapshot.Spec.DatabaseName
 	if databaseName == "" {
@@ -43,7 +35,7 @@ func (s *Snapshotter) Validate(dbSnapshot *tapi.DatabaseSnapshot) error {
 		amc.LabelSnapshotStatus: string(tapi.StatusSnapshotRunning),
 	}
 
-	snapshotList, err := s.ExtClient.DatabaseSnapshots(dbSnapshot.Namespace).List(kapi.ListOptions{
+	snapshotList, err := c.ExtClient.DatabaseSnapshots(dbSnapshot.Namespace).List(kapi.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
 	})
 	if err != nil {
@@ -56,28 +48,28 @@ func (s *Snapshotter) Validate(dbSnapshot *tapi.DatabaseSnapshot) error {
 		dbSnapshot.Status.CompletionTime = &unversionedNow
 		dbSnapshot.Status.Status = tapi.StatusSnapshotFailed
 		dbSnapshot.Status.Reason = "One DatabaseSnapshot is already Running"
-		if _, err := s.ExtClient.DatabaseSnapshots(dbSnapshot.Namespace).Update(dbSnapshot); err != nil {
+		if _, err := c.ExtClient.DatabaseSnapshots(dbSnapshot.Namespace).Update(dbSnapshot); err != nil {
 			return err
 		}
 		return errors.New("One DatabaseSnapshot is already Running")
 	}
 
 	snapshotSpec := dbSnapshot.Spec.SnapshotSpec
-	if err := s.ValidateSnapshotSpec(snapshotSpec); err != nil {
+	if err := c.ValidateSnapshotSpec(snapshotSpec); err != nil {
 		return err
 	}
 
-	if err := s.CheckBucketAccess(dbSnapshot.Spec.SnapshotSpec, dbSnapshot.Namespace); err != nil {
+	if err := c.CheckBucketAccess(dbSnapshot.Spec.SnapshotSpec, dbSnapshot.Namespace); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Snapshotter) GetDatabase(snapshot *tapi.DatabaseSnapshot) (runtime.Object, error) {
-	return s.ExtClient.Elastics(snapshot.Namespace).Get(snapshot.Spec.DatabaseName)
+func (c *Controller) GetDatabase(snapshot *tapi.DatabaseSnapshot) (runtime.Object, error) {
+	return c.ExtClient.Elastics(snapshot.Namespace).Get(snapshot.Spec.DatabaseName)
 }
 
-func (s *Snapshotter) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.Job, error) {
+func (c *Controller) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.Job, error) {
 	databaseName := snapshot.Spec.DatabaseName
 	jobName := rand.WithUniqSuffix(SnapshotProcess_Backup + "-" + databaseName)
 	jobLabel := map[string]string{
@@ -86,13 +78,13 @@ func (s *Snapshotter) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.J
 	}
 	backupSpec := snapshot.Spec.SnapshotSpec
 
-	elastic, err := s.ExtClient.Elastics(snapshot.Namespace).Get(databaseName)
+	elastic, err := c.ExtClient.Elastics(snapshot.Namespace).Get(databaseName)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	persistentVolume, err := s.getVolumeForSnapshot(elastic.Spec.Storage, jobName, snapshot.Namespace)
+	persistentVolume, err := c.getVolumeForSnapshot(elastic.Spec.Storage, jobName, snapshot.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -154,11 +146,11 @@ func (s *Snapshotter) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.J
 	return job, nil
 }
 
-func (s *Snapshotter) DestroySnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {
-	return s.DeleteSnapshotData(dbSnapshot)
+func (c *Controller) DestroySnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {
+	return c.DeleteSnapshotData(dbSnapshot)
 }
 
-func (s *Snapshotter) getVolumeForSnapshot(storage *tapi.StorageSpec, jobName, namespace string) (*kapi.Volume, error) {
+func (c *Controller) getVolumeForSnapshot(storage *tapi.StorageSpec, jobName, namespace string) (*kapi.Volume, error) {
 	volume := &kapi.Volume{
 		Name: "util-volume",
 	}
@@ -174,7 +166,7 @@ func (s *Snapshotter) getVolumeForSnapshot(storage *tapi.StorageSpec, jobName, n
 			Spec: storage.PersistentVolumeClaimSpec,
 		}
 
-		if _, err := s.Client.Core().PersistentVolumeClaims(claim.Namespace).Create(claim); err != nil {
+		if _, err := c.Client.Core().PersistentVolumeClaims(claim.Namespace).Create(claim); err != nil {
 			return nil, err
 		}
 
