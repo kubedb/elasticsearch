@@ -219,7 +219,7 @@ func (c *elasticController) delete(elastic *tapi.Elastic) {
 		kapi.EventTypeNormal, eventer.EventReasonSuccessfulCreate, message, elastic,
 	)
 
-	c.cronController.StopScheduledBackup(elastic.ObjectMeta)
+	c.cronController.StopBackupScheduling(elastic.ObjectMeta)
 }
 
 func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
@@ -274,7 +274,7 @@ func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
 				log.Errorln(err)
 			}
 		} else {
-			c.cronController.StopScheduledBackup(oldElastic.ObjectMeta)
+			c.cronController.StopBackupScheduling(oldElastic.ObjectMeta)
 		}
 	}
 }

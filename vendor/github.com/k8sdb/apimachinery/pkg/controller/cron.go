@@ -19,7 +19,7 @@ import (
 type CronControllerInterface interface {
 	StartCron()
 	ScheduleBackup(runtime.Object, kapi.ObjectMeta, *tapi.BackupScheduleSpec) error
-	StopScheduledBackup(kapi.ObjectMeta)
+	StopBackupScheduling(kapi.ObjectMeta)
 	StopCron()
 }
 
@@ -36,7 +36,7 @@ type cronController struct {
 
 /*
  NewCronController returns CronControllerInterface.
- You need to call StartCron() method to start Cron.
+ Need to call StartCron() method to start Cron.
 */
 func NewCronController(client clientset.Interface, extClient tcs.ExtensionInterface) CronControllerInterface {
 	return &cronController{
@@ -86,7 +86,7 @@ func (c *cronController) ScheduleBackup(
 	return nil
 }
 
-func (c *cronController) StopScheduledBackup(om kapi.ObjectMeta) {
+func (c *cronController) StopBackupScheduling(om kapi.ObjectMeta) {
 	// cronEntry name
 	cronEntryName := fmt.Sprintf("%v@%v", om.Name, om.Namespace)
 
