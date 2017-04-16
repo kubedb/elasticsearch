@@ -22,7 +22,7 @@ const (
 	tagElasticDump          = "2.4.2-v2"
 )
 
-func (c *Controller) Validate(dbSnapshot *tapi.DatabaseSnapshot) error {
+func (c *Controller) ValidateSnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {
 	// Database name can't empty
 	databaseName := dbSnapshot.Spec.DatabaseName
 	if databaseName == "" {
