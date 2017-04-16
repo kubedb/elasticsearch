@@ -14,7 +14,7 @@ source "$REPO_ROOT/hack/libbuild/common/lib.sh"
 source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
-IMG=k8ses
+IMG=k8s-es
 
 DIST=$GOPATH/src/github.com/k8sdb/elasticsearch/dist
 mkdir -p $DIST
@@ -23,36 +23,36 @@ if [ -f "$DIST/.tag" ]; then
 fi
 
 clean() {
-    pushd $REPO_ROOT/hack/docker/controller
-    rm -f k8ses Dockerfile
+    pushd $REPO_ROOT/hack/docker/k8s-es
+    rm -f k8s-es Dockerfile
     popd
 }
 
 build_binary() {
     pushd $REPO_ROOT
     ./hack/builddeps.sh
-    ./hack/make.py build k8ses
+    ./hack/make.py build k8s-es
     detect_tag $DIST/.tag
     popd
 }
 
 build_docker() {
-    pushd $REPO_ROOT/hack/docker/controller
-    cp $DIST/k8ses/k8ses-linux-amd64 k8ses
-    chmod 755 k8ses
+    pushd $REPO_ROOT/hack/docker/k8s-es
+    cp $DIST/k8s-es/k8s-es-linux-amd64 k8s-es
+    chmod 755 k8s-es
 
     cat >Dockerfile <<EOL
 FROM alpine
 
-COPY k8ses /k8ses
+COPY k8s-es /k8s-es
 
 USER nobody:nobody
-ENTRYPOINT ["/k8ses"]
+ENTRYPOINT ["/k8s-es"]
 EOL
     local cmd="docker build -t appscode/$IMG:$TAG ."
     echo $cmd; $cmd
 
-    rm k8ses Dockerfile
+    rm k8s-es Dockerfile
     popd
 }
 

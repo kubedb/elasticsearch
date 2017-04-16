@@ -38,7 +38,7 @@ from os.path import expandvars
 libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/k8sdb/elasticsearch'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
-    'k8ses': {
+    'k8s-es': {
         'type': 'go',
         'go_version': True,
         'use_cgo': False,
