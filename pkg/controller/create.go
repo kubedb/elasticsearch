@@ -318,6 +318,10 @@ func (w *Controller) reCreateElastic(elastic *tapi.Elastic) error {
 	return nil
 }
 
+const (
+	SnapshotProcess_Restore = "restore"
+)
+
 func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.DatabaseSnapshot) (*kbatch.Job, error) {
 
 	databaseName := elastic.Name

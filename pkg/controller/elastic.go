@@ -77,7 +77,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			// Set status to Failed
 			elastic.Status.DatabaseStatus = tapi.StatusDatabaseFailed
 			elastic.Status.Reason = message
-			if _, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+			if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 				message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
 				c.eventRecorder.PushEvent(
 					kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
