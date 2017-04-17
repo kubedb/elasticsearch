@@ -245,7 +245,6 @@ func (c *DatabaseSnapshotController) checkDatabaseSnapshotJob(dbSnapshot *tapi.D
 			)
 			log.Errorln(err)
 			return
-
 		}
 		log.Debugf("Pods Statuses:	%d Running / %d Succeeded / %d Failed",
 			job.Status.Active, job.Status.Succeeded, job.Status.Failed)
