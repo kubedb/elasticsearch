@@ -10,9 +10,19 @@ type StorageSpec struct {
 	api.PersistentVolumeClaimSpec `json:",inline,omitempty"`
 }
 
-type InitialScriptSpec struct {
+type InitSpec struct {
+	*ScriptSource   `json:",inline,omitempty"`
+	*SnapshotSource `json:",inline,omitempty"`
+}
+
+type ScriptSource struct {
 	ScriptPath       string `json:"scriptPath,omitempty"`
 	api.VolumeSource `json:",inline,omitempty"`
+}
+
+type SnapshotSource struct {
+	Namespace string `json:"namespace,omitempty"`
+	Name      string `json:"name,omitempty"`
 }
 
 type BackupScheduleSpec struct {

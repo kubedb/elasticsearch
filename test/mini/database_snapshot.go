@@ -24,7 +24,7 @@ func CreateDatabaseSnapshot(c *controller.Controller, namespace string, snapshot
 			Name:      rand.WithUniqSuffix("e2e-db-snapshot"),
 			Namespace: namespace,
 			Labels: map[string]string{
-				"k8sdb.com/type": "elasticsearch",
+				amc.LabelDatabaseType:   tapi.ResourceNameElastic,
 			},
 		},
 		Spec: snapshotSpec,

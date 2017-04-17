@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/appscode/go/crypto/rand"
 	"github.com/ghodss/yaml"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	kapi "k8s.io/kubernetes/pkg/api"
 	k8serr "k8s.io/kubernetes/pkg/api/errors"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
+	kbatch "k8s.io/kubernetes/pkg/apis/batch"
 	"k8s.io/kubernetes/pkg/util/intstr"
 )
 
@@ -314,4 +316,78 @@ func (w *Controller) reCreateElastic(elastic *tapi.Elastic) error {
 	}
 
 	return nil
+}
+
+func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.DatabaseSnapshot) (*kbatch.Job, error) {
+
+	databaseName := elastic.Name
+	jobName := rand.WithUniqSuffix(SnapshotProcess_Restore + "-" + databaseName)
+	jobLabel := map[string]string{
+		amc.LabelDatabaseName: databaseName,
+		amc.LabelJobType:      SnapshotProcess_Restore,
+	}
+	backupSpec := dbSnapshot.Spec.SnapshotSpec
+
+	// Get PersistentVolume object for Backup Util pod.
+	persistentVolume, err := w.getVolumeForSnapshot(elastic.Spec.Storage, jobName, elastic.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	// Folder name inside Cloud bucket where backup will be uploaded
+	folderName := tapi.ResourceNameElastic + "-" + dbSnapshot.Spec.DatabaseName
+
+	job := &kbatch.Job{
+		ObjectMeta: kapi.ObjectMeta{
+			Name:   jobName,
+			Labels: jobLabel,
+		},
+		Spec: kbatch.JobSpec{
+			Template: kapi.PodTemplateSpec{
+				ObjectMeta: kapi.ObjectMeta{
+					Labels: jobLabel,
+				},
+				Spec: kapi.PodSpec{
+					Containers: []kapi.Container{
+						{
+							Name:  SnapshotProcess_Restore,
+							Image: imageElasticDump + ":" + tagElasticDump,
+							Args: []string{
+								fmt.Sprintf(`--process=%s`, SnapshotProcess_Restore),
+								fmt.Sprintf(`--host=%s`, databaseName),
+								fmt.Sprintf(`--bucket=%s`, backupSpec.BucketName),
+								fmt.Sprintf(`--folder=%s`, folderName),
+								fmt.Sprintf(`--snapshot=%s`, dbSnapshot.Name),
+							},
+							VolumeMounts: []kapi.VolumeMount{
+								{
+									Name:      "cloud",
+									MountPath: storageSecretMountPath,
+								},
+								{
+									Name:      persistentVolume.Name,
+									MountPath: "/var/" + snapshotType_DumpBackup + "/",
+								},
+							},
+						},
+					},
+					Volumes: []kapi.Volume{
+						{
+							Name: "cloud",
+							VolumeSource: kapi.VolumeSource{
+								Secret: backupSpec.StorageSecret,
+							},
+						},
+						{
+							Name:         persistentVolume.Name,
+							VolumeSource: persistentVolume.VolumeSource,
+						},
+					},
+					RestartPolicy: kapi.RestartPolicyNever,
+				},
+			},
+		},
+	}
+
+	return w.Client.Batch().Jobs(elastic.Namespace).Create(job)
 }

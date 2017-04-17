@@ -17,6 +17,7 @@ import (
 const (
 	imageElasticDump        = "appscode/elasticdump"
 	SnapshotProcess_Backup  = "backup"
+	SnapshotProcess_Restore = "restore"
 	snapshotType_DumpBackup = "dump-backup"
 	storageSecretMountPath  = "/var/credentials/"
 	tagElasticDump          = "2.4.2-v2"

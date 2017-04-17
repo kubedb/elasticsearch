@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
@@ -142,6 +143,10 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 		}
 	}
 
+	if elastic.Spec.Init != nil {
+		c.initialize(elastic)
+	}
+
 	if foundDeleteDb {
 		// Delete DeletedDatabase instance
 		if err := c.ExtClient.DeletedDatabases(deletedDb.Namespace).Delete(deletedDb.Name); err != nil {
@@ -177,6 +182,36 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			log.Errorln(err)
 		}
 	}
+}
+
+const (
+	durationCheckRestoreJob = time.Minute * 30
+)
+
+func (c *Controller) initialize(elastic *tapi.Elastic) error {
+	init := elastic.Spec.Init
+	if init.SnapshotSource != nil {
+		// Event for notification that kubernetes objects are creating
+		c.eventRecorder.PushEvent(
+			kapi.EventTypeNormal, eventer.EventReasonInitializing,
+			fmt.Sprintf(`Initializing from DatabaseSnapshot: "%v"`, init.SnapshotSource.Name),
+			elastic,
+		)
+
+		snapshotSource := init.SnapshotSource
+		dbSnapshot, err := c.ExtClient.DatabaseSnapshots(snapshotSource.Namespace).Get(snapshotSource.Name)
+		if err != nil {
+			return err
+		}
+
+		job, err := c.createRestoreJob(elastic, dbSnapshot)
+		if err != nil {
+			return err
+		}
+
+		go c.CheckDatabaseRestoreJob(job.Name, job.Namespace, elastic, c.eventRecorder, durationCheckRestoreJob)
+	}
+	return nil
 }
 
 func (c *Controller) delete(elastic *tapi.Elastic) {
