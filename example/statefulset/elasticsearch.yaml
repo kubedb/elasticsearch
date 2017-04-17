@@ -16,7 +16,7 @@ spec:
         pod.beta.kubernetes.io/init-containers: '[
           {
             "name": "discover",
-            "image": "appscode/k8ses:0.1",
+            "image": "appscode/k8s-es:0.1",
             "imagePullPolicy": "IfNotPresent",
             "args": ["discover", "--service=elasticsearch-demo"],
             "env": [

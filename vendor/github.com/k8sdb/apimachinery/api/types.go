@@ -47,6 +47,8 @@ const (
 	StatusDatabaseRunning DatabaseStatus = "Running"
 	// used for Databases that are currently creating
 	StatusDatabaseCreating DatabaseStatus = "Creating"
+	// used for Databases that are currently initializing
+	StatusDatabaseInitializing DatabaseStatus = "Initializing"
 	// used for Databases that are Failed
 	StatusDatabaseFailed DatabaseStatus = "Failed"
 )

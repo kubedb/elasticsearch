@@ -18,15 +18,18 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	unversionedNow := unversioned.Now()
 	elastic.Status.Created = &unversionedNow
 	elastic.Status.DatabaseStatus = tapi.StatusDatabaseCreating
+
+	var _elastic *tapi.Elastic
 	var err error
-	if elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
-		message := fmt.Sprintf(`Fail to update Postgres: "%v". Reason: %v`, elastic.Name, err)
+	if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+		message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
 		c.eventRecorder.PushEvent(
 			kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
 		)
 		log.Errorln(err)
 		return
 	}
+	elastic = _elastic
 
 	if err := c.validateElastic(elastic); err != nil {
 		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonInvalid, err.Error(), elastic)
@@ -34,7 +37,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 		elastic.Status.DatabaseStatus = tapi.StatusDatabaseFailed
 		elastic.Status.Reason = err.Error()
 		if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
-			message := fmt.Sprintf(`Fail to update Postgres: "%v". Reason: %v`, elastic.Name, err)
+			message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
 			c.eventRecorder.PushEvent(
 				kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
 			)
@@ -74,7 +77,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			// Set status to Failed
 			elastic.Status.DatabaseStatus = tapi.StatusDatabaseFailed
 			elastic.Status.Reason = message
-			if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+			if _, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 				message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
 				c.eventRecorder.PushEvent(
 					kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
@@ -144,7 +147,23 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	}
 
 	if elastic.Spec.Init != nil {
-		c.initialize(elastic)
+		elastic.Status.DatabaseStatus = tapi.StatusDatabaseInitializing
+		if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+			message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
+			c.eventRecorder.PushEvent(
+				kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
+			)
+			log.Errorln(err)
+			return
+		}
+		elastic = _elastic
+
+		if err := c.initialize(elastic); err != nil {
+			message := fmt.Sprintf(`Failed to initialize. Reason: %v`, err)
+			c.eventRecorder.PushEvent(
+				kapi.EventTypeWarning, eventer.EventReasonFailedToInitialize, message, elastic,
+			)
+		}
 	}
 
 	if foundDeleteDb {
@@ -163,13 +182,14 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	}
 
 	elastic.Status.DatabaseStatus = tapi.StatusDatabaseRunning
-	if c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+	if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 		message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
 		c.eventRecorder.PushEvent(
 			kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
 		)
 		log.Errorln(err)
 	}
+	elastic = _elastic
 
 	// Setup Schedule backup
 	if elastic.Spec.BackupSchedule != nil {
@@ -199,7 +219,11 @@ func (c *Controller) initialize(elastic *tapi.Elastic) error {
 		)
 
 		snapshotSource := init.SnapshotSource
-		dbSnapshot, err := c.ExtClient.DatabaseSnapshots(snapshotSource.Namespace).Get(snapshotSource.Name)
+		namespace := snapshotSource.Namespace
+		if namespace == "" {
+			namespace = elastic.Namespace
+		}
+		dbSnapshot, err := c.ExtClient.DatabaseSnapshots(namespace).Get(snapshotSource.Name)
 		if err != nil {
 			return err
 		}
@@ -209,7 +233,18 @@ func (c *Controller) initialize(elastic *tapi.Elastic) error {
 			return err
 		}
 
-		go c.CheckDatabaseRestoreJob(job.Name, job.Namespace, elastic, c.eventRecorder, durationCheckRestoreJob)
+		jobSuccess := c.CheckDatabaseRestoreJob(job, elastic, c.eventRecorder, durationCheckRestoreJob)
+		if jobSuccess {
+			c.eventRecorder.PushEvent(
+				kapi.EventTypeNormal, eventer.EventReasonSuccessfulInitialize,
+				"Successfully completed initialization", elastic,
+			)
+		} else {
+			c.eventRecorder.PushEvent(
+				kapi.EventTypeWarning, eventer.EventReasonFailedToInitialize,
+				"Failed to complete initialization", elastic,
+			)
+		}
 	}
 	return nil
 }

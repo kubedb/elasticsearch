@@ -3,7 +3,7 @@ kind: DatabaseSnapshot
 metadata:
   name: snapshot-xyz
   labels:
-    "k8sdb.com/type": "elasticsearch"
+    "k8sdb.com/type": "elastic"
 spec:
   DatabaseName: elasticsearch-demo
   BucketName: ""

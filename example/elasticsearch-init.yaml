@@ -1,0 +1,9 @@
+apiVersion: k8sdb.com/v1beta1
+kind: Elastic
+metadata:
+  name: elasticsearch-demo
+spec:
+  Version: 2.3.1-v2.3
+  Replicas: 1
+  Init:
+    Name: snapshot-xyz

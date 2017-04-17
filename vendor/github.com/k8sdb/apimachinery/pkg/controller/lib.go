@@ -281,26 +281,24 @@ func (c *Controller) DeleteDatabaseSnapshots(namespace string, selector labels.S
 }
 
 func (c *Controller) CheckDatabaseRestoreJob(
-	jobName string,
-	jobNamespace string,
+	job *kbatch.Job,
 	runtimeObj runtime.Object,
 	recorder eventer.EventRecorderInterface,
 	checkDuration time.Duration,
-) {
+) bool {
 	var jobSuccess bool = false
-	var job *kbatch.Job
 	var err error
 
 	then := time.Now()
 	now := time.Now()
 	for now.Sub(then) < checkDuration {
-		log.Debugln("Checking for Job ", jobName)
-		job, err = c.Client.Batch().Jobs(jobNamespace).Get(jobName)
+		log.Debugln("Checking for Job ", job.Name)
+		job, err = c.Client.Batch().Jobs(job.Namespace).Get(job.Name)
 		if err != nil {
 			message := fmt.Sprintf(`Failed to get Job. Reason: %v`, err)
 			recorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToList, message, runtimeObj)
 			log.Errorln(err)
-			return
+			return jobSuccess
 		}
 		log.Debugf("Pods Statuses:	%d Running / %d Succeeded / %d Failed",
 			job.Status.Active, job.Status.Succeeded, job.Status.Failed)
@@ -325,7 +323,7 @@ func (c *Controller) CheckDatabaseRestoreJob(
 		message := fmt.Sprintf(`Failed to list Pods. Reason: %v`, err)
 		recorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToList, message, runtimeObj)
 		log.Errorln(err)
-		return
+		return jobSuccess
 	}
 
 	for _, pod := range podList.Items {
@@ -358,16 +356,5 @@ func (c *Controller) CheckDatabaseRestoreJob(
 		log.Errorln(err)
 	}
 
-	if jobSuccess {
-		recorder.PushEvent(
-			kapi.EventTypeNormal, eventer.EventReasonSuccessfulInitialize,
-			"Successfully completed initialization",
-			runtimeObj,
-		)
-	} else {
-		recorder.PushEvent(
-			kapi.EventTypeWarning, eventer.EventReasonFailedToInitialize, "Failed to complete initialization",
-			runtimeObj,
-		)
-	}
+	return jobSuccess
 }
