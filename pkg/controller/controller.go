@@ -34,12 +34,12 @@ type Controller struct {
 var _ amc.Snapshotter = &Controller{}
 var _ amc.Deleter = &Controller{}
 
-func New(c *rest.Config) *Controller {
-	controller := amc.NewController(c)
+func New(cfg *rest.Config) *Controller {
+	c := amc.NewController(cfg)
 	return &Controller{
-		Controller:     controller,
-		cronController: amc.NewCronController(controller.Client, controller.ExtClient),
-		eventRecorder:  eventer.NewEventRecorder(controller.Client, "Elastic Controller"),
+		Controller:     c,
+		cronController: amc.NewCronController(c.Client, c.ExtClient),
+		eventRecorder:  eventer.NewEventRecorder(c.Client, "Elastic Controller"),
 		syncPeriod:     time.Minute * 2,
 	}
 }
@@ -74,7 +74,6 @@ func (c *Controller) watchElastic() {
 		},
 	}
 
-	eController := &elasticController{c}
 	_, cacheController := cache.NewInformer(
 		lw,
 		&tapi.Elastic{},
@@ -83,11 +82,11 @@ func (c *Controller) watchElastic() {
 			AddFunc: func(obj interface{}) {
 				elastic := obj.(*tapi.Elastic)
 				if elastic.Status.Created == nil {
-					eController.create(elastic)
+					c.create(elastic)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				eController.delete(obj.(*tapi.Elastic))
+				c.delete(obj.(*tapi.Elastic))
 			},
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*tapi.Elastic)
@@ -99,7 +98,7 @@ func (c *Controller) watchElastic() {
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					eController.update(oldObj, newObj)
+					c.update(oldObj, newObj)
 				}
 			},
 		},

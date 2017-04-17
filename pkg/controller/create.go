@@ -26,7 +26,7 @@ const (
 	durationCheckStatefulSet = time.Minute * 30
 )
 
-func (c *elasticController) checkService(name, namespace string) (bool, error) {
+func (c *Controller) checkService(name, namespace string) (bool, error) {
 	service, err := c.Client.Core().Services(namespace).Get(name)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
@@ -43,7 +43,7 @@ func (c *elasticController) checkService(name, namespace string) (bool, error) {
 	return true, nil
 }
 
-func (c *elasticController) createService(name, namespace string) error {
+func (c *Controller) createService(name, namespace string) error {
 	// Check if service name exists
 	found, err := c.checkService(name, namespace)
 	if err != nil {
@@ -85,7 +85,7 @@ func (c *elasticController) createService(name, namespace string) error {
 	return nil
 }
 
-func (c *elasticController) checkStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
+func (c *Controller) checkStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
 	// SatatefulSet for Postgres database
 	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, elastic.Name)
 	statefulSet, err := c.Client.Apps().StatefulSets(elastic.Namespace).Get(statefulSetName)
@@ -104,7 +104,7 @@ func (c *elasticController) checkStatefulSet(elastic *tapi.Elastic) (*kapps.Stat
 	return statefulSet, nil
 }
 
-func (c *elasticController) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
+func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
 	_statefulSet, err := c.checkStatefulSet(elastic)
 	if err != nil {
 		return nil, err
@@ -271,7 +271,7 @@ func addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 	}
 }
 
-func (w *elasticController) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.DeletedDatabase, error) {
+func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.DeletedDatabase, error) {
 	deletedDb := &tapi.DeletedDatabase{
 		ObjectMeta: kapi.ObjectMeta{
 			Name:      elastic.Name,
@@ -298,7 +298,7 @@ func (w *elasticController) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.
 	return w.ExtClient.DeletedDatabases(deletedDb.Namespace).Create(deletedDb)
 }
 
-func (w *elasticController) reCreateElastic(elastic *tapi.Elastic) error {
+func (w *Controller) reCreateElastic(elastic *tapi.Elastic) error {
 	_elastic := &tapi.Elastic{
 		ObjectMeta: kapi.ObjectMeta{
 			Name:        elastic.Name,

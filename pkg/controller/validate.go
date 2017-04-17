@@ -6,7 +6,7 @@ import (
 	tapi "github.com/k8sdb/apimachinery/api"
 )
 
-func (c *elasticController) validateElastic(elastic *tapi.Elastic) error {
+func (c *Controller) validateElastic(elastic *tapi.Elastic) error {
 	if elastic.Spec.Version == "" {
 		return fmt.Errorf(`Object 'Version' is missing in '%v'`, elastic.Spec)
 	}

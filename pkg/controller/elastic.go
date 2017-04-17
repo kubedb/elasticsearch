@@ -13,11 +13,7 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-type elasticController struct {
-	*Controller
-}
-
-func (c *elasticController) create(elastic *tapi.Elastic) {
+func (c *Controller) create(elastic *tapi.Elastic) {
 	unversionedNow := unversioned.Now()
 	elastic.Status.Created = &unversionedNow
 	elastic.Status.DatabaseStatus = tapi.StatusDatabaseCreating
@@ -183,7 +179,7 @@ func (c *elasticController) create(elastic *tapi.Elastic) {
 	}
 }
 
-func (c *elasticController) delete(elastic *tapi.Elastic) {
+func (c *Controller) delete(elastic *tapi.Elastic) {
 
 	c.eventRecorder.PushEvent(
 		kapi.EventTypeNormal, eventer.EventReasonDeleting, "Deleting Elastic", elastic,
@@ -222,7 +218,7 @@ func (c *elasticController) delete(elastic *tapi.Elastic) {
 	c.cronController.StopBackupScheduling(elastic.ObjectMeta)
 }
 
-func (c *elasticController) update(oldElastic, updatedElastic *tapi.Elastic) {
+func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 	if (updatedElastic.Spec.Replicas != oldElastic.Spec.Replicas) && oldElastic.Spec.Replicas >= 0 {
 		statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, updatedElastic.Name)
 		statefulSet, err := c.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
