@@ -11,16 +11,16 @@ type StorageSpec struct {
 }
 
 type InitSpec struct {
-	*ScriptSource   `json:",inline,omitempty"`
-	*SnapshotSource `json:",inline,omitempty"`
+	ScriptSource   *ScriptSourceSpec   `json:"scriptSource,omitempty"`
+	SnapshotSource *SnapshotSourceSpec `json:"snapshotSource,omitempty"`
 }
 
-type ScriptSource struct {
+type ScriptSourceSpec struct {
 	ScriptPath       string `json:"scriptPath,omitempty"`
 	api.VolumeSource `json:",inline,omitempty"`
 }
 
-type SnapshotSource struct {
+type SnapshotSourceSpec struct {
 	Namespace string `json:"namespace,omitempty"`
 	Name      string `json:"name,omitempty"`
 }
