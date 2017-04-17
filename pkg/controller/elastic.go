@@ -146,7 +146,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 		}
 	}
 
-	if elastic.Spec.Init != nil {
+	if elastic.Spec.Init != nil && elastic.Spec.Init.SnapshotSource != nil {
 		elastic.Status.DatabaseStatus = tapi.StatusDatabaseInitializing
 		if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 			message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
@@ -209,42 +209,39 @@ const (
 )
 
 func (c *Controller) initialize(elastic *tapi.Elastic) error {
-	init := elastic.Spec.Init
-	if init.SnapshotSource != nil {
-		// Event for notification that kubernetes objects are creating
+	snapshotSource := elastic.Spec.Init.SnapshotSource
+	// Event for notification that kubernetes objects are creating
+	c.eventRecorder.PushEvent(
+		kapi.EventTypeNormal, eventer.EventReasonInitializing,
+		fmt.Sprintf(`Initializing from DatabaseSnapshot: "%v"`, snapshotSource.Name),
+		elastic,
+	)
+
+	namespace := snapshotSource.Namespace
+	if namespace == "" {
+		namespace = elastic.Namespace
+	}
+	dbSnapshot, err := c.ExtClient.DatabaseSnapshots(namespace).Get(snapshotSource.Name)
+	if err != nil {
+		return err
+	}
+
+	job, err := c.createRestoreJob(elastic, dbSnapshot)
+	if err != nil {
+		return err
+	}
+
+	jobSuccess := c.CheckDatabaseRestoreJob(job, elastic, c.eventRecorder, durationCheckRestoreJob)
+	if jobSuccess {
 		c.eventRecorder.PushEvent(
-			kapi.EventTypeNormal, eventer.EventReasonInitializing,
-			fmt.Sprintf(`Initializing from DatabaseSnapshot: "%v"`, init.SnapshotSource.Name),
-			elastic,
+			kapi.EventTypeNormal, eventer.EventReasonSuccessfulInitialize,
+			"Successfully completed initialization", elastic,
 		)
-
-		snapshotSource := init.SnapshotSource
-		namespace := snapshotSource.Namespace
-		if namespace == "" {
-			namespace = elastic.Namespace
-		}
-		dbSnapshot, err := c.ExtClient.DatabaseSnapshots(namespace).Get(snapshotSource.Name)
-		if err != nil {
-			return err
-		}
-
-		job, err := c.createRestoreJob(elastic, dbSnapshot)
-		if err != nil {
-			return err
-		}
-
-		jobSuccess := c.CheckDatabaseRestoreJob(job, elastic, c.eventRecorder, durationCheckRestoreJob)
-		if jobSuccess {
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeNormal, eventer.EventReasonSuccessfulInitialize,
-				"Successfully completed initialization", elastic,
-			)
-		} else {
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToInitialize,
-				"Failed to complete initialization", elastic,
-			)
-		}
+	} else {
+		c.eventRecorder.PushEvent(
+			kapi.EventTypeWarning, eventer.EventReasonFailedToInitialize,
+			"Failed to complete initialization", elastic,
+		)
 	}
 	return nil
 }

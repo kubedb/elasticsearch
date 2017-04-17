@@ -411,7 +411,7 @@ func TestInitialize(t *testing.T) {
 	fmt.Println("---- >> Creating elastic_init")
 	elastic_init := mini.NewElastic()
 	elastic_init.Spec.Init = &tapi.InitSpec{
-		SnapshotSource: &tapi.SnapshotSource{
+		SnapshotSource: &tapi.SnapshotSourceSpec{
 			Name: dbSnapshot.Name,
 		},
 	}
