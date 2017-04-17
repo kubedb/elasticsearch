@@ -67,7 +67,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			Destroy previous database and delete DeletedDatabase object
 			Or use different name for your new Elastic database
 		*/
-		if deletedDb.Labels[amc.LabelDatabaseType] != DatabaseElasticsearch {
+		if deletedDb.Labels[amc.LabelDatabaseType] != tapi.ResourceNameElastic {
 			message := fmt.Sprintf(`Invalid Elastic: "%v". Exists irrelevent DeletedDatabase: "%v"`,
 				elastic.Name, deletedDb.Name)
 			// Set status to Failed

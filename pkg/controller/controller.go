@@ -108,7 +108,7 @@ func (c *Controller) watchElastic() {
 
 func (c *Controller) watchDatabaseSnapshot() {
 	labelMap := map[string]string{
-		amc.LabelDatabaseType: DatabaseElasticsearch,
+		amc.LabelDatabaseType: tapi.ResourceNameElastic,
 	}
 	// Watch with label selector
 	lw := &cache.ListWatch{
@@ -131,7 +131,7 @@ func (c *Controller) watchDatabaseSnapshot() {
 
 func (c *Controller) watchDeletedDatabase() {
 	labelMap := map[string]string{
-		amc.LabelDatabaseType: DatabaseElasticsearch,
+		amc.LabelDatabaseType: tapi.ResourceNameElastic,
 	}
 	// Watch with label selector
 	lw := &cache.ListWatch{

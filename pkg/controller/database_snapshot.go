@@ -30,7 +30,7 @@ func (c *Controller) ValidateSnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {
 	}
 
 	labelMap := map[string]string{
-		amc.LabelDatabaseType:   DatabaseElasticsearch,
+		amc.LabelDatabaseType:   tapi.ResourceNameElastic,
 		amc.LabelDatabaseName:   dbSnapshot.Spec.DatabaseName,
 		amc.LabelSnapshotStatus: string(tapi.StatusSnapshotRunning),
 	}
@@ -90,7 +90,7 @@ func (c *Controller) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.Jo
 	}
 
 	// Folder name inside Cloud bucket where backup will be uploaded
-	folderName := DatabaseElasticsearch + "-" + databaseName
+	folderName := tapi.ResourceNameElastic + "-" + databaseName
 
 	job := &kbatch.Job{
 		ObjectMeta: kapi.ObjectMeta{

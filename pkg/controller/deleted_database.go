@@ -41,7 +41,7 @@ func (c *Controller) DeleteDatabase(deletedDb *tapi.DeletedDatabase) error {
 func (c *Controller) DestroyDatabase(deletedDb *tapi.DeletedDatabase) error {
 	labelMap := map[string]string{
 		amc.LabelDatabaseName: deletedDb.Name,
-		amc.LabelDatabaseType: DatabaseElasticsearch,
+		amc.LabelDatabaseType: tapi.ResourceNameElastic,
 	}
 
 	labelSelector := labels.SelectorFromSet(labelMap)
@@ -60,7 +60,7 @@ func (c *Controller) DestroyDatabase(deletedDb *tapi.DeletedDatabase) error {
 
 func (c *Controller) RecoverDatabase(deletedDb *tapi.DeletedDatabase) error {
 	var _elastic tapi.Elastic
-	if err := yaml.Unmarshal([]byte(deletedDb.Annotations[DatabaseElasticsearch]), &_elastic); err != nil {
+	if err := yaml.Unmarshal([]byte(deletedDb.Annotations[tapi.ResourceNameElastic]), &_elastic); err != nil {
 		return err
 	}
 	elastic := &tapi.Elastic{

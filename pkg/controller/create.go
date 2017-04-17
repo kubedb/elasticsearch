@@ -15,10 +15,9 @@ import (
 
 const (
 	annotationDatabaseVersion  = "elastic.k8sdb.com/version"
-	DatabaseElasticsearch      = "elasticsearch"
 	GoverningElasticsearch     = "governing-elasticsearch"
 	imageElasticsearch         = "appscode/elasticsearch"
-	imageOperatorElasticsearch = "appscode/k8ses"
+	imageOperatorElasticsearch = "appscode/k8s-es"
 	tagOperatorElasticsearch   = "0.1"
 	// Duration in Minute
 	// Check whether pod under StatefulSet is running or not
@@ -97,7 +96,7 @@ func (c *Controller) checkStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet
 		}
 	}
 
-	if statefulSet.Labels[amc.LabelDatabaseType] != DatabaseElasticsearch {
+	if statefulSet.Labels[amc.LabelDatabaseType] != tapi.ResourceNameElastic {
 		return nil, fmt.Errorf(`Intended statefulSet "%v" already exists`, statefulSetName)
 	}
 
@@ -117,7 +116,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 	if elastic.Labels == nil {
 		elastic.Labels = make(map[string]string)
 	}
-	elastic.Labels[amc.LabelDatabaseType] = DatabaseElasticsearch
+	elastic.Labels[amc.LabelDatabaseType] = tapi.ResourceNameElastic
 	// Set Annotations
 	if elastic.Annotations == nil {
 		elastic.Annotations = make(map[string]string)
@@ -153,7 +152,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 				Spec: kapi.PodSpec{
 					Containers: []kapi.Container{
 						{
-							Name:            DatabaseElasticsearch,
+							Name:            tapi.ResourceNameElastic,
 							Image:           dockerImage,
 							ImagePullPolicy: kapi.PullIfNotPresent,
 							Ports: []kapi.ContainerPort{
@@ -277,7 +276,7 @@ func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.Deleted
 			Name:      elastic.Name,
 			Namespace: elastic.Namespace,
 			Labels: map[string]string{
-				amc.LabelDatabaseType: DatabaseElasticsearch,
+				amc.LabelDatabaseType: tapi.ResourceNameElastic,
 			},
 		},
 	}
@@ -292,7 +291,7 @@ func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.Deleted
 	yamlDataByte, _ := yaml.Marshal(_elastic)
 	if yamlDataByte != nil {
 		deletedDb.Annotations = map[string]string{
-			DatabaseElasticsearch: string(yamlDataByte),
+			tapi.ResourceNameElastic: string(yamlDataByte),
 		}
 	}
 	return w.ExtClient.DeletedDatabases(deletedDb.Namespace).Create(deletedDb)
