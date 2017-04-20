@@ -49,7 +49,7 @@ COPY k8s-es /k8s-es
 USER nobody:nobody
 ENTRYPOINT ["/k8s-es"]
 EOL
-    local cmd="docker build -t appscode/$IMG:$TAG ."
+    local cmd="docker build -t k8sdb/$IMG:$TAG ."
     echo $cmd; $cmd
 
     rm k8s-es Dockerfile
