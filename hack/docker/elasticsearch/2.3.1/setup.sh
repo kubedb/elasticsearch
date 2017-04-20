@@ -8,10 +8,10 @@ GOPATH=$(go env GOPATH)
 REPO_ROOT=$GOPATH/src/github.com/k8sdb/elasticsearch
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
-source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
+source "$REPO_ROOT/hack/libbuild/common/k8sdb_image.sh"
 
 IMG=elasticsearch
-TAG=2.3.1-v2
+TAG=2.3.1
 
 DIST=$GOPATH/src/github.com/k8sdb/elasticsearch/dist
 mkdir -p $DIST
@@ -28,7 +28,7 @@ clean() {
 build_docker() {
     pushd $REPO_ROOT/hack/docker/elasticsearch/2.3.1
     cp -r ../lib .
-	local cmd="docker build -t appscode/$IMG:$TAG ."
+	local cmd="docker build -t k8sdb/$IMG:$TAG ."
 	echo $cmd; $cmd
     rm -r lib
 	popd

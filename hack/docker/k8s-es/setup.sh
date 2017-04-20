@@ -11,7 +11,7 @@ ROOT=$GOPATH
 REPO_ROOT=$GOPATH/src/github.com/k8sdb/elasticsearch
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
-source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
+source "$REPO_ROOT/hack/libbuild/common/k8sdb_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=k8s-es
@@ -66,10 +66,7 @@ docker_push() {
         echo "Nothing to do in prod env. Are you trying to 'release' binaries to prod?"
         exit 0
     fi
-
-    if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
-        docker_up $IMG:$TAG
-    fi
+    hub_canary k8sdb
 }
 
 docker_release() {
@@ -81,10 +78,7 @@ docker_release() {
         echo "'apply_tag' to release binaries and/or docker images."
         exit 1
     fi
-
-    if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
-        docker push appscode/$IMG:$TAG
-    fi
+    hub_up k8sdb
 }
 
 source_repo $@
