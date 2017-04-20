@@ -81,7 +81,7 @@ func (c *Controller) watchElastic() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				elastic := obj.(*tapi.Elastic)
-				if elastic.Status.CreateTime == nil {
+				if elastic.Status.CreationTime == nil {
 					c.create(elastic)
 				}
 			},
