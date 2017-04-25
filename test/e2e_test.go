@@ -252,7 +252,7 @@ func TestDatabaseSnapshot(t *testing.T) {
 	}
 }
 
-func TestDeletedDatabase(t *testing.T) {
+func TestDatabaseRecovery(t *testing.T) {
 	controller, err := getController()
 	if !assert.Nil(t, err) {
 		return

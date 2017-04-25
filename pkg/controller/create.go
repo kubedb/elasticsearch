@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
-	"github.com/ghodss/yaml"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	kapi "k8s.io/kubernetes/pkg/api"
@@ -281,20 +280,14 @@ func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.Deleted
 				amc.LabelDatabaseType: tapi.ResourceNameElastic,
 			},
 		},
-	}
-
-	_elastic := &tapi.Elastic{
-		ObjectMeta: kapi.ObjectMeta{
-			Labels:      elastic.Labels,
-			Annotations: elastic.Annotations,
+		Spec: tapi.DeletedDatabaseSpec{
+			Origin: tapi.Origin{
+				ObjectMeta: elastic.ObjectMeta,
+				Spec: tapi.OriginSpec{
+					Elastic: &elastic.Spec,
+				},
+			},
 		},
-		Spec: elastic.Spec,
-	}
-	yamlDataByte, _ := yaml.Marshal(_elastic)
-	if yamlDataByte != nil {
-		deletedDb.Annotations = map[string]string{
-			tapi.ResourceNameElastic: string(yamlDataByte),
-		}
 	}
 	return w.ExtClient.DeletedDatabases(deletedDb.Namespace).Create(deletedDb)
 }

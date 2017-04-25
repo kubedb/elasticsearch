@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/appscode/log"
-	"github.com/ghodss/yaml"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	kapi "k8s.io/kubernetes/pkg/api"
@@ -59,20 +58,17 @@ func (c *Controller) DestroyDatabase(deletedDb *tapi.DeletedDatabase) error {
 }
 
 func (c *Controller) RecoverDatabase(deletedDb *tapi.DeletedDatabase) error {
-	var _elastic tapi.Elastic
-	if err := yaml.Unmarshal([]byte(deletedDb.Annotations[tapi.ResourceNameElastic]), &_elastic); err != nil {
-		return err
-	}
+	origin := deletedDb.Spec.Origin
+	objectMeta := origin.ObjectMeta
 	elastic := &tapi.Elastic{
 		ObjectMeta: kapi.ObjectMeta{
-			Name:        deletedDb.Name,
-			Namespace:   deletedDb.Namespace,
-			Labels:      _elastic.Labels,
-			Annotations: _elastic.Annotations,
+			Name:        objectMeta.Name,
+			Namespace:   objectMeta.Namespace,
+			Labels:      objectMeta.Labels,
+			Annotations: objectMeta.Annotations,
 		},
-		Spec: _elastic.Spec,
+		Spec: *origin.Spec.Elastic,
 	}
-
-	_, err := c.ExtClient.Elastics(deletedDb.Namespace).Create(elastic)
+	_, err := c.ExtClient.Elastics(elastic.Namespace).Create(elastic)
 	return err
 }
