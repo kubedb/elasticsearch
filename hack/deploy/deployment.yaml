@@ -1,0 +1,23 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: k8sdb-elasticsearch
+  name: k8sdb-elasticsearch
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: k8sdb-elasticsearch
+  template:
+    metadata:
+      labels:
+        run: k8sdb-elasticsearch
+    spec:
+      containers:
+      - name: k8sdb-es
+        image: k8sdb/k8s-es:canary
+        args:
+        - run
+        - --v=4
