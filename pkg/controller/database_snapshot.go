@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	imageElasticDump        = "appscode/elasticdump"
+	imageElasticDump        = "k8sdb/elasticdump"
 	SnapshotProcess_Backup  = "backup"
 	snapshotType_DumpBackup = "dump-backup"
 	storageSecretMountPath  = "/var/credentials/"
-	tagElasticDump          = "2.4.2-v2"
+	tagElasticDump          = "canary"
 )
 
 func (c *Controller) ValidateSnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {

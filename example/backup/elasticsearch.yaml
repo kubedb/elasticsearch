@@ -3,7 +3,7 @@ kind: Elastic
 metadata:
   name: elasticsearch-demo
 spec:
-  Version: 2.3.1-v2.2
+  Version: canary
   Replicas: 1
   BackupSchedule:
     CronExpression: "@every 6h"

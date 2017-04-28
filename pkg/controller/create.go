@@ -17,9 +17,9 @@ import (
 const (
 	annotationDatabaseVersion  = "elastic.k8sdb.com/version"
 	GoverningElasticsearch     = "governing-elasticsearch"
-	imageElasticsearch         = "appscode/elasticsearch"
-	imageOperatorElasticsearch = "appscode/k8s-es"
-	tagOperatorElasticsearch   = "0.1"
+	imageElasticsearch         = "k8sdb/elasticsearch"
+	imageOperatorElasticsearch = "k8sdb/k8s-es"
+	tagOperatorElasticsearch   = "canary"
 	// Duration in Minute
 	// Check whether pod under StatefulSet is running or not
 	// Continue checking for this duration until failure

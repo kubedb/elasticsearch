@@ -16,7 +16,7 @@ spec:
         pod.beta.kubernetes.io/init-containers: '[
           {
             "name": "discover",
-            "image": "appscode/k8s-es:0.1",
+            "image": "k8sdb/k8s-es:canary",
             "imagePullPolicy": "IfNotPresent",
             "args": ["discover", "--service=elasticsearch-demo"],
             "env": [
@@ -43,7 +43,7 @@ spec:
         elastic.k8sdb.com/name: elasticsearch-demo
     spec:
       containers:
-      - image: appscode/elasticsearch:2.3.1-v2.3
+      - image: k8sdb/elasticsearch:canary
         imagePullPolicy: IfNotPresent
         name: elasticsearch
         env:
