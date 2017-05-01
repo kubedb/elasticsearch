@@ -27,9 +27,9 @@ type Controller struct {
 	cronController amc.CronControllerInterface
 	// Event Recorder
 	eventRecorder eventer.EventRecorderInterface
-	// Tag of k8sdb/k8s-es image
+	// Tag of elasticsearch opearator
 	operatorTag string
-	// Tag of k8sdb/elasticdump image
+	// Tag of elasticdump
 	elasticDumpTag string
 	// sync time to sync the list.
 	syncPeriod time.Duration

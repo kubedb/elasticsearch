@@ -38,7 +38,6 @@ func NewCmdRun() *cobra.Command {
 
 			w := controller.New(config, operatorTag, elasticDumpTag)
 			fmt.Println("Starting operator...")
-
 			w.RunAndHold()
 		},
 	}
