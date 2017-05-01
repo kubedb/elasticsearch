@@ -49,8 +49,8 @@ func NewCmdRun() *cobra.Command {
 
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&operatorTag, "operator-tag", operatorVersion, "Tag of elasticsearch opearator")
-	cmd.Flags().StringVar(&elasticDumpTag, "elasticdump-tag", canary, "Tag of elasticdump")
+	cmd.Flags().StringVar(&operatorTag, "operator", operatorVersion, "Tag of elasticsearch opearator")
+	cmd.Flags().StringVar(&elasticDumpTag, "elasticdump", canary, "Tag of elasticdump")
 
 	return cmd
 }
