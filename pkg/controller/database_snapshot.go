@@ -19,7 +19,6 @@ const (
 	SnapshotProcess_Backup  = "backup"
 	snapshotType_DumpBackup = "dump-backup"
 	storageSecretMountPath  = "/var/credentials/"
-	tagElasticDump          = "canary"
 )
 
 func (c *Controller) ValidateSnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {
@@ -106,7 +105,7 @@ func (c *Controller) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.Jo
 					Containers: []kapi.Container{
 						{
 							Name:  SnapshotProcess_Backup,
-							Image: imageElasticDump + ":" + tagElasticDump,
+							Image: imageElasticDump + ":" + c.elasticDumpTag,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Backup),
 								fmt.Sprintf(`--host=%s`, databaseName),

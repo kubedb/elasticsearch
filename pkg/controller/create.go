@@ -19,7 +19,6 @@ const (
 	GoverningElasticsearch     = "governing-elasticsearch"
 	imageElasticsearch         = "k8sdb/elasticsearch"
 	imageOperatorElasticsearch = "k8sdb/k8s-es"
-	tagOperatorElasticsearch   = "canary"
 	// Duration in Minute
 	// Check whether pod under StatefulSet is running or not
 	// Continue checking for this duration until failure
@@ -131,7 +130,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 	podLabels[amc.LabelDatabaseName] = elastic.Name
 
 	dockerImage := fmt.Sprintf("%v:%v", imageElasticsearch, elastic.Spec.Version)
-	initContainerImage := fmt.Sprintf("%v:%v", imageOperatorElasticsearch, tagOperatorElasticsearch)
+	initContainerImage := fmt.Sprintf("%v:%v", imageOperatorElasticsearch, c.operatorTag)
 
 	// SatatefulSet for Elastic database
 	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, elastic.Name)
@@ -349,7 +348,7 @@ func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.Da
 					Containers: []kapi.Container{
 						{
 							Name:  SnapshotProcess_Restore,
-							Image: imageElasticDump + ":" + tagElasticDump,
+							Image: imageElasticDump + ":" + w.operatorTag,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Restore),
 								fmt.Sprintf(`--host=%s`, databaseName),

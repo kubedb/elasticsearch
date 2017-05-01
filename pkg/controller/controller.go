@@ -27,6 +27,10 @@ type Controller struct {
 	cronController amc.CronControllerInterface
 	// Event Recorder
 	eventRecorder eventer.EventRecorderInterface
+	// Tag of k8sdb/k8s-es image
+	operatorTag string
+	// Tag of k8sdb/elasticdump image
+	elasticDumpTag string
 	// sync time to sync the list.
 	syncPeriod time.Duration
 }
@@ -34,12 +38,14 @@ type Controller struct {
 var _ amc.Snapshotter = &Controller{}
 var _ amc.Deleter = &Controller{}
 
-func New(cfg *rest.Config) *Controller {
+func New(cfg *rest.Config, operatorTag, elasticDumpTag string) *Controller {
 	c := amc.NewController(cfg)
 	return &Controller{
 		Controller:     c,
 		cronController: amc.NewCronController(c.Client, c.ExtClient),
 		eventRecorder:  eventer.NewEventRecorder(c.Client, "Elastic Controller"),
+		operatorTag:    operatorTag,
+		elasticDumpTag: elasticDumpTag,
 		syncPeriod:     time.Minute * 2,
 	}
 }

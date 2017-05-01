@@ -4,16 +4,24 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/appscode/go/version"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/util/runtime"
 )
 
+const (
+	// Default tag
+	canary = "canary"
+)
+
 func NewCmdRun() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
+		operatorTag    string
+		elasticDumpTag string
 	)
 
 	cmd := &cobra.Command{
@@ -28,13 +36,22 @@ func NewCmdRun() *cobra.Command {
 			}
 			defer runtime.HandleCrash()
 
-			w := controller.New(config)
+			w := controller.New(config, operatorTag, elasticDumpTag)
 			fmt.Println("Starting operator...")
+
 			w.RunAndHold()
 		},
 	}
+
+	operatorVersion := version.Version.Version
+	if operatorVersion == "" {
+		operatorVersion = canary
+	}
+
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().StringVar(&operatorTag, "operator-tag", operatorVersion, "Tag of elasticsearch opearator")
+	cmd.Flags().StringVar(&elasticDumpTag, "elasticdump-tag", canary, "Tag of elasticdump")
 
 	return cmd
 }

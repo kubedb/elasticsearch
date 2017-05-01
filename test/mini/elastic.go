@@ -21,7 +21,7 @@ func NewElastic() *tapi.Elastic {
 			Name:      rand.WithUniqSuffix("e2e-elastic"),
 		},
 		Spec: tapi.ElasticSpec{
-			Version: "2.3.1-v2.3",
+			Version: "canary",
 			Replicas: 1,
 		},
 	}
