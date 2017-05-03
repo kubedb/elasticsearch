@@ -21,9 +21,13 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	var _elastic *tapi.Elastic
 	var err error
 	if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
-		message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
-		c.eventRecorder.PushEvent(
-			kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
+		c.eventRecorder.Eventf(
+			elastic,
+			kapi.EventTypeWarning,
+			eventer.EventReasonFailedToUpdate,
+			`Fail to update Elastic: "%v". Reason: %v`,
+			elastic.Name,
+			err,
 		)
 		log.Errorln(err)
 		return
@@ -31,14 +35,18 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	elastic = _elastic
 
 	if err := c.validateElastic(elastic); err != nil {
-		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonInvalid, err.Error(), elastic)
+		c.eventRecorder.Event(elastic, kapi.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
 
 		elastic.Status.Phase = tapi.DatabasePhaseFailed
 		elastic.Status.Reason = err.Error()
 		if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
-			message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				`Fail to update Elastic: "%v". Reason: %v`,
+				elastic.Name,
+				err,
 			)
 			log.Errorln(err)
 		}
@@ -47,8 +55,11 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 		return
 	}
 	// Event for successful validation
-	c.eventRecorder.PushEvent(
-		kapi.EventTypeNormal, eventer.EventReasonSuccessfulValidate, "Successfully validate Elastic", elastic,
+	c.eventRecorder.Event(
+		elastic,
+		kapi.EventTypeNormal,
+		eventer.EventReasonSuccessfulValidate,
+		"Successfully validate Elastic",
 	)
 
 	// Check if DeletedDatabase exists or not
@@ -56,8 +67,14 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	deletedDb, err := c.ExtClient.DeletedDatabases(elastic.Namespace).Get(elastic.Name)
 	if err != nil {
 		if !k8serr.IsNotFound(err) {
-			message := fmt.Sprintf(`Fail to get DeletedDatabase: "%v". Reason: %v`, elastic.Name, err)
-			c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToGet, message, elastic)
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToGet,
+				`Fail to get DeletedDatabase: "%v". Reason: %v`,
+				elastic.Name,
+				err,
+			)
 			log.Errorln(err)
 			return
 		}
@@ -79,14 +96,21 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			elastic.Status.Phase = tapi.DatabasePhaseFailed
 			elastic.Status.Reason = message
 			if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
-				message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
-				c.eventRecorder.PushEvent(
-					kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
+				c.eventRecorder.Eventf(
+					elastic,
+					kapi.EventTypeWarning,
+					eventer.EventReasonFailedToUpdate,
+					`Fail to update Elastic: "%v". Reason: %v`,
+					elastic.Name,
+					err,
 				)
 				log.Errorln(err)
 			}
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToCreate, message, elastic,
+			c.eventRecorder.Event(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				message,
 			)
 			log.Infoln(message)
 			return
@@ -94,8 +118,11 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	}
 
 	// Event for notification that kubernetes objects are creating
-	c.eventRecorder.PushEvent(
-		kapi.EventTypeNormal, eventer.EventReasonCreating, "Creating Kubernetes objects", elastic,
+	c.eventRecorder.Event(
+		elastic,
+		kapi.EventTypeNormal,
+		eventer.EventReasonCreating,
+		"Creating Kubernetes objects",
 	)
 
 	// create Governing Service
@@ -105,8 +132,14 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	}
 
 	if err := c.CreateGoverningServiceAccount(governingService, elastic.Namespace); err != nil {
-		message := fmt.Sprintf(`Failed to create ServiceAccount: "%v". Reason: %v`, governingService, err)
-		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToCreate, message, elastic)
+		c.eventRecorder.Eventf(
+			elastic,
+			kapi.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			`Failed to create ServiceAccount: "%v". Reason: %v`,
+			governingService,
+			err,
+		)
 		log.Errorln(err)
 		return
 	}
@@ -114,8 +147,13 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 
 	// create database Service
 	if err := c.createService(elastic.Name, elastic.Namespace); err != nil {
-		message := fmt.Sprintf(`Failed to create Service. Reason: %v`, err)
-		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToCreate, message, elastic)
+		c.eventRecorder.Eventf(
+			elastic,
+			kapi.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			"Failed to create Service. Reason: %v",
+			err,
+		)
 		log.Errorln(err)
 		return
 	}
@@ -123,8 +161,13 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	// Create statefulSet for Elastic database
 	statefulSet, err := c.createStatefulSet(elastic)
 	if err != nil {
-		message := fmt.Sprintf(`Failed to create StatefulSet. Reason: %v`, err)
-		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonFailedToCreate, message, elastic)
+		c.eventRecorder.Eventf(
+			elastic,
+			kapi.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			"Failed to create StatefulSet. Reason: %v",
+			err,
+		)
 		log.Errorln(err)
 		return
 	}
@@ -132,16 +175,21 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	// Check StatefulSet Pod status
 	if elastic.Spec.Replicas > 0 {
 		if err := c.CheckStatefulSetPodStatus(statefulSet, durationCheckStatefulSet); err != nil {
-			message := fmt.Sprintf(`Failed to create StatefulSet. Reason: %v`, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToStart, message, elastic,
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToStart,
+				"Failed to create StatefulSet. Reason: %v",
+				err,
 			)
 			log.Errorln(err)
 			return
 		} else {
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeNormal, eventer.EventReasonSuccessfulCreate, "Successfully created Elastic",
+			c.eventRecorder.Event(
 				elastic,
+				kapi.EventTypeNormal,
+				eventer.EventReasonSuccessfulCreate,
+				"Successfully created Elastic",
 			)
 		}
 	}
@@ -149,9 +197,13 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	if elastic.Spec.Init != nil && elastic.Spec.Init.SnapshotSource != nil {
 		elastic.Status.Phase = tapi.DatabasePhaseInitializing
 		if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
-			message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				`Fail to update Elastic: "%v". Reason: %v`,
+				elastic.Name,
+				err,
 			)
 			log.Errorln(err)
 			return
@@ -159,9 +211,12 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 		elastic = _elastic
 
 		if err := c.initialize(elastic); err != nil {
-			message := fmt.Sprintf(`Failed to initialize. Reason: %v`, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToInitialize, message, elastic,
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToInitialize,
+				"Failed to initialize. Reason: %v",
+				err,
 			)
 		}
 	}
@@ -169,23 +224,34 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	if recovering {
 		// Delete DeletedDatabase instance
 		if err := c.ExtClient.DeletedDatabases(deletedDb.Namespace).Delete(deletedDb.Name); err != nil {
-			message := fmt.Sprintf(`Failed to delete DeletedDatabase: "%v". Reason: %v`, deletedDb.Name, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToDelete, message, elastic,
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToDelete,
+				`Failed to delete DeletedDatabase: "%v". Reason: %v`,
+				deletedDb.Name,
+				err,
 			)
 			log.Errorln(err)
 		}
-		message := fmt.Sprintf(`Successfully deleted DeletedDatabase: "%v"`, deletedDb.Name)
-		c.eventRecorder.PushEvent(
-			kapi.EventTypeNormal, eventer.EventReasonSuccessfulDelete, message, elastic,
+		c.eventRecorder.Eventf(
+			elastic,
+			kapi.EventTypeNormal,
+			eventer.EventReasonSuccessfulDelete,
+			`Successfully deleted DeletedDatabase: "%v"`,
+			deletedDb.Name,
 		)
 	}
 
 	elastic.Status.Phase = tapi.DatabasePhaseRunning
 	if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
-		message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
-		c.eventRecorder.PushEvent(
-			kapi.EventTypeWarning, eventer.EventReasonFailedToUpdate, message, elastic,
+		c.eventRecorder.Eventf(
+			elastic,
+			kapi.EventTypeWarning,
+			eventer.EventReasonFailedToUpdate,
+			`Fail to update Elastic: "%v". Reason: %v`,
+			elastic.Name,
+			err,
 		)
 		log.Errorln(err)
 	}
@@ -195,9 +261,12 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	if elastic.Spec.BackupSchedule != nil {
 		err := c.cronController.ScheduleBackup(elastic, elastic.ObjectMeta, elastic.Spec.BackupSchedule)
 		if err != nil {
-			message := fmt.Sprintf(`Failed to schedule snapshot. Reason: %v`, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToSchedule, message, elastic,
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToSchedule,
+				"Failed to schedule snapshot. Reason: %v",
+				err,
 			)
 			log.Errorln(err)
 		}
@@ -211,10 +280,12 @@ const (
 func (c *Controller) initialize(elastic *tapi.Elastic) error {
 	snapshotSource := elastic.Spec.Init.SnapshotSource
 	// Event for notification that kubernetes objects are creating
-	c.eventRecorder.PushEvent(
-		kapi.EventTypeNormal, eventer.EventReasonInitializing,
-		fmt.Sprintf(`Initializing from DatabaseSnapshot: "%v"`, snapshotSource.Name),
+	c.eventRecorder.Eventf(
 		elastic,
+		kapi.EventTypeNormal,
+		eventer.EventReasonInitializing,
+		`Initializing from DatabaseSnapshot: "%v"`,
+		snapshotSource.Name,
 	)
 
 	namespace := snapshotSource.Namespace
@@ -233,14 +304,18 @@ func (c *Controller) initialize(elastic *tapi.Elastic) error {
 
 	jobSuccess := c.CheckDatabaseRestoreJob(job, elastic, c.eventRecorder, durationCheckRestoreJob)
 	if jobSuccess {
-		c.eventRecorder.PushEvent(
-			kapi.EventTypeNormal, eventer.EventReasonSuccessfulInitialize,
-			"Successfully completed initialization", elastic,
+		c.eventRecorder.Event(
+			elastic,
+			kapi.EventTypeNormal,
+			eventer.EventReasonSuccessfulInitialize,
+			"Successfully completed initialization",
 		)
 	} else {
-		c.eventRecorder.PushEvent(
-			kapi.EventTypeWarning, eventer.EventReasonFailedToInitialize,
-			"Failed to complete initialization", elastic,
+		c.eventRecorder.Event(
+			elastic,
+			kapi.EventTypeWarning,
+			eventer.EventReasonFailedToInitialize,
+			"Failed to complete initialization",
 		)
 	}
 	return nil
@@ -248,20 +323,25 @@ func (c *Controller) initialize(elastic *tapi.Elastic) error {
 
 func (c *Controller) delete(elastic *tapi.Elastic) {
 
-	c.eventRecorder.PushEvent(
-		kapi.EventTypeNormal, eventer.EventReasonDeleting, "Deleting Elastic", elastic,
-	)
+	c.eventRecorder.Event(elastic, kapi.EventTypeNormal, eventer.EventReasonDeleting, "Deleting Elastic")
 
 	if elastic.Spec.DoNotDelete {
-		message := fmt.Sprintf(`Elastic "%v" is locked.`, elastic.Name)
-		c.eventRecorder.PushEvent(
-			kapi.EventTypeWarning, eventer.EventReasonFailedToDelete, message, elastic,
+		c.eventRecorder.Eventf(
+			elastic,
+			kapi.EventTypeWarning,
+			eventer.EventReasonFailedToDelete,
+			`Elastic "%v" is locked.`,
+			elastic.Name,
 		)
 
 		if err := c.reCreateElastic(elastic); err != nil {
-			message := fmt.Sprintf(`Failed to recreate Elastic: "%v". Reason: %v`, elastic, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeWarning, eventer.EventReasonFailedToCreate, message, elastic,
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				`Failed to recreate Elastic: "%v". Reason: %v`,
+				elastic.Name,
+				err,
 			)
 			log.Errorln(err)
 			return
@@ -270,16 +350,23 @@ func (c *Controller) delete(elastic *tapi.Elastic) {
 	}
 
 	if _, err := c.createDeletedDatabase(elastic); err != nil {
-		message := fmt.Sprintf(`Failed to create DeletedDatabase: "%v". Reason: %v`, elastic.Name, err)
-		c.eventRecorder.PushEvent(
-			kapi.EventTypeWarning, eventer.EventReasonFailedToCreate, message, elastic,
+		c.eventRecorder.Eventf(
+			elastic,
+			kapi.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			`Failed to create DeletedDatabase: "%v". Reason: %v`,
+			elastic.Name,
+			err,
 		)
 		log.Errorln(err)
 		return
 	}
-	message := fmt.Sprintf(`Successfully created DeletedDatabase: "%v"`, elastic.Name)
-	c.eventRecorder.PushEvent(
-		kapi.EventTypeNormal, eventer.EventReasonSuccessfulCreate, message, elastic,
+	c.eventRecorder.Eventf(
+		elastic,
+		kapi.EventTypeNormal,
+		eventer.EventReasonSuccessfulCreate,
+		`Successfully created DeletedDatabase: "%v"`,
+		elastic.Name,
 	)
 
 	c.cronController.StopBackupScheduling(elastic.ObjectMeta)
@@ -290,18 +377,26 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 		statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, updatedElastic.Name)
 		statefulSet, err := c.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
 		if err != nil {
-			message := fmt.Sprintf(`Failed to get StatefulSet: "%v". Reason: %v`, statefulSetName, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeNormal, eventer.EventReasonFailedToGet, message, updatedElastic,
+			c.eventRecorder.Eventf(
+				updatedElastic,
+				kapi.EventTypeNormal,
+				eventer.EventReasonFailedToGet,
+				`Failed to get StatefulSet: "%v". Reason: %v`,
+				statefulSetName,
+				err,
 			)
 			log.Errorln(err)
 			return
 		}
 		statefulSet.Spec.Replicas = oldElastic.Spec.Replicas
 		if _, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Update(statefulSet); err != nil {
-			message := fmt.Sprintf(`Failed to update StatefulSet: "%v". Reason: %v`, statefulSetName, err)
-			c.eventRecorder.PushEvent(
-				kapi.EventTypeNormal, eventer.EventReasonFailedToUpdate, message, updatedElastic,
+			c.eventRecorder.Eventf(
+				updatedElastic,
+				kapi.EventTypeNormal,
+				eventer.EventReasonFailedToUpdate,
+				`Failed to update StatefulSet: "%v". Reason: %v`,
+				statefulSetName,
+				err,
 			)
 			log.Errorln(err)
 			return
@@ -312,8 +407,11 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 		backupScheduleSpec := updatedElastic.Spec.BackupSchedule
 		if backupScheduleSpec != nil {
 			if err := c.ValidateBackupSchedule(backupScheduleSpec); err != nil {
-				c.eventRecorder.PushEvent(
-					kapi.EventTypeNormal, eventer.EventReasonInvalid, err.Error(), updatedElastic,
+				c.eventRecorder.Event(
+					updatedElastic,
+					kapi.EventTypeNormal,
+					eventer.EventReasonInvalid,
+					err.Error(),
 				)
 				log.Errorln(err)
 				return
@@ -321,8 +419,11 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 
 			if err := c.CheckBucketAccess(
 				backupScheduleSpec.SnapshotSpec, updatedElastic.Namespace); err != nil {
-				c.eventRecorder.PushEvent(
-					kapi.EventTypeNormal, eventer.EventReasonInvalid, err.Error(), updatedElastic,
+				c.eventRecorder.Event(
+					updatedElastic,
+					kapi.EventTypeNormal,
+					eventer.EventReasonInvalid,
+					err.Error(),
 				)
 				log.Errorln(err)
 				return
@@ -330,9 +431,12 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 
 			if err := c.cronController.ScheduleBackup(
 				oldElastic, oldElastic.ObjectMeta, oldElastic.Spec.BackupSchedule); err != nil {
-				message := fmt.Sprintf(`Failed to schedule snapshot. Reason: %v`, err)
-				c.eventRecorder.PushEvent(
-					kapi.EventTypeWarning, eventer.EventReasonFailedToSchedule, message, updatedElastic,
+				c.eventRecorder.Eventf(
+					updatedElastic,
+					kapi.EventTypeWarning,
+					eventer.EventReasonFailedToSchedule,
+					`Failed to schedule snapshot. Reason: %v`,
+					err,
 				)
 				log.Errorln(err)
 			}
