@@ -17,7 +17,7 @@ import (
 func (c *Controller) create(elastic *tapi.Elastic) {
 	t := unversioned.Now()
 	elastic.Status.CreationTime = &t
-	elastic.Status.DatabaseStatus = tapi.StatusDatabaseCreating
+	elastic.Status.Phase = tapi.DatabasePhaseCreating
 	var _elastic *tapi.Elastic
 	var err error
 	if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
@@ -33,7 +33,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	if err := c.validateElastic(elastic); err != nil {
 		c.eventRecorder.PushEvent(kapi.EventTypeWarning, eventer.EventReasonInvalid, err.Error(), elastic)
 
-		elastic.Status.DatabaseStatus = tapi.StatusDatabaseFailed
+		elastic.Status.Phase = tapi.DatabasePhaseFailed
 		elastic.Status.Reason = err.Error()
 		if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 			message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
@@ -68,7 +68,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			message = fmt.Sprintf(`Invalid Elastic: "%v". Exists irrelevant DeletedDatabase: "%v"`,
 				elastic.Name, deletedDb.Name)
 		} else {
-			if deletedDb.Status.Phase == tapi.PhaseDatabaseRecovering {
+			if deletedDb.Status.Phase == tapi.DeletedDatabasePhaseRecovering {
 				recovering = true
 			} else {
 				message = fmt.Sprintf(`Recover from DeletedDatabase: "%v"`, deletedDb.Name)
@@ -76,7 +76,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 		}
 		if !recovering {
 			// Set status to Failed
-			elastic.Status.DatabaseStatus = tapi.StatusDatabaseFailed
+			elastic.Status.Phase = tapi.DatabasePhaseFailed
 			elastic.Status.Reason = message
 			if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 				message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
@@ -147,7 +147,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 	}
 
 	if elastic.Spec.Init != nil && elastic.Spec.Init.SnapshotSource != nil {
-		elastic.Status.DatabaseStatus = tapi.StatusDatabaseInitializing
+		elastic.Status.Phase = tapi.DatabasePhaseInitializing
 		if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 			message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
 			c.eventRecorder.PushEvent(
@@ -181,7 +181,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 		)
 	}
 
-	elastic.Status.DatabaseStatus = tapi.StatusDatabaseRunning
+	elastic.Status.Phase = tapi.DatabasePhaseRunning
 	if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 		message := fmt.Sprintf(`Fail to update Elastic: "%v". Reason: %v`, elastic.Name, err)
 		c.eventRecorder.PushEvent(
