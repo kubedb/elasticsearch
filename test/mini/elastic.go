@@ -53,9 +53,9 @@ func CheckElasticStatus(c *controller.Controller, elastic *tapi.Elastic) (bool, 
 			return false, err
 		}
 
-		log.Debugf("Pod Phase: %v", _elastic.Status.DatabaseStatus)
+		log.Debugf("Pod Phase: %v", _elastic.Status.Phase)
 
-		if _elastic.Status.DatabaseStatus == tapi.StatusDatabaseRunning {
+		if _elastic.Status.Phase == tapi.DatabasePhaseRunning {
 			elasticReady = true
 			break
 		}
