@@ -54,29 +54,8 @@ func TestCreate(t *testing.T) {
 		fmt.Println("---- >> Failed to be deleted")
 	}
 
-	fmt.Println("---- >> ReCreating elastic")
-	elastic, err = mini.ReCreateElastic(controller, elastic)
-	if !assert.Nil(t, err) {
-		return
-	}
-
-	time.Sleep(time.Second * 30)
-	fmt.Println("---- >> Checking elastic")
-	running, err = mini.CheckElasticStatus(controller, elastic)
-	assert.Nil(t, err)
-	if !assert.True(t, running) {
-		fmt.Println("---- >> elastic fails to be Ready")
-	} else {
-		err := mini.CheckElasticWorkload(controller, elastic)
-		assert.Nil(t, err)
-	}
-
-	fmt.Println("---- >> Deleted elastic")
-	err = mini.DeleteElastic(controller, elastic)
-	assert.Nil(t, err)
-
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err = mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Deleting DeletedDatabase")
+	err = mini.DeleteDeletedDatabase(controller, elastic)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")

@@ -46,3 +46,7 @@ func CheckDeletedDatabasePhase(c *controller.Controller, elastic *tapi.Elastic, 
 
 	return true, nil
 }
+
+func DeleteDeletedDatabase(c *controller.Controller, elastic *tapi.Elastic) error {
+	return c.ExtClient.DeletedDatabases(elastic.Namespace).Delete(elastic.Name)
+}

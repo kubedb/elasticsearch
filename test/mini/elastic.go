@@ -28,21 +28,6 @@ func NewElastic() *tapi.Elastic {
 	return elastic
 }
 
-func ReCreateElastic(c *controller.Controller, elastic *tapi.Elastic) (*tapi.Elastic, error) {
-	_elastic := &tapi.Elastic{
-		ObjectMeta: kapi.ObjectMeta{
-			Name:        elastic.Name,
-			Namespace:   elastic.Namespace,
-			Labels:      elastic.Labels,
-			Annotations: elastic.Annotations,
-		},
-		Spec:   elastic.Spec,
-		Status: elastic.Status,
-	}
-
-	return c.ExtClient.Elastics(_elastic.Namespace).Create(_elastic)
-}
-
 func CheckElasticStatus(c *controller.Controller, elastic *tapi.Elastic) (bool, error) {
 	elasticReady := false
 	then := time.Now()
