@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-func (c *Controller) create(elastic *tapi.Elastic) {
+func (c *Controller) create(elastic *tapi.Elastic) error {
 	t := unversioned.Now()
 	elastic.Status.CreationTime = &t
 	elastic.Status.Phase = tapi.DatabasePhaseCreating
@@ -29,8 +30,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			elastic.Name,
 			err,
 		)
-		log.Errorln(err)
-		return
+		return err
 	}
 	elastic = _elastic
 
@@ -50,9 +50,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			)
 			log.Errorln(err)
 		}
-
-		log.Errorln(err)
-		return
+		return err
 	}
 	// Event for successful validation
 	c.eventRecorder.Event(
@@ -75,8 +73,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 				elastic.Name,
 				err,
 			)
-			log.Errorln(err)
-			return
+			return err
 		}
 	} else {
 		var message string
@@ -112,8 +109,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 				eventer.EventReasonFailedToCreate,
 				message,
 			)
-			log.Infoln(message)
-			return
+			return errors.New(message)
 		}
 	}
 
@@ -140,8 +136,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			governingService,
 			err,
 		)
-		log.Errorln(err)
-		return
+		return err
 	}
 	elastic.Spec.ServiceAccountName = governingService
 
@@ -154,8 +149,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			"Failed to create Service. Reason: %v",
 			err,
 		)
-		log.Errorln(err)
-		return
+		return err
 	}
 
 	// Create statefulSet for Elastic database
@@ -168,8 +162,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			"Failed to create StatefulSet. Reason: %v",
 			err,
 		)
-		log.Errorln(err)
-		return
+		return err
 	}
 
 	// Check StatefulSet Pod status
@@ -182,8 +175,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 				"Failed to create StatefulSet. Reason: %v",
 				err,
 			)
-			log.Errorln(err)
-			return
+			return err
 		} else {
 			c.eventRecorder.Event(
 				elastic,
@@ -205,8 +197,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 				elastic.Name,
 				err,
 			)
-			log.Errorln(err)
-			return
+			return err
 		}
 		elastic = _elastic
 
@@ -271,6 +262,7 @@ func (c *Controller) create(elastic *tapi.Elastic) {
 			log.Errorln(err)
 		}
 	}
+	return nil
 }
 
 const (
@@ -321,7 +313,7 @@ func (c *Controller) initialize(elastic *tapi.Elastic) error {
 	return nil
 }
 
-func (c *Controller) delete(elastic *tapi.Elastic) {
+func (c *Controller) delete(elastic *tapi.Elastic) error {
 
 	c.eventRecorder.Event(elastic, kapi.EventTypeNormal, eventer.EventReasonDeleting, "Deleting Elastic")
 
@@ -343,10 +335,9 @@ func (c *Controller) delete(elastic *tapi.Elastic) {
 				elastic.Name,
 				err,
 			)
-			log.Errorln(err)
-			return
+			return err
 		}
-		return
+		return nil
 	}
 
 	if _, err := c.createDeletedDatabase(elastic); err != nil {
@@ -358,8 +349,7 @@ func (c *Controller) delete(elastic *tapi.Elastic) {
 			elastic.Name,
 			err,
 		)
-		log.Errorln(err)
-		return
+		return err
 	}
 	c.eventRecorder.Eventf(
 		elastic,
@@ -370,9 +360,10 @@ func (c *Controller) delete(elastic *tapi.Elastic) {
 	)
 
 	c.cronController.StopBackupScheduling(elastic.ObjectMeta)
+	return nil
 }
 
-func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
+func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 	if (updatedElastic.Spec.Replicas != oldElastic.Spec.Replicas) && oldElastic.Spec.Replicas >= 0 {
 		statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, updatedElastic.Name)
 		statefulSet, err := c.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
@@ -385,8 +376,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 				statefulSetName,
 				err,
 			)
-			log.Errorln(err)
-			return
+			return err
 		}
 		statefulSet.Spec.Replicas = oldElastic.Spec.Replicas
 		if _, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Update(statefulSet); err != nil {
@@ -398,8 +388,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 				statefulSetName,
 				err,
 			)
-			log.Errorln(err)
-			return
+			return err
 		}
 	}
 
@@ -413,8 +402,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 					eventer.EventReasonInvalid,
 					err.Error(),
 				)
-				log.Errorln(err)
-				return
+				return err
 			}
 
 			if err := c.CheckBucketAccess(
@@ -425,8 +413,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 					eventer.EventReasonInvalid,
 					err.Error(),
 				)
-				log.Errorln(err)
-				return
+				return err
 			}
 
 			if err := c.cronController.ScheduleBackup(
@@ -444,4 +431,5 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) {
 			c.cronController.StopBackupScheduling(oldElastic.ObjectMeta)
 		}
 	}
+	return nil
 }

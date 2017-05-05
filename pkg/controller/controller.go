@@ -89,11 +89,15 @@ func (c *Controller) watchElastic() {
 			AddFunc: func(obj interface{}) {
 				elastic := obj.(*tapi.Elastic)
 				if elastic.Status.CreationTime == nil {
-					c.create(elastic)
+					if err := c.create(elastic); err != nil {
+						log.Errorln(err)
+					}
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				c.delete(obj.(*tapi.Elastic))
+				if err := c.delete(obj.(*tapi.Elastic)); err != nil {
+					log.Errorln(err)
+				}
 			},
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*tapi.Elastic)
@@ -105,7 +109,9 @@ func (c *Controller) watchElastic() {
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					c.update(oldObj, newObj)
+					if err := c.update(oldObj, newObj); err != nil {
+						log.Errorln(err)
+					}
 				}
 			},
 		},
