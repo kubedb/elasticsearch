@@ -282,10 +282,10 @@ func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.Deleted
 		Spec: tapi.DeletedDatabaseSpec{
 			Origin: tapi.Origin{
 				ObjectMeta: kapi.ObjectMeta{
-					Name:        elastic.ObjectMeta.Name,
-					Namespace:   elastic.ObjectMeta.Namespace,
-					Labels:      elastic.ObjectMeta.Labels,
-					Annotations: elastic.ObjectMeta.Annotations,
+					Name:        elastic.Name,
+					Namespace:   elastic.Namespace,
+					Labels:      elastic.Labels,
+					Annotations: elastic.Annotations,
 				},
 				Spec: tapi.OriginSpec{
 					Elastic: &elastic.Spec,
