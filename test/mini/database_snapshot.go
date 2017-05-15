@@ -24,7 +24,7 @@ func CreateDatabaseSnapshot(c *controller.Controller, namespace string, snapshot
 			Name:      rand.WithUniqSuffix("e2e-db-snapshot"),
 			Namespace: namespace,
 			Labels: map[string]string{
-				amc.LabelDatabaseType:   tapi.ResourceNameElastic,
+				amc.LabelDatabaseKind:   tapi.ResourceKindElastic,
 			},
 		},
 		Spec: snapshotSpec,
@@ -104,7 +104,7 @@ func CheckSnapshotData(c *controller.Controller, dbSnapshot *tapi.DatabaseSnapsh
 		return 0, err
 	}
 
-	folderName := dbSnapshot.Labels[amc.LabelDatabaseType] + "-" + dbSnapshot.Spec.DatabaseName
+	folderName := dbSnapshot.Labels[amc.LabelDatabaseKind] + "-" + dbSnapshot.Spec.DatabaseName
 	prefix := fmt.Sprintf("%v/%v", folderName, dbSnapshot.Name)
 	cursor := stow.CursorStart
 	totalItem := 0

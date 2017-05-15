@@ -3,9 +3,9 @@ kind: DatabaseSnapshot
 metadata:
   name: snapshot-xyz
   labels:
-    "k8sdb.com/type": "elastic"
+    "k8sdb.com/kind": "Elastic"
 spec:
   DatabaseName: elasticsearch-demo
-  BucketName: ""
+  BucketName: "database-test"
   StorageSecret:
-    SecretName: ""
+    SecretName: "google-cred"

@@ -6,4 +6,5 @@ spec:
   Version: canary
   Replicas: 1
   Init:
-    Name: snapshot-xyz
+    SnapshotSource:
+      Name: snapshot-xyz

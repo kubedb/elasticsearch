@@ -96,7 +96,7 @@ func (c *Controller) checkStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet
 		}
 	}
 
-	if statefulSet.Labels[amc.LabelDatabaseType] != tapi.ResourceNameElastic {
+	if statefulSet.Labels[amc.LabelDatabaseKind] != tapi.ResourceKindElastic {
 		return nil, fmt.Errorf(`Intended statefulSet "%v" already exists`, statefulSetName)
 	}
 
@@ -113,18 +113,21 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 	}
 
 	// Set labels
-	if elastic.Labels == nil {
-		elastic.Labels = make(map[string]string)
+	labels := make(map[string]string)
+	for key, val := range elastic.Labels {
+		labels[key] = val
 	}
-	elastic.Labels[amc.LabelDatabaseType] = tapi.ResourceNameElastic
+	labels[amc.LabelDatabaseKind] = tapi.ResourceKindElastic
+
 	// Set Annotations
-	if elastic.Annotations == nil {
-		elastic.Annotations = make(map[string]string)
+	annotations := make(map[string]string)
+	for key, val := range elastic.Annotations {
+		annotations[key] = val
 	}
-	elastic.Annotations[annotationDatabaseVersion] = elastic.Spec.Version
+	annotations[annotationDatabaseVersion] = elastic.Spec.Version
 
 	podLabels := make(map[string]string)
-	for key, val := range elastic.Labels {
+	for key, val := range labels {
 		podLabels[key] = val
 	}
 	podLabels[amc.LabelDatabaseName] = elastic.Name
@@ -138,8 +141,8 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 		ObjectMeta: kapi.ObjectMeta{
 			Name:        statefulSetName,
 			Namespace:   elastic.Namespace,
-			Labels:      elastic.Labels,
-			Annotations: elastic.Annotations,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: kapps.StatefulSetSpec{
 			Replicas:    elastic.Spec.Replicas,
@@ -147,7 +150,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 			Template: kapi.PodTemplateSpec{
 				ObjectMeta: kapi.ObjectMeta{
 					Labels:      podLabels,
-					Annotations: elastic.Annotations,
+					Annotations: annotations,
 				},
 				Spec: kapi.PodSpec{
 					Containers: []kapi.Container{
@@ -276,7 +279,7 @@ func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.Deleted
 			Name:      elastic.Name,
 			Namespace: elastic.Namespace,
 			Labels: map[string]string{
-				amc.LabelDatabaseType: tapi.ResourceNameElastic,
+				amc.LabelDatabaseKind: tapi.ResourceKindElastic,
 			},
 		},
 		Spec: tapi.DeletedDatabaseSpec{
@@ -337,7 +340,7 @@ func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.Da
 	}
 
 	// Folder name inside Cloud bucket where backup will be uploaded
-	folderName := tapi.ResourceNameElastic + "-" + dbSnapshot.Spec.DatabaseName
+	folderName := tapi.ResourceKindElastic + "-" + dbSnapshot.Spec.DatabaseName
 
 	job := &kbatch.Job{
 		ObjectMeta: kapi.ObjectMeta{
