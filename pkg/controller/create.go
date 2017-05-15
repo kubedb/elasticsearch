@@ -340,7 +340,7 @@ func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.Da
 	}
 
 	// Folder name inside Cloud bucket where backup will be uploaded
-	folderName := tapi.ResourceKindElastic + "-" + dbSnapshot.Spec.DatabaseName
+	folderName := fmt.Sprintf("%v/%v/%v", amc.DatabaseNamePrefix, dbSnapshot.Namespace, dbSnapshot.Spec.DatabaseName)
 
 	job := &kbatch.Job{
 		ObjectMeta: kapi.ObjectMeta{
