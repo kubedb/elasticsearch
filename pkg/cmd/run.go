@@ -18,10 +18,11 @@ const (
 
 func NewCmdRun() *cobra.Command {
 	var (
-		masterURL      string
-		kubeconfigPath string
-		operatorTag    string
-		elasticDumpTag string
+		masterURL        string
+		kubeconfigPath   string
+		operatorTag      string
+		elasticDumpTag   string
+		governingService string
 	)
 
 	cmd := &cobra.Command{
@@ -36,7 +37,7 @@ func NewCmdRun() *cobra.Command {
 			}
 			defer runtime.HandleCrash()
 
-			w := controller.New(config, operatorTag, elasticDumpTag)
+			w := controller.New(config, operatorTag, elasticDumpTag, governingService)
 			fmt.Println("Starting operator...")
 			w.RunAndHold()
 		},
@@ -51,6 +52,7 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&operatorTag, "operator", operatorVersion, "Tag of elasticsearch opearator")
 	cmd.Flags().StringVar(&elasticDumpTag, "elasticdump", canary, "Tag of elasticdump")
+	cmd.Flags().StringVar(&governingService, "governing-service", "k8sdb", "Governing service for database statefulset")
 
 	return cmd
 }
