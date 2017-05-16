@@ -174,7 +174,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 									MountPath: "/tmp/discovery",
 								},
 								{
-									Name:      "volume",
+									Name:      "data",
 									MountPath: "/var/pv",
 								},
 							},
@@ -251,7 +251,7 @@ func addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 		statefulSet.Spec.VolumeClaimTemplates = []kapi.PersistentVolumeClaim{
 			{
 				ObjectMeta: kapi.ObjectMeta{
-					Name: "volume",
+					Name: "data",
 					Annotations: map[string]string{
 						"volume.beta.kubernetes.io/storage-class": storageClassName,
 					},
@@ -264,7 +264,7 @@ func addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 		statefulSet.Spec.Template.Spec.Volumes = append(
 			statefulSet.Spec.Template.Spec.Volumes,
 			kapi.Volume{
-				Name: "volume",
+				Name: "data",
 				VolumeSource: kapi.VolumeSource{
 					EmptyDir: &kapi.EmptyDirVolumeSource{},
 				},
