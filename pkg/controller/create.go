@@ -146,7 +146,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 		},
 		Spec: kapps.StatefulSetSpec{
 			Replicas:    elastic.Spec.Replicas,
-			ServiceName: elastic.Spec.ServiceAccountName,
+			ServiceName: c.governingService,
 			Template: kapi.PodTemplateSpec{
 				ObjectMeta: kapi.ObjectMeta{
 					Labels:      podLabels,
@@ -174,7 +174,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 									MountPath: "/tmp/discovery",
 								},
 								{
-									Name:      "volume",
+									Name:      "data",
 									MountPath: "/var/pv",
 								},
 							},
@@ -251,7 +251,7 @@ func addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 		statefulSet.Spec.VolumeClaimTemplates = []kapi.PersistentVolumeClaim{
 			{
 				ObjectMeta: kapi.ObjectMeta{
-					Name: "volume",
+					Name: "data",
 					Annotations: map[string]string{
 						"volume.beta.kubernetes.io/storage-class": storageClassName,
 					},
@@ -264,7 +264,7 @@ func addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 		statefulSet.Spec.Template.Spec.Volumes = append(
 			statefulSet.Spec.Template.Spec.Volumes,
 			kapi.Volume{
-				Name: "volume",
+				Name: "data",
 				VolumeSource: kapi.VolumeSource{
 					EmptyDir: &kapi.EmptyDirVolumeSource{},
 				},
@@ -356,7 +356,7 @@ func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.Da
 					Containers: []kapi.Container{
 						{
 							Name:  SnapshotProcess_Restore,
-							Image: imageElasticDump + ":" + w.elasticDumpTag,
+							Image: ImageElasticDump + ":" + w.elasticDumpTag,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Restore),
 								fmt.Sprintf(`--host=%s`, databaseName),

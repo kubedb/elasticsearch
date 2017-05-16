@@ -19,9 +19,8 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 	t := unversioned.Now()
 	elastic.Status.CreationTime = &t
 	elastic.Status.Phase = tapi.DatabasePhaseCreating
-	var _elastic *tapi.Elastic
 	var err error
-	if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+	if _, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 		c.eventRecorder.Eventf(
 			elastic,
 			kapi.EventTypeWarning,
@@ -32,10 +31,13 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 		)
 		return err
 	}
-	elastic = _elastic
 
 	if err := c.validateElastic(elastic); err != nil {
 		c.eventRecorder.Event(elastic, kapi.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
+
+		if elastic, err = c.ExtClient.Elastics(elastic.Namespace).Get(elastic.Name); err != nil {
+			return err
+		}
 
 		elastic.Status.Phase = tapi.DatabasePhaseFailed
 		elastic.Status.Reason = err.Error()
@@ -89,6 +91,10 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 			}
 		}
 		if !recovering {
+			if elastic, err = c.ExtClient.Elastics(elastic.Namespace).Get(elastic.Name); err != nil {
+				return err
+			}
+
 			// Set status to Failed
 			elastic.Status.Phase = tapi.DatabasePhaseFailed
 			elastic.Status.Reason = message
@@ -122,12 +128,8 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 	)
 
 	// create Governing Service
-	governingService := GoverningElasticsearch
-	if elastic.Spec.ServiceAccountName != "" {
-		governingService = elastic.Spec.ServiceAccountName
-	}
-
-	if err := c.CreateGoverningServiceAccount(governingService, elastic.Namespace); err != nil {
+	governingService := c.governingService
+	if err := c.CreateGoverningService(governingService, elastic.Namespace); err != nil {
 		c.eventRecorder.Eventf(
 			elastic,
 			kapi.EventTypeWarning,
@@ -138,7 +140,6 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 		)
 		return err
 	}
-	elastic.Spec.ServiceAccountName = governingService
 
 	// create database Service
 	if err := c.createService(elastic.Name, elastic.Namespace); err != nil {
@@ -187,8 +188,12 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 	}
 
 	if elastic.Spec.Init != nil && elastic.Spec.Init.SnapshotSource != nil {
+		if elastic, err = c.ExtClient.Elastics(elastic.Namespace).Get(elastic.Name); err != nil {
+			return err
+		}
+
 		elastic.Status.Phase = tapi.DatabasePhaseInitializing
-		if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+		if _, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 			c.eventRecorder.Eventf(
 				elastic,
 				kapi.EventTypeWarning,
@@ -199,7 +204,6 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 			)
 			return err
 		}
-		elastic = _elastic
 
 		if err := c.initialize(elastic); err != nil {
 			c.eventRecorder.Eventf(
@@ -234,8 +238,12 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 		)
 	}
 
+	if elastic, err = c.ExtClient.Elastics(elastic.Namespace).Get(elastic.Name); err != nil {
+		return err
+	}
+
 	elastic.Status.Phase = tapi.DatabasePhaseRunning
-	if _elastic, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+	if _, err = c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
 		c.eventRecorder.Eventf(
 			elastic,
 			kapi.EventTypeWarning,
@@ -246,7 +254,6 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 		)
 		log.Errorln(err)
 	}
-	elastic = _elastic
 
 	// Setup Schedule backup
 	if elastic.Spec.BackupSchedule != nil {
