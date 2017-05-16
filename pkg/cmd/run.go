@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/appscode/go/version"
+	"github.com/appscode/log"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
@@ -40,7 +42,8 @@ func NewCmdRun() *cobra.Command {
 
 			// Check elasticdump docker image tag
 			if err := amc.CheckDockerImageVersion(controller.ImageElasticDump, elasticDumpTag); err != nil {
-				panic(fmt.Sprintf(`Image %v:%v not found.`, controller.ImageElasticDump, elasticDumpTag))
+				log.Fatalf(`Image %v:%v not found.`, controller.ImageElasticDump, elasticDumpTag)
+				os.Exit(1)
 			}
 
 			w := controller.New(config, operatorTag, elasticDumpTag, governingService)
