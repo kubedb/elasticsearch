@@ -136,7 +136,7 @@ func (c *Controller) CheckBucketAccess(snapshotSpec tapi.SnapshotSpec, namespace
 	return nil
 }
 
-func (c *Controller) CreateGoverningServiceAccount(name, namespace string) error {
+func (c *Controller) CreateGoverningService(name, namespace string) error {
 	var err error
 	if _, err = c.Client.Core().ServiceAccounts(namespace).Get(name); err == nil {
 		return nil

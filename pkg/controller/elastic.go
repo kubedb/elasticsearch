@@ -123,11 +123,11 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 
 	// create Governing Service
 	governingService := GoverningElasticsearch
-	if elastic.Spec.ServiceAccountName != "" {
-		governingService = elastic.Spec.ServiceAccountName
+	if elastic.Spec.GoverningService != "" {
+		governingService = elastic.Spec.GoverningService
 	}
 
-	if err := c.CreateGoverningServiceAccount(governingService, elastic.Namespace); err != nil {
+	if err := c.createGoverningService(governingService, elastic.Namespace); err != nil {
 		c.eventRecorder.Eventf(
 			elastic,
 			kapi.EventTypeWarning,
@@ -138,7 +138,7 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 		)
 		return err
 	}
-	elastic.Spec.ServiceAccountName = governingService
+	elastic.Spec.GoverningService = governingService
 
 	// create database Service
 	if err := c.createService(elastic.Name, elastic.Namespace); err != nil {
