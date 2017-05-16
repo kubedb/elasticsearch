@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/appscode/go/version"
@@ -43,7 +42,6 @@ func NewCmdRun() *cobra.Command {
 			// Check elasticdump docker image tag
 			if err := amc.CheckDockerImageVersion(controller.ImageElasticDump, elasticDumpTag); err != nil {
 				log.Fatalf(`Image %v:%v not found.`, controller.ImageElasticDump, elasticDumpTag)
-				os.Exit(1)
 			}
 
 			w := controller.New(config, operatorTag, elasticDumpTag, governingService)
