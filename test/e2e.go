@@ -19,7 +19,7 @@ type elasticController struct {
 var e2eController = elasticController{isControllerRunning: false}
 
 const (
-	configPath = "/home/shahriar/.kube/config"
+	configPath = ""
 )
 
 func getController() (c *controller.Controller, err error) {
