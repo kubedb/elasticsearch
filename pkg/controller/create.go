@@ -356,7 +356,7 @@ func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.Da
 					Containers: []kapi.Container{
 						{
 							Name:  SnapshotProcess_Restore,
-							Image: imageElasticDump + ":" + w.elasticDumpTag,
+							Image: ImageElasticDump + ":" + w.elasticDumpTag,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Restore),
 								fmt.Sprintf(`--host=%s`, databaseName),

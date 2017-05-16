@@ -19,7 +19,7 @@ type elasticController struct {
 var e2eController = elasticController{isControllerRunning: false}
 
 const (
-	configPath = ""
+	configPath = "/home/shahriar/.kube/config"
 )
 
 func getController() (c *controller.Controller, err error) {
@@ -40,7 +40,7 @@ func getController() (c *controller.Controller, err error) {
 				err = fmt.Errorf("Could not get kubernetes config: %s", err)
 				return
 			}
-			c = controller.New(config, "canary", "canary")
+			c = controller.New(config, "canary", "canary", "k8sdb")
 
 			e2eController.controller = c
 			e2eController.isControllerRunning = true

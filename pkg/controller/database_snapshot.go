@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	imageElasticDump        = "k8sdb/elasticdump"
+	ImageElasticDump        = "k8sdb/elasticdump"
 	SnapshotProcess_Backup  = "backup"
 	snapshotType_DumpBackup = "dump-backup"
 	storageSecretMountPath  = "/var/credentials/"
@@ -26,6 +26,10 @@ func (c *Controller) ValidateSnapshot(dbSnapshot *tapi.DatabaseSnapshot) error {
 	databaseName := dbSnapshot.Spec.DatabaseName
 	if databaseName == "" {
 		return fmt.Errorf(`Object 'DatabaseName' is missing in '%v'`, dbSnapshot.Spec)
+	}
+
+	if err := amc.CheckDockerImageVersion(ImageElasticDump, c.elasticDumpTag); err != nil {
+		return fmt.Errorf(`Image %v:%v not found`, ImageElasticDump, c.elasticDumpTag)
 	}
 
 	labelMap := map[string]string{
@@ -104,7 +108,7 @@ func (c *Controller) GetSnapshotter(snapshot *tapi.DatabaseSnapshot) (*kbatch.Jo
 					Containers: []kapi.Container{
 						{
 							Name:  SnapshotProcess_Backup,
-							Image: imageElasticDump + ":" + c.elasticDumpTag,
+							Image: ImageElasticDump + ":" + c.elasticDumpTag,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Backup),
 								fmt.Sprintf(`--host=%s`, databaseName),
