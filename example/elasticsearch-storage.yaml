@@ -5,11 +5,6 @@ metadata:
 spec:
   Version: canary
   Replicas: 1
-  BackupSchedule:
-    CronExpression: "@every 6h"
-    BucketName: ""
-    StorageSecret:
-      SecretName: ""
   Storage:
     Class: ""
     AccessModes:

@@ -1,0 +1,12 @@
+apiVersion: k8sdb.com/v1beta1
+kind: Elastic
+metadata:
+  name: elasticsearch-demo
+spec:
+  Version: canary
+  Replicas: 1
+  BackupSchedule:
+    CronExpression: "@every 6h"
+    BucketName: ""
+    StorageSecret:
+      SecretName: ""
