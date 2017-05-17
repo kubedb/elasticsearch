@@ -127,7 +127,7 @@ func TestDoNotDelete(t *testing.T) {
 	}
 }
 
-func TestDatabaseSnapshot(t *testing.T) {
+func TestSnapshot(t *testing.T) {
 	controller, err := getController()
 	if !assert.Nil(t, err) {
 		return
@@ -165,7 +165,7 @@ func TestDatabaseSnapshot(t *testing.T) {
 		secretName = ""
 	)
 
-	dbSnapshotSpec := tapi.DatabaseSnapshotSpec{
+	snapshotSpec := tapi.SnapshotSpec{
 		DatabaseName: elastic.Name,
 		SnapshotSpec: tapi.SnapshotSpec{
 			BucketName: bucket,
@@ -175,19 +175,19 @@ func TestDatabaseSnapshot(t *testing.T) {
 		},
 	}
 
-	err = controller.CheckBucketAccess(dbSnapshotSpec.SnapshotSpec, elastic.Namespace)
+	err = controller.CheckBucketAccess(snapshotSpec.SnapshotSpec, elastic.Namespace)
 	if !assert.Nil(t, err) {
 		return
 	}
 
-	fmt.Println("---- >> Creating DatabaseSnapshot")
-	dbSnapshot, err := mini.CreateDatabaseSnapshot(controller, elastic.Namespace, dbSnapshotSpec)
+	fmt.Println("---- >> Creating Snapshot")
+	snapshot, err := mini.CreateSnapshot(controller, elastic.Namespace, snapshotSpec)
 	if !assert.Nil(t, err) {
 		return
 	}
 
-	fmt.Println("---- >> Checking DatabaseSnapshot")
-	done, err := mini.CheckDatabaseSnapshot(controller, dbSnapshot)
+	fmt.Println("---- >> Checking Snapshot")
+	done, err := mini.CheckSnapshot(controller, snapshot)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to take snapshot")
@@ -195,24 +195,24 @@ func TestDatabaseSnapshot(t *testing.T) {
 	}
 
 	fmt.Println("---- >> Checking Snapshot data")
-	count, err := mini.CheckSnapshotData(controller, dbSnapshot)
+	count, err := mini.CheckSnapshotData(controller, snapshot)
 	if !assert.Nil(t, err) {
 		fmt.Println("---- >> Failed to check snapshot data")
 		return
 	}
 	assert.NotZero(t, count)
 
-	fmt.Println("---- >> Deleting DatabaseSnapshot")
-	err = controller.ExtClient.DatabaseSnapshots(dbSnapshot.Namespace).Delete(dbSnapshot.Name)
+	fmt.Println("---- >> Deleting Snapshot")
+	err = controller.ExtClient.Snapshots(snapshot.Namespace).Delete(snapshot.Name)
 	if !assert.Nil(t, err) {
-		fmt.Println("---- >> Failed to delete DatabaseSnapshot")
+		fmt.Println("---- >> Failed to delete Snapshot")
 		return
 	}
 
 	time.Sleep(time.Second * 30)
 
 	fmt.Println("---- >> Checking Snapshot data")
-	count, err = mini.CheckSnapshotData(controller, dbSnapshot)
+	count, err = mini.CheckSnapshotData(controller, snapshot)
 	if !assert.Nil(t, err) {
 		fmt.Println("---- >> Failed to check snapshot data")
 		return
@@ -351,7 +351,7 @@ func TestInitialize(t *testing.T) {
 		secretName = ""
 	)
 
-	dbSnapshotSpec := tapi.DatabaseSnapshotSpec{
+	snapshotSpec := tapi.SnapshotSpec{
 		DatabaseName: elastic.Name,
 		SnapshotSpec: tapi.SnapshotSpec{
 			BucketName: bucket,
@@ -361,14 +361,14 @@ func TestInitialize(t *testing.T) {
 		},
 	}
 
-	fmt.Println("---- >> Creating DatabaseSnapshot")
-	dbSnapshot, err := mini.CreateDatabaseSnapshot(controller, elastic.Namespace, dbSnapshotSpec)
+	fmt.Println("---- >> Creating Snapshot")
+	snapshot, err := mini.CreateSnapshot(controller, elastic.Namespace, snapshotSpec)
 	if !assert.Nil(t, err) {
 		return
 	}
 
-	fmt.Println("---- >> Checking DatabaseSnapshot")
-	done, err := mini.CheckDatabaseSnapshot(controller, dbSnapshot)
+	fmt.Println("---- >> Checking Snapshot")
+	done, err := mini.CheckSnapshot(controller, snapshot)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to take snapshot")
@@ -376,7 +376,7 @@ func TestInitialize(t *testing.T) {
 	}
 
 	fmt.Println("---- >> Checking Snapshot data")
-	count, err := mini.CheckSnapshotData(controller, dbSnapshot)
+	count, err := mini.CheckSnapshotData(controller, snapshot)
 	if !assert.Nil(t, err) {
 		fmt.Println("---- >> Failed to check snapshot data")
 		return
@@ -391,7 +391,7 @@ func TestInitialize(t *testing.T) {
 	elastic_init := mini.NewElastic()
 	elastic_init.Spec.Init = &tapi.InitSpec{
 		SnapshotSource: &tapi.SnapshotSourceSpec{
-			Name: dbSnapshot.Name,
+			Name: snapshot.Name,
 		},
 	}
 
@@ -416,17 +416,17 @@ func TestInitialize(t *testing.T) {
 	}
 
 
-	fmt.Println("---- >> Deleting DatabaseSnapshot")
-	err = controller.ExtClient.DatabaseSnapshots(dbSnapshot.Namespace).Delete(dbSnapshot.Name)
+	fmt.Println("---- >> Deleting Snapshot")
+	err = controller.ExtClient.Snapshots(snapshot.Namespace).Delete(snapshot.Name)
 	if !assert.Nil(t, err) {
-		fmt.Println("---- >> Failed to delete DatabaseSnapshot")
+		fmt.Println("---- >> Failed to delete Snapshot")
 		return
 	}
 
 	time.Sleep(time.Second * 30)
 
 	fmt.Println("---- >> Checking Snapshot data")
-	count, err = mini.CheckSnapshotData(controller, dbSnapshot)
+	count, err = mini.CheckSnapshotData(controller, snapshot)
 	if !assert.Nil(t, err) {
 		fmt.Println("---- >> Failed to check snapshot data")
 		return

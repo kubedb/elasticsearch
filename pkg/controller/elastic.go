@@ -284,7 +284,7 @@ func (c *Controller) initialize(elastic *tapi.Elastic) error {
 		elastic,
 		kapi.EventTypeNormal,
 		eventer.EventReasonInitializing,
-		`Initializing from DatabaseSnapshot: "%v"`,
+		`Initializing from Snapshot: "%v"`,
 		snapshotSource.Name,
 	)
 
@@ -292,12 +292,12 @@ func (c *Controller) initialize(elastic *tapi.Elastic) error {
 	if namespace == "" {
 		namespace = elastic.Namespace
 	}
-	dbSnapshot, err := c.ExtClient.DatabaseSnapshots(namespace).Get(snapshotSource.Name)
+	snapshot, err := c.ExtClient.Snapshots(namespace).Get(snapshotSource.Name)
 	if err != nil {
 		return err
 	}
 
-	job, err := c.createRestoreJob(elastic, dbSnapshot)
+	job, err := c.createRestoreJob(elastic, snapshot)
 	if err != nil {
 		return err
 	}
@@ -414,7 +414,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 			}
 
 			if err := c.CheckBucketAccess(
-				backupScheduleSpec.SnapshotSpec, updatedElastic.Namespace); err != nil {
+				backupScheduleSpec.SnapshotStorageSpec, updatedElastic.Namespace); err != nil {
 				c.eventRecorder.Event(
 					updatedElastic,
 					kapi.EventTypeNormal,

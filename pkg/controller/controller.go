@@ -66,8 +66,8 @@ func (c *Controller) RunAndHold() {
 
 	// Watch Elastic TPR objects
 	go c.watchElastic()
-	// Watch DatabaseSnapshot with labelSelector only for Elastic
-	go c.watchDatabaseSnapshot()
+	// Watch Snapshot with labelSelector only for Elastic
+	go c.watchSnapshot()
 	// Watch DeletedDatabase with labelSelector only for Elastic
 	go c.watchDeletedDatabase()
 	// hold
@@ -122,27 +122,27 @@ func (c *Controller) watchElastic() {
 	cacheController.Run(wait.NeverStop)
 }
 
-func (c *Controller) watchDatabaseSnapshot() {
+func (c *Controller) watchSnapshot() {
 	labelMap := map[string]string{
 		amc.LabelDatabaseKind: tapi.ResourceKindElastic,
 	}
 	// Watch with label selector
 	lw := &cache.ListWatch{
 		ListFunc: func(opts kapi.ListOptions) (runtime.Object, error) {
-			return c.ExtClient.DatabaseSnapshots(kapi.NamespaceAll).List(
+			return c.ExtClient.Snapshots(kapi.NamespaceAll).List(
 				kapi.ListOptions{
 					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
 				})
 		},
 		WatchFunc: func(options kapi.ListOptions) (watch.Interface, error) {
-			return c.ExtClient.DatabaseSnapshots(kapi.NamespaceAll).Watch(
+			return c.ExtClient.Snapshots(kapi.NamespaceAll).Watch(
 				kapi.ListOptions{
 					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
 				})
 		},
 	}
 
-	amc.NewDatabaseSnapshotController(c.Client, c.ExtClient, c, lw, c.syncPeriod).Run()
+	amc.NewSnapshotController(c.Client, c.ExtClient, c, lw, c.syncPeriod).Run()
 }
 
 func (c *Controller) watchDeletedDatabase() {
