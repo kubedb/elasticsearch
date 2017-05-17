@@ -6,6 +6,6 @@ metadata:
     "k8sdb.com/kind": "Elastic"
 spec:
   DatabaseName: elasticsearch-demo
-  BucketName: ""
+  BucketName: "database"
   StorageSecret:
-    SecretName: ""
+    SecretName: "cloud-credential"

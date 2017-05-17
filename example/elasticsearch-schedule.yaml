@@ -7,6 +7,6 @@ spec:
   Replicas: 1
   BackupSchedule:
     CronExpression: "@every 6h"
-    BucketName: ""
+    BucketName: "database"
     StorageSecret:
-      SecretName: ""
+      SecretName: "cloud-credential"

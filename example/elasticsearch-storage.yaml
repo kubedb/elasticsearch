@@ -6,9 +6,9 @@ spec:
   Version: canary
   Replicas: 1
   Storage:
-    Class: ""
+    Class: "pd-standard"
     AccessModes:
     - ReadWriteOnce
     resources:
       requests:
-        storage: ""
+        storage: "50Gi"
