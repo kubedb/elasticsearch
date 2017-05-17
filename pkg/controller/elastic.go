@@ -372,7 +372,7 @@ func (c *Controller) delete(elastic *tapi.Elastic) error {
 
 func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 	if (updatedElastic.Spec.Replicas != oldElastic.Spec.Replicas) && oldElastic.Spec.Replicas >= 0 {
-		statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, updatedElastic.Name)
+		statefulSetName := getStatefulSetName(updatedElastic.Name)
 		statefulSet, err := c.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
 		if err != nil {
 			c.eventRecorder.Eventf(

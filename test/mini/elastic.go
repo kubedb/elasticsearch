@@ -8,7 +8,6 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
-	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	kapi "k8s.io/kubernetes/pkg/api"
 )
@@ -62,7 +61,7 @@ func CheckElasticWorkload(c *controller.Controller, elastic *tapi.Elastic) error
 	}
 
 	// SatatefulSet for Elastic database
-	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, elastic.Name)
+	statefulSetName := fmt.Sprintf("%v-es", elastic.Name)
 	if _, err := c.Client.Apps().StatefulSets(elastic.Namespace).Get(statefulSetName); err != nil {
 		return err
 	}

@@ -86,7 +86,7 @@ func (c *Controller) createService(name, namespace string) error {
 
 func (c *Controller) checkStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSet, error) {
 	// SatatefulSet for Postgres database
-	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, elastic.Name)
+	statefulSetName := getStatefulSetName(elastic.Name)
 	statefulSet, err := c.Client.Apps().StatefulSets(elastic.Namespace).Get(statefulSetName)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
@@ -136,7 +136,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 	initContainerImage := fmt.Sprintf("%v:%v", imageOperatorElasticsearch, c.operatorTag)
 
 	// SatatefulSet for Elastic database
-	statefulSetName := fmt.Sprintf("%v-%v", amc.DatabaseNamePrefix, elastic.Name)
+	statefulSetName := getStatefulSetName(elastic.Name)
 	statefulSet := &kapps.StatefulSet{
 		ObjectMeta: kapi.ObjectMeta{
 			Name:        statefulSetName,
@@ -395,4 +395,8 @@ func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.Da
 	}
 
 	return w.Client.Batch().Jobs(elastic.Namespace).Create(job)
+}
+
+func getStatefulSetName(databaseName string) string {
+	return fmt.Sprintf("%v-es", databaseName)
 }
