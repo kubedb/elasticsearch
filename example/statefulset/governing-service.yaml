@@ -5,14 +5,4 @@ metadata:
   namespace: default
 spec:
   clusterIP: None
-  ports:
-  - name: api
-    port: 9200
-    protocol: TCP
-    targetPort: api
-  - name: tcp
-    port: 9300
-    protocol: TCP
-    targetPort: tcp
-  selector:
-    elastic.k8sdb.com/name: elasticsearch-demo
+  type: ClusterIP
