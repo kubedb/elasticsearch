@@ -397,6 +397,10 @@ func (w *Controller) createRestoreJob(elastic *tapi.Elastic, dbSnapshot *tapi.Da
 	return w.Client.Batch().Jobs(elastic.Namespace).Create(job)
 }
 
+const (
+	ShortResourceTypeElastic = "es"
+)
+
 func getStatefulSetName(databaseName string) string {
-	return fmt.Sprintf("%v-es", databaseName)
+	return fmt.Sprintf("%v-%v", databaseName, ShortResourceTypeElastic)
 }
