@@ -54,6 +54,20 @@ func TestCreate(t *testing.T) {
 		fmt.Println("---- >> Failed to be deleted")
 	}
 
+	fmt.Println("---- >> WipingOut Database")
+	err = mini.WipeOutDeletedDatabase(controller, elastic)
+	assert.Nil(t, err)
+	if !assert.True(t, done) {
+		fmt.Println("---- >> Failed to be wipedout")
+	}
+
+	fmt.Println("---- >> Checking DeletedDatabase")
+	done, err = mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseWipedOut)
+	assert.Nil(t, err)
+	if !assert.True(t, done) {
+		fmt.Println("---- >> Failed to be wipedout")
+	}
+
 	fmt.Println("---- >> Deleting DeletedDatabase")
 	err = mini.DeleteDeletedDatabase(controller, elastic)
 	assert.Nil(t, err)
@@ -167,7 +181,7 @@ func TestSnapshot(t *testing.T) {
 
 	snapshotSpec := tapi.SnapshotSpec{
 		DatabaseName: elastic.Name,
-		SnapshotSpec: tapi.SnapshotSpec{
+		SnapshotStorageSpec: tapi.SnapshotStorageSpec{
 			BucketName: bucket,
 			StorageSecret: &kapi.SecretVolumeSource{
 				SecretName: secretName,
@@ -175,7 +189,7 @@ func TestSnapshot(t *testing.T) {
 		},
 	}
 
-	err = controller.CheckBucketAccess(snapshotSpec.SnapshotSpec, elastic.Namespace)
+	err = controller.CheckBucketAccess(snapshotSpec.SnapshotStorageSpec, elastic.Namespace)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -353,7 +367,7 @@ func TestInitialize(t *testing.T) {
 
 	snapshotSpec := tapi.SnapshotSpec{
 		DatabaseName: elastic.Name,
-		SnapshotSpec: tapi.SnapshotSpec{
+		SnapshotStorageSpec: tapi.SnapshotStorageSpec{
 			BucketName: bucket,
 			StorageSecret: &kapi.SecretVolumeSource{
 				SecretName: secretName,
@@ -450,6 +464,96 @@ func TestInitialize(t *testing.T) {
 
 	fmt.Println("---- >> Checking DeletedDatabase")
 	done, err = mini.CheckDeletedDatabasePhase(controller, elastic_init, tapi.DeletedDatabasePhaseDeleted)
+	assert.Nil(t, err)
+	if !assert.True(t, done) {
+		fmt.Println("---- >> Failed to be deleted")
+	}
+}
+
+func TestUpdateScheduler(t *testing.T) {
+	controller, err := getController()
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	fmt.Println("--> Running elastic Controller")
+
+	// elastic
+	fmt.Println()
+	fmt.Println("-- >> Testing elastic")
+	fmt.Println("---- >> Creating elastic")
+	elastic := mini.NewElastic()
+	elastic, err = controller.ExtClient.Elastics("default").Create(elastic)
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	time.Sleep(time.Second * 30)
+	fmt.Println("---- >> Checking elastic")
+	running, err := mini.CheckElasticStatus(controller, elastic)
+	assert.Nil(t, err)
+	if !assert.True(t, running) {
+		fmt.Println("---- >> elastic fails to be Ready")
+		return
+	} else {
+		err := mini.CheckElasticWorkload(controller, elastic)
+		if !assert.Nil(t, err){
+			return
+		}
+	}
+
+	elastic, err = controller.ExtClient.Elastics("default").Get(elastic.Name)
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	elastic.Spec.BackupSchedule = &tapi.BackupScheduleSpec{
+		CronExpression: "@every 30s",
+		SnapshotStorageSpec: tapi.SnapshotStorageSpec{
+			BucketName: "",
+			StorageSecret: &kapi.SecretVolumeSource{
+				SecretName: "",
+			},
+		},
+	}
+
+	elastic, err = mini.UpdateElastic(controller, elastic)
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	err = mini.CheckSnapshotScheduler(controller, elastic)
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	fmt.Println("---- >> Deleted Postgres")
+	err = mini.DeleteElastic(controller, elastic)
+	assert.Nil(t, err)
+
+	fmt.Println("---- >> Checking DeletedDatabase")
+	done, err := mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	assert.Nil(t, err)
+	if !assert.True(t, done) {
+		fmt.Println("---- >> Failed to be deleted")
+	}
+
+	fmt.Println("---- >> WipingOut Database")
+	err = mini.WipeOutDeletedDatabase(controller, elastic)
+	assert.Nil(t, err)
+	if !assert.True(t, done) {
+		fmt.Println("---- >> Failed to be wipedout")
+	}
+
+	fmt.Println("---- >> Checking DeletedDatabase")
+	done, err = mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseWipedOut)
+	assert.Nil(t, err)
+	if !assert.True(t, done) {
+		fmt.Println("---- >> Failed to be wipedout")
+	}
+
+	fmt.Println("---- >> Deleting DeletedDatabase")
+	err = mini.DeleteDeletedDatabase(controller, elastic)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")

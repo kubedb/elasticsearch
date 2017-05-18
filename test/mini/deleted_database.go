@@ -47,6 +47,18 @@ func CheckDeletedDatabasePhase(c *controller.Controller, elastic *tapi.Elastic, 
 	return true, nil
 }
 
+func WipeOutDeletedDatabase(c *controller.Controller, elastic *tapi.Elastic) error {
+	deletedDb, err := c.ExtClient.DeletedDatabases(elastic.Namespace).Get(elastic.Name)
+	if err != nil {
+		return err
+	}
+
+	deletedDb.Spec.WipeOut = true
+
+	_, err = c.ExtClient.DeletedDatabases(deletedDb.Namespace).Update(deletedDb)
+	return err
+}
+
 func DeleteDeletedDatabase(c *controller.Controller, elastic *tapi.Elastic) error {
 	return c.ExtClient.DeletedDatabases(elastic.Namespace).Delete(elastic.Name)
 }
