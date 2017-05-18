@@ -372,7 +372,7 @@ func (c *Controller) delete(elastic *tapi.Elastic) error {
 }
 
 func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
-	if (updatedElastic.Spec.Replicas != oldElastic.Spec.Replicas) && oldElastic.Spec.Replicas >= 0 {
+	if (updatedElastic.Spec.Replicas != oldElastic.Spec.Replicas) && updatedElastic.Spec.Replicas >= 0 {
 		statefulSetName := getStatefulSetName(updatedElastic.Name)
 		statefulSet, err := c.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
 		if err != nil {
@@ -386,7 +386,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 			)
 			return err
 		}
-		statefulSet.Spec.Replicas = oldElastic.Spec.Replicas
+		statefulSet.Spec.Replicas = updatedElastic.Spec.Replicas
 		if _, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Update(statefulSet); err != nil {
 			c.eventRecorder.Eventf(
 				updatedElastic,
@@ -400,7 +400,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 		}
 	}
 
-	if !reflect.DeepEqual(updatedElastic.Spec.BackupSchedule, oldElastic.Spec.BackupSchedule) {
+	if !reflect.DeepEqual(updatedElastic.Spec.BackupSchedule, updatedElastic.Spec.BackupSchedule) {
 		backupScheduleSpec := updatedElastic.Spec.BackupSchedule
 		if backupScheduleSpec != nil {
 			if err := c.ValidateBackupSchedule(backupScheduleSpec); err != nil {
@@ -425,7 +425,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 			}
 
 			if err := c.cronController.ScheduleBackup(
-				oldElastic, oldElastic.ObjectMeta, oldElastic.Spec.BackupSchedule); err != nil {
+				updatedElastic, updatedElastic.ObjectMeta, updatedElastic.Spec.BackupSchedule); err != nil {
 				c.eventRecorder.Eventf(
 					updatedElastic,
 					kapi.EventTypeWarning,
@@ -436,7 +436,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 				log.Errorln(err)
 			}
 		} else {
-			c.cronController.StopBackupScheduling(oldElastic.ObjectMeta)
+			c.cronController.StopBackupScheduling(updatedElastic.ObjectMeta)
 		}
 	}
 	return nil
