@@ -326,7 +326,7 @@ const (
 func (w *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snapshot) (*kbatch.Job, error) {
 
 	databaseName := elastic.Name
-	jobName := rand.WithUniqSuffix(SnapshotProcess_Restore + "-" + databaseName)
+	jobName := rand.WithUniqSuffix(databaseName)
 	jobLabel := map[string]string{
 		amc.LabelDatabaseName: databaseName,
 		amc.LabelJobType:      SnapshotProcess_Restore,
