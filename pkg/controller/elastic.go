@@ -400,7 +400,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 		}
 	}
 
-	if !reflect.DeepEqual(updatedElastic.Spec.BackupSchedule, updatedElastic.Spec.BackupSchedule) {
+	if !reflect.DeepEqual(oldElastic.Spec.BackupSchedule, updatedElastic.Spec.BackupSchedule) {
 		backupScheduleSpec := updatedElastic.Spec.BackupSchedule
 		if backupScheduleSpec != nil {
 			if err := c.ValidateBackupSchedule(backupScheduleSpec); err != nil {
