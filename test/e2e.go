@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/client/restclient"
+	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 )
 
 type elasticController struct {

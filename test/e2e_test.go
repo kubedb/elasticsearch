@@ -38,7 +38,7 @@ func TestCreate(t *testing.T) {
 		return
 	} else {
 		err := mini.CheckElasticWorkload(controller, elastic)
-		if !assert.Nil(t, err){
+		if !assert.Nil(t, err) {
 			return
 		}
 	}
@@ -397,7 +397,6 @@ func TestInitialize(t *testing.T) {
 	}
 	assert.NotZero(t, count)
 
-
 	// elastic
 	fmt.Println()
 	fmt.Println("-- >> Testing elastic_init")
@@ -428,7 +427,6 @@ func TestInitialize(t *testing.T) {
 			return
 		}
 	}
-
 
 	fmt.Println("---- >> Deleting Snapshot")
 	err = controller.ExtClient.Snapshots(snapshot.Namespace).Delete(snapshot.Name)
@@ -497,7 +495,7 @@ func TestUpdateScheduler(t *testing.T) {
 		return
 	} else {
 		err := mini.CheckElasticWorkload(controller, elastic)
-		if !assert.Nil(t, err){
+		if !assert.Nil(t, err) {
 			return
 		}
 	}
