@@ -98,7 +98,7 @@ func (c *Controller) watchElastic() {
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				if err := c.delete(obj.(*tapi.Elastic)); err != nil {
+				if err := c.pause(obj.(*tapi.Elastic)); err != nil {
 					log.Errorln(err)
 				}
 			},
@@ -165,7 +165,7 @@ func (c *Controller) watchDormantDatabase() {
 		},
 	}
 
-	amc.NewDeletedDbController(c.Client, c.ExtClient, c, lw, c.syncPeriod).Run()
+	amc.NewDormantDbController(c.Client, c.ExtClient, c, lw, c.syncPeriod).Run()
 }
 
 func (c *Controller) ensureThirdPartyResource() {

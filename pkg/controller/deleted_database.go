@@ -20,43 +20,43 @@ func (c *Controller) Exists(om *kapi.ObjectMeta) (bool, error) {
 	return true, nil
 }
 
-func (c *Controller) DeleteDatabase(deletedDb *tapi.DormantDatabase) error {
+func (c *Controller) PauseDatabase(dormantDb *tapi.DormantDatabase) error {
 	// Delete Service
-	if err := c.DeleteService(deletedDb.Name, deletedDb.Namespace); err != nil {
+	if err := c.DeleteService(dormantDb.Name, dormantDb.Namespace); err != nil {
 		log.Errorln(err)
 		return err
 	}
 
-	statefulSetName := getStatefulSetName(deletedDb.Name)
-	if err := c.DeleteStatefulSet(statefulSetName, deletedDb.Namespace); err != nil {
+	statefulSetName := getStatefulSetName(dormantDb.Name)
+	if err := c.DeleteStatefulSet(statefulSetName, dormantDb.Namespace); err != nil {
 		log.Errorln(err)
 		return err
 	}
 	return nil
 }
 
-func (c *Controller) WipeOutDatabase(deletedDb *tapi.DormantDatabase) error {
+func (c *Controller) WipeOutDatabase(dormantDb *tapi.DormantDatabase) error {
 	labelMap := map[string]string{
-		amc.LabelDatabaseName: deletedDb.Name,
+		amc.LabelDatabaseName: dormantDb.Name,
 		amc.LabelDatabaseKind: tapi.ResourceKindElastic,
 	}
 
 	labelSelector := labels.SelectorFromSet(labelMap)
 
-	if err := c.DeleteSnapshots(deletedDb.Namespace, labelSelector); err != nil {
+	if err := c.DeleteSnapshots(dormantDb.Namespace, labelSelector); err != nil {
 		log.Errorln(err)
 		return err
 	}
 
-	if err := c.DeletePersistentVolumeClaims(deletedDb.Namespace, labelSelector); err != nil {
+	if err := c.DeletePersistentVolumeClaims(dormantDb.Namespace, labelSelector); err != nil {
 		log.Errorln(err)
 		return err
 	}
 	return nil
 }
 
-func (c *Controller) RecoverDatabase(deletedDb *tapi.DormantDatabase) error {
-	origin := deletedDb.Spec.Origin
+func (c *Controller) ResumeDatabase(dormantDb *tapi.DormantDatabase) error {
+	origin := dormantDb.Spec.Origin
 	objectMeta := origin.ObjectMeta
 	elastic := &tapi.Elastic{
 		ObjectMeta: kapi.ObjectMeta{

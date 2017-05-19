@@ -17,7 +17,7 @@ func CheckDormantDatabasePhase(c *controller.Controller, elastic *tapi.Elastic, 
 	now := time.Now()
 
 	for now.Sub(then) < durationCheckDormantDatabase {
-		deletedDb, err := c.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
+		dormantDb, err := c.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
 		if err != nil {
 			if k8serr.IsNotFound(err) {
 				time.Sleep(time.Second * 10)
@@ -28,9 +28,9 @@ func CheckDormantDatabasePhase(c *controller.Controller, elastic *tapi.Elastic, 
 			}
 		}
 
-		log.Debugf("DormantDatabase Phase: %v", deletedDb.Status.Phase)
+		log.Debugf("DormantDatabase Phase: %v", dormantDb.Status.Phase)
 
-		if deletedDb.Status.Phase == phase {
+		if dormantDb.Status.Phase == phase {
 			doneChecking = true
 			break
 		}
@@ -48,14 +48,14 @@ func CheckDormantDatabasePhase(c *controller.Controller, elastic *tapi.Elastic, 
 }
 
 func WipeOutDormantDatabase(c *controller.Controller, elastic *tapi.Elastic) error {
-	deletedDb, err := c.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
+	dormantDb, err := c.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
 	if err != nil {
 		return err
 	}
 
-	deletedDb.Spec.WipeOut = true
+	dormantDb.Spec.WipeOut = true
 
-	_, err = c.ExtClient.DormantDatabases(deletedDb.Namespace).Update(deletedDb)
+	_, err = c.ExtClient.DormantDatabases(dormantDb.Namespace).Update(dormantDb)
 	return err
 }
 

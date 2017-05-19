@@ -290,14 +290,14 @@ func TestDatabaseRecovery(t *testing.T) {
 	}
 
 	fmt.Println("---- >> Updating DormantDatabase")
-	deletedDb, err := controller.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
+	dormantDb, err := controller.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
 	if !assert.Nil(t, err) {
 		fmt.Println("---- >> Failed to get DormantDatabase")
 		return
 	}
 
-	deletedDb.Spec.Recover = true
-	_, err = controller.ExtClient.DormantDatabases(deletedDb.Namespace).Update(deletedDb)
+	dormantDb.Spec.Recover = true
+	_, err = controller.ExtClient.DormantDatabases(dormantDb.Namespace).Update(dormantDb)
 	assert.Nil(t, err)
 
 	time.Sleep(time.Second * 30)
