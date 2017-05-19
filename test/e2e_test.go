@@ -47,29 +47,29 @@ func TestCreate(t *testing.T) {
 	err = mini.DeleteElastic(controller, elastic)
 	assert.Nil(t, err)
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err := mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err := mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseDeleted)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")
 	}
 
 	fmt.Println("---- >> WipingOut Database")
-	err = mini.WipeOutDeletedDatabase(controller, elastic)
+	err = mini.WipeOutDormantDatabase(controller, elastic)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be wipedout")
 	}
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err = mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseWipedOut)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err = mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseWipedOut)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be wipedout")
 	}
 
-	fmt.Println("---- >> Deleting DeletedDatabase")
-	err = mini.DeleteDeletedDatabase(controller, elastic)
+	fmt.Println("---- >> Deleting DormantDatabase")
+	err = mini.DeleteDormantDatabase(controller, elastic)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")
@@ -133,8 +133,8 @@ func TestDoNotDelete(t *testing.T) {
 	err = mini.DeleteElastic(controller, elastic)
 	assert.Nil(t, err)
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err := mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err := mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseDeleted)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")
@@ -237,8 +237,8 @@ func TestSnapshot(t *testing.T) {
 	err = mini.DeleteElastic(controller, elastic)
 	assert.Nil(t, err)
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err = mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err = mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseDeleted)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")
@@ -282,22 +282,22 @@ func TestDatabaseRecovery(t *testing.T) {
 	err = mini.DeleteElastic(controller, elastic)
 	assert.Nil(t, err)
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err := mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err := mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseDeleted)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be delete")
 	}
 
-	fmt.Println("---- >> Updating DeletedDatabase")
-	deletedDb, err := controller.ExtClient.DeletedDatabases(elastic.Namespace).Get(elastic.Name)
+	fmt.Println("---- >> Updating DormantDatabase")
+	deletedDb, err := controller.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
 	if !assert.Nil(t, err) {
-		fmt.Println("---- >> Failed to get DeletedDatabase")
+		fmt.Println("---- >> Failed to get DormantDatabase")
 		return
 	}
 
 	deletedDb.Spec.Recover = true
-	_, err = controller.ExtClient.DeletedDatabases(deletedDb.Namespace).Update(deletedDb)
+	_, err = controller.ExtClient.DormantDatabases(deletedDb.Namespace).Update(deletedDb)
 	assert.Nil(t, err)
 
 	time.Sleep(time.Second * 30)
@@ -319,8 +319,8 @@ func TestDatabaseRecovery(t *testing.T) {
 	err = mini.DeleteElastic(controller, elastic)
 	assert.Nil(t, err)
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err = mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err = mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseDeleted)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be delete")
@@ -451,8 +451,8 @@ func TestInitialize(t *testing.T) {
 	err = mini.DeleteElastic(controller, elastic)
 	assert.Nil(t, err)
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err = mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err = mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseDeleted)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")
@@ -462,8 +462,8 @@ func TestInitialize(t *testing.T) {
 	err = mini.DeleteElastic(controller, elastic_init)
 	assert.Nil(t, err)
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err = mini.CheckDeletedDatabasePhase(controller, elastic_init, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err = mini.CheckDormantDatabasePhase(controller, elastic_init, tapi.DormantDatabasePhaseDeleted)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")
@@ -531,29 +531,29 @@ func TestUpdateScheduler(t *testing.T) {
 	err = mini.DeleteElastic(controller, elastic)
 	assert.Nil(t, err)
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err := mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseDeleted)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err := mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseDeleted)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")
 	}
 
 	fmt.Println("---- >> WipingOut Database")
-	err = mini.WipeOutDeletedDatabase(controller, elastic)
+	err = mini.WipeOutDormantDatabase(controller, elastic)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be wipedout")
 	}
 
-	fmt.Println("---- >> Checking DeletedDatabase")
-	done, err = mini.CheckDeletedDatabasePhase(controller, elastic, tapi.DeletedDatabasePhaseWipedOut)
+	fmt.Println("---- >> Checking DormantDatabase")
+	done, err = mini.CheckDormantDatabasePhase(controller, elastic, tapi.DormantDatabasePhaseWipedOut)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be wipedout")
 	}
 
-	fmt.Println("---- >> Deleting DeletedDatabase")
-	err = mini.DeleteDeletedDatabase(controller, elastic)
+	fmt.Println("---- >> Deleting DormantDatabase")
+	err = mini.DeleteDormantDatabase(controller, elastic)
 	assert.Nil(t, err)
 	if !assert.True(t, done) {
 		fmt.Println("---- >> Failed to be deleted")

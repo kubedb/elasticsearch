@@ -63,16 +63,16 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 		"Successfully validate Elastic",
 	)
 
-	// Check if DeletedDatabase exists or not
+	// Check if DormantDatabase exists or not
 	recovering := false
-	deletedDb, err := c.ExtClient.DeletedDatabases(elastic.Namespace).Get(elastic.Name)
+	deletedDb, err := c.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
 	if err != nil {
 		if !k8serr.IsNotFound(err) {
 			c.eventRecorder.Eventf(
 				elastic,
 				kapi.EventTypeWarning,
 				eventer.EventReasonFailedToGet,
-				`Fail to get DeletedDatabase: "%v". Reason: %v`,
+				`Fail to get DormantDatabase: "%v". Reason: %v`,
 				elastic.Name,
 				err,
 			)
@@ -82,13 +82,13 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 		var message string
 
 		if deletedDb.Labels[amc.LabelDatabaseKind] != tapi.ResourceKindElastic {
-			message = fmt.Sprintf(`Invalid Elastic: "%v". Exists DeletedDatabase "%v" of different Kind`,
+			message = fmt.Sprintf(`Invalid Elastic: "%v". Exists DormantDatabase "%v" of different Kind`,
 				elastic.Name, deletedDb.Name)
 		} else {
-			if deletedDb.Status.Phase == tapi.DeletedDatabasePhaseRecovering {
+			if deletedDb.Status.Phase == tapi.DormantDatabasePhaseRecovering {
 				recovering = true
 			} else {
-				message = fmt.Sprintf(`Recover from DeletedDatabase: "%v"`, deletedDb.Name)
+				message = fmt.Sprintf(`Recover from DormantDatabase: "%v"`, deletedDb.Name)
 			}
 		}
 		if !recovering {
@@ -218,13 +218,13 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 	}
 
 	if recovering {
-		// Delete DeletedDatabase instance
-		if err := c.ExtClient.DeletedDatabases(deletedDb.Namespace).Delete(deletedDb.Name); err != nil {
+		// Delete DormantDatabase instance
+		if err := c.ExtClient.DormantDatabases(deletedDb.Namespace).Delete(deletedDb.Name); err != nil {
 			c.eventRecorder.Eventf(
 				elastic,
 				kapi.EventTypeWarning,
 				eventer.EventReasonFailedToDelete,
-				`Failed to delete DeletedDatabase: "%v". Reason: %v`,
+				`Failed to delete DormantDatabase: "%v". Reason: %v`,
 				deletedDb.Name,
 				err,
 			)
@@ -234,7 +234,7 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 			elastic,
 			kapi.EventTypeNormal,
 			eventer.EventReasonSuccessfulDelete,
-			`Successfully deleted DeletedDatabase: "%v"`,
+			`Successfully deleted DormantDatabase: "%v"`,
 			deletedDb.Name,
 		)
 	}
@@ -348,12 +348,12 @@ func (c *Controller) delete(elastic *tapi.Elastic) error {
 		return nil
 	}
 
-	if _, err := c.createDeletedDatabase(elastic); err != nil {
+	if _, err := c.createDormantDatabase(elastic); err != nil {
 		c.eventRecorder.Eventf(
 			elastic,
 			kapi.EventTypeWarning,
 			eventer.EventReasonFailedToCreate,
-			`Failed to create DeletedDatabase: "%v". Reason: %v`,
+			`Failed to create DormantDatabase: "%v". Reason: %v`,
 			elastic.Name,
 			err,
 		)
@@ -363,7 +363,7 @@ func (c *Controller) delete(elastic *tapi.Elastic) error {
 		elastic,
 		kapi.EventTypeNormal,
 		eventer.EventReasonSuccessfulCreate,
-		`Successfully created DeletedDatabase: "%v"`,
+		`Successfully created DormantDatabase: "%v"`,
 		elastic.Name,
 	)
 

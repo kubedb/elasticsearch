@@ -273,8 +273,8 @@ func addDataVolume(statefulSet *kapps.StatefulSet, storage *tapi.StorageSpec) {
 	}
 }
 
-func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.DeletedDatabase, error) {
-	deletedDb := &tapi.DeletedDatabase{
+func (w *Controller) createDormantDatabase(elastic *tapi.Elastic) (*tapi.DormantDatabase, error) {
+	deletedDb := &tapi.DormantDatabase{
 		ObjectMeta: kapi.ObjectMeta{
 			Name:      elastic.Name,
 			Namespace: elastic.Namespace,
@@ -282,7 +282,7 @@ func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.Deleted
 				amc.LabelDatabaseKind: tapi.ResourceKindElastic,
 			},
 		},
-		Spec: tapi.DeletedDatabaseSpec{
+		Spec: tapi.DormantDatabaseSpec{
 			Origin: tapi.Origin{
 				ObjectMeta: kapi.ObjectMeta{
 					Name:        elastic.Name,
@@ -296,7 +296,7 @@ func (w *Controller) createDeletedDatabase(elastic *tapi.Elastic) (*tapi.Deleted
 			},
 		},
 	}
-	return w.ExtClient.DeletedDatabases(deletedDb.Namespace).Create(deletedDb)
+	return w.ExtClient.DormantDatabases(deletedDb.Namespace).Create(deletedDb)
 }
 
 func (w *Controller) reCreateElastic(elastic *tapi.Elastic) error {

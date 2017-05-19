@@ -20,7 +20,7 @@ func (c *Controller) Exists(om *kapi.ObjectMeta) (bool, error) {
 	return true, nil
 }
 
-func (c *Controller) DeleteDatabase(deletedDb *tapi.DeletedDatabase) error {
+func (c *Controller) DeleteDatabase(deletedDb *tapi.DormantDatabase) error {
 	// Delete Service
 	if err := c.DeleteService(deletedDb.Name, deletedDb.Namespace); err != nil {
 		log.Errorln(err)
@@ -35,7 +35,7 @@ func (c *Controller) DeleteDatabase(deletedDb *tapi.DeletedDatabase) error {
 	return nil
 }
 
-func (c *Controller) WipeOutDatabase(deletedDb *tapi.DeletedDatabase) error {
+func (c *Controller) WipeOutDatabase(deletedDb *tapi.DormantDatabase) error {
 	labelMap := map[string]string{
 		amc.LabelDatabaseName: deletedDb.Name,
 		amc.LabelDatabaseKind: tapi.ResourceKindElastic,
@@ -55,7 +55,7 @@ func (c *Controller) WipeOutDatabase(deletedDb *tapi.DeletedDatabase) error {
 	return nil
 }
 
-func (c *Controller) RecoverDatabase(deletedDb *tapi.DeletedDatabase) error {
+func (c *Controller) RecoverDatabase(deletedDb *tapi.DormantDatabase) error {
 	origin := deletedDb.Spec.Origin
 	objectMeta := origin.ObjectMeta
 	elastic := &tapi.Elastic{
