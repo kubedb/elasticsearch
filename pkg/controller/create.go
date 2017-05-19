@@ -16,7 +16,6 @@ import (
 
 const (
 	annotationDatabaseVersion  = "elastic.k8sdb.com/version"
-	GoverningElasticsearch     = "governing-elasticsearch"
 	imageElasticsearch         = "k8sdb/elasticsearch"
 	imageOperatorElasticsearch = "k8sdb/k8s-es"
 	// Duration in Minute
