@@ -58,7 +58,7 @@ func CheckSnapshot(c *controller.Controller, snapshot *tapi.Snapshot) (bool, err
 			break
 		}
 
-		time.Sleep(time.Minute)
+		time.Sleep(time.Second * 10)
 		now = time.Now()
 
 	}
@@ -149,7 +149,7 @@ func CheckSnapshotScheduler(c *controller.Controller, elastic *tapi.Elastic) err
 			return nil
 		}
 
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Second * 10)
 		now = time.Now()
 	}
 

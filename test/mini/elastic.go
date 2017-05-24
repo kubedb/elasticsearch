@@ -43,9 +43,8 @@ func CheckElasticStatus(c *controller.Controller, elastic *tapi.Elastic) (bool, 
 			elasticReady = true
 			break
 		}
-		time.Sleep(time.Minute)
+		time.Sleep(time.Second * 10)
 		now = time.Now()
-
 	}
 
 	if !elasticReady {

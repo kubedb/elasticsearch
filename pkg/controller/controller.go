@@ -108,6 +108,25 @@ func (c *Controller) watchElastic() {
 				if elastic.Status.CreationTime == nil {
 					if err := c.create(elastic); err != nil {
 						log.Errorln(err)
+
+						var _err error
+						if elastic, _err = c.ExtClient.Elastics(elastic.Namespace).Get(elastic.Name); _err != nil {
+							log.Errorln(_err)
+						} else {
+							elastic.Status.Phase = tapi.DatabasePhaseFailed
+							elastic.Status.Reason = err.Error()
+							if _, err := c.ExtClient.Elastics(elastic.Namespace).Update(elastic); err != nil {
+								c.eventRecorder.Eventf(
+									elastic,
+									kapi.EventTypeWarning,
+									eventer.EventReasonFailedToUpdate,
+									`Fail to update Elastic: "%v". Reason: %v`,
+									elastic.Name,
+									err,
+								)
+								log.Errorln(err)
+							}
+						}
 					}
 				}
 			},
