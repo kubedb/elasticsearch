@@ -2,13 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/appscode/go/version"
 	"github.com/appscode/log"
+	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
+	tcs "github.com/k8sdb/apimachinery/client/clientset"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
+	cgcmd "k8s.io/client-go/tools/clientcmd"
+	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/util/runtime"
 )
@@ -33,18 +36,29 @@ func NewCmdRun() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				fmt.Printf("Could not get kubernetes config: %s", err)
-				time.Sleep(30 * time.Minute)
-				panic(err)
+				log.Fatalf("Could not get kubernetes config: %s", err)
 			}
-			defer runtime.HandleCrash()
 
 			// Check elasticdump docker image tag
 			if err := amc.CheckDockerImageVersion(controller.ImageElasticDump, elasticDumpTag); err != nil {
 				log.Fatalf(`Image %v:%v not found.`, controller.ImageElasticDump, elasticDumpTag)
 			}
 
-			w := controller.New(config, operatorTag, elasticDumpTag, governingService)
+			client := clientset.NewForConfigOrDie(config)
+			extClient := tcs.NewExtensionsForConfigOrDie(config)
+
+			cgConfig, err := cgcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
+			if err != nil {
+				log.Fatalf("Could not get kubernetes config: %s", err)
+			}
+
+			promClient, err := pcm.NewForConfig(cgConfig)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			w := controller.New(client, extClient, promClient, operatorTag, elasticDumpTag, governingService)
+			defer runtime.HandleCrash()
 			fmt.Println("Starting operator...")
 			w.RunAndHold()
 		},
