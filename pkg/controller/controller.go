@@ -29,7 +29,7 @@ type Controller struct {
 	// Cron Controller
 	cronController amc.CronControllerInterface
 	// Prometheus client
-	PromClient *pcm.MonitoringV1alpha1Client
+	promClient *pcm.MonitoringV1alpha1Client
 	// Event Recorder
 	eventRecorder record.EventRecorder
 	// Tag of elasticsearch opearator
@@ -59,7 +59,7 @@ func New(
 			ExtClient: extClient,
 		},
 		cronController:   amc.NewCronController(client, extClient),
-		PromClient:       promClient,
+		promClient:       promClient,
 		eventRecorder:    eventer.NewEventRecorder(client, "Elastic Controller"),
 		operatorTag:      operatorTag,
 		elasticDumpTag:   elasticDumpTag,
