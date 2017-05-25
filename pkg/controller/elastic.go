@@ -89,7 +89,7 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 	)
 
 	// create Governing Service
-	governingService := c.governingService
+	governingService := c.option.GoverningService
 	if err := c.CreateGoverningService(governingService, elastic.Namespace); err != nil {
 		c.eventRecorder.Eventf(
 			elastic,
@@ -208,6 +208,19 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 			log.Errorln(err)
 		}
 	}
+
+	if elastic.Spec.Monitor != nil {
+		if err := c.addMonitor(elastic); err != nil {
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				"Failed to set monitoring. Reason: %v",
+				err,
+			)
+			log.Errorln(err)
+		}
+	}
 	return nil
 }
 
@@ -305,6 +318,19 @@ func (c *Controller) pause(elastic *tapi.Elastic) error {
 	)
 
 	c.cronController.StopBackupScheduling(elastic.ObjectMeta)
+
+	if elastic.Spec.Monitor != nil {
+		if err := c.deleteMonitor(elastic); err != nil {
+			c.eventRecorder.Eventf(
+				elastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToDelete,
+				"Failed to delete monitoring system. Reason: %v",
+				err,
+			)
+			log.Errorln(err)
+		}
+	}
 	return nil
 }
 
@@ -375,6 +401,19 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 		} else {
 			c.cronController.StopBackupScheduling(updatedElastic.ObjectMeta)
 		}
+		if !reflect.DeepEqual(oldElastic.Spec.Monitor, updatedElastic.Spec.Monitor) {
+			if err := c.updateMonitor(oldElastic, updatedElastic); err != nil {
+				c.eventRecorder.Eventf(
+					updatedElastic,
+					kapi.EventTypeWarning,
+					eventer.EventReasonFailedToUpdate,
+					"Failed to update monitoring system. Reason: %v",
+					err,
+				)
+				log.Errorln(err)
+			}
+		}
+
 	}
 	return nil
 }

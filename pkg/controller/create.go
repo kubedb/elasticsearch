@@ -132,7 +132,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 	podLabels[amc.LabelDatabaseName] = elastic.Name
 
 	dockerImage := fmt.Sprintf("%v:%v", ImageElasticsearch, elastic.Spec.Version)
-	initContainerImage := fmt.Sprintf("%v:%v", ImageOperatorElasticsearch, c.operatorTag)
+	initContainerImage := fmt.Sprintf("%v:%v", ImageOperatorElasticsearch, c.option.OperatorTag)
 
 	// SatatefulSet for Elastic database
 	statefulSetName := getStatefulSetName(elastic.Name)
@@ -145,7 +145,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*kapps.StatefulSe
 		},
 		Spec: kapps.StatefulSetSpec{
 			Replicas:    elastic.Spec.Replicas,
-			ServiceName: c.governingService,
+			ServiceName: c.option.GoverningService,
 			Template: kapi.PodTemplateSpec{
 				ObjectMeta: kapi.ObjectMeta{
 					Labels:      podLabels,
@@ -355,7 +355,7 @@ func (c *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snap
 					Containers: []kapi.Container{
 						{
 							Name:  SnapshotProcess_Restore,
-							Image: ImageElasticDump + ":" + c.elasticDumpTag,
+							Image: ImageElasticDump + ":" + c.option.ElasticDumpTag,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Restore),
 								fmt.Sprintf(`--host=%s`, databaseName),

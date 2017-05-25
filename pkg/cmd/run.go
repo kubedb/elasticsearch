@@ -23,12 +23,11 @@ const (
 
 func NewCmdRun() *cobra.Command {
 	var (
-		masterURL        string
-		kubeconfigPath   string
-		operatorTag      string
-		elasticDumpTag   string
-		governingService string
+		masterURL      string
+		kubeconfigPath string
 	)
+
+	opt := &controller.Option{}
 
 	cmd := &cobra.Command{
 		Use:   "run",
@@ -40,8 +39,8 @@ func NewCmdRun() *cobra.Command {
 			}
 
 			// Check elasticdump docker image tag
-			if err := amc.CheckDockerImageVersion(controller.ImageElasticDump, elasticDumpTag); err != nil {
-				log.Fatalf(`Image %v:%v not found.`, controller.ImageElasticDump, elasticDumpTag)
+			if err := amc.CheckDockerImageVersion(controller.ImageElasticDump, opt.ElasticDumpTag); err != nil {
+				log.Fatalf(`Image %v:%v not found.`, controller.ImageElasticDump, opt.ElasticDumpTag)
 			}
 
 			client := clientset.NewForConfigOrDie(config)
@@ -57,7 +56,7 @@ func NewCmdRun() *cobra.Command {
 				log.Fatalln(err)
 			}
 
-			w := controller.New(client, extClient, promClient, operatorTag, elasticDumpTag, governingService)
+			w := controller.New(client, extClient, promClient, opt)
 			defer runtime.HandleCrash()
 			fmt.Println("Starting operator...")
 			w.RunAndHold()
@@ -71,9 +70,9 @@ func NewCmdRun() *cobra.Command {
 
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&operatorTag, "operator", operatorVersion, "Tag of elasticsearch opearator")
-	cmd.Flags().StringVar(&elasticDumpTag, "elasticdump", canary, "Tag of elasticdump")
-	cmd.Flags().StringVar(&governingService, "governing-service", "kubedb", "Governing service for database statefulset")
+	cmd.Flags().StringVar(&opt.OperatorTag, "operator", operatorVersion, "Tag of elasticsearch opearator")
+	cmd.Flags().StringVar(&opt.ElasticDumpTag, "elasticdump", canary, "Tag of elasticdump")
+	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", "kubedb", "Governing service for database statefulset")
 
 	return cmd
 }

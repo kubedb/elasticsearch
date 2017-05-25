@@ -32,14 +32,23 @@ type Controller struct {
 	promClient *pcm.MonitoringV1alpha1Client
 	// Event Recorder
 	eventRecorder record.EventRecorder
-	// Tag of elasticsearch opearator
-	operatorTag string
-	// Tag of elasticdump
-	elasticDumpTag string
 	// Governing service
-	governingService string
-	// sync time to sync the list.
 	syncPeriod time.Duration
+	// Flag data
+	option *Option
+}
+
+type Option struct {
+	// Exporter namespace
+	ExporterNamespace string
+	// Tag of Exporter
+	ExporterTag string
+	// Governing service
+	GoverningService string
+	// Tag of elasticdump
+	ElasticDumpTag string
+	// Tag of elasticsearch opearator
+	OperatorTag string
 }
 
 var _ amc.Snapshotter = &Controller{}
@@ -49,22 +58,18 @@ func New(
 	client clientset.Interface,
 	extClient tcs.ExtensionInterface,
 	promClient *pcm.MonitoringV1alpha1Client,
-	operatorTag string,
-	elasticDumpTag string,
-	governingService string,
+	opt *Option,
 ) *Controller {
 	return &Controller{
 		Controller: &amc.Controller{
 			Client:    client,
 			ExtClient: extClient,
 		},
-		cronController:   amc.NewCronController(client, extClient),
-		promClient:       promClient,
-		eventRecorder:    eventer.NewEventRecorder(client, "Elastic Controller"),
-		operatorTag:      operatorTag,
-		elasticDumpTag:   elasticDumpTag,
-		governingService: governingService,
-		syncPeriod:       time.Minute * 2,
+		cronController: amc.NewCronController(client, extClient),
+		promClient:     promClient,
+		eventRecorder:  eventer.NewEventRecorder(client, "Elastic Controller"),
+		option:         opt,
+		syncPeriod:     time.Minute * 2,
 	}
 }
 
