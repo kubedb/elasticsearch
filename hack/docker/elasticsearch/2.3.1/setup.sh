@@ -7,7 +7,7 @@ set -o pipefail
 GOPATH=$(go env GOPATH)
 REPO_ROOT=$GOPATH/src/github.com/k8sdb/elasticsearch
 
-source "$REPO_ROOT/hack/libbuild/common/k8sdb_image.sh"
+source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 IMG=elasticsearch
 TAG=2.3.1

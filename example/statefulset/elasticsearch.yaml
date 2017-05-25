@@ -16,7 +16,7 @@ spec:
         pod.beta.kubernetes.io/init-containers: '[
           {
             "name": "discover",
-            "image": "kubedb/k8s-es:canary",
+            "image": "kubedb/es-operator:canary",
             "imagePullPolicy": "IfNotPresent",
             "args": ["discover", "--service=elasticsearch-demo"],
             "env": [

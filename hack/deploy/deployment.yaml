@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: kubedb-es
-        image: kubedb/k8s-es:0.1.0
+        image: kubedb/es-operator:0.1.0
         args:
         - run
         - --operator=0.1.0

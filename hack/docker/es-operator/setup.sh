@@ -10,10 +10,10 @@ BIN=$GOPATH/bin
 ROOT=$GOPATH
 REPO_ROOT=$GOPATH/src/github.com/k8sdb/elasticsearch
 
-source "$REPO_ROOT/hack/libbuild/common/k8sdb_image.sh"
+source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
-IMG=k8s-es
+IMG=es-operator
 
 DIST=$GOPATH/src/github.com/k8sdb/elasticsearch/dist
 mkdir -p $DIST
@@ -22,23 +22,23 @@ if [ -f "$DIST/.tag" ]; then
 fi
 
 clean() {
-    pushd $REPO_ROOT/hack/docker/k8s-es
-    rm -f k8s-es Dockerfile
+    pushd $REPO_ROOT/hack/docker/es-operator
+    rm -f es-operator Dockerfile
     popd
 }
 
 build_binary() {
     pushd $REPO_ROOT
     ./hack/builddeps.sh
-    ./hack/make.py build k8s-es
+    ./hack/make.py build es-operator
     detect_tag $DIST/.tag
     popd
 }
 
 build_docker() {
-    pushd $REPO_ROOT/hack/docker/k8s-es
-    cp $DIST/k8s-es/k8s-es-linux-amd64 k8s-es
-    chmod 755 k8s-es
+    pushd $REPO_ROOT/hack/docker/es-operator
+    cp $DIST/es-operator/es-operator-linux-amd64 es-operator
+    chmod 755 es-operator
 
     cat >Dockerfile <<EOL
 FROM alpine
@@ -48,15 +48,15 @@ RUN set -x \
   && apk add ca-certificates \
   && rm -rf /var/cache/apk/*
 
-COPY k8s-es /k8s-es
+COPY es-operator /es-operator
 
 USER nobody:nobody
-ENTRYPOINT ["/k8s-es"]
+ENTRYPOINT ["/es-operator"]
 EOL
     local cmd="docker build -t kubedb/$IMG:$TAG ."
     echo $cmd; $cmd
 
-    rm k8s-es Dockerfile
+    rm es-operator Dockerfile
     popd
 }
 
