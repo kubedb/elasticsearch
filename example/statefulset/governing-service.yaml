@@ -1,5 +1,8 @@
 apiVersion: v1
-kind: ServiceAccount
+kind: Service
 metadata:
   name: governing-elasticsearch
   namespace: default
+spec:
+  clusterIP: None
+  type: ClusterIP

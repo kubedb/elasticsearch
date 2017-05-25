@@ -1,0 +1,14 @@
+apiVersion: k8sdb.com/v1beta1
+kind: Elastic
+metadata:
+  name: elasticsearch-demo
+spec:
+  Version: canary
+  Replicas: 1
+  Storage:
+    Class: "pd-standard"
+    AccessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: "50Gi"
