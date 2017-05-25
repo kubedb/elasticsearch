@@ -10,10 +10,14 @@ import (
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
+	"io/ioutil"
 	cgcmd "k8s.io/client-go/tools/clientcmd"
+	kapi "k8s.io/kubernetes/pkg/api"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/util/runtime"
+	"os"
+	"strings"
 )
 
 const (
@@ -73,6 +77,19 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().StringVar(&opt.OperatorTag, "operator", operatorVersion, "Tag of elasticsearch opearator")
 	cmd.Flags().StringVar(&opt.ElasticDumpTag, "elasticdump", canary, "Tag of elasticdump")
 	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", "kubedb", "Governing service for database statefulset")
+	cmd.Flags().StringVar(&opt.ExporterNamespace, "exporter-ns", namespace(), "Namespace for monitoring exporter")
 
 	return cmd
+}
+
+func namespace() string {
+	if ns := os.Getenv("OPERATOR_NAMESPACE"); ns != "" {
+		return ns
+	}
+	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
+		if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
+			return ns
+		}
+	}
+	return kapi.NamespaceDefault
 }
