@@ -14,4 +14,4 @@ spec:
     protocol: TCP
     targetPort: tcp
   selector:
-    elastic.k8sdb.com/name: elasticsearch-demo
+    elastic.kubedb.com/name: elasticsearch-demo

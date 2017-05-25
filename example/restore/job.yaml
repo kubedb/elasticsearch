@@ -8,7 +8,7 @@ spec:
     metadata:
       labels:
         job-name: restore-elasticsearch
-        job.k8sdb.com/type: restore
+        job.kubedb.com/type: restore
     spec:
       restartPolicy: Never
       containers:

@@ -7,8 +7,8 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      k8sdb.com/type: elasticsearch
-      elastic.k8sdb.com/name: elasticsearch-demo
+      kubedb.com/type: elasticsearch
+      elastic.kubedb.com/name: elasticsearch-demo
   serviceName: governing-elasticsearch
   template:
     metadata:
@@ -39,8 +39,8 @@ spec:
           }
         ]'
       labels:
-        k8sdb.com/type: elasticsearch
-        elastic.k8sdb.com/name: elasticsearch-demo
+        kubedb.com/type: elasticsearch
+        elastic.kubedb.com/name: elasticsearch-demo
     spec:
       containers:
       - image: k8sdb/elasticsearch:canary

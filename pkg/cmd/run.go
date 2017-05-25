@@ -73,7 +73,7 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&operatorTag, "operator", operatorVersion, "Tag of elasticsearch opearator")
 	cmd.Flags().StringVar(&elasticDumpTag, "elasticdump", canary, "Tag of elasticdump")
-	cmd.Flags().StringVar(&governingService, "governing-service", "k8sdb", "Governing service for database statefulset")
+	cmd.Flags().StringVar(&governingService, "governing-service", "kubedb", "Governing service for database statefulset")
 
 	return cmd
 }
