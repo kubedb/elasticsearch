@@ -11,7 +11,6 @@ import (
 	"github.com/appscode/log"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tcs "github.com/k8sdb/apimachinery/client/clientset"
-	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
@@ -46,12 +45,12 @@ func NewCmdRun() *cobra.Command {
 			}
 
 			// Check elasticdump docker image tag
-			if err := amc.CheckDockerImageVersion(docker.ImageElasticdump, opt.ElasticDumpTag); err != nil {
+			if err := docker.CheckDockerImageVersion(docker.ImageElasticdump, opt.ElasticDumpTag); err != nil {
 				log.Fatalf(`Image %v:%v not found.`, docker.ImageElasticdump, opt.ElasticDumpTag)
 			}
 
 			// Check exporter docker image tag
-			if err := amc.CheckDockerImageVersion(docker.ImageExporter, opt.ExporterTag); err != nil {
+			if err := docker.CheckDockerImageVersion(docker.ImageExporter, opt.ExporterTag); err != nil {
 				log.Fatalf(`Image %v:%v not found.`, docker.ImageExporter, opt.ExporterTag)
 			}
 
