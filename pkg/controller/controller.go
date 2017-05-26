@@ -209,6 +209,7 @@ func (c *Controller) ensureThirdPartyResource() {
 		ObjectMeta: kapi.ObjectMeta{
 			Name: resourceName,
 		},
+		Description: "Elasticsearch Database in Kubernetes by appscode.com",
 		Versions: []extensions.APIVersion{
 			{
 				Name: tapi.V1beta1SchemeGroupVersion.Version,
