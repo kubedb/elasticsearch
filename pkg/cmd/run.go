@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
 
 	acstr "github.com/appscode/go/strings"
 	"github.com/appscode/go/version"
@@ -11,19 +14,11 @@ import (
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 	cgcmd "k8s.io/client-go/tools/clientcmd"
 	kapi "k8s.io/kubernetes/pkg/api"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/util/runtime"
-	"os"
-	"strings"
-)
-
-const (
-	// Default tag
-	canary = "canary"
 )
 
 func NewCmdRun() *cobra.Command {
