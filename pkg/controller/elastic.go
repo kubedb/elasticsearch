@@ -215,7 +215,7 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 				elastic,
 				kapi.EventTypeWarning,
 				eventer.EventReasonFailedToCreate,
-				"Failed to set monitoring. Reason: %v",
+				"Failed to set monitoring system. Reason: %v",
 				err,
 			)
 			log.Errorln(err)
@@ -401,19 +401,20 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 		} else {
 			c.cronController.StopBackupScheduling(updatedElastic.ObjectMeta)
 		}
-		if !reflect.DeepEqual(oldElastic.Spec.Monitor, updatedElastic.Spec.Monitor) {
-			if err := c.updateMonitor(oldElastic, updatedElastic); err != nil {
-				c.eventRecorder.Eventf(
-					updatedElastic,
-					kapi.EventTypeWarning,
-					eventer.EventReasonFailedToUpdate,
-					"Failed to update monitoring system. Reason: %v",
-					err,
-				)
-				log.Errorln(err)
-			}
-		}
-
 	}
+
+	if !reflect.DeepEqual(oldElastic.Spec.Monitor, updatedElastic.Spec.Monitor) {
+		if err := c.updateMonitor(oldElastic, updatedElastic); err != nil {
+			c.eventRecorder.Eventf(
+				updatedElastic,
+				kapi.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				"Failed to update monitoring system. Reason: %v",
+				err,
+			)
+			log.Errorln(err)
+		}
+	}
+
 	return nil
 }

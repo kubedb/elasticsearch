@@ -24,6 +24,19 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
+type Option struct {
+	// Tag of elasticdump
+	ElasticDumpTag string
+	// Tag of elasticsearch operator
+	OperatorTag string
+	// Exporter namespace
+	ExporterNamespace string
+	// Tag of Exporter
+	ExporterTag string
+	// Governing service
+	GoverningService string
+}
+
 type Controller struct {
 	*amc.Controller
 	// Cron Controller
@@ -32,23 +45,10 @@ type Controller struct {
 	promClient *pcm.MonitoringV1alpha1Client
 	// Event Recorder
 	eventRecorder record.EventRecorder
-	// Governing service
-	syncPeriod time.Duration
 	// Flag data
 	option *Option
-}
-
-type Option struct {
-	// Exporter namespace
-	ExporterNamespace string
-	// Tag of Exporter
-	ExporterTag string
 	// Governing service
-	GoverningService string
-	// Tag of elasticdump
-	ElasticDumpTag string
-	// Tag of elasticsearch opearator
-	OperatorTag string
+	syncPeriod time.Duration
 }
 
 var _ amc.Snapshotter = &Controller{}

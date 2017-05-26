@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	acstr "github.com/appscode/go/strings"
 	"github.com/appscode/go/version"
 	"github.com/appscode/log"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
@@ -31,7 +32,13 @@ func NewCmdRun() *cobra.Command {
 		kubeconfigPath string
 	)
 
-	opt := &controller.Option{}
+	opt := &controller.Option{
+		ElasticDumpTag:    "canary",
+		OperatorTag:       acstr.Val(version.Version.Version, "canary"),
+		ExporterNamespace: namespace(),
+		ExporterTag:       "canary",
+		GoverningService:  "kubedb",
+	}
 
 	cmd := &cobra.Command{
 		Use:   "run",
@@ -45,6 +52,11 @@ func NewCmdRun() *cobra.Command {
 			// Check elasticdump docker image tag
 			if err := amc.CheckDockerImageVersion(controller.ImageElasticDump, opt.ElasticDumpTag); err != nil {
 				log.Fatalf(`Image %v:%v not found.`, controller.ImageElasticDump, opt.ElasticDumpTag)
+			}
+
+			// Check exporter docker image tag
+			if err := amc.CheckDockerImageVersion(controller.ImageExporter, opt.ExporterTag); err != nil {
+				log.Fatalf(`Image %v:%v not found.`, controller.ImageExporter, opt.ExporterTag)
 			}
 
 			client := clientset.NewForConfigOrDie(config)
@@ -67,18 +79,13 @@ func NewCmdRun() *cobra.Command {
 		},
 	}
 
-	operatorVersion := version.Version.Version
-	if operatorVersion == "" {
-		operatorVersion = canary
-	}
-
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.OperatorTag, "operator", operatorVersion, "Tag of elasticsearch opearator")
-	cmd.Flags().StringVar(&opt.ElasticDumpTag, "elasticdump", canary, "Tag of elasticdump")
-	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", "kubedb", "Governing service for database statefulset")
-	cmd.Flags().StringVar(&opt.ExporterNamespace, "exporter-ns", namespace(), "Namespace for monitoring exporter")
-
+	cmd.Flags().StringVar(&opt.ElasticDumpTag, "elasticdump", opt.ElasticDumpTag, "Tag of elasticdump")
+	cmd.Flags().StringVar(&opt.OperatorTag, "operator", opt.OperatorTag, "Tag of elasticsearch opearator")
+	cmd.Flags().StringVar(&opt.ExporterNamespace, "exporter-ns", opt.ExporterNamespace, "Namespace for monitoring exporter")
+	cmd.Flags().StringVar(&opt.ExporterTag, "exporter", opt.ExporterTag, "Tag of monitoring expoter")
+	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", opt.GoverningService, "Governing service for database statefulset")
 	return cmd
 }
 
