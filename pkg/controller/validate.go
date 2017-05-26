@@ -12,7 +12,6 @@ func (c *Controller) validateElastic(elastic *tapi.Elastic) error {
 		return fmt.Errorf(`Object 'Version' is missing in '%v'`, elastic.Spec)
 	}
 
-
 	if err := docker.CheckDockerImageVersion(docker.ImageElasticsearch, elastic.Spec.Version); err != nil {
 		return fmt.Errorf(`Image %v:%v not found`, docker.ImageElasticsearch, elastic.Spec.Version)
 	}

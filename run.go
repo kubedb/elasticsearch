@@ -33,7 +33,6 @@ func NewCmdRun() *cobra.Command {
 		ExporterNamespace: namespace(),
 		ExporterTag:       "canary",
 		GoverningService:  "kubedb",
-		Address:           ":8080",
 	}
 
 	cmd := &cobra.Command{
@@ -46,6 +45,7 @@ func NewCmdRun() *cobra.Command {
 			}
 
 			// Check elasticdump docker image tag
+
 			if err := docker.CheckDockerImageVersion(docker.ImageElasticdump, opt.ElasticDumpTag); err != nil {
 				log.Fatalf(`Image %v:%v not found.`, docker.ImageElasticdump, opt.ElasticDumpTag)
 			}
@@ -82,7 +82,8 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().StringVar(&opt.ExporterNamespace, "exporter-ns", opt.ExporterNamespace, "Namespace for monitoring exporter")
 	cmd.Flags().StringVar(&opt.ExporterTag, "exporter", opt.ExporterTag, "Tag of monitoring expoter")
 	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", opt.GoverningService, "Governing service for database statefulset")
-	cmd.Flags().StringVar(&opt.Address, "address", opt.Address, "Address to listen on for web interface and telemetry.")
+	cmd.Flags().StringVar(&opt.Address, "address", ":8080", "Address to listen on for web interface and telemetry.")
+
 	return cmd
 }
 
