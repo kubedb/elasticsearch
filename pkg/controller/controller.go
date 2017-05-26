@@ -38,6 +38,8 @@ type Controller struct {
 	elasticDumpTag string
 	// Governing service
 	governingService string
+	// Address to listen on for web interface and telemetry.
+	address string
 	// sync time to sync the list.
 	syncPeriod time.Duration
 }
@@ -52,6 +54,7 @@ func New(
 	operatorTag string,
 	elasticDumpTag string,
 	governingService string,
+	address string,
 ) *Controller {
 	return &Controller{
 		Controller: &amc.Controller{
@@ -64,6 +67,7 @@ func New(
 		operatorTag:      operatorTag,
 		elasticDumpTag:   elasticDumpTag,
 		governingService: governingService,
+		address:          address,
 		syncPeriod:       time.Minute * 2,
 	}
 }
@@ -84,6 +88,8 @@ func (c *Controller) RunAndHold() {
 	go c.watchSnapshot()
 	// Watch DormantDatabase with labelSelector only for Elastic
 	go c.watchDormantDatabase()
+	// Run HTTP server to expose metrics, audit endpoint & debug profiles.
+	go c.runHTTPServer()
 	// hold
 	hold.Hold()
 }
