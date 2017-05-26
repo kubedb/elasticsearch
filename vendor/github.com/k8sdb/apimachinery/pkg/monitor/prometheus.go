@@ -10,14 +10,15 @@ import (
 	_ "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	prom "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tapi "github.com/k8sdb/apimachinery/api"
+	cgerr "k8s.io/client-go/pkg/api/errors"
 	"k8s.io/client-go/pkg/api/unversioned"
 	"k8s.io/client-go/pkg/api/v1"
 	kapi "k8s.io/kubernetes/pkg/api"
 	kerr "k8s.io/kubernetes/pkg/api/errors"
+	uv "k8s.io/kubernetes/pkg/api/unversioned"
 	kepi "k8s.io/kubernetes/pkg/apis/extensions"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/util/intstr"
-	cgerr "k8s.io/client-go/pkg/api/errors"
 )
 
 const (
@@ -111,8 +112,14 @@ func (c *PrometheusController) ensureExporterPods() error {
 			Labels:    exporterLabel,
 		},
 		Spec: kepi.DeploymentSpec{
+			Selector: &uv.LabelSelector{
+				MatchLabels: exporterLabel,
+			},
 			Replicas: 1,
 			Template: kapi.PodTemplateSpec{
+				ObjectMeta: kapi.ObjectMeta{
+					Labels: exporterLabel,
+				},
 				Spec: kapi.PodSpec{
 					Containers: []kapi.Container{
 						{
@@ -120,6 +127,7 @@ func (c *PrometheusController) ensureExporterPods() error {
 							Args: []string{
 								"run",
 								fmt.Sprintf("--address=:%d", portNumber),
+								"--v=3",
 							},
 							Image:           c.exporterDockerImage,
 							ImagePullPolicy: kapi.PullIfNotPresent,
@@ -192,8 +200,8 @@ func (c *PrometheusController) ensureServiceMonitor(meta kapi.ObjectMeta, old, n
 	if old != nil &&
 		(!reflect.DeepEqual(old.Prometheus.Labels, new.Prometheus.Labels) || old.Prometheus.Interval != new.Prometheus.Interval) {
 		actual.Labels = new.Prometheus.Labels
-		for _, e := range actual.Spec.Endpoints {
-			e.Interval = new.Prometheus.Interval
+		for i := range actual.Spec.Endpoints {
+			actual.Spec.Endpoints[i].Interval = new.Prometheus.Interval
 		}
 		_, err := c.promClient.ServiceMonitors(new.Prometheus.Namespace).Update(actual)
 		return err
