@@ -219,7 +219,14 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 				err,
 			)
 			log.Errorln(err)
+			return nil
 		}
+		c.eventRecorder.Event(
+			elastic,
+			kapi.EventTypeNormal,
+			eventer.EventReasonSuccessfulCreate,
+			"Successfully created monitoring system.",
+		)
 	}
 	return nil
 }
@@ -329,7 +336,14 @@ func (c *Controller) pause(elastic *tapi.Elastic) error {
 				err,
 			)
 			log.Errorln(err)
+			return nil
 		}
+		c.eventRecorder.Event(
+			elastic,
+			kapi.EventTypeNormal,
+			eventer.EventReasonSuccessfulDelete,
+			"Successfully deleted monitoring system.",
+		)
 	}
 	return nil
 }
@@ -413,7 +427,14 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 				err,
 			)
 			log.Errorln(err)
+			return nil
 		}
+		c.eventRecorder.Event(
+			updatedElastic,
+			kapi.EventTypeNormal,
+			eventer.EventReasonSuccessfulUpdate,
+			"Successfully updated monitoring system.",
+		)
 	}
 
 	return nil
