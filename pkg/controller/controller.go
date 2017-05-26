@@ -35,6 +35,8 @@ type Option struct {
 	ExporterTag string
 	// Governing service
 	GoverningService string
+	// Address to listen on for web interface and telemetry.
+	Address string
 }
 
 type Controller struct {
@@ -47,7 +49,7 @@ type Controller struct {
 	eventRecorder record.EventRecorder
 	// Flag data
 	option *Option
-	// Governing service
+	// sync time to sync the list.
 	syncPeriod time.Duration
 }
 
@@ -73,8 +75,7 @@ func New(
 	}
 }
 
-// Blocks caller. Intended to be called as a Go routine.
-func (c *Controller) RunAndHold() {
+func (c *Controller) Run() {
 	// Ensure Elastic TPR
 	c.ensureThirdPartyResource()
 
@@ -89,6 +90,14 @@ func (c *Controller) RunAndHold() {
 	go c.watchSnapshot()
 	// Watch DormantDatabase with labelSelector only for Elastic
 	go c.watchDormantDatabase()
+}
+
+// Blocks caller. Intended to be called as a Go routine.
+func (c *Controller) RunAndHold() {
+	c.Run()
+
+	// Run HTTP server to expose metrics, audit endpoint & debug profiles.
+	go c.runHTTPServer()
 	// hold
 	hold.Hold()
 }

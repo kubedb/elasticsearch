@@ -8,7 +8,6 @@ import (
 	"github.com/appscode/go/version"
 	logs "github.com/appscode/log/golog"
 	_ "github.com/k8sdb/apimachinery/api/install"
-	"github.com/k8sdb/elasticsearch/pkg/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -28,8 +27,8 @@ func main() {
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 
 	rootCmd.AddCommand(version.NewCmdVersion())
-	rootCmd.AddCommand(cmd.NewCmdRun())
-	rootCmd.AddCommand(cmd.NewCmdDiscover())
+	rootCmd.AddCommand(NewCmdRun())
+	rootCmd.AddCommand(NewCmdDiscover())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
