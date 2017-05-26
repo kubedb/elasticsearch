@@ -1,14 +1,5 @@
-<<<<<<< HEAD
-hash: 90d0b31b80434e17259a3032a6a8a933a376868045aa9f2e564b5b9e88d8b2f3
-<<<<<<< HEAD
-updated: 2017-05-26T10:04:26.02669864+06:00
-=======
 hash: a07bd3f7fe8c299ead89e7fb528f926f81f7bff1bd4800972680e7ef13aa1a19
-updated: 2017-05-26T01:23:25.685621213-07:00
->>>>>>> 2a368be249aff8b1012e27d349727ccf76fb3f11
-=======
-updated: 2017-05-26T14:43:24.979306522+06:00
->>>>>>> 2c14d67679420d518e633aac0fa2851f7630a966
+updated: 2017-05-26T17:02:30.144499873+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -92,8 +83,15 @@ imports:
 - name: github.com/docker/distribution
   version: cd27f179f2c10c5d300e6d09025b538c475b0d51
   subpackages:
+  - context
   - digest
+  - manifest
+  - manifest/schema1
+  - manifest/schema2
   - reference
+  - uuid
+- name: github.com/docker/libtrust
+  version: aabc10ec26b754e797f9028f4589c5b7bd90dc20
 - name: github.com/emicklei/go-restful
   version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
   subpackages:
@@ -130,6 +128,10 @@ imports:
   - proto
 - name: github.com/google/gofuzz
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
+- name: github.com/gorilla/context
+  version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
+- name: github.com/gorilla/mux
+  version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
 - name: github.com/graymeta/stow
   version: 0f16e170afc5e1b89434469a3b52a81f792c9038
   subpackages:
@@ -137,6 +139,8 @@ imports:
   - s3
 - name: github.com/heroku/docker-registry-client
   version: 95467b6cacee2a06f112a3cf7e47a70fad6000cf
+  subpackages:
+  - registry
 - name: github.com/howeyc/gopass
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/imdario/mergo
@@ -150,15 +154,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/k8sdb/apimachinery
-<<<<<<< HEAD
-<<<<<<< HEAD
-  version: de6bd153d792fdc80e5c5c003a1778023a47fd50
-=======
   version: 1b710fa293cac69e288891e6a9917726c0245380
->>>>>>> 2a368be249aff8b1012e27d349727ccf76fb3f11
-=======
-  version: 1b710fa293cac69e288891e6a9917726c0245380
->>>>>>> 2c14d67679420d518e633aac0fa2851f7630a966
   subpackages:
   - api
   - api/install
@@ -166,12 +162,9 @@ imports:
   - pkg/controller
   - pkg/docker
   - pkg/eventer
-<<<<<<< HEAD
   - pkg/monitor
-=======
 - name: github.com/lib/pq
-  version: 50761b0867bd1d9d069276790bcd4a3bccf2324a
->>>>>>> 2a368be249aff8b1012e27d349727ccf76fb3f11
+  version: 2704adc878c21e1329f46f6e56a1c387d788ff94
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
