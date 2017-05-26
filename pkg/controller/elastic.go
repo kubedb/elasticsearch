@@ -214,12 +214,19 @@ func (c *Controller) create(elastic *tapi.Elastic) error {
 			c.eventRecorder.Eventf(
 				elastic,
 				kapi.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				"Failed to set monitoring system. Reason: %v",
+				eventer.EventReasonFailedToAddMonitor,
+				"Failed to add monitoring system. Reason: %v",
 				err,
 			)
 			log.Errorln(err)
+			return nil
 		}
+		c.eventRecorder.Event(
+			elastic,
+			kapi.EventTypeNormal,
+			eventer.EventReasonSuccessfulMonitorAdd,
+			"Successfully added monitoring system.",
+		)
 	}
 	return nil
 }
@@ -324,12 +331,19 @@ func (c *Controller) pause(elastic *tapi.Elastic) error {
 			c.eventRecorder.Eventf(
 				elastic,
 				kapi.EventTypeWarning,
-				eventer.EventReasonFailedToDelete,
+				eventer.EventReasonFailedToDeleteMonitor,
 				"Failed to delete monitoring system. Reason: %v",
 				err,
 			)
 			log.Errorln(err)
+			return nil
 		}
+		c.eventRecorder.Event(
+			elastic,
+			kapi.EventTypeNormal,
+			eventer.EventReasonSuccessfulMonitorDelete,
+			"Successfully deleted monitoring system.",
+		)
 	}
 	return nil
 }
@@ -408,12 +422,19 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 			c.eventRecorder.Eventf(
 				updatedElastic,
 				kapi.EventTypeWarning,
-				eventer.EventReasonFailedToUpdate,
+				eventer.EventReasonFailedToUpdateMonitor,
 				"Failed to update monitoring system. Reason: %v",
 				err,
 			)
 			log.Errorln(err)
+			return nil
 		}
+		c.eventRecorder.Event(
+			updatedElastic,
+			kapi.EventTypeNormal,
+			eventer.EventReasonSuccessfulMonitorUpdate,
+			"Successfully updated monitoring system.",
+		)
 	}
 
 	return nil

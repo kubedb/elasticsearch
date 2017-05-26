@@ -46,13 +46,13 @@ func NewCmdRun() *cobra.Command {
 			}
 
 			// Check elasticdump docker image tag
-			if err := docker.CheckDockerImageVersion(controller.ImageElasticDump, opt.ElasticDumpTag); err != nil {
-				log.Fatalf(`Image %v:%v not found.`, controller.ImageElasticDump, opt.ElasticDumpTag)
+			if err := docker.CheckDockerImageVersion(docker.ImageElasticdump, opt.ElasticDumpTag); err != nil {
+				log.Fatalf(`Image %v:%v not found.`, docker.ImageElasticdump, opt.ElasticDumpTag)
 			}
 
 			// Check exporter docker image tag
-			if err := docker.CheckDockerImageVersion(controller.ImageExporter, opt.ExporterTag); err != nil {
-				log.Fatalf(`Image %v:%v not found.`, controller.ImageExporter, opt.ExporterTag)
+			if err := docker.CheckDockerImageVersion(docker.ImageExporter, opt.ExporterTag); err != nil {
+				log.Fatalf(`Image %v:%v not found.`, docker.ImageExporter, opt.ExporterTag)
 			}
 
 			client := clientset.NewForConfigOrDie(config)
