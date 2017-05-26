@@ -5,6 +5,7 @@ import (
 
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
+	"github.com/k8sdb/apimachinery/pkg/docker"
 )
 
 func (c *Controller) validateElastic(elastic *tapi.Elastic) error {
@@ -12,12 +13,12 @@ func (c *Controller) validateElastic(elastic *tapi.Elastic) error {
 		return fmt.Errorf(`Object 'Version' is missing in '%v'`, elastic.Spec)
 	}
 
-	if err := amc.CheckDockerImageVersion(ImageElasticsearch, elastic.Spec.Version); err != nil {
-		return fmt.Errorf(`Image %v:%v not found`, ImageElasticsearch, elastic.Spec.Version)
+	if err := amc.CheckDockerImageVersion(docker.ImageElasticsearch, elastic.Spec.Version); err != nil {
+		return fmt.Errorf(`Image %v:%v not found`, docker.ImageElasticsearch, elastic.Spec.Version)
 	}
 
-	if err := amc.CheckDockerImageVersion(ImageOperatorElasticsearch, c.option.OperatorTag); err != nil {
-		return fmt.Errorf(`Image %v:%v not found`, ImageOperatorElasticsearch, c.option.OperatorTag)
+	if err := amc.CheckDockerImageVersion(docker.ImageElasticOperator, c.option.OperatorTag); err != nil {
+		return fmt.Errorf(`Image %v:%v not found`, docker.ImageElasticOperator, c.option.OperatorTag)
 	}
 
 	if elastic.Spec.Storage != nil {
