@@ -11,6 +11,7 @@ import (
 	"github.com/appscode/log"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tcs "github.com/k8sdb/apimachinery/client/clientset"
+	"github.com/k8sdb/apimachinery/pkg/analytics"
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
@@ -72,6 +73,7 @@ func NewCmdRun() *cobra.Command {
 			w := controller.New(client, extClient, promClient, opt)
 			defer runtime.HandleCrash()
 			fmt.Println("Starting operator...")
+			analytics.SendEvent(docker.ImageElasticOperator, "started", Version)
 			w.RunAndHold()
 		},
 	}
