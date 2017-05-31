@@ -3,5 +3,5 @@ kind: Elastic
 metadata:
   name: elasticsearch-demo
 spec:
-  Version: canary
+  Version: 2.3.1
   Replicas: 1
