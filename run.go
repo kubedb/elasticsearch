@@ -91,6 +91,7 @@ func NewCmdRun() *cobra.Command {
 
 	// Analytics flags
 	cmd.Flags().BoolVar(&opt.EnableAnalytics, "analytics", opt.EnableAnalytics, "Send analytical event to Google Analytics")
+
 	return cmd
 }
 
