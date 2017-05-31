@@ -34,7 +34,7 @@ func NewCmdRun() *cobra.Command {
 		ExporterTag:       "canary",
 		GoverningService:  "kubedb",
 		Address:           ":8080",
-		EnableAnalytics:  true,
+		EnableAnalytics:   true,
 	}
 
 	cmd := &cobra.Command{
