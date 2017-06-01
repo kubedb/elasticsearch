@@ -9,5 +9,5 @@ spec:
     prometheus:
       namespace: default
       labels:
-        app: "kubedb-exporter"
+        app: kubedb-exporter
       interval: 10s
