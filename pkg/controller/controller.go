@@ -60,6 +60,7 @@ var _ amc.Deleter = &Controller{}
 func New(
 	client clientset.Interface,
 	extClient tcs.ExtensionInterface,
+	cronController amc.CronControllerInterface,
 	promClient *pcm.MonitoringV1alpha1Client,
 	opt Options,
 ) *Controller {
@@ -68,7 +69,7 @@ func New(
 			Client:    client,
 			ExtClient: extClient,
 		},
-		cronController: amc.NewCronController(client, extClient),
+		cronController: cronController,
 		promClient:     promClient,
 		eventRecorder:  eventer.NewEventRecorder(client, "Elastic operator"),
 		opt:            opt,
@@ -79,11 +80,6 @@ func New(
 func (c *Controller) Run() {
 	// Ensure Elastic TPR
 	c.ensureThirdPartyResource()
-
-	// Start Cron
-	c.cronController.StartCron()
-	// Stop Cron
-	defer c.cronController.StopCron()
 
 	// Watch Elastic TPR objects
 	go c.watchElastic()
