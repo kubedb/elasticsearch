@@ -42,10 +42,10 @@ type Options struct {
 
 type Controller struct {
 	*amc.Controller
-	// Cron Controller
-	cronController amc.CronControllerInterface
 	// Prometheus client
 	promClient *pcm.MonitoringV1alpha1Client
+	// Cron Controller
+	cronController amc.CronControllerInterface
 	// Event Recorder
 	eventRecorder record.EventRecorder
 	// Flag data
@@ -60,8 +60,8 @@ var _ amc.Deleter = &Controller{}
 func New(
 	client clientset.Interface,
 	extClient tcs.ExtensionInterface,
-	cronController amc.CronControllerInterface,
 	promClient *pcm.MonitoringV1alpha1Client,
+	cronController amc.CronControllerInterface,
 	opt Options,
 ) *Controller {
 	return &Controller{
@@ -69,8 +69,8 @@ func New(
 			Client:    client,
 			ExtClient: extClient,
 		},
-		cronController: cronController,
 		promClient:     promClient,
+		cronController: cronController,
 		eventRecorder:  eventer.NewEventRecorder(client, "Elastic operator"),
 		opt:            opt,
 		syncPeriod:     time.Minute * 2,
