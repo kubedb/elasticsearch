@@ -81,6 +81,9 @@ func (c *Controller) Run() {
 	// Ensure Elastic TPR
 	c.ensureThirdPartyResource()
 
+	// Start Cron
+	c.cronController.StartCron()
+
 	// Watch Elastic TPR objects
 	go c.watchElastic()
 	// Watch Snapshot with labelSelector only for Elastic
