@@ -9,11 +9,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
 	"github.com/appscode/log"
-	kapi "k8s.io/kubernetes/pkg/api"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	rest "k8s.io/kubernetes/pkg/client/restclient"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+clientset "k8s.io/client-go/kubernetes"
+"k8s.io/client-go/rest"
 )
 
 func write(path, data string) {
@@ -33,7 +32,7 @@ func ensureDirectory(path string) {
 	}
 }
 
-func flattenSubsets(subsets []kapi.EndpointSubset) []string {
+func flattenSubsets(subsets []apiv1.EndpointSubset) []string {
 	ips := []string{}
 	for _, ss := range subsets {
 		for _, addr := range ss.Addresses {
@@ -53,7 +52,7 @@ func DiscoverEndpoints(config *rest.Config, service, namespace string) {
 		log.Fatalf("Failed to make client: %v", err)
 	}
 
-	var elasticsearch *kapi.Service
+	var elasticsearch *apiv1.Service
 	// Look for endpoints associated with the Elasticsearch loggging service.
 	// First wait for the service to become available.
 	for t := time.Now(); time.Since(t) < 5*time.Minute; time.Sleep(10 * time.Second) {
@@ -69,7 +68,7 @@ func DiscoverEndpoints(config *rest.Config, service, namespace string) {
 		return
 	}
 
-	var endpoints *kapi.Endpoints
+	var endpoints *apiv1.Endpoints
 	addrs := []string{}
 
 	// $(statefulset name)-$(ordinal)

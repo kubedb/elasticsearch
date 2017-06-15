@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/go/version"
 	"github.com/appscode/log"
@@ -16,11 +15,11 @@ import (
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
-	cgcmd "k8s.io/client-go/tools/clientcmd"
-	kapi "k8s.io/kubernetes/pkg/api"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util/runtime"
+"k8s.io/kubernetes/pkg/util/runtime"
 )
 
 func NewCmdRun() *cobra.Command {
@@ -55,7 +54,7 @@ func NewCmdRun() *cobra.Command {
 			client := clientset.NewForConfigOrDie(config)
 			extClient := tcs.NewForConfigOrDie(config)
 
-			cgConfig, err := cgcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
+			cgConfig, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
 				log.Fatalf("Could not get kubernetes config: %s", err)
 			}
@@ -103,5 +102,5 @@ func namespace() string {
 			return ns
 		}
 	}
-	return kapi.NamespaceDefault
+	return apiv1.NamespaceDefault
 }

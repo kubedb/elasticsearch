@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"time"
-
 	"github.com/appscode/go/flags"
 	"github.com/k8sdb/elasticsearch/pkg/discover"
 	"github.com/spf13/cobra"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util/runtime"
+"k8s.io/kubernetes/pkg/util/runtime"
 )
 
 func NewCmdDiscover() *cobra.Command {

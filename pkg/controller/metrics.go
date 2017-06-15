@@ -3,7 +3,6 @@ package controller
 import (
 	"net/http"
 	_ "net/http/pprof"
-
 	"github.com/appscode/pat"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"

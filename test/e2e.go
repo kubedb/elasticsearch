@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tcs "github.com/k8sdb/apimachinery/client/clientset"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-	cgcmd "k8s.io/client-go/tools/clientcmd"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	"k8s.io/kubernetes/pkg/client/restclient"
+"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+clientset "k8s.io/client-go/kubernetes"
+"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 )
 
@@ -38,7 +37,7 @@ func getController() (c *controller.Controller, err error) {
 		func() {
 			fmt.Println("-- TestE2E: Waiting for controller")
 
-			var config *restclient.Config
+			var config *rest.Config
 			config, err = clientcmd.BuildConfigFromFlags("", configPath)
 			if err != nil {
 				err = fmt.Errorf("Could not get kubernetes config: %s", err)
@@ -48,7 +47,7 @@ func getController() (c *controller.Controller, err error) {
 			client := clientset.NewForConfigOrDie(config)
 			extClient := tcs.NewExtensionsForConfigOrDie(config)
 
-			cgConfig, _err := cgcmd.BuildConfigFromFlags("", configPath)
+			cgConfig, _err := clientcmd.BuildConfigFromFlags("", configPath)
 			if _err != nil {
 				err = _err
 				return

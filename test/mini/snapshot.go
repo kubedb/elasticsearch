@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/log"
 	"github.com/ghodss/yaml"
@@ -12,16 +11,16 @@ import (
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-	kapi "k8s.io/kubernetes/pkg/api"
-	k8serr "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/labels"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+kerr "k8s.io/apimachinery/pkg/api/errors"
+"k8s.io/apimachinery/pkg/labels"
 )
 
 const durationCheckSnapshot = time.Minute * 30
 
 func CreateSnapshot(c *controller.Controller, namespace string, snapshotSpec tapi.SnapshotSpec) (*tapi.Snapshot, error) {
 	snapshot := &tapi.Snapshot{
-		ObjectMeta: kapi.ObjectMeta{
+		ObjectMeta: apiv1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("e2e-db-snapshot"),
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -42,7 +41,7 @@ func CheckSnapshot(c *controller.Controller, snapshot *tapi.Snapshot) (bool, err
 	for now.Sub(then) < durationCheckSnapshot {
 		snapshot, err := c.ExtClient.Snapshots(snapshot.Namespace).Get(snapshot.Name)
 		if err != nil {
-			if k8serr.IsNotFound(err) {
+			if kerr.IsNotFound(err) {
 				time.Sleep(time.Second * 10)
 				now = time.Now()
 				continue
@@ -137,7 +136,7 @@ func CheckSnapshotScheduler(c *controller.Controller, elastic *tapi.Elastic) err
 
 	for now.Sub(then) < durationCheckSnapshot {
 
-		snapshotList, err := c.ExtClient.Snapshots(elastic.Namespace).List(kapi.ListOptions{
+		snapshotList, err := c.ExtClient.Snapshots(elastic.Namespace).List(apiv1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
 		})
 

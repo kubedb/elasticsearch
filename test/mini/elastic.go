@@ -4,19 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-	kapi "k8s.io/kubernetes/pkg/api"
+apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const durationCheckElastic = time.Minute * 30
 
 func NewElastic() *tapi.Elastic {
 	elastic := &tapi.Elastic{
-		ObjectMeta: kapi.ObjectMeta{
+		ObjectMeta: apiv1.ObjectMeta{
 			Name: rand.WithUniqSuffix("e2e-elastic"),
 		},
 		Spec: tapi.ElasticSpec{
@@ -72,7 +71,7 @@ func CheckElasticWorkload(c *controller.Controller, elastic *tapi.Elastic) error
 	}
 
 	// If job is success
-	if pod.Status.Phase != kapi.PodRunning {
+	if pod.Status.Phase != apiv1.PodRunning {
 		return errors.New("Pod is not running")
 	}
 
