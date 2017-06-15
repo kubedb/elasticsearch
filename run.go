@@ -53,13 +53,7 @@ func NewCmdRun() *cobra.Command {
 
 			client := clientset.NewForConfigOrDie(config)
 			extClient := tcs.NewForConfigOrDie(config)
-
-			cgConfig, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-			if err != nil {
-				log.Fatalf("Could not get kubernetes config: %s", err)
-			}
-
-			promClient, err := pcm.NewForConfig(cgConfig)
+			promClient, err := pcm.NewForConfig(config)
 			if err != nil {
 				log.Fatalln(err)
 			}

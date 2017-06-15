@@ -7,10 +7,9 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (c *Controller) Exists(om *apiv1.ObjectMeta) (bool, error) {
+func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
 	if _, err := c.ExtClient.Elastics(om.Namespace).Get(om.Name); err != nil {
 		if !kerr.IsNotFound(err) {
 			return false, err

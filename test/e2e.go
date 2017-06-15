@@ -7,6 +7,7 @@ import (
 
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tcs "github.com/k8sdb/apimachinery/client/clientset"
+	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -45,23 +46,22 @@ func getController() (c *controller.Controller, err error) {
 			}
 
 			client := clientset.NewForConfigOrDie(config)
-			extClient := tcs.NewExtensionsForConfigOrDie(config)
-
-			cgConfig, _err := clientcmd.BuildConfigFromFlags("", configPath)
-			if _err != nil {
-				err = _err
-				return
-			}
-
-			promClient, err := pcm.NewForConfig(cgConfig)
+			extClient := tcs.NewForConfigOrDie(config)
+			promClient, err := pcm.NewForConfig(config)
 			if err != nil {
 				err = err
 				return
 			}
 
-			c = controller.New(client, extClient, promClient, "canary", "canary", "kubedb")
-
-			e2eController.controller = c
+			cronController := amc.NewCronController(client, extClient)
+			// Start Cron
+			cronController.StartCron()
+			// Stop Cron
+			e2eController.controller = controller.New(client, extClient, promClient, cronController, controller.Options{
+				GoverningService: "kubedb",
+				ElasticDumpTag:   "canary",
+				OperatorTag:      "canary",
+			})
 			e2eController.isControllerRunning = true
 			go c.RunAndHold()
 

@@ -38,7 +38,7 @@ func (c *Controller) ValidateSnapshot(snapshot *tapi.Snapshot) error {
 		amc.LabelSnapshotStatus: string(tapi.DatabasePhaseRunning),
 	}
 
-	snapshotList, err := c.ExtClient.Snapshots(snapshot.Namespace).List(apiv1.ListOptions{
+	snapshotList, err := c.ExtClient.Snapshots(snapshot.Namespace).List(metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
 	})
 	if err != nil {

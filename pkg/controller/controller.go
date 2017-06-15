@@ -109,11 +109,11 @@ func (c *Controller) RunAndHold() {
 
 func (c *Controller) watchElastic() {
 	lw := &cache.ListWatch{
-		ListFunc: func(opts apiv1.ListOptions) (runtime.Object, error) {
-			return c.ExtClient.Elastics(apiv1.NamespaceAll).List(apiv1.ListOptions{})
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+			return c.ExtClient.Elastics(apiv1.NamespaceAll).List(metav1.ListOptions{})
 		},
-		WatchFunc: func(options apiv1.ListOptions) (watch.Interface, error) {
-			return c.ExtClient.Elastics(apiv1.NamespaceAll).Watch(apiv1.ListOptions{})
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return c.ExtClient.Elastics(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 
@@ -168,16 +168,16 @@ func (c *Controller) watchSnapshot() {
 	}
 	// Watch with label selector
 	lw := &cache.ListWatch{
-		ListFunc: func(opts apiv1.ListOptions) (runtime.Object, error) {
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
 			return c.ExtClient.Snapshots(apiv1.NamespaceAll).List(
-				apiv1.ListOptions{
-					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+				metav1.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labelMap).String(),
 				})
 		},
-		WatchFunc: func(options apiv1.ListOptions) (watch.Interface, error) {
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 			return c.ExtClient.Snapshots(apiv1.NamespaceAll).Watch(
-				apiv1.ListOptions{
-					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+				metav1.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labelMap).String(),
 				})
 		},
 	}
@@ -191,16 +191,16 @@ func (c *Controller) watchDormantDatabase() {
 	}
 	// Watch with label selector
 	lw := &cache.ListWatch{
-		ListFunc: func(opts apiv1.ListOptions) (runtime.Object, error) {
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
 			return c.ExtClient.DormantDatabases(apiv1.NamespaceAll).List(
-				apiv1.ListOptions{
-					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+				metav1.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labelMap).String(),
 				})
 		},
-		WatchFunc: func(options apiv1.ListOptions) (watch.Interface, error) {
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 			return c.ExtClient.DormantDatabases(apiv1.NamespaceAll).Watch(
-				apiv1.ListOptions{
-					LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+				metav1.ListOptions{
+					LabelSelector: labels.SelectorFromSet(labelMap).String(),
 				})
 		},
 	}
@@ -213,7 +213,7 @@ func (c *Controller) ensureThirdPartyResource() {
 
 	resourceName := tapi.ResourceNameElastic + "." + tapi.V1alpha1SchemeGroupVersion.Group
 
-	if _, err := c.Client.Extensions().ThirdPartyResources().Get(resourceName); err != nil {
+	if _, err := c.Client.ExtensionsV1beta1().ThirdPartyResources().Get(resourceName, metav1.GetOptions{}); err != nil {
 		if !kerr.IsNotFound(err) {
 			log.Fatalln(err)
 		}
@@ -226,7 +226,7 @@ func (c *Controller) ensureThirdPartyResource() {
 			APIVersion: "extensions/v1beta1",
 			Kind:       "ThirdPartyResource",
 		},
-		ObjectMeta: apiv1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceName,
 		},
 		Description: "Elasticsearch Database in Kubernetes by appscode.com",
