@@ -3,6 +3,7 @@ package controller
 import (
 	"reflect"
 	"time"
+
 	"github.com/appscode/go/hold"
 	"github.com/appscode/log"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
@@ -11,17 +12,17 @@ import (
 	"github.com/k8sdb/apimachinery/pkg/analytics"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-kerr "k8s.io/apimachinery/pkg/api/errors"
-metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-"k8s.io/client-go/tools/cache"
-clientset "k8s.io/client-go/kubernetes"
-"k8s.io/client-go/tools/record"
-"k8s.io/apimachinery/pkg/labels"
-"k8s.io/apimachinery/pkg/runtime"
-"k8s.io/apimachinery/pkg/util/wait"
-"k8s.io/apimachinery/pkg/watch"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
+	clientset "k8s.io/client-go/kubernetes"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
 )
 
 type Options struct {

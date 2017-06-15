@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/log"
 	"github.com/ghodss/yaml"
@@ -11,9 +12,9 @@ import (
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-kerr "k8s.io/apimachinery/pkg/api/errors"
-"k8s.io/apimachinery/pkg/labels"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const durationCheckSnapshot = time.Minute * 30

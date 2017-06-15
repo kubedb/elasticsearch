@@ -2,10 +2,11 @@ package mini
 
 import (
 	"time"
+
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-kerr "k8s.io/apimachinery/pkg/api/errors"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const durationCheckDormantDatabase = time.Minute * 30

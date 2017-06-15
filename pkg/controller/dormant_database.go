@@ -4,9 +4,10 @@ import (
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-kerr "k8s.io/apimachinery/pkg/api/errors"
-"k8s.io/apimachinery/pkg/labels"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func (c *Controller) Exists(om *apiv1.ObjectMeta) (bool, error) {
@@ -59,7 +60,7 @@ func (c *Controller) ResumeDatabase(dormantDb *tapi.DormantDatabase) error {
 	origin := dormantDb.Spec.Origin
 	objectMeta := origin.ObjectMeta
 	elastic := &tapi.Elastic{
-		ObjectMeta: apiv1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:        objectMeta.Name,
 			Namespace:   objectMeta.Namespace,
 			Labels:      objectMeta.Labels,

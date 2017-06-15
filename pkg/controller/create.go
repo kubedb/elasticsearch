@@ -3,15 +3,17 @@ package controller
 import (
 	"fmt"
 	"time"
+
 	"github.com/appscode/go/crypto/rand"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-kerr "k8s.io/apimachinery/pkg/api/errors"
-apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
-batch "k8s.io/client-go/pkg/apis/batch/v1"
-"k8s.io/apimachinery/pkg/util/intstr"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
+	batch "k8s.io/client-go/pkg/apis/batch/v1"
 )
 
 const (
@@ -23,7 +25,7 @@ const (
 )
 
 func (c *Controller) findService(name, namespace string) (bool, error) {
-	service, err := c.Client.Core().Services(namespace).Get(name)
+	service, err := c.Client.CoreV1().Services(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return false, nil
@@ -44,7 +46,7 @@ func (c *Controller) createService(name, namespace string) error {
 		amc.LabelDatabaseName: name,
 	}
 	service := &apiv1.Service{
-		ObjectMeta: apiv1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: label,
 		},
@@ -65,7 +67,7 @@ func (c *Controller) createService(name, namespace string) error {
 		},
 	}
 
-	if _, err := c.Client.Core().Services(namespace).Create(service); err != nil {
+	if _, err := c.Client.CoreV1().Services(namespace).Create(service); err != nil {
 		return err
 	}
 
@@ -75,7 +77,7 @@ func (c *Controller) createService(name, namespace string) error {
 func (c *Controller) findStatefulSet(elastic *tapi.Elastic) (bool, error) {
 	// SatatefulSet for Postgres database
 	statefulSetName := getStatefulSetName(elastic.Name)
-	statefulSet, err := c.Client.Apps().StatefulSets(elastic.Namespace).Get(statefulSetName)
+	statefulSet, err := c.Client.AppsV1beta1().StatefulSets(elastic.Namespace).Get(statefulSetName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return false, nil
@@ -118,17 +120,17 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*apps.StatefulSet
 	// SatatefulSet for Elastic database
 	statefulSetName := getStatefulSetName(elastic.Name)
 	statefulSet := &apps.StatefulSet{
-		ObjectMeta: apiv1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:        statefulSetName,
 			Namespace:   elastic.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
 		Spec: apps.StatefulSetSpec{
-			Replicas:    elastic.Spec.Replicas,
+			Replicas:    &elastic.Spec.Replicas,
 			ServiceName: c.opt.GoverningService,
 			Template: apiv1.PodTemplateSpec{
-				ObjectMeta: apiv1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Labels:      podLabels,
 					Annotations: annotations,
 				},
@@ -216,7 +218,7 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*apps.StatefulSet
 	// Add Data volume for StatefulSet
 	addDataVolume(statefulSet, elastic.Spec.Storage)
 
-	if _, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
+	if _, err := c.Client.AppsV1beta1().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
 		return nil, err
 	}
 
@@ -230,7 +232,7 @@ func addDataVolume(statefulSet *apps.StatefulSet, storage *tapi.StorageSpec) {
 		storageClassName := storage.Class
 		statefulSet.Spec.VolumeClaimTemplates = []apiv1.PersistentVolumeClaim{
 			{
-				ObjectMeta: apiv1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "data",
 					Annotations: map[string]string{
 						"volume.beta.kubernetes.io/storage-class": storageClassName,
@@ -255,7 +257,7 @@ func addDataVolume(statefulSet *apps.StatefulSet, storage *tapi.StorageSpec) {
 
 func (c *Controller) createDormantDatabase(elastic *tapi.Elastic) (*tapi.DormantDatabase, error) {
 	dormantDb := &tapi.DormantDatabase{
-		ObjectMeta: apiv1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      elastic.Name,
 			Namespace: elastic.Namespace,
 			Labels: map[string]string{
@@ -264,7 +266,7 @@ func (c *Controller) createDormantDatabase(elastic *tapi.Elastic) (*tapi.Dormant
 		},
 		Spec: tapi.DormantDatabaseSpec{
 			Origin: tapi.Origin{
-				ObjectMeta: apiv1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:        elastic.Name,
 					Namespace:   elastic.Namespace,
 					Labels:      elastic.Labels,
@@ -281,7 +283,7 @@ func (c *Controller) createDormantDatabase(elastic *tapi.Elastic) (*tapi.Dormant
 
 func (c *Controller) reCreateElastic(elastic *tapi.Elastic) error {
 	_elastic := &tapi.Elastic{
-		ObjectMeta: apiv1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:        elastic.Name,
 			Namespace:   elastic.Namespace,
 			Labels:      elastic.Labels,
@@ -304,7 +306,6 @@ const (
 )
 
 func (c *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snapshot) (*batch.Job, error) {
-
 	databaseName := elastic.Name
 	jobName := rand.WithUniqSuffix(databaseName)
 	jobLabel := map[string]string{
@@ -323,13 +324,13 @@ func (c *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snap
 	folderName := fmt.Sprintf("%v/%v/%v", amc.DatabaseNamePrefix, snapshot.Namespace, snapshot.Spec.DatabaseName)
 
 	job := &batch.Job{
-		ObjectMeta: apiv1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   jobName,
 			Labels: jobLabel,
 		},
 		Spec: batch.JobSpec{
 			Template: apiv1.PodTemplateSpec{
-				ObjectMeta: apiv1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Labels: jobLabel,
 				},
 				Spec: apiv1.PodSpec{
@@ -374,7 +375,7 @@ func (c *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snap
 		},
 	}
 
-	return c.Client.Batch().Jobs(elastic.Namespace).Create(job)
+	return c.Client.BatchV1().Jobs(elastic.Namespace).Create(job)
 }
 
 func getStatefulSetName(databaseName string) string {

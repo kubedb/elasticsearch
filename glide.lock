@@ -1,5 +1,5 @@
-hash: 731194b29646b05b0cc2e5d5d133144aa0e779158f06d1f583314815e4924dd6
-updated: 2017-06-14T18:09:08.551841168-07:00
+hash: b0f6cde29339cba852b88aeb78ad81b60bbb75fb52cdf9dd139ce39b748e0e5f
+updated: 2017-06-14T18:27:36.471589272-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -62,8 +62,6 @@ imports:
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
-- name: github.com/blang/semver
-  version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/coreos/prometheus-operator
   version: 6d45d8c65343a5e6cbe23e7ef17aafbd64b29f03
   repo: https://github.com/appscode/prometheus-operator.git
@@ -151,7 +149,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/k8sdb/apimachinery
-  version: 208e2cb46333631ea8c0db66266f21ebe64b687d
+  version: a6849727f72de3285ba2230a6c91e6101a834e18
   subpackages:
   - api
   - api/install
@@ -181,8 +179,6 @@ imports:
   - signal
 - name: github.com/orcaman/concurrent-map
   version: 2ae17bc4c860c83513ee50feb9746f3e50d7515d
-- name: github.com/pborman/uuid
-  version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pkg/errors
   version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/prometheus/client_golang
@@ -400,78 +396,24 @@ imports:
   - pkg/version
   - rest
   - rest/watch
+  - tools/auth
   - tools/cache
+  - tools/clientcmd
   - tools/clientcmd/api
+  - tools/clientcmd/api/latest
+  - tools/clientcmd/api/v1
   - tools/metrics
   - tools/record
   - transport
   - util/cert
   - util/clock
   - util/flowcontrol
+  - util/homedir
   - util/integer
 - name: k8s.io/kubernetes
   version: 8eb75a5810cba92ccad845ca360cf924f2385881
   subpackages:
-  - pkg/api
-  - pkg/api/errors
-  - pkg/api/meta
-  - pkg/api/meta/metatypes
-  - pkg/api/resource
-  - pkg/api/unversioned
-  - pkg/api/v1
-  - pkg/api/validation/path
-  - pkg/apis/autoscaling
-  - pkg/apis/batch
-  - pkg/apis/certificates
-  - pkg/apis/extensions
-  - pkg/auth/user
-  - pkg/client/metrics
-  - pkg/client/restclient
-  - pkg/client/transport
-  - pkg/client/unversioned/auth
-  - pkg/client/unversioned/clientcmd
-  - pkg/client/unversioned/clientcmd/api
-  - pkg/client/unversioned/clientcmd/api/latest
-  - pkg/client/unversioned/clientcmd/api/v1
-  - pkg/conversion
-  - pkg/conversion/queryparams
-  - pkg/fields
-  - pkg/genericapiserver/openapi/common
-  - pkg/labels
-  - pkg/runtime
-  - pkg/runtime/serializer
-  - pkg/runtime/serializer/json
-  - pkg/runtime/serializer/protobuf
-  - pkg/runtime/serializer/recognizer
-  - pkg/runtime/serializer/streaming
-  - pkg/runtime/serializer/versioning
-  - pkg/selection
-  - pkg/types
-  - pkg/util
-  - pkg/util/cert
-  - pkg/util/clock
-  - pkg/util/errors
-  - pkg/util/flowcontrol
-  - pkg/util/framer
-  - pkg/util/homedir
-  - pkg/util/integer
-  - pkg/util/intstr
-  - pkg/util/json
-  - pkg/util/labels
-  - pkg/util/net
-  - pkg/util/parsers
-  - pkg/util/rand
   - pkg/util/runtime
-  - pkg/util/sets
-  - pkg/util/uuid
-  - pkg/util/validation
-  - pkg/util/validation/field
-  - pkg/util/wait
-  - pkg/util/yaml
-  - pkg/version
-  - pkg/watch
-  - pkg/watch/versioned
-  - third_party/forked/golang/reflect
 testImports:
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d

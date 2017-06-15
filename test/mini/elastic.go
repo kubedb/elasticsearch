@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-apiv1 "k8s.io/client-go/pkg/api/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const durationCheckElastic = time.Minute * 30

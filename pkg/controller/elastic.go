@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-kerr "k8s.io/apimachinery/pkg/api/errors"
-metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func (c *Controller) create(elastic *tapi.Elastic) error {
@@ -425,7 +426,7 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 
 	if (updatedElastic.Spec.Replicas != oldElastic.Spec.Replicas) && updatedElastic.Spec.Replicas >= 0 {
 		statefulSetName := getStatefulSetName(updatedElastic.Name)
-		statefulSet, err := c.Client.Apps().StatefulSets(updatedElastic.Namespace).Get(statefulSetName)
+		statefulSet, err := c.Client.AppsV1beta1().StatefulSets(updatedElastic.Namespace).Get(statefulSetName, metav1.GetOptions{})
 		if err != nil {
 			c.eventRecorder.Eventf(
 				updatedElastic,
@@ -437,8 +438,8 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elastic) error {
 			)
 			return err
 		}
-		statefulSet.Spec.Replicas = updatedElastic.Spec.Replicas
-		if _, err := c.Client.Apps().StatefulSets(statefulSet.Namespace).Update(statefulSet); err != nil {
+		statefulSet.Spec.Replicas = &updatedElastic.Spec.Replicas
+		if _, err := c.Client.AppsV1beta1().StatefulSets(statefulSet.Namespace).Update(statefulSet); err != nil {
 			c.eventRecorder.Eventf(
 				updatedElastic,
 				apiv1.EventTypeNormal,

@@ -37,7 +37,7 @@ BEGIN_IMPORT_REGEX = ur'import \(\s*'
 END_IMPORT_REGEX = ur'\)\s*'
 
 PKG_MAP = {
-    'k8s.io/client-go/tools/clientcmd': ['k8s.io/kubernetes/pkg/client/unversioned/clientcmd'],
+    'k8s.io/kubernetes/pkg/client/unversioned/clientcmd': ['k8s.io/client-go/tools/clientcmd'],
     'k8s.io/kubernetes/pkg/util/runtime': ['k8s.io/kubernetes/pkg/util/runtime'],
     'k8s.io/kubernetes/pkg/api': ['k8s.io/client-go/pkg/api/v1', 'apiv1'],
     'k8s.io/kubernetes/pkg/api/errors': ['k8s.io/apimachinery/pkg/api/errors'],

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tcs "github.com/k8sdb/apimachinery/client/clientset"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-clientset "k8s.io/client-go/kubernetes"
-"k8s.io/client-go/rest"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type elasticController struct {

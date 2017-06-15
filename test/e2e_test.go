@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
 	tapi "github.com/k8sdb/apimachinery/api"
 	"github.com/k8sdb/elasticsearch/test/mini"
 	"github.com/stretchr/testify/assert"
-apiv1 "k8s.io/client-go/pkg/api/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func TestCreate(t *testing.T) {

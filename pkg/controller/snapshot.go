@@ -3,15 +3,16 @@ package controller
 import (
 	"errors"
 	"fmt"
+
 	"github.com/appscode/go/crypto/rand"
 	tapi "github.com/k8sdb/apimachinery/api"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-batch "k8s.io/client-go/pkg/apis/batch/v1"
-"k8s.io/apimachinery/pkg/labels"
-"k8s.io/apimachinery/pkg/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	batch "k8s.io/client-go/pkg/apis/batch/v1"
 )
 
 const (
@@ -38,7 +39,7 @@ func (c *Controller) ValidateSnapshot(snapshot *tapi.Snapshot) error {
 	}
 
 	snapshotList, err := c.ExtClient.Snapshots(snapshot.Namespace).List(apiv1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+		LabelSelector: labels.SelectorFromSet(labelMap).String(),
 	})
 	if err != nil {
 		return err
@@ -98,13 +99,13 @@ func (c *Controller) GetSnapshotter(snapshot *tapi.Snapshot) (*batch.Job, error)
 	// Folder name inside Cloud bucket where backup will be uploaded
 	folderName := fmt.Sprintf("%v/%v/%v", amc.DatabaseNamePrefix, snapshot.Namespace, snapshot.Spec.DatabaseName)
 	job := &batch.Job{
-		ObjectMeta: apiv1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   jobName,
 			Labels: jobLabel,
 		},
 		Spec: batch.JobSpec{
 			Template: apiv1.PodTemplateSpec{
-				ObjectMeta: apiv1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Labels: jobLabel,
 				},
 				Spec: apiv1.PodSpec{
@@ -161,7 +162,7 @@ func (c *Controller) getVolumeForSnapshot(storage *tapi.StorageSpec, jobName, na
 	}
 	if storage != nil {
 		claim := &apiv1.PersistentVolumeClaim{
-			ObjectMeta: apiv1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      jobName,
 				Namespace: namespace,
 				Annotations: map[string]string{
