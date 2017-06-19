@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/appscode/go/runtime"
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/go/version"
 	"github.com/appscode/log"
@@ -19,7 +20,6 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/kubernetes/pkg/util/runtime"
 )
 
 func NewCmdRun() *cobra.Command {
