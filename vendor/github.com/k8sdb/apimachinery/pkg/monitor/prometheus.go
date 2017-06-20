@@ -10,20 +10,18 @@ import (
 	_ "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	prom "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tapi "github.com/k8sdb/apimachinery/api"
-	"github.com/k8sdb/apimachinery/pkg/docker"
 	cgerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kapi "k8s.io/kubernetes/pkg/api"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	clientset "k8s.io/client-go/kubernetes"
 )
 
 type PrometheusController struct {
 	kubeClient        clientset.Interface
-	promClient        *v1alpha1.MonitoringV1alpha1Client
+	promClient        v1alpha1.MonitoringV1alpha1Interface
 	operatorNamespace string
 }
 
-func NewPrometheusController(kubeClient clientset.Interface, promClient *v1alpha1.MonitoringV1alpha1Client, operatorNamespace string) Monitor {
+func NewPrometheusController(kubeClient clientset.Interface, promClient v1alpha1.MonitoringV1alpha1Interface, operatorNamespace string) Monitor {
 	return &PrometheusController{
 		kubeClient:        kubeClient,
 		promClient:        promClient,
@@ -31,21 +29,21 @@ func NewPrometheusController(kubeClient clientset.Interface, promClient *v1alpha
 	}
 }
 
-func (c *PrometheusController) AddMonitor(meta kapi.ObjectMeta, spec *tapi.MonitorSpec) error {
+func (c *PrometheusController) AddMonitor(meta metav1.ObjectMeta, spec *tapi.MonitorSpec) error {
 	if !c.SupportsCoreOSOperator() {
 		return errors.New("Cluster does not support CoreOS Prometheus operator")
 	}
 	return c.ensureServiceMonitor(meta, spec, spec)
 }
 
-func (c *PrometheusController) UpdateMonitor(meta kapi.ObjectMeta, old, new *tapi.MonitorSpec) error {
+func (c *PrometheusController) UpdateMonitor(meta metav1.ObjectMeta, old, new *tapi.MonitorSpec) error {
 	if !c.SupportsCoreOSOperator() {
 		return errors.New("Cluster does not support CoreOS Prometheus operator")
 	}
 	return c.ensureServiceMonitor(meta, old, new)
 }
 
-func (c *PrometheusController) DeleteMonitor(meta kapi.ObjectMeta, spec *tapi.MonitorSpec) error {
+func (c *PrometheusController) DeleteMonitor(meta metav1.ObjectMeta, spec *tapi.MonitorSpec) error {
 	if !c.SupportsCoreOSOperator() {
 		return errors.New("Cluster does not support CoreOS Prometheus operator")
 	}
@@ -56,18 +54,18 @@ func (c *PrometheusController) DeleteMonitor(meta kapi.ObjectMeta, spec *tapi.Mo
 }
 
 func (c *PrometheusController) SupportsCoreOSOperator() bool {
-	_, err := c.kubeClient.Extensions().ThirdPartyResources().Get("prometheus." + prom.TPRGroup)
+	_, err := c.kubeClient.ExtensionsV1beta1().ThirdPartyResources().Get("prometheus."+prom.TPRGroup, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
-	_, err = c.kubeClient.Extensions().ThirdPartyResources().Get("service-monitor." + prom.TPRGroup)
+	_, err = c.kubeClient.ExtensionsV1beta1().ThirdPartyResources().Get("service-monitor."+prom.TPRGroup, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
 	return true
 }
 
-func (c *PrometheusController) ensureServiceMonitor(meta kapi.ObjectMeta, old, new *tapi.MonitorSpec) error {
+func (c *PrometheusController) ensureServiceMonitor(meta metav1.ObjectMeta, old, new *tapi.MonitorSpec) error {
 	name := getServiceMonitorName(meta)
 	if old != nil && (new == nil || old.Prometheus.Namespace != new.Prometheus.Namespace) {
 		err := c.promClient.ServiceMonitors(old.Prometheus.Namespace).Delete(name, nil)
@@ -112,8 +110,8 @@ func (c *PrometheusController) ensureServiceMonitor(meta kapi.ObjectMeta, old, n
 	return nil
 }
 
-func (c *PrometheusController) createServiceMonitor(meta kapi.ObjectMeta, spec *tapi.MonitorSpec) error {
-	svc, err := c.kubeClient.Core().Services(meta.Namespace).Get(meta.Name)
+func (c *PrometheusController) createServiceMonitor(meta metav1.ObjectMeta, spec *tapi.MonitorSpec) error {
+	svc, err := c.kubeClient.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -134,10 +132,9 @@ func (c *PrometheusController) createServiceMonitor(meta kapi.ObjectMeta, spec *
 			},
 			Endpoints: []prom.Endpoint{
 				{
-					Address:  fmt.Sprintf("%s.%s.svc:%d", docker.OperatorName, c.operatorNamespace, docker.OperatorPortNumber),
-					Port:     svc.Spec.Ports[0].Name,
-					Interval: spec.Prometheus.Interval,
-					Path:     fmt.Sprintf("/kubedb.com/v1alpha1/namespaces/%s/%s/%s/pods/${__meta_kubernetes_pod_ip}/metrics", meta.Namespace, getTypeFromSelfLink(meta.SelfLink), meta.Name),
+					TargetPort: spec.Prometheus.TargetPort,
+					Interval:   spec.Prometheus.Interval,
+					Path:       fmt.Sprintf("/kubedb.com/v1alpha1/namespaces/%s/%s/%s/metrics", meta.Namespace, getTypeFromSelfLink(meta.SelfLink), meta.Name),
 				},
 			},
 			Selector: metav1.LabelSelector{
@@ -159,6 +156,6 @@ func getTypeFromSelfLink(selfLink string) string {
 	return s[len(s)-2]
 }
 
-func getServiceMonitorName(meta kapi.ObjectMeta) string {
+func getServiceMonitorName(meta metav1.ObjectMeta) string {
 	return fmt.Sprintf("kubedb-%s-%s", meta.Namespace, meta.Name)
 }

@@ -1,10 +1,9 @@
 package api
 
 import (
-	schema "k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/runtime"
-	versionedwatch "k8s.io/kubernetes/pkg/watch/versioned"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // SchemeGroupVersion is group version used to register these objects
@@ -30,9 +29,7 @@ func v1addKnownTypes(scheme *runtime.Scheme) error {
 		// kubedb Postgres
 		&Postgres{},
 		&PostgresList{},
-
-		&v1.ListOptions{},
 	)
-	versionedwatch.AddToGroupVersion(scheme, V1alpha1SchemeGroupVersion)
+	metav1.AddToGroupVersion(scheme, V1alpha1SchemeGroupVersion)
 	return nil
 }

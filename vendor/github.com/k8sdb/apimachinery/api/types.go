@@ -1,13 +1,16 @@
 package api
 
-import "k8s.io/kubernetes/pkg/api"
+import (
+	"k8s.io/apimachinery/pkg/util/intstr"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+)
 
 // StorageSpec defines storage provisioning
 type StorageSpec struct {
 	// Name of the StorageClass to use when requesting storage provisioning.
 	Class string `json:"class"`
 	// Persistent Volume Claim
-	api.PersistentVolumeClaimSpec `json:",inline,omitempty"`
+	apiv1.PersistentVolumeClaimSpec `json:",inline,omitempty"`
 }
 
 type InitSpec struct {
@@ -16,8 +19,8 @@ type InitSpec struct {
 }
 
 type ScriptSourceSpec struct {
-	ScriptPath       string `json:"scriptPath,omitempty"`
-	api.VolumeSource `json:",inline,omitempty"`
+	ScriptPath         string `json:"scriptPath,omitempty"`
+	apiv1.VolumeSource `json:",inline,omitempty"`
 }
 
 type SnapshotSourceSpec struct {
@@ -32,16 +35,20 @@ type BackupScheduleSpec struct {
 
 type SnapshotStorageSpec struct {
 	// Snapshot storage secret
-	StorageSecret *api.SecretVolumeSource `json:"storageSecret,omitempty"`
+	StorageSecret *apiv1.SecretVolumeSource `json:"storageSecret,omitempty"`
 	// Cloud bucket name
 	BucketName string `json:"bucketName,omitempty"`
 }
 
 type MonitorSpec struct {
+	Agent      string          `json:"agent,omitempty"`
 	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
 }
 
 type PrometheusSpec struct {
+	// Name or number of the target port of the endpoint. Mutually exclusive with port.
+	TargetPort intstr.IntOrString `json:"targetPort,omitempty"`
+
 	// Namespace of Prometheus. Service monitors will be created in this namespace.
 	Namespace string `json:"namespace,omitempty"`
 	// Labels are key value pairs that is used to select Prometheus instance via ServiceMonitor labels.

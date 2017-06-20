@@ -45,6 +45,8 @@ import:
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/prometheus/common
+- package: gopkg.in/olivere/elastic.v3
+  version: v3.0.55
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4

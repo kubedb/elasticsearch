@@ -1,5 +1,5 @@
-hash: dcd44e64653110fe1feeb6c9825ab3d4c829a642cefdce737113eebb6e599cec
-updated: 2017-06-13T18:20:16.126143556-07:00
+hash: 2d543bf7140553e6598e1738bf836ab5a3d467dc529594fc30f92b96f46704c3
+updated: 2017-06-20T16:01:57.72357843+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -167,7 +167,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/k8sdb/apimachinery
-  version: ef84724d13c8a82bc3d9edb25415e95f06fe3c0e
+  version: d62217f181ffdc68c48a8dbbc0fef9422c23eb4f
   subpackages:
   - api
   - api/install
@@ -225,7 +225,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
 - name: github.com/spf13/cobra
-  version: b4dbd37a01839e0653eec12aa4bbb2a2ce7b2a37
+  version: 99b5d838ca16c25cc4944e323684f8415e8b10ba
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/ugorji/go
@@ -295,6 +295,11 @@ imports:
   subpackages:
   - bson
   - internal/json
+- name: gopkg.in/olivere/elastic.v3
+  version: eaecbad7a83e6b60f131825553e5eb7fd5a50b41
+  subpackages:
+  - backoff
+  - uritemplates
 - name: gopkg.in/robfig/cron.v2
   version: be2e0b0deed5a68ffee390b4583a13aff8321535
 - name: gopkg.in/yaml.v2
@@ -325,39 +330,105 @@ imports:
   - pkg/runtime/serializer/versioning
   - pkg/selection
   - pkg/types
+  - pkg/util/diff
   - pkg/util/errors
   - pkg/util/framer
   - pkg/util/intstr
   - pkg/util/json
+  - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/rand
   - pkg/util/runtime
   - pkg/util/sets
+  - pkg/util/strategicpatch
   - pkg/util/validation
   - pkg/util/validation/field
   - pkg/util/wait
   - pkg/util/yaml
   - pkg/version
   - pkg/watch
+  - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
   version: 3627aeb7d4f6ade38f995d2c923e459146493c7e
   subpackages:
+  - discovery
   - dynamic
+  - kubernetes
+  - kubernetes/scheme
+  - kubernetes/typed/apps/v1beta1
+  - kubernetes/typed/authentication/v1
+  - kubernetes/typed/authentication/v1beta1
+  - kubernetes/typed/authorization/v1
+  - kubernetes/typed/authorization/v1beta1
+  - kubernetes/typed/autoscaling/v1
+  - kubernetes/typed/autoscaling/v2alpha1
+  - kubernetes/typed/batch/v1
+  - kubernetes/typed/batch/v2alpha1
+  - kubernetes/typed/certificates/v1beta1
+  - kubernetes/typed/core/v1
+  - kubernetes/typed/extensions/v1beta1
+  - kubernetes/typed/policy/v1beta1
+  - kubernetes/typed/rbac/v1alpha1
+  - kubernetes/typed/rbac/v1beta1
+  - kubernetes/typed/settings/v1alpha1
+  - kubernetes/typed/storage/v1
+  - kubernetes/typed/storage/v1beta1
   - pkg/api
+  - pkg/api/install
   - pkg/api/v1
+  - pkg/apis/apps
+  - pkg/apis/apps/install
+  - pkg/apis/apps/v1beta1
+  - pkg/apis/authentication
+  - pkg/apis/authentication/install
+  - pkg/apis/authentication/v1
+  - pkg/apis/authentication/v1beta1
+  - pkg/apis/authorization
+  - pkg/apis/authorization/install
+  - pkg/apis/authorization/v1
+  - pkg/apis/authorization/v1beta1
+  - pkg/apis/autoscaling
+  - pkg/apis/autoscaling/install
+  - pkg/apis/autoscaling/v1
+  - pkg/apis/autoscaling/v2alpha1
+  - pkg/apis/batch
+  - pkg/apis/batch/install
+  - pkg/apis/batch/v1
+  - pkg/apis/batch/v2alpha1
+  - pkg/apis/certificates
+  - pkg/apis/certificates/install
+  - pkg/apis/certificates/v1beta1
   - pkg/apis/extensions
+  - pkg/apis/extensions/install
+  - pkg/apis/extensions/v1beta1
+  - pkg/apis/policy
+  - pkg/apis/policy/install
+  - pkg/apis/policy/v1beta1
+  - pkg/apis/rbac
+  - pkg/apis/rbac/install
+  - pkg/apis/rbac/v1alpha1
+  - pkg/apis/rbac/v1beta1
+  - pkg/apis/settings
+  - pkg/apis/settings/install
+  - pkg/apis/settings/v1alpha1
+  - pkg/apis/storage
+  - pkg/apis/storage/install
+  - pkg/apis/storage/v1
+  - pkg/apis/storage/v1beta1
   - pkg/util
   - pkg/util/parsers
   - pkg/version
   - rest
   - rest/watch
   - tools/auth
+  - tools/cache
   - tools/clientcmd
   - tools/clientcmd/api
   - tools/clientcmd/api/latest
   - tools/clientcmd/api/v1
   - tools/metrics
+  - tools/record
   - transport
   - util/cert
   - util/clock
@@ -365,7 +436,7 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/kubernetes
-  version: 8eb75a5810cba92ccad845ca360cf924f2385881
+  version: f07eea23494be1e7c11a8e2cf51bd96d1ec9fdf1
   subpackages:
   - pkg/api
   - pkg/api/errors
