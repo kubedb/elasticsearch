@@ -9,14 +9,15 @@ import (
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-	kapi "k8s.io/kubernetes/pkg/api"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const durationCheckElastic = time.Minute * 30
 
 func NewElastic() *tapi.Elastic {
 	elastic := &tapi.Elastic{
-		ObjectMeta: kapi.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: rand.WithUniqSuffix("e2e-elastic"),
 		},
 		Spec: tapi.ElasticSpec{
@@ -55,24 +56,24 @@ func CheckElasticStatus(c *controller.Controller, elastic *tapi.Elastic) (bool, 
 }
 
 func CheckElasticWorkload(c *controller.Controller, elastic *tapi.Elastic) error {
-	if _, err := c.Client.Core().Services(elastic.Namespace).Get(elastic.Name); err != nil {
+	if _, err := c.Client.CoreV1().Services(elastic.Namespace).Get(elastic.Name, metav1.GetOptions{}); err != nil {
 		return err
 	}
 
 	// SatatefulSet for Elastic database
 	statefulSetName := fmt.Sprintf("%v-%v", elastic.Name, tapi.ResourceCodeElastic)
-	if _, err := c.Client.Apps().StatefulSets(elastic.Namespace).Get(statefulSetName); err != nil {
+	if _, err := c.Client.AppsV1beta1().StatefulSets(elastic.Namespace).Get(statefulSetName, metav1.GetOptions{}); err != nil {
 		return err
 	}
 
 	podName := fmt.Sprintf("%v-%v", statefulSetName, 0)
-	pod, err := c.Client.Core().Pods(elastic.Namespace).Get(podName)
+	pod, err := c.Client.CoreV1().Pods(elastic.Namespace).Get(podName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	// If job is success
-	if pod.Status.Phase != kapi.PodRunning {
+	if pod.Status.Phase != apiv1.PodRunning {
 		return errors.New("Pod is not running")
 	}
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/appscode/go/runtime"
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/go/version"
 	"github.com/appscode/log"
@@ -16,11 +17,9 @@ import (
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
-	cgcmd "k8s.io/client-go/tools/clientcmd"
-	kapi "k8s.io/kubernetes/pkg/api"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util/runtime"
+	clientset "k8s.io/client-go/kubernetes"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func NewCmdRun() *cobra.Command {
@@ -31,8 +30,9 @@ func NewCmdRun() *cobra.Command {
 
 	opt := controller.Options{
 		ElasticDumpTag:    "canary",
-		OperatorTag:       stringz.Val(version.Version.Version, "canary"),
+		DiscoveryTag:      stringz.Val(version.Version.Version, "canary"),
 		OperatorNamespace: namespace(),
+		ExporterTag:       "0.2.0",
 		GoverningService:  "kubedb",
 		Address:           ":8080",
 		EnableAnalytics:   true,
@@ -54,13 +54,7 @@ func NewCmdRun() *cobra.Command {
 
 			client := clientset.NewForConfigOrDie(config)
 			extClient := tcs.NewForConfigOrDie(config)
-
-			cgConfig, err := cgcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-			if err != nil {
-				log.Fatalf("Could not get kubernetes config: %s", err)
-			}
-
-			promClient, err := pcm.NewForConfig(cgConfig)
+			promClient, err := pcm.NewForConfig(config)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -83,6 +77,7 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", opt.GoverningService, "Governing service for database statefulset")
+	cmd.Flags().StringVar(&opt.ExporterTag, "exporter-tag", opt.ExporterTag, "Tag of kubedb/operator used as exporter")
 	cmd.Flags().StringVar(&opt.Address, "address", opt.Address, "Address to listen on for web interface and telemetry.")
 
 	// elasticdump flags
@@ -103,5 +98,5 @@ func namespace() string {
 			return ns
 		}
 	}
-	return kapi.NamespaceDefault
+	return apiv1.NamespaceDefault
 }

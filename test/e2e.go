@@ -7,11 +7,11 @@ import (
 
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tcs "github.com/k8sdb/apimachinery/client/clientset"
+	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
-	cgcmd "k8s.io/client-go/tools/clientcmd"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type elasticController struct {
@@ -38,7 +38,7 @@ func getController() (c *controller.Controller, err error) {
 		func() {
 			fmt.Println("-- TestE2E: Waiting for controller")
 
-			var config *restclient.Config
+			var config *rest.Config
 			config, err = clientcmd.BuildConfigFromFlags("", configPath)
 			if err != nil {
 				err = fmt.Errorf("Could not get kubernetes config: %s", err)
@@ -46,23 +46,22 @@ func getController() (c *controller.Controller, err error) {
 			}
 
 			client := clientset.NewForConfigOrDie(config)
-			extClient := tcs.NewExtensionsForConfigOrDie(config)
-
-			cgConfig, _err := cgcmd.BuildConfigFromFlags("", configPath)
-			if _err != nil {
-				err = _err
-				return
-			}
-
-			promClient, err := pcm.NewForConfig(cgConfig)
+			extClient := tcs.NewForConfigOrDie(config)
+			promClient, err := pcm.NewForConfig(config)
 			if err != nil {
 				err = err
 				return
 			}
 
-			c = controller.New(client, extClient, promClient, "canary", "canary", "kubedb")
-
-			e2eController.controller = c
+			cronController := amc.NewCronController(client, extClient)
+			// Start Cron
+			cronController.StartCron()
+			// Stop Cron
+			e2eController.controller = controller.New(client, extClient, promClient, cronController, controller.Options{
+				GoverningService: "kubedb",
+				ElasticDumpTag:   "canary",
+				DiscoveryTag:     "canary",
+			})
 			e2eController.isControllerRunning = true
 			go c.RunAndHold()
 

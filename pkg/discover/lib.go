@@ -11,9 +11,10 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	kapi "k8s.io/kubernetes/pkg/api"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	rest "k8s.io/kubernetes/pkg/client/restclient"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientset "k8s.io/client-go/kubernetes"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/rest"
 )
 
 func write(path, data string) {
@@ -33,7 +34,7 @@ func ensureDirectory(path string) {
 	}
 }
 
-func flattenSubsets(subsets []kapi.EndpointSubset) []string {
+func flattenSubsets(subsets []apiv1.EndpointSubset) []string {
 	ips := []string{}
 	for _, ss := range subsets {
 		for _, addr := range ss.Addresses {
@@ -53,11 +54,11 @@ func DiscoverEndpoints(config *rest.Config, service, namespace string) {
 		log.Fatalf("Failed to make client: %v", err)
 	}
 
-	var elasticsearch *kapi.Service
+	var elasticsearch *apiv1.Service
 	// Look for endpoints associated with the Elasticsearch loggging service.
 	// First wait for the service to become available.
 	for t := time.Now(); time.Since(t) < 5*time.Minute; time.Sleep(10 * time.Second) {
-		elasticsearch, err = c.Core().Services(namespace).Get(service)
+		elasticsearch, err = c.CoreV1().Services(namespace).Get(service, metav1.GetOptions{})
 		if err == nil {
 			break
 		}
@@ -69,7 +70,7 @@ func DiscoverEndpoints(config *rest.Config, service, namespace string) {
 		return
 	}
 
-	var endpoints *kapi.Endpoints
+	var endpoints *apiv1.Endpoints
 	addrs := []string{}
 
 	// $(statefulset name)-$(ordinal)
@@ -88,7 +89,7 @@ func DiscoverEndpoints(config *rest.Config, service, namespace string) {
 	// Wait for some endpoints.
 	count := 0
 	for t := time.Now(); time.Since(t) < 5*time.Minute; time.Sleep(10 * time.Second) {
-		endpoints, err = c.Core().Endpoints(namespace).Get(service)
+		endpoints, err = c.CoreV1().Endpoints(namespace).Get(service, metav1.GetOptions{})
 		if err != nil {
 			continue
 		}
