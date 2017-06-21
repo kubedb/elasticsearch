@@ -1,9 +1,10 @@
 package summary
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
 
+	"github.com/k8sdb/elasticsearch/pkg/audit/type"
 	elastic "gopkg.in/olivere/elastic.v3"
 )
 
@@ -12,54 +13,55 @@ func newClient(host, port string) (*elastic.Client, error) {
 		elastic.SetURL(fmt.Sprintf("http://%v:%v", host, port)),
 		elastic.SetMaxRetries(10),
 		elastic.SetSniff(false),
-	), nil
+	)
 }
 
 func getAllIndices(client *elastic.Client) ([]string, error) {
 	return client.IndexNames()
 }
 
-func getDataFromIndex(client *elastic.Client, indexName string) *ElasticData {
+func getDataFromIndex(client *elastic.Client, indexName string) (*types.IndexInfo, error) {
 	// Get analyzer
 	analyzerData, err := client.IndexGetSettings(indexName).Do()
 	if err != nil {
-		log.Fatal(err)
+		return &types.IndexInfo{}, err
 	}
 
 	dataByte, err := json.Marshal(analyzerData[indexName].Settings["index"])
 	if err != nil {
-		log.Fatal(err)
+		return &types.IndexInfo{}, err
 	}
 
-	if err := json.Unmarshal(dataByte, &elasticData.Setting); err != nil {
-		log.Fatal(err)
+	var indexInfo *types.IndexInfo
+	if err := json.Unmarshal(dataByte, &indexInfo.Setting); err != nil {
+		return &types.IndexInfo{}, err
 	}
 
 	// get mappings
 	mappingData, err := client.GetMapping().Index(indexName).Do()
 	if err != nil {
-		log.Fatal(err)
+		return &types.IndexInfo{}, err
 	}
-	elasticData.Mapping = mappingData
+	indexInfo.Mapping = mappingData
 
 	// Count Ids
 	mappingDataBype, err := json.Marshal(mappingData[indexName])
 	if err != nil {
-		log.Fatal(err)
+		return &types.IndexInfo{}, err
 	}
 	type esTypes struct {
 		Mappings map[string]interface{} `json:"mappings"`
 	}
 	var esType esTypes
 	if err := json.Unmarshal(mappingDataBype, &esType); err != nil {
-		log.Fatal(err)
+		return &types.IndexInfo{}, err
 	}
 	for key := range esType.Mappings {
 		counts, err := client.Count(indexName).Type(key).Do()
 		if err != nil {
-			log.Fatal(err)
+			return &types.IndexInfo{}, err
 		}
-		elasticData.IdCount[key] = counts
+		indexInfo.IdCount[key] = counts
 	}
-	return elasticData
+	return indexInfo, nil
 }

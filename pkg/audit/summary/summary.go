@@ -1,13 +1,14 @@
 package summary
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	tcs "github.com/k8sdb/apimachinery/client/clientset"
+	"github.com/k8sdb/elasticsearch/pkg/audit/type"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	clientset "k8s.io/client-go/kubernetes"
-	"github.com/k8sdb/elasticsearch/pkg/audit/type"
 )
 
 func GetSummaryReport(
@@ -39,7 +40,7 @@ func GetSummaryReport(
 
 	indices := make([]string, 0)
 	if index == "" {
-		indices, err = GetAllIndices(client)
+		indices, err = getAllIndices(client)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -50,7 +51,18 @@ func GetSummaryReport(
 
 	infos := make(map[string]*types.IndexInfo)
 	for _, index := range indices {
-		lib.DumpDBInfo(client, req.Dir, index)
+		info, err := getDataFromIndex(client, index)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		infos[index] = info
+	}
+
+	data, err := json.MarshalIndent(infos, "", "  ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if data != nil {
