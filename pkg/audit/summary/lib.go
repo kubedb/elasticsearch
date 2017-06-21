@@ -21,6 +21,10 @@ func getAllIndices(client *elastic.Client) ([]string, error) {
 }
 
 func getDataFromIndex(client *elastic.Client, indexName string) (*types.IndexInfo, error) {
+	indexInfo := &types.IndexInfo{
+		IdCount: make(map[string]int64),
+	}
+
 	// Get analyzer
 	analyzerData, err := client.IndexGetSettings(indexName).Do()
 	if err != nil {
@@ -32,7 +36,6 @@ func getDataFromIndex(client *elastic.Client, indexName string) (*types.IndexInf
 		return &types.IndexInfo{}, err
 	}
 
-	var indexInfo *types.IndexInfo
 	if err := json.Unmarshal(dataByte, &indexInfo.Setting); err != nil {
 		return &types.IndexInfo{}, err
 	}

@@ -18,5 +18,5 @@ type IndexInfo struct {
 		} `json:"analysis"`
 		NumberOfReplicas string `json:"number_of_replicas"`
 		NumberOfShards   string `json:"number_of_shards"`
-	}
+	} `json:"setting"`
 }
