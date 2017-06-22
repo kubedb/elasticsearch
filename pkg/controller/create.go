@@ -72,7 +72,7 @@ func (c *Controller) createService(elastic *tapi.Elastic) error {
 		svc.Spec.Ports = append(svc.Spec.Ports, apiv1.ServicePort{
 			Name:       tapi.PrometheusExporterPortName,
 			Port:       tapi.PrometheusExporterPortNumber,
-			TargetPort: intstr.FromInt(tapi.PrometheusExporterPortNumber),
+			TargetPort: intstr.FromString(tapi.PrometheusExporterPortName),
 		})
 	}
 
