@@ -15,7 +15,6 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const durationCheckSnapshot = time.Minute * 30
@@ -137,7 +136,7 @@ func CheckSnapshotScheduler(c *controller.Controller, elastic *tapi.Elastic) err
 	now := time.Now()
 
 	for now.Sub(then) < durationCheckSnapshot {
-		snapshotList, err := c.ExtClient.Snapshots(elastic.Namespace).List(apiv1.ListOptions{
+		snapshotList, err := c.ExtClient.Snapshots(elastic.Namespace).List(metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(labelMap).String(),
 		})
 
