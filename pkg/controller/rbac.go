@@ -8,9 +8,9 @@ import (
 	rbac "k8s.io/client-go/pkg/apis/rbac/v1beta1"
 )
 
-func (c *Controller) deleteRole(name, namespace string) error {
+func (c *Controller) deleteRole(elastic *tapi.Elastic) error {
 	// Delete existing Roles
-	if err := c.Client.RbacV1beta1().Roles(namespace).Delete(name, nil); err != nil {
+	if err := c.Client.RbacV1beta1().Roles(elastic.Namespace).Delete(elastic.OffshootName(), nil); err != nil {
 		if !kerr.IsNotFound(err) {
 			return err
 		}
@@ -41,9 +41,9 @@ func (c *Controller) createRole(elastic *tapi.Elastic) error {
 	return nil
 }
 
-func (c *Controller) deleteServiceAccount(name, namespace string) error {
+func (c *Controller) deleteServiceAccount(elastic *tapi.Elastic) error {
 	// Delete existing ServiceAccount
-	if err := c.Client.CoreV1().ServiceAccounts(namespace).Delete(name, nil); err != nil {
+	if err := c.Client.CoreV1().ServiceAccounts(elastic.Namespace).Delete(elastic.OffshootName(), nil); err != nil {
 		if !kerr.IsNotFound(err) {
 			return err
 		}
@@ -66,9 +66,9 @@ func (c *Controller) createServiceAccount(elastic *tapi.Elastic) error {
 	return nil
 }
 
-func (c *Controller) deleteRoleBinding(name, namespace string) error {
+func (c *Controller) deleteRoleBinding(elastic *tapi.Elastic) error {
 	// Delete existing RoleBindings
-	if err := c.Client.RbacV1beta1().RoleBindings(namespace).Delete(name, nil); err != nil {
+	if err := c.Client.RbacV1beta1().RoleBindings(elastic.Namespace).Delete(elastic.OffshootName(), nil); err != nil {
 		if !kerr.IsNotFound(err) {
 			return err
 		}
@@ -105,7 +105,7 @@ func (c *Controller) createRoleBinding(elastic *tapi.Elastic) error {
 
 func (c *Controller) createRBACStuff(elastic *tapi.Elastic) error {
 	// Delete Existing Role
-	if err := c.deleteRole(elastic.Name, elastic.Namespace); err != nil {
+	if err := c.deleteRole(elastic); err != nil {
 		return err
 	}
 	// Create New Role
@@ -130,21 +130,20 @@ func (c *Controller) createRBACStuff(elastic *tapi.Elastic) error {
 	return nil
 }
 
-func (c *Controller) deleteRBACStuff(name, namespace string) error {
+func (c *Controller) deleteRBACStuff(elastic *tapi.Elastic) error {
 	// Delete Existing Role
-	if err := c.deleteRole(name, namespace); err != nil {
+	if err := c.deleteRole(elastic); err != nil {
 		return err
 	}
 
 	// Delete ServiceAccount
-	if err := c.deleteServiceAccount(name, namespace); err != nil {
+	if err := c.deleteServiceAccount(elastic); err != nil {
 		return err
 	}
 
 	// Delete New RoleBinding
-	if err := c.deleteRoleBinding(name, namespace); err != nil {
+	if err := c.deleteRoleBinding(elastic); err != nil {
 		return err
 	}
-
 	return nil
 }

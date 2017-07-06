@@ -155,7 +155,7 @@ func (c *Controller) findDormantDatabase(elastic *tapi.Elastic) error {
 
 func (c *Controller) ensureService(elastic *tapi.Elastic) error {
 	// Check if service name exists
-	found, err := c.findService(elastic.Name, elastic.Namespace)
+	found, err := c.findService(elastic)
 	if err != nil {
 		return err
 	}

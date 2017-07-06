@@ -16,15 +16,15 @@ import (
 )
 
 const (
-	annotationDatabaseVersion = "elastic.kubedb.com/version"
 	// Duration in Minute
 	// Check whether pod under StatefulSet is running or not
 	// Continue checking for this duration until failure
 	durationCheckStatefulSet = time.Minute * 30
 )
 
-func (c *Controller) findService(name, namespace string) (bool, error) {
-	service, err := c.Client.CoreV1().Services(namespace).Get(name, metav1.GetOptions{})
+func (c *Controller) findService(elastic *tapi.Elastic) (bool, error) {
+	name := elastic.OffshootName()
+	service, err := c.Client.CoreV1().Services(elastic.Namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return false, nil
@@ -41,13 +41,10 @@ func (c *Controller) findService(name, namespace string) (bool, error) {
 }
 
 func (c *Controller) createService(elastic *tapi.Elastic) error {
-	label := map[string]string{
-		tapi.LabelDatabaseName: elastic.Name,
-	}
 	svc := &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   elastic.Name,
-			Labels: label,
+			Labels: elastic.OffshootLabels(),
 		},
 		Spec: apiv1.ServiceSpec{
 			Ports: []apiv1.ServicePort{
@@ -62,7 +59,7 @@ func (c *Controller) createService(elastic *tapi.Elastic) error {
 					TargetPort: intstr.FromString("cluster"),
 				},
 			},
-			Selector: label,
+			Selector: elastic.OffshootLabels(),
 		},
 	}
 	if elastic.Spec.Monitor != nil &&
