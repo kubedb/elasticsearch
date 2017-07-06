@@ -166,7 +166,7 @@ func (c *Controller) watchElastic() {
 
 func (c *Controller) watchSnapshot() {
 	labelMap := map[string]string{
-		amc.LabelDatabaseKind: tapi.ResourceKindElastic,
+		tapi.LabelDatabaseKind: tapi.ResourceKindElastic,
 	}
 	// Watch with label selector
 	lw := &cache.ListWatch{
@@ -189,7 +189,7 @@ func (c *Controller) watchSnapshot() {
 
 func (c *Controller) watchDormantDatabase() {
 	labelMap := map[string]string{
-		amc.LabelDatabaseKind: tapi.ResourceKindElastic,
+		tapi.LabelDatabaseKind: tapi.ResourceKindElastic,
 	}
 	// Watch with label selector
 	lw := &cache.ListWatch{
