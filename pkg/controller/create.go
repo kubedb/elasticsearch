@@ -220,7 +220,6 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*apps.StatefulSet
 							},
 						},
 					},
-					ServiceAccountName: c.opt.OperatorServiceAccount,
 				},
 			},
 		},
@@ -251,6 +250,15 @@ func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*apps.StatefulSet
 
 	// Add Data volume for StatefulSet
 	addDataVolume(statefulSet, elastic.Spec.Storage)
+
+	if c.opt.EnableRbac {
+		// Ensure ClusterRoles for database statefulsets
+		if err := c.createRBACStuff(elastic); err != nil {
+			return nil, err
+		}
+
+		statefulSet.Spec.Template.Spec.ServiceAccountName = elastic.Name
+	}
 
 	if _, err := c.Client.AppsV1beta1().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
 		return nil, err
@@ -411,8 +419,7 @@ func (c *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snap
 							},
 						},
 					},
-					RestartPolicy:      apiv1.RestartPolicyNever,
-					ServiceAccountName: c.opt.OperatorServiceAccount,
+					RestartPolicy: apiv1.RestartPolicyNever,
 				},
 			},
 		},

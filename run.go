@@ -28,14 +28,14 @@ func NewCmdRun() *cobra.Command {
 	)
 
 	opt := controller.Options{
-		ElasticDumpTag:         "canary",
-		DiscoveryTag:           stringz.Val(Version, "canary"),
-		OperatorNamespace:      namespace(),
-		OperatorServiceAccount: stringz.Val(os.Getenv("OPERATOR_SERVICE_ACCOUNT"), "default"),
-		ExporterTag:            "0.2.0",
-		GoverningService:       "kubedb",
-		Address:                ":8080",
-		EnableAnalytics:        true,
+		ElasticDumpTag:    "canary",
+		DiscoveryTag:      stringz.Val(Version, "canary"),
+		OperatorNamespace: namespace(),
+		ExporterTag:       "0.2.0",
+		GoverningService:  "kubedb",
+		Address:           ":8080",
+		EnableAnalytics:   true,
+		EnableRbac:        false,
 	}
 
 	cmd := &cobra.Command{
@@ -77,10 +77,9 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", opt.GoverningService, "Governing service for database statefulset")
-	cmd.Flags().StringVar(&opt.OperatorServiceAccount, "operator-service-account", opt.OperatorServiceAccount, "Service account name used to run operator")
 	cmd.Flags().StringVar(&opt.ExporterTag, "exporter-tag", opt.ExporterTag, "Tag of kubedb/operator used as exporter")
 	cmd.Flags().StringVar(&opt.Address, "address", opt.Address, "Address to listen on for web interface and telemetry.")
-
+	cmd.Flags().BoolVar(&opt.EnableRbac, "rbac", opt.EnableRbac, "Enable RBAC for database workloads")
 	// elasticdump flags
 	cmd.Flags().StringVar(&opt.ElasticDumpTag, "elasticdump.tag", opt.ElasticDumpTag, "Tag of elasticdump")
 
