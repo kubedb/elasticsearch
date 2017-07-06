@@ -5,7 +5,6 @@ import (
 	"time"
 
 	tapi "github.com/k8sdb/apimachinery/api"
-	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/apimachinery/pkg/storage"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -34,7 +33,7 @@ func (c *Controller) findService(name, namespace string) (bool, error) {
 		}
 	}
 
-	if service.Spec.Selector[amc.LabelDatabaseName] != name {
+	if service.Spec.Selector[tapi.LabelDatabaseName] != name {
 		return false, fmt.Errorf(`Intended service "%v" already exists`, name)
 	}
 
@@ -43,7 +42,7 @@ func (c *Controller) findService(name, namespace string) (bool, error) {
 
 func (c *Controller) createService(elastic *tapi.Elastic) error {
 	label := map[string]string{
-		amc.LabelDatabaseName: elastic.Name,
+		tapi.LabelDatabaseName: elastic.Name,
 	}
 	svc := &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -85,8 +84,7 @@ func (c *Controller) createService(elastic *tapi.Elastic) error {
 
 func (c *Controller) findStatefulSet(elastic *tapi.Elastic) (bool, error) {
 	// SatatefulSet for Postgres database
-	statefulSetName := getStatefulSetName(elastic.Name)
-	statefulSet, err := c.Client.AppsV1beta1().StatefulSets(elastic.Namespace).Get(statefulSetName, metav1.GetOptions{})
+	statefulSet, err := c.Client.AppsV1beta1().StatefulSets(elastic.Namespace).Get(elastic.OffshootName(), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return false, nil
@@ -95,53 +93,31 @@ func (c *Controller) findStatefulSet(elastic *tapi.Elastic) (bool, error) {
 		}
 	}
 
-	if statefulSet.Labels[amc.LabelDatabaseKind] != tapi.ResourceKindElastic {
-		return false, fmt.Errorf(`Intended statefulSet "%v" already exists`, statefulSetName)
+	if statefulSet.Labels[tapi.LabelDatabaseKind] != tapi.ResourceKindElastic {
+		return false, fmt.Errorf(`Intended statefulSet "%v" already exists`, elastic.OffshootName())
 	}
 
 	return true, nil
 }
 
 func (c *Controller) createStatefulSet(elastic *tapi.Elastic) (*apps.StatefulSet, error) {
-	// Set labels
-	labels := make(map[string]string)
-	for key, val := range elastic.Labels {
-		labels[key] = val
-	}
-	labels[amc.LabelDatabaseKind] = tapi.ResourceKindElastic
-
-	// Set Annotations
-	annotations := make(map[string]string)
-	for key, val := range elastic.Annotations {
-		annotations[key] = val
-	}
-	annotations[annotationDatabaseVersion] = string(elastic.Spec.Version)
-
-	podLabels := make(map[string]string)
-	for key, val := range labels {
-		podLabels[key] = val
-	}
-	podLabels[amc.LabelDatabaseName] = elastic.Name
-
 	dockerImage := fmt.Sprintf("%v:%v", docker.ImageElasticsearch, elastic.Spec.Version)
 	initContainerImage := fmt.Sprintf("%v:%v", docker.ImageElasticOperator, c.opt.DiscoveryTag)
 
 	// SatatefulSet for Elastic database
-	statefulSetName := getStatefulSetName(elastic.Name)
 	statefulSet := &apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        statefulSetName,
+			Name:        elastic.OffshootName(),
 			Namespace:   elastic.Namespace,
-			Labels:      labels,
-			Annotations: annotations,
+			Labels:      elastic.StatefulSetLabels(),
+			Annotations: elastic.StatefulSetAnnotations(),
 		},
 		Spec: apps.StatefulSetSpec{
 			Replicas:    &elastic.Spec.Replicas,
 			ServiceName: c.opt.GoverningService,
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
-					Annotations: annotations,
+					Labels: elastic.OffshootLabels(),
 				},
 				Spec: apiv1.PodSpec{
 					Containers: []apiv1.Container{
@@ -303,7 +279,7 @@ func (c *Controller) createDormantDatabase(elastic *tapi.Elastic) (*tapi.Dormant
 			Name:      elastic.Name,
 			Namespace: elastic.Namespace,
 			Labels: map[string]string{
-				amc.LabelDatabaseKind: tapi.ResourceKindElastic,
+				tapi.LabelDatabaseKind: tapi.ResourceKindElastic,
 			},
 		},
 		Spec: tapi.DormantDatabaseSpec{
@@ -349,13 +325,13 @@ const (
 
 func (c *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snapshot) (*batch.Job, error) {
 	databaseName := elastic.Name
-	jobName := snapshot.Name
+	jobName := snapshot.OffshootName()
 	jobLabel := map[string]string{
-		amc.LabelDatabaseName: databaseName,
-		amc.LabelJobType:      SnapshotProcess_Restore,
+		tapi.LabelDatabaseName: databaseName,
+		tapi.LabelJobType:      SnapshotProcess_Restore,
 	}
 	backupSpec := snapshot.Spec.SnapshotStorageSpec
-	bucket, err := storage.GetContainer(backupSpec)
+	bucket, err := backupSpec.Container()
 	if err != nil {
 		return nil, err
 	}
@@ -367,7 +343,7 @@ func (c *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snap
 	}
 
 	// Folder name inside Cloud bucket where backup will be uploaded
-	folderName := fmt.Sprintf("%v/%v/%v", amc.DatabaseNamePrefix, snapshot.Namespace, snapshot.Spec.DatabaseName)
+	folderName, _ := snapshot.Location()
 
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -432,8 +408,4 @@ func (c *Controller) createRestoreJob(elastic *tapi.Elastic, snapshot *tapi.Snap
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, snapshot.Spec.SnapshotStorageSpec.Local.Volume)
 	}
 	return c.Client.BatchV1().Jobs(elastic.Namespace).Create(job)
-}
-
-func getStatefulSetName(databaseName string) string {
-	return fmt.Sprintf("%v-%v", databaseName, tapi.ResourceCodeElastic)
 }
