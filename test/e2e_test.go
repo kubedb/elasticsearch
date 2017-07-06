@@ -6,9 +6,9 @@ import (
 	"time"
 
 	tapi "github.com/k8sdb/apimachinery/api"
+	"github.com/k8sdb/apimachinery/pkg/storage"
 	"github.com/k8sdb/elasticsearch/test/mini"
 	"github.com/stretchr/testify/assert"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func TestCreate(t *testing.T) {
@@ -203,14 +203,14 @@ func TestSnapshot(t *testing.T) {
 	snapshotSpec := tapi.SnapshotSpec{
 		DatabaseName: elastic.Name,
 		SnapshotStorageSpec: tapi.SnapshotStorageSpec{
-			BucketName: bucket,
-			StorageSecret: &apiv1.SecretVolumeSource{
-				SecretName: secretName,
+			StorageSecretName: secretName,
+			GCS: &tapi.GCSSpec{
+				Bucket: bucket,
 			},
 		},
 	}
 
-	err = controller.CheckBucketAccess(snapshotSpec.SnapshotStorageSpec, elastic.Namespace)
+	err = storage.CheckBucketAccess(controller.Client, snapshotSpec.SnapshotStorageSpec, elastic.Namespace)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -437,9 +437,9 @@ func TestInitialize(t *testing.T) {
 	snapshotSpec := tapi.SnapshotSpec{
 		DatabaseName: elastic.Name,
 		SnapshotStorageSpec: tapi.SnapshotStorageSpec{
-			BucketName: bucket,
-			StorageSecret: &apiv1.SecretVolumeSource{
-				SecretName: secretName,
+			StorageSecretName: secretName,
+			GCS: &tapi.GCSSpec{
+				Bucket: bucket,
 			},
 		},
 	}
@@ -599,12 +599,17 @@ func TestUpdateScheduler(t *testing.T) {
 		return
 	}
 
+	const (
+		bucket     = ""
+		secretName = ""
+	)
+
 	elastic.Spec.BackupSchedule = &tapi.BackupScheduleSpec{
 		CronExpression: "@every 30s",
 		SnapshotStorageSpec: tapi.SnapshotStorageSpec{
-			BucketName: "",
-			StorageSecret: &apiv1.SecretVolumeSource{
-				SecretName: "",
+			StorageSecretName: secretName,
+			GCS: &tapi.GCSSpec{
+				Bucket: bucket,
 			},
 		},
 	}

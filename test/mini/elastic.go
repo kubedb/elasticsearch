@@ -21,7 +21,7 @@ func NewElastic() *tapi.Elastic {
 			Name: rand.WithUniqSuffix("e2e-elastic"),
 		},
 		Spec: tapi.ElasticSpec{
-			Version:  "canary",
+			Version:  "2.3.1",
 			Replicas: 1,
 		},
 	}
@@ -56,12 +56,12 @@ func CheckElasticStatus(c *controller.Controller, elastic *tapi.Elastic) (bool, 
 }
 
 func CheckElasticWorkload(c *controller.Controller, elastic *tapi.Elastic) error {
-	if _, err := c.Client.CoreV1().Services(elastic.Namespace).Get(elastic.Name, metav1.GetOptions{}); err != nil {
+	if _, err := c.Client.CoreV1().Services(elastic.Namespace).Get(elastic.OffshootName(), metav1.GetOptions{}); err != nil {
 		return err
 	}
 
 	// SatatefulSet for Elastic database
-	statefulSetName := fmt.Sprintf("%v-%v", elastic.Name, tapi.ResourceCodeElastic)
+	statefulSetName := elastic.OffshootName()
 	if _, err := c.Client.AppsV1beta1().StatefulSets(elastic.Namespace).Get(statefulSetName, metav1.GetOptions{}); err != nil {
 		return err
 	}
