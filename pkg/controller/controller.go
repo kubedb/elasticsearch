@@ -265,19 +265,15 @@ func (c *Controller) pushFailureEvent(elastic *tapi.Elasticsearch, reason string
 		return
 	}
 
-	elastic.Status.Phase = tapi.DatabasePhaseFailed
-	elastic.Status.Reason = reason
-	if _, err := c.ExtClient.Elasticsearches(elastic.Namespace).Update(elastic); err != nil {
-		c.eventRecorder.Eventf(
-			elastic,
-			apiv1.EventTypeWarning,
-			eventer.EventReasonFailedToUpdate,
-			`Fail to update Postgres: "%v". Reason: %v`,
-			elastic.Name,
-			err,
-		)
-		log.Errorln(err)
+	_, err = c.UpdateElasticsearch(elastic.ObjectMeta, func(in tapi.Elasticsearch) tapi.Elasticsearch {
+		in.Status.Phase = tapi.DatabasePhaseFailed
+		in.Status.Reason = reason
+		return in
+	})
+	if err != nil {
+		c.eventRecorder.Eventf(elastic, apiv1.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 	}
+
 }
 
 func elasticSuccessfullyCreated() {
