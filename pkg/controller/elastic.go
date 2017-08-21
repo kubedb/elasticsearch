@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
+	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
 	"github.com/k8sdb/apimachinery/pkg/storage"
@@ -47,8 +49,32 @@ func (c *Controller) create(elastic *tapi.Elasticsearch) error {
 	)
 
 	// Check DormantDatabase
-	if err := c.findDormantDatabase(elastic); err != nil {
+	matched, err := c.matchDormantDatabase(elastic)
+	if err != nil {
 		return err
+	}
+	if matched {
+		if err := c.ExtClient.Elasticsearches(elastic.Namespace).Delete(elastic.Name); err != nil {
+			return fmt.Errorf(
+				`Failed to resume Elasticsearch "%v" from DormantDatabase "%v". Error: %v`,
+				elastic.Name,
+				elastic.Name,
+				err,
+			)
+		}
+
+		err = amc.NewDormantDbController(nil, c.ExtClient, nil, nil, 0).UpdateDormantDatabase(
+			elastic.ObjectMeta, func(in tapi.DormantDatabase) tapi.DormantDatabase {
+				in.Spec.Resume = true
+				return in
+			},
+		)
+		if err != nil {
+			c.eventRecorder.Eventf(elastic, apiv1.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			return err
+		}
+
+		return nil
 	}
 
 	// Event for notification that kubernetes objects are creating
@@ -110,7 +136,7 @@ func (c *Controller) create(elastic *tapi.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) findDormantDatabase(elastic *tapi.Elasticsearch) error {
+func (c *Controller) matchDormantDatabase(elastic *tapi.Elasticsearch) (bool, error) {
 	// Check if DormantDatabase exists or not
 	dormantDb, err := c.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
 	if err != nil {
@@ -123,25 +149,52 @@ func (c *Controller) findDormantDatabase(elastic *tapi.Elasticsearch) error {
 				elastic.Name,
 				err,
 			)
-			return err
+			return false, err
 		}
-	} else {
-		var message string
-		if dormantDb.Labels[tapi.LabelDatabaseKind] != tapi.ResourceKindElasticsearch {
-			message = fmt.Sprintf(`Invalid Elasticsearch: "%v". Exists DormantDatabase "%v" of different Kind`,
-				elastic.Name, dormantDb.Name)
-		} else {
-			message = fmt.Sprintf(`Recover from DormantDatabase: "%v"`, dormantDb.Name)
-		}
+		return false, nil
+	}
+
+	var sendEvent = func(message string) (bool, error) {
 		c.eventRecorder.Event(
 			elastic,
 			apiv1.EventTypeWarning,
 			eventer.EventReasonFailedToCreate,
 			message,
 		)
-		return errors.New(message)
+		return false, errors.New(message)
 	}
-	return nil
+
+	// Check DatabaseKind
+	if dormantDb.Labels[tapi.LabelDatabaseKind] != tapi.ResourceKindElasticsearch {
+		return sendEvent(fmt.Sprintf(`Invalid Elasticsearch: "%v". Exists DormantDatabase "%v" of different Kind`,
+			elastic.Name, dormantDb.Name))
+	}
+
+	// Check InitSpec
+	initSpecAnnotationStr := dormantDb.Annotations[tapi.ElasticsearchInitSpec]
+	if initSpecAnnotationStr != "" {
+		var initSpecAnnotation *tapi.InitSpec
+		if err := json.Unmarshal([]byte(initSpecAnnotationStr), &initSpecAnnotation); err != nil {
+			return sendEvent(err.Error())
+		}
+
+		if elastic.Spec.Init != nil {
+			if !reflect.DeepEqual(initSpecAnnotation, elastic.Spec.Init) {
+				return sendEvent("InitSpec mismatches with DormantDatabase annotation")
+			}
+		}
+	}
+
+	// Check Origin Spec
+	drmnOriginSpec := dormantDb.Spec.Origin.Spec.Elasticsearch
+	originalSpec := elastic.Spec
+	originalSpec.Init = nil
+
+	if !reflect.DeepEqual(drmnOriginSpec, &originalSpec) {
+		return sendEvent("Elasticsearch spec mismatches with OriginSpec in DormantDatabases")
+	}
+
+	return true, nil
 }
 
 func (c *Controller) ensureService(elastic *tapi.Elasticsearch) error {
@@ -402,11 +455,6 @@ func (c *Controller) update(oldElastic, updatedElastic *tapi.Elasticsearch) erro
 		eventer.EventReasonSuccessfulValidate,
 		"Successfully validate Elasticsearch",
 	)
-
-	// Check DormantDatabase
-	if err := c.findDormantDatabase(updatedElastic); err != nil {
-		return err
-	}
 
 	if err := c.ensureService(updatedElastic); err != nil {
 		return err
