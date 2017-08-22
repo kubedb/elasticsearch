@@ -27,6 +27,14 @@ import:
   version: v3.0.0-beta.0
 - package: gopkg.in/olivere/elastic.v3
   version: v3.0.55
+- package: github.com/appscode/kutil
+  version: master
+- package: github.com/Azure/azure-sdk-for-go
+  version: v10.2.1-beta
+- package: github.com/Azure/go-autorest
+  version: ~8.1.1
+- package: google.golang.org/api/storage/v1
+  version: master
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4

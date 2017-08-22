@@ -1,12 +1,11 @@
 package framework
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/encoding/json/types"
-	"github.com/appscode/log"
+	kutildb "github.com/appscode/kutil/kubedb/v1alpha1"
 	tapi "github.com/k8sdb/apimachinery/api"
 	. "github.com/onsi/gomega"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -38,25 +37,8 @@ func (f *Framework) GetElasticsearch(meta metav1.ObjectMeta) (*tapi.Elasticsearc
 	return f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name)
 }
 
-func (f *Framework) UpdateElasticsearch(meta metav1.ObjectMeta, transformer func(tapi.Elasticsearch) tapi.Elasticsearch) (*tapi.Elasticsearch, error) {
-	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		cur, err := f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		modified := transformer(*cur)
-		updated, err := f.extClient.Elasticsearches(cur.Namespace).Update(&modified)
-		if err == nil {
-			return updated, nil
-		}
-
-		log.Errorf("Attempt %d failed to update Elasticsearch %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
-	}
-
-	return nil, fmt.Errorf("Failed to update Elasticsearch %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
+func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func(*tapi.Elasticsearch) *tapi.Elasticsearch) (*tapi.Elasticsearch, error) {
+	return kutildb.TryPatchElasticsearch(f.extClient, meta, transform)
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {

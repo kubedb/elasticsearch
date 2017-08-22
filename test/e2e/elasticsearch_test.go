@@ -55,7 +55,7 @@ var _ = Describe("Elasticsearch", func() {
 		f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
 		By("WipeOut elasticsearch")
-		_, err := f.UpdateDormantDatabase(elasticsearch.ObjectMeta, func(in tapi.DormantDatabase) tapi.DormantDatabase {
+		_, err := f.TryPatchDormantDatabase(elasticsearch.ObjectMeta, func(in *tapi.DormantDatabase) *tapi.DormantDatabase {
 			in.Spec.WipeOut = true
 			return in
 		})
@@ -111,7 +111,7 @@ var _ = Describe("Elasticsearch", func() {
 				elasticsearch.Spec.DoNotPause = true
 			})
 
-			It("should work successfully", func() {
+			FIt("should work successfully", func() {
 				// Create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
@@ -126,7 +126,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
 				By("Update elasticsearch to set DoNotPause=false")
-				f.UpdateElasticsearch(elasticsearch.ObjectMeta, func(in tapi.Elasticsearch) tapi.Elasticsearch {
+				f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
 					in.Spec.DoNotPause = false
 					return in
 				})
@@ -311,7 +311,7 @@ var _ = Describe("Elasticsearch", func() {
 				By("Wait for elasticsearch to be paused")
 				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-				_, err = f.UpdateDormantDatabase(elasticsearch.ObjectMeta, func(in tapi.DormantDatabase) tapi.DormantDatabase {
+				_, err = f.TryPatchDormantDatabase(elasticsearch.ObjectMeta, func(in *tapi.DormantDatabase) *tapi.DormantDatabase {
 					in.Spec.Resume = true
 					return in
 				})
@@ -408,7 +408,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.CreateSecret(secret)
 
 					By("Update elasticsearch")
-					_, err = f.UpdateElasticsearch(elasticsearch.ObjectMeta, func(in tapi.Elasticsearch) tapi.Elasticsearch {
+					_, err = f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
 						in.Spec.BackupSchedule = &tapi.BackupScheduleSpec{
 							CronExpression: "@every 1m",
 							SnapshotStorageSpec: tapi.SnapshotStorageSpec{
