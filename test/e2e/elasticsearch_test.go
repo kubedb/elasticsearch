@@ -111,7 +111,7 @@ var _ = Describe("Elasticsearch", func() {
 				elasticsearch.Spec.DoNotPause = true
 			})
 
-			FIt("should work successfully", func() {
+			It("should work successfully", func() {
 				// Create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
