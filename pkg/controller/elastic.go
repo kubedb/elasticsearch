@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	kutildb "github.com/appscode/kutil/kubedb/v1alpha1"
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/api"
 	"github.com/k8sdb/apimachinery/pkg/docker"
@@ -18,7 +19,7 @@ import (
 )
 
 func (c *Controller) create(elastic *tapi.Elasticsearch) error {
-	_, err := c.UpdateElasticsearch(elastic.ObjectMeta, func(in tapi.Elasticsearch) tapi.Elasticsearch {
+	_, err := kutildb.TryPatchElasticsearch(c.ExtClient, elastic.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
 		t := metav1.Now()
 		in.Status.CreationTime = &t
 		in.Status.Phase = tapi.DatabasePhaseCreating
@@ -212,7 +213,7 @@ func (c *Controller) ensureStatefulSet(elastic *tapi.Elasticsearch) error {
 	}
 
 	if elastic.Spec.Init != nil && elastic.Spec.Init.SnapshotSource != nil {
-		_, err := c.UpdateElasticsearch(elastic.ObjectMeta, func(in tapi.Elasticsearch) tapi.Elasticsearch {
+		_, err := kutildb.TryPatchElasticsearch(c.ExtClient, elastic.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
 			in.Status.Phase = tapi.DatabasePhaseInitializing
 			return in
 		})
@@ -232,7 +233,7 @@ func (c *Controller) ensureStatefulSet(elastic *tapi.Elasticsearch) error {
 		}
 	}
 
-	_, err = c.UpdateElasticsearch(elastic.ObjectMeta, func(in tapi.Elasticsearch) tapi.Elasticsearch {
+	_, err = kutildb.TryPatchElasticsearch(c.ExtClient, elastic.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
 		in.Status.Phase = tapi.DatabasePhaseRunning
 		return in
 	})

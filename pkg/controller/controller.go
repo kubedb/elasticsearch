@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"time"
 
+	kutildb "github.com/appscode/kutil/kubedb/v1alpha1"
 	"github.com/appscode/go/hold"
 	"github.com/appscode/log"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
@@ -265,7 +266,7 @@ func (c *Controller) pushFailureEvent(elastic *tapi.Elasticsearch, reason string
 		return
 	}
 
-	_, err = c.UpdateElasticsearch(elastic.ObjectMeta, func(in tapi.Elasticsearch) tapi.Elasticsearch {
+	_, err = kutildb.TryPatchElasticsearch(c.ExtClient, elastic.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
 		in.Status.Phase = tapi.DatabasePhaseFailed
 		in.Status.Reason = reason
 		return in
