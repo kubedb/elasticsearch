@@ -1,5 +1,5 @@
 hash: db81beaa3194ee6d91d3eeca4ce73e667b8eef66e9c8da615c6136a4934acdb3
-updated: 2017-08-31T10:05:27.375844766+06:00
+updated: 2017-08-31T11:28:20.836394407+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -105,7 +105,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/go-ini/ini
-  version: 2e44421e256d82ebbf3d4d4fcabe8930b905eff3
+  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
 - name: github.com/go-openapi/analysis
   version: b44dc874b601d9e4e2f6e19140e794ba24bead3b
 - name: github.com/go-openapi/jsonpointer
@@ -177,7 +177,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/k8sdb/apimachinery
-  version: 5c6c7ad12dbb22a058d58edc99fd567b45666e4d
+  version: 51f0257620c1a7076080e46b8e123d9b4a893d65
   subpackages:
   - api
   - api/install
