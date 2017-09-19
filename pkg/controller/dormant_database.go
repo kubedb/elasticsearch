@@ -70,8 +70,8 @@ func (c *Controller) ResumeDatabase(dormantDb *tapi.DormantDatabase) error {
 	origin := dormantDb.Spec.Origin
 	objectMeta := origin.ObjectMeta
 
-	if origin.Spec.Postgres.Init != nil {
-		return errors.New("Do not support InitSpec in spec.origin.postgres")
+	if origin.Spec.Elasticsearch.Init != nil {
+		return errors.New("Do not support InitSpec in spec.origin.elasticsearch")
 	}
 
 	elastic := &tapi.Elasticsearch{
