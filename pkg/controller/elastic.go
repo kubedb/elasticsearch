@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"time"
 
+	kutildb "github.com/appscode/kutil/kubedb/v1alpha1"
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
 	"github.com/k8sdb/apimachinery/pkg/storage"
@@ -58,7 +58,7 @@ func (c *Controller) create(elastic *tapi.Elasticsearch) error {
 		elastic.Annotations = map[string]string{
 			"kubedb.com/ignore": "",
 		}
-		if err := c.ExtClient.Elasticsearchs(elastic.Namespace).Delete(elastic.Name); err != nil {
+		if err := c.ExtClient.Elasticsearchs(elastic.Namespace).Delete(elastic.Name, &metav1.DeleteOptions{}); err != nil {
 			return fmt.Errorf(
 				`failed to resume Elasticsearch "%v" from DormantDatabase "%v". Error: %v`,
 				elastic.Name,
@@ -67,17 +67,14 @@ func (c *Controller) create(elastic *tapi.Elasticsearch) error {
 			)
 		}
 
-		err = amc.NewDormantDbController(nil, nil, c.ExtClient, nil, nil, 0).UpdateDormantDatabase(
-			elastic.ObjectMeta, func(in tapi.DormantDatabase) tapi.DormantDatabase {
-				in.Spec.Resume = true
-				return in
-			},
-		)
+		_, err := kutildb.TryPatchDormantDatabase(c.ExtClient, elastic.ObjectMeta, func(in *tapi.DormantDatabase) *tapi.DormantDatabase {
+			in.Spec.Resume = true
+			return in
+		})
 		if err != nil {
 			c.eventRecorder.Eventf(elastic, apiv1.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
-
 		return nil
 	}
 
@@ -142,7 +139,7 @@ func (c *Controller) create(elastic *tapi.Elasticsearch) error {
 
 func (c *Controller) matchDormantDatabase(elastic *tapi.Elasticsearch) (bool, error) {
 	// Check if DormantDatabase exists or not
-	dormantDb, err := c.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name)
+	dormantDb, err := c.ExtClient.DormantDatabases(elastic.Namespace).Get(elastic.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kerr.IsNotFound(err) {
 			c.eventRecorder.Eventf(
@@ -339,7 +336,7 @@ func (c *Controller) initialize(elastic *tapi.Elasticsearch) error {
 	if namespace == "" {
 		namespace = elastic.Namespace
 	}
-	snapshot, err := c.ExtClient.Snapshots(namespace).Get(snapshotSource.Name)
+	snapshot, err := c.ExtClient.Snapshots(namespace).Get(snapshotSource.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

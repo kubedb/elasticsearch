@@ -58,7 +58,7 @@ func (c *Controller) GetSnapshotter(snapshot *tapi.Snapshot) (*batch.Job, error)
 	if err != nil {
 		return nil, err
 	}
-	elastic, err := c.ExtClient.Elasticsearchs(snapshot.Namespace).Get(databaseName)
+	elastic, err := c.ExtClient.Elasticsearchs(snapshot.Namespace).Get(databaseName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
-	if _, err := c.ExtClient.Elasticsearchs(om.Namespace).Get(om.Name); err != nil {
+	if _, err := c.ExtClient.Elasticsearchs(om.Namespace).Get(om.Name, metav1.GetOptions{}); err != nil {
 		if !kerr.IsNotFound(err) {
 			return false, err
 		}
