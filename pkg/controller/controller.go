@@ -54,7 +54,7 @@ type Controller struct {
 	// Cron Controller
 	cronController amc.CronControllerInterface
 	// Event Recorder
-	eventRecorder record.EventRecorder
+	recorder record.EventRecorder
 	// Flag data
 	opt Options
 	// sync time to sync the list.
@@ -80,7 +80,7 @@ func New(
 		ApiExtKubeClient: apiExtKubeClient,
 		promClient:       promClient,
 		cronController:   cronController,
-		eventRecorder:    eventer.NewEventRecorder(client, "Elasticsearch operator"),
+		recorder:         eventer.NewEventRecorder(client, "Elasticsearch operator"),
 		opt:              opt,
 		syncPeriod:       time.Minute * 2,
 	}
@@ -254,8 +254,8 @@ func (c *Controller) ensureCustomResourceDefinition() {
 }
 
 func (c *Controller) pushFailureEvent(elastic *tapi.Elasticsearch, reason string) {
-	c.eventRecorder.Eventf(
-		elastic,
+	c.recorder.Eventf(
+		elastic.ObjectReference(),
 		apiv1.EventTypeWarning,
 		eventer.EventReasonFailedToStart,
 		`Fail to be ready Elasticsearch: "%v". Reason: %v`,
@@ -275,7 +275,7 @@ func (c *Controller) pushFailureEvent(elastic *tapi.Elasticsearch, reason string
 		return in
 	})
 	if err != nil {
-		c.eventRecorder.Eventf(elastic, apiv1.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+		c.recorder.Eventf(elastic.ObjectReference(), apiv1.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 	}
 
 }
