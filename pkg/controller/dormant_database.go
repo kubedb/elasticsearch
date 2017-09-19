@@ -3,15 +3,15 @@ package controller
 import (
 	"errors"
 
-	"github.com/appscode/log"
-	tapi "github.com/k8sdb/apimachinery/api"
+	"github.com/appscode/go/log"
+	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
 func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
-	if _, err := c.ExtClient.Elasticsearches(om.Namespace).Get(om.Name); err != nil {
+	if _, err := c.ExtClient.Elasticsearchs(om.Namespace).Get(om.Name, metav1.GetOptions{}); err != nil {
 		if !kerr.IsNotFound(err) {
 			return false, err
 		}
@@ -92,6 +92,6 @@ func (c *Controller) ResumeDatabase(dormantDb *tapi.DormantDatabase) error {
 		elastic.Annotations[key] = val
 	}
 
-	_, err := c.ExtClient.Elasticsearches(elastic.Namespace).Create(elastic)
+	_, err := c.ExtClient.Elasticsearchs(elastic.Namespace).Create(elastic)
 	return err
 }

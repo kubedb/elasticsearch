@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appscode/log"
+	"github.com/appscode/go/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"

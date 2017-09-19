@@ -8,14 +8,16 @@ import (
 
 	"github.com/appscode/go/runtime"
 	stringz "github.com/appscode/go/strings"
-	"github.com/appscode/log"
+	"github.com/appscode/go/log"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
-	tcs "github.com/k8sdb/apimachinery/client/clientset"
-	"github.com/k8sdb/apimachinery/pkg/analytics"
+	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	tcs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
+	"github.com/k8sdb/apimachinery/pkg/migrator"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -34,7 +36,6 @@ func NewCmdRun() *cobra.Command {
 		ExporterTag:       "0.6.0",
 		GoverningService:  "kubedb",
 		Address:           ":8080",
-		EnableAnalytics:   true,
 		EnableRbac:        false,
 	}
 
@@ -53,6 +54,7 @@ func NewCmdRun() *cobra.Command {
 			}
 
 			client := clientset.NewForConfigOrDie(config)
+			apiExtKubeClient := apiextensionsclient.NewForConfigOrDie(config)
 			extClient := tcs.NewForConfigOrDie(config)
 			promClient, err := pcm.NewForConfig(config)
 			if err != nil {
@@ -65,10 +67,19 @@ func NewCmdRun() *cobra.Command {
 			// Stop Cron
 			defer cronController.StopCron()
 
-			w := controller.New(client, extClient, promClient, cronController, opt)
+			tprMigrator := migrator.NewMigrator(client, apiExtKubeClient, extClient)
+			err = tprMigrator.RunMigration(
+				&tapi.Elasticsearch{},
+				&tapi.Snapshot{},
+				&tapi.DormantDatabase{},
+			)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			w := controller.New(client, apiExtKubeClient, extClient, promClient, cronController, opt)
 			defer runtime.HandleCrash()
 			fmt.Println("Starting operator...")
-			analytics.SendEvent(docker.ImageElasticOperator, "started", Version)
 			w.RunAndHold()
 		},
 	}
@@ -82,9 +93,6 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().BoolVar(&opt.EnableRbac, "rbac", opt.EnableRbac, "Enable RBAC for database workloads")
 	// elasticdump flags
 	cmd.Flags().StringVar(&opt.ElasticDumpTag, "elasticdump.tag", opt.ElasticDumpTag, "Tag of elasticdump")
-
-	// Analytics flags
-	cmd.Flags().BoolVar(&opt.EnableAnalytics, "analytics", opt.EnableAnalytics, "Send analytical event to Google Analytics")
 
 	return cmd
 }

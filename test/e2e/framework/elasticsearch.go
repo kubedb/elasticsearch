@@ -6,7 +6,8 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/encoding/json/types"
 	kutildb "github.com/appscode/kutil/kubedb/v1alpha1"
-	tapi "github.com/k8sdb/apimachinery/api"
+	"github.com/appscode/go/log"
+	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	. "github.com/onsi/gomega"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,12 +30,12 @@ func (f *Invocation) Elasticsearch() *tapi.Elasticsearch {
 }
 
 func (f *Framework) CreateElasticsearch(obj *tapi.Elasticsearch) error {
-	_, err := f.extClient.Elasticsearches(obj.Namespace).Create(obj)
+	_, err := f.extClient.Elasticsearchs(obj.Namespace).Create(obj)
 	return err
 }
 
 func (f *Framework) GetElasticsearch(meta metav1.ObjectMeta) (*tapi.Elasticsearch, error) {
-	return f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name)
+	return f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name)
 }
 
 func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func(*tapi.Elasticsearch) *tapi.Elasticsearch) (*tapi.Elasticsearch, error) {
@@ -42,13 +43,13 @@ func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
-	return f.extClient.Elasticsearches(meta.Namespace).Delete(meta.Name)
+	return f.extClient.Elasticsearchs(meta.Namespace).Delete(meta.Name)
 }
 
 func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name)
+			_, err := f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name)
 			if err != nil {
 				if kerr.IsNotFound(err) {
 					return false
@@ -66,7 +67,7 @@ func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncA
 func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			elasticsearch, err := f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name)
+			elasticsearch, err := f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name)
 			Expect(err).NotTo(HaveOccurred())
 			return elasticsearch.Status.Phase == tapi.DatabasePhaseRunning
 		},

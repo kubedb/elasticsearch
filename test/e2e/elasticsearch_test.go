@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/appscode/go/types"
-	tapi "github.com/k8sdb/apimachinery/api"
+	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/k8sdb/elasticsearch/test/e2e/framework"
 	"github.com/k8sdb/elasticsearch/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
@@ -355,6 +355,36 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
+			})
+
+			Context("With original Elasticsearch", func() {
+				It("should resume DormantDatabase successfully", func() {
+					// Create and wait for running Elasticsearch
+					createAndWaitForRunning()
+
+					By("Delete elasticsearch")
+					f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+
+					By("Wait for elasticsearch to be paused")
+					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+
+					// Create Elasticsearch object again to resume it
+					By("Create Elasticsearch: " + elasticsearch.Name)
+					err = f.CreateElasticsearch(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for DormantDatabase to be deleted")
+					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Wait for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticsearch, err = f.GetElasticsearch(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Delete test resource
+					deleteTestResouce()
+				})
 			})
 		})
 
