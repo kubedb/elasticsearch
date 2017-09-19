@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	tapi "github.com/k8sdb/apimachinery/api"
+	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
@@ -58,7 +58,7 @@ func (c *Controller) create(elastic *tapi.Elasticsearch) error {
 		elastic.Annotations = map[string]string{
 			"kubedb.com/ignore": "",
 		}
-		if err := c.ExtClient.Elasticsearches(elastic.Namespace).Delete(elastic.Name); err != nil {
+		if err := c.ExtClient.Elasticsearchs(elastic.Namespace).Delete(elastic.Name); err != nil {
 			return fmt.Errorf(
 				`failed to resume Elasticsearch "%v" from DormantDatabase "%v". Error: %v`,
 				elastic.Name,
