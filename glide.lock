@@ -1,5 +1,5 @@
-hash: ed436e291bca7a1f627424f43df4fa0d7d44bf296c3066f8cb080a3df0b7261a
-updated: 2017-09-19T06:33:16.888764441-07:00
+hash: 40d5b6d7931cf7cedc5bcdf505e0d3753ca944d63f666013e2bc9e114baf7788
+updated: 2017-09-19T14:33:35.284240816-07:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -118,7 +118,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/go-ini/ini
-  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
+  version: 2e44421e256d82ebbf3d4d4fcabe8930b905eff3
 - name: github.com/go-openapi/analysis
   version: b44dc874b601d9e4e2f6e19140e794ba24bead3b
 - name: github.com/go-openapi/jsonpointer
@@ -187,7 +187,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/k8sdb/apimachinery
-  version: 50bd8fb16dc2de3417dc72681747003fb499f983
+  version: 0ce956bc35245de2d2ac64a4abd861eeffb9a93f
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -368,7 +368,7 @@ imports:
   repo: https://github.com/appscode/cron.git
   vcs: git
 - name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
+  version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
 - name: k8s.io/apiextensions-apiserver
   version: 5fa44608f6b9b2180a2fd1ecb52e651fd0397794
   subpackages:
