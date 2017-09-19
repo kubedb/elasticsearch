@@ -56,11 +56,11 @@ func (c *Controller) create(elastic *tapi.Elasticsearch) error {
 	if matched {
 		//TODO: Use Annotation Key
 		elastic.Annotations = map[string]string{
-			"elasticsearchs.kubedb.com/ignore": "Resuming from DormantDatabase",
+			"kubedb.com/ignore": "",
 		}
 		if err := c.ExtClient.Elasticsearches(elastic.Namespace).Delete(elastic.Name); err != nil {
 			return fmt.Errorf(
-				`Failed to resume Elasticsearch "%v" from DormantDatabase "%v". Error: %v`,
+				`failed to resume Elasticsearch "%v" from DormantDatabase "%v". Error: %v`,
 				elastic.Name,
 				elastic.Name,
 				err,
@@ -379,7 +379,7 @@ func (c *Controller) initialize(elastic *tapi.Elasticsearch) error {
 
 func (c *Controller) pause(elastic *tapi.Elasticsearch) error {
 	if elastic.Annotations != nil {
-		if val, found := elastic.Annotations["elasticsearchs.kubedb.com/ignore"]; found {
+		if val, found := elastic.Annotations["kubedb.com/ignore"]; found {
 			//TODO: Add Event Reason "Ignored"
 			c.eventRecorder.Event(elastic, apiv1.EventTypeNormal, "Ignored", val)
 			return nil
