@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"time"
 
-	kutildb "github.com/appscode/kutil/kubedb/v1alpha1"
 	"github.com/appscode/go/hold"
 	"github.com/appscode/go/log"
+	kutildb "github.com/appscode/kutil/kubedb/v1alpha1"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	tcs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
@@ -128,20 +128,14 @@ func (c *Controller) watchElastic() {
 				elastic := obj.(*tapi.Elasticsearch)
 				if elastic.Status.CreationTime == nil {
 					if err := c.create(elastic); err != nil {
-						elasticFailedToCreate()
 						log.Errorln(err)
 						c.pushFailureEvent(elastic, err.Error())
-					} else {
-						elasticSuccessfullyCreated()
 					}
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				if err := c.pause(obj.(*tapi.Elasticsearch)); err != nil {
-					elasticFailedToDelete()
 					log.Errorln(err)
-				} else {
-					elasticSuccessfullyDeleted()
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {

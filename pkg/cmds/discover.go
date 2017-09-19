@@ -1,4 +1,4 @@
-package main
+package cmds
 
 import (
 	"fmt"
@@ -20,8 +20,9 @@ func NewCmdDiscover() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "discover",
-		Short: "Discover Elasticsearch Endpoints",
+		Use:               "discover",
+		Short:             "Discover Elasticsearch Endpoints",
+		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
