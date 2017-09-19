@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	tapi "github.com/k8sdb/apimachinery/api"
-	tcs "github.com/k8sdb/apimachinery/client/clientset"
+	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	tcs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/k8sdb/elasticsearch/test/e2e/framework"

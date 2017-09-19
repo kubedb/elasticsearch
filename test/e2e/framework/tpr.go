@@ -13,7 +13,7 @@ func (f *Framework) EventuallyTPR() GomegaAsyncAssertion {
 	return Eventually(
 		func() error {
 			// Check Elasticsearch TPR
-			if _, err := f.extClient.Elasticsearches(apiv1.NamespaceAll).List(metav1.ListOptions{}); err != nil {
+			if _, err := f.extClient.Elasticsearchs(apiv1.NamespaceAll).List(metav1.ListOptions{}); err != nil {
 				return errors.New("thirdpartyresources are not ready")
 			}
 

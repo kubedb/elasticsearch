@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/go/version"
 	logs "github.com/appscode/log/golog"
-	_ "github.com/k8sdb/apimachinery/api/install"
+	_ "github.com/k8sdb/apimachinery/client/scheme"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
