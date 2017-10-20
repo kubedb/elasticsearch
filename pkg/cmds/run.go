@@ -17,9 +17,9 @@ import (
 	"github.com/k8sdb/apimachinery/pkg/migrator"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
+	apiv1 "k8s.io/api/core/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientset "k8s.io/client-go/kubernetes"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
