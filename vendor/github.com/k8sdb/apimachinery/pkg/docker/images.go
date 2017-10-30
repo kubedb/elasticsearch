@@ -7,8 +7,8 @@ const (
 	ImageMySQLOperator    = "kubedb/mysql-operator"
 	ImageMySQL            = "library/mysql"
 	ImageElasticOperator  = "kubedb/es-operator"
-	ImageElasticsearch    = "aerokite/elasticsearch"
-	ImageElasticdump      = "aerokite/elasticdump"
+	ImageElasticsearch    = "kubedb/elasticsearch"
+	ImageElasticdump      = "kubedb/elasticdump"
 )
 
 const (
