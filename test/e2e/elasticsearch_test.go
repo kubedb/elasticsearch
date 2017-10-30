@@ -9,8 +9,8 @@ import (
 	"github.com/k8sdb/elasticsearch/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -26,13 +26,13 @@ var _ = Describe("Elasticsearch", func() {
 		f             *framework.Invocation
 		elasticsearch *tapi.Elasticsearch
 		snapshot      *tapi.Snapshot
-		secret        *apiv1.Secret
+		secret        *core.Secret
 		skipMessage   string
 	)
 
 	BeforeEach(func() {
 		f = root.Invoke()
-		elasticsearch = f.Elasticsearch()
+		elasticsearch = f.CombinedElasticsearch()
 		snapshot = f.Snapshot()
 		skipMessage = ""
 	})
@@ -68,7 +68,7 @@ var _ = Describe("Elasticsearch", func() {
 		Expect(err).NotTo(HaveOccurred())
 	}
 
-	var shouldSuccessfullyRunning = func() {
+	var shouldRunSuccessfully = func() {
 		if skipMessage != "" {
 			Skip(skipMessage)
 		}
@@ -85,7 +85,14 @@ var _ = Describe("Elasticsearch", func() {
 		Context("General", func() {
 
 			Context("-", func() {
-				It("should run successfully", shouldSuccessfullyRunning)
+				It("should run successfully", shouldRunSuccessfully)
+			})
+
+			Context("Dedicated elasticsearch", func() {
+				BeforeEach(func() {
+					elasticsearch = f.DedicatedElasticsearch()
+				})
+				It("should run successfully", shouldRunSuccessfully)
 			})
 
 			Context("With PVC", func() {
@@ -93,16 +100,16 @@ var _ = Describe("Elasticsearch", func() {
 					if f.StorageClass == "" {
 						skipMessage = "Missing StorageClassName. Provide as flag to test this."
 					}
-					elasticsearch.Spec.Storage = &apiv1.PersistentVolumeClaimSpec{
-						Resources: apiv1.ResourceRequirements{
-							Requests: apiv1.ResourceList{
-								apiv1.ResourceStorage: resource.MustParse("5Gi"),
+					elasticsearch.Spec.Storage = &core.PersistentVolumeClaimSpec{
+						Resources: core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceStorage: resource.MustParse("5Gi"),
 							},
 						},
 						StorageClassName: types.StringP(f.StorageClass),
 					}
 				})
-				It("should run successfully", shouldSuccessfullyRunning)
+				It("should run successfully", shouldRunSuccessfully)
 			})
 		})
 
@@ -182,10 +189,8 @@ var _ = Describe("Elasticsearch", func() {
 					snapshot.Spec.StorageSecretName = secret.Name
 					snapshot.Spec.Local = &tapi.LocalSpec{
 						Path: "/repo",
-						VolumeSource: apiv1.VolumeSource{
-							HostPath: &apiv1.HostPathVolumeSource{
-								Path: "/repo",
-							},
+						VolumeSource: core.VolumeSource{
+							EmptyDir: &core.EmptyDirVolumeSource{},
 						},
 					}
 				})
@@ -276,7 +281,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Create elasticsearch from snapshot")
-				elasticsearch = f.Elasticsearch()
+				elasticsearch = f.CombinedElasticsearch()
 				elasticsearch.Spec.Init = &tapi.InitSpec{
 					SnapshotSource: &tapi.SnapshotSourceSpec{
 						Namespace: snapshot.Namespace,
@@ -339,34 +344,21 @@ var _ = Describe("Elasticsearch", func() {
 				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
 			})
 
-			Context("With Init", func() {
-				BeforeEach(func() {
-					usedInitSpec = true
-					elasticsearch.Spec.Init = &tapi.InitSpec{
-						ScriptSource: &tapi.ScriptSourceSpec{
-							ScriptPath: "elasticsearch-init-scripts/run.sh",
-							VolumeSource: apiv1.VolumeSource{
-								GitRepo: &apiv1.GitRepoVolumeSource{
-									Repository: "https://github.com/k8sdb/elasticsearch-init-scripts.git",
-								},
-							},
-						},
-					}
-				})
-
-				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
-			})
-
 			Context("With original Elasticsearch", func() {
 				It("should resume DormantDatabase successfully", func() {
 					// Create and wait for running Elasticsearch
 					createAndWaitForRunning()
+
+					_elasticserch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 
 					By("Delete elasticsearch")
 					f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 
 					By("Wait for elasticsearch to be paused")
 					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+
+					elasticsearch.Spec = _elasticserch.Spec
 
 					// Create Elasticsearch object again to resume it
 					By("Create Elasticsearch: " + elasticsearch.Name)
@@ -405,10 +397,8 @@ var _ = Describe("Elasticsearch", func() {
 							StorageSecretName: secret.Name,
 							Local: &tapi.LocalSpec{
 								Path: "/repo",
-								VolumeSource: apiv1.VolumeSource{
-									HostPath: &apiv1.HostPathVolumeSource{
-										Path: "/repo",
-									},
+								VolumeSource: core.VolumeSource{
+									EmptyDir: &core.EmptyDirVolumeSource{},
 								},
 							},
 						},
@@ -416,11 +406,11 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				It("should run schedular successfully", func() {
-					By("Create Secret")
-					f.CreateSecret(secret)
-
 					// Create and wait for running Elasticsearch
 					createAndWaitForRunning()
+
+					By("Create Secret")
+					f.CreateSecret(secret)
 
 					By("Count multiple Snapshot")
 					f.EventuallySnapshotCount(elasticsearch.ObjectMeta).Should(matcher.MoreThan(3))
@@ -445,8 +435,8 @@ var _ = Describe("Elasticsearch", func() {
 								StorageSecretName: secret.Name,
 								Local: &tapi.LocalSpec{
 									Path: "/repo",
-									VolumeSource: apiv1.VolumeSource{
-										HostPath: &apiv1.HostPathVolumeSource{
+									VolumeSource: core.VolumeSource{
+										HostPath: &core.HostPathVolumeSource{
 											Path: "/repo",
 										},
 									},

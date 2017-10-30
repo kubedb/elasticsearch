@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/appscode/go/log"
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -21,19 +23,49 @@ func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
 	return true, nil
 }
 
-func (c *Controller) PauseDatabase(dormantDb *tapi.DormantDatabase) error {
+func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 	// Delete Service
 	if err := c.DeleteService(dormantDb.Name, dormantDb.Namespace); err != nil {
 		log.Errorln(err)
 		return err
 	}
 
-	if err := c.DeleteStatefulSet(dormantDb.OffshootName(), dormantDb.Namespace); err != nil {
-		log.Errorln(err)
-		return err
+	topology := dormantDb.Spec.Origin.Spec.Elasticsearch.Topology
+	if topology != nil {
+		clientName := dormantDb.OffshootName()
+		if topology.Client.Prefix != "" {
+			clientName = fmt.Sprintf("%v-%v", topology.Client.Prefix, clientName)
+		}
+		if err := c.DeleteStatefulSet(clientName, dormantDb.Namespace); err != nil {
+			log.Errorln(err)
+			return err
+		}
+
+		masterName := dormantDb.OffshootName()
+		if topology.Master.Prefix != "" {
+			masterName = fmt.Sprintf("%v-%v", topology.Master.Prefix, masterName)
+		}
+		if err := c.DeleteStatefulSet(masterName, dormantDb.Namespace); err != nil {
+			log.Errorln(err)
+			return err
+		}
+
+		dataName := dormantDb.OffshootName()
+		if topology.Data.Prefix != "" {
+			dataName = fmt.Sprintf("%v-%v", topology.Data.Prefix, dataName)
+		}
+		if err := c.DeleteStatefulSet(dataName, dormantDb.Namespace); err != nil {
+			log.Errorln(err)
+			return err
+		}
+	} else {
+		if err := c.DeleteStatefulSet(dormantDb.OffshootName(), dormantDb.Namespace); err != nil {
+			log.Errorln(err)
+			return err
+		}
 	}
 
-	elastic := &tapi.Elasticsearch{
+	elastic := &api.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dormantDb.OffshootName(),
 			Namespace: dormantDb.Namespace,
@@ -46,10 +78,10 @@ func (c *Controller) PauseDatabase(dormantDb *tapi.DormantDatabase) error {
 	return nil
 }
 
-func (c *Controller) WipeOutDatabase(dormantDb *tapi.DormantDatabase) error {
+func (c *Controller) WipeOutDatabase(dormantDb *api.DormantDatabase) error {
 	labelMap := map[string]string{
-		tapi.LabelDatabaseName: dormantDb.Name,
-		tapi.LabelDatabaseKind: tapi.ResourceKindElasticsearch,
+		api.LabelDatabaseName: dormantDb.Name,
+		api.LabelDatabaseKind: api.ResourceKindElasticsearch,
 	}
 
 	labelSelector := labels.SelectorFromSet(labelMap)
@@ -66,7 +98,7 @@ func (c *Controller) WipeOutDatabase(dormantDb *tapi.DormantDatabase) error {
 	return nil
 }
 
-func (c *Controller) ResumeDatabase(dormantDb *tapi.DormantDatabase) error {
+func (c *Controller) ResumeDatabase(dormantDb *api.DormantDatabase) error {
 	origin := dormantDb.Spec.Origin
 	objectMeta := origin.ObjectMeta
 
@@ -74,7 +106,7 @@ func (c *Controller) ResumeDatabase(dormantDb *tapi.DormantDatabase) error {
 		return errors.New("Do not support InitSpec in spec.origin.elasticsearch")
 	}
 
-	elastic := &tapi.Elasticsearch{
+	elastic := &api.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        objectMeta.Name,
 			Namespace:   objectMeta.Namespace,
@@ -94,4 +126,42 @@ func (c *Controller) ResumeDatabase(dormantDb *tapi.DormantDatabase) error {
 
 	_, err := c.ExtClient.Elasticsearchs(elastic.Namespace).Create(elastic)
 	return err
+}
+
+func (c *Controller) createDormantDatabase(elastic *api.Elasticsearch) (*api.DormantDatabase, error) {
+	dormantDb := &api.DormantDatabase{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      elastic.Name,
+			Namespace: elastic.Namespace,
+			Labels: map[string]string{
+				api.LabelDatabaseKind: api.ResourceKindElasticsearch,
+			},
+		},
+		Spec: api.DormantDatabaseSpec{
+			Origin: api.Origin{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        elastic.Name,
+					Namespace:   elastic.Namespace,
+					Labels:      elastic.Labels,
+					Annotations: elastic.Annotations,
+				},
+				Spec: api.OriginSpec{
+					Elasticsearch: &elastic.Spec,
+				},
+			},
+		},
+	}
+
+	if elastic.Spec.Init != nil {
+		initSpec, _ := json.Marshal(elastic.Spec.Init)
+		if initSpec != nil {
+			dormantDb.Annotations = map[string]string{
+				api.ElasticsearchInitSpec: string(initSpec),
+			}
+		}
+	}
+
+	dormantDb.Spec.Origin.Spec.Elasticsearch.Init = nil
+
+	return c.ExtClient.DormantDatabases(dormantDb.Namespace).Create(dormantDb)
 }

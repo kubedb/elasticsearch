@@ -8,18 +8,17 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/runtime"
-	stringz "github.com/appscode/go/strings"
-	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1alpha1"
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	tcs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
+	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	cs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/apimachinery/pkg/migrator"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/spf13/cobra"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	clientset "k8s.io/client-go/kubernetes"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
+	core "k8s.io/api/core/v1"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -30,10 +29,9 @@ func NewCmdRun(version string) *cobra.Command {
 	)
 
 	opt := controller.Options{
-		ElasticDumpTag:    "canary",
-		DiscoveryTag:      stringz.Val(version, "canary"),
+		ElasticDumpTag:    "5.6.3",
 		OperatorNamespace: namespace(),
-		ExporterTag:       "0.7.0",
+		ExporterTag:       "0.7.1",
 		GoverningService:  "kubedb",
 		Address:           ":8080",
 		EnableRbac:        false,
@@ -54,9 +52,9 @@ func NewCmdRun(version string) *cobra.Command {
 				log.Fatalf(`Image %v:%v not found.`, docker.ImageElasticdump, opt.ElasticDumpTag)
 			}
 
-			client := clientset.NewForConfigOrDie(config)
-			apiExtKubeClient := apiextensionsclient.NewForConfigOrDie(config)
-			extClient := tcs.NewForConfigOrDie(config)
+			client := kubernetes.NewForConfigOrDie(config)
+			apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
+			extClient := cs.NewForConfigOrDie(config)
 			promClient, err := pcm.NewForConfig(config)
 			if err != nil {
 				log.Fatalln(err)
@@ -70,9 +68,9 @@ func NewCmdRun(version string) *cobra.Command {
 
 			tprMigrator := migrator.NewMigrator(client, apiExtKubeClient, extClient)
 			err = tprMigrator.RunMigration(
-				&tapi.Elasticsearch{},
-				&tapi.Snapshot{},
-				&tapi.DormantDatabase{},
+				&api.Elasticsearch{},
+				&api.Snapshot{},
+				&api.DormantDatabase{},
 			)
 			if err != nil {
 				log.Fatalln(err)
@@ -107,5 +105,5 @@ func namespace() string {
 			return ns
 		}
 	}
-	return apiv1.NamespaceDefault
+	return core.NamespaceDefault
 }

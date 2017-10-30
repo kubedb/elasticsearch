@@ -2,20 +2,23 @@ package e2e_test
 
 import (
 	"flag"
+	"log"
 	"path/filepath"
 	"testing"
 	"time"
 
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	tcs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
+	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
+	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	cs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/elasticsearch/pkg/controller"
 	"github.com/k8sdb/elasticsearch/test/e2e/framework"
 	"github.com/mitchellh/go-homedir"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	. "github.com/onsi/gomega"
-	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -53,10 +56,16 @@ var _ = BeforeSuite(func() {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	Expect(err).NotTo(HaveOccurred())
 	// Clients
-	kubeClient := clientset.NewForConfigOrDie(config)
-	extClient := tcs.NewForConfigOrDie(config)
+	kubeClient := kubernetes.NewForConfigOrDie(config)
+	restClient := kubeClient.RESTClient()
+	apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
+	extClient := cs.NewForConfigOrDie(config)
+	promClient, err := pcm.NewForConfig(config)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	// Framework
-	root = framework.New(kubeClient, extClient, storageClass)
+	root = framework.New(config, restClient, kubeClient, extClient, storageClass)
 
 	By("Using namespace " + root.Namespace())
 
@@ -69,14 +78,13 @@ var _ = BeforeSuite(func() {
 	cronController.StartCron()
 
 	opt := controller.Options{
-		ElasticDumpTag:    "2.4.2",
-		DiscoveryTag:      "0.7.0",
+		ElasticDumpTag:    "5.6.3",
 		OperatorNamespace: root.Namespace(),
-		GoverningService:  tapi.DatabaseNamePrefix,
+		GoverningService:  api.DatabaseNamePrefix,
 	}
 
 	// Controller
-	ctrl = controller.New(kubeClient, extClient, nil, cronController, opt)
+	ctrl = controller.New(kubeClient, apiExtKubeClient, extClient, promClient, cronController, opt)
 	ctrl.Run()
 	root.EventuallyTPR().Should(Succeed())
 })

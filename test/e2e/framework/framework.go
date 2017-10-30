@@ -2,20 +2,25 @@ package framework
 
 import (
 	"github.com/appscode/go/crypto/rand"
-	tcs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
-	clientset "k8s.io/client-go/kubernetes"
+	cs "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type Framework struct {
-	kubeClient   clientset.Interface
-	extClient    tcs.KubedbV1alpha1Interface
+	restConfig   *rest.Config
+	restClient   rest.Interface
+	kubeClient   kubernetes.Interface
+	extClient    cs.KubedbV1alpha1Interface
 	namespace    string
 	name         string
 	StorageClass string
 }
 
-func New(kubeClient clientset.Interface, extClient tcs.KubedbV1alpha1Interface, storageClass string) *Framework {
+func New(restConfig *rest.Config, restClient rest.Interface, kubeClient kubernetes.Interface, extClient cs.KubedbV1alpha1Interface, storageClass string) *Framework {
 	return &Framework{
+		restConfig:   restConfig,
+		restClient:   restClient,
 		kubeClient:   kubeClient,
 		extClient:    extClient,
 		name:         "elasticsearch-operator",

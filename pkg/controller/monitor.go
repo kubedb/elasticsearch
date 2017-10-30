@@ -3,11 +3,11 @@ package controller
 import (
 	"fmt"
 
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/k8sdb/apimachinery/pkg/monitor"
 )
 
-func (c *Controller) newMonitorController(elastic *tapi.Elasticsearch) (monitor.Monitor, error) {
+func (c *Controller) newMonitorController(elastic *api.Elasticsearch) (monitor.Monitor, error) {
 	monitorSpec := elastic.Spec.Monitor
 
 	if monitorSpec == nil {
@@ -21,7 +21,7 @@ func (c *Controller) newMonitorController(elastic *tapi.Elasticsearch) (monitor.
 	return nil, fmt.Errorf("Monitoring controller not found for %v", monitorSpec)
 }
 
-func (c *Controller) addMonitor(elastic *tapi.Elasticsearch) error {
+func (c *Controller) addMonitor(elastic *api.Elasticsearch) error {
 	ctrl, err := c.newMonitorController(elastic)
 	if err != nil {
 		return err
@@ -29,7 +29,7 @@ func (c *Controller) addMonitor(elastic *tapi.Elasticsearch) error {
 	return ctrl.AddMonitor(elastic.ObjectMeta, elastic.Spec.Monitor)
 }
 
-func (c *Controller) deleteMonitor(elastic *tapi.Elasticsearch) error {
+func (c *Controller) deleteMonitor(elastic *api.Elasticsearch) error {
 	ctrl, err := c.newMonitorController(elastic)
 	if err != nil {
 		return err
@@ -37,7 +37,7 @@ func (c *Controller) deleteMonitor(elastic *tapi.Elasticsearch) error {
 	return ctrl.DeleteMonitor(elastic.ObjectMeta, elastic.Spec.Monitor)
 }
 
-func (c *Controller) updateMonitor(oldElastic, updatedElastic *tapi.Elasticsearch) error {
+func (c *Controller) updateMonitor(oldElastic, updatedElastic *api.Elasticsearch) error {
 	var err error
 	var ctrl monitor.Monitor
 	if updatedElastic.Spec.Monitor == nil {

@@ -16,7 +16,7 @@ es-operator run [flags]
 ```
       --address string             Address to listen on for web interface and telemetry. (default ":8080")
       --elasticdump.tag string     Tag of elasticdump (default "canary")
-      --exporter-tag string        Tag of kubedb/operator used as exporter (default "0.7.0")
+      --exporter-tag string        Tag of kubedb/operator used as exporter (default "0.7.1")
       --governing-service string   Governing service for database statefulset (default "kubedb")
   -h, --help                       help for run
       --kubeconfig string          Path to kubeconfig file with authorization information (the master location is set by the master flag).

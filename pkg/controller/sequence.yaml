@@ -1,0 +1,43 @@
+Create:
+  - UpdateStatus: "DatabasePhaseCreating"
+
+  ValidateElasticsearch:
+    - [Spec.Version, DockerImageVersion]
+    validateElasticsearchNode:
+      - [prefix, mode, master_node]
+    - [Spec.Storage]
+    ValidateBackupSchedule:
+      - [spec.CronExpression]
+      ValidateSnapshotSpec:
+        - [spec.StorageSecretName]
+        CheckBucketAccess: "check bucket access using osm"
+    ValidateMonitorSpec:
+      - [monitorSpec.Agent]
+
+  matchDormantDatabase: "match initSpec with existing dormant_database if available"
+
+  CreateGoverningService:
+    - [checkGoverningService]
+    - [create]
+
+  ensureService:
+    - [findService]
+    - [createService, createDiscoveryService]
+
+  ensureStatefulSet:
+    - for each node:
+      - [findStatefulSet]
+      createStatefulSet:
+        - [createCertSecret]
+      CheckStatefulSetPodStatus: "check for pod status"
+
+      initialize:
+        - UpdateStatus: "DatabasePhaseInitializing"
+
+      - UpdateStatus: "DatabasePhaseRunning"
+
+  ensureBackupScheduler:
+    - ScheduleBackup
+    - StopBackupScheduling
+
+
