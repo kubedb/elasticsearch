@@ -3,16 +3,16 @@ package controller
 import (
 	"fmt"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	kutilapps "github.com/appscode/kutil/apps/v1beta1"
-	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	"github.com/k8sdb/apimachinery/pkg/docker"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

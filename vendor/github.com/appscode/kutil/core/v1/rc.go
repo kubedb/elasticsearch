@@ -39,7 +39,7 @@ func PatchRC(c kubernetes.Interface, cur *core.ReplicationController, transform 
 		return nil, err
 	}
 
-	modJson, err := json.Marshal(transform(cur))
+	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func TryUpdateRC(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.CoreV1().ReplicationControllers(cur.Namespace).Update(transform(cur))
+			result, e2 = c.CoreV1().ReplicationControllers(cur.Namespace).Update(transform(cur.DeepCopy()))
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update ReplicationController %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -98,7 +98,7 @@ func TryUpdateRC(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(
 }
 
 func WaitUntilRCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	return wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}
