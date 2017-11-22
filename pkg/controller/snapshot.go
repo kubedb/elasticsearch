@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 
+	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/log"
 	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/k8sdb/apimachinery/pkg/docker"
@@ -12,7 +13,6 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"github.com/appscode/go/crypto/rand"
 )
 
 const (
@@ -96,7 +96,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							},
 							Env: []core.EnvVar{
 								{
-									Name: "USERNAME",
+									Name:  "USERNAME",
 									Value: "readall",
 								},
 								{
@@ -104,7 +104,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 									ValueFrom: &core.EnvVarSource{
 										SecretKeyRef: &core.SecretKeySelector{
 											LocalObjectReference: core.LocalObjectReference{
-												Name: elastic.Spec.AuthSecret.SecretName,
+												Name: elastic.Spec.DatabaseSecret.SecretName,
 											},
 											Key: "READALL_PASSWORD",
 										},
@@ -123,7 +123,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 									ReadOnly:  true,
 								},
 								{
-									Name: "certs",
+									Name:      "certs",
 									MountPath: "/certs",
 									ReadOnly:  true,
 								},
@@ -139,7 +139,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							Name: "osmconfig",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
-									SecretName: fmt.Sprintf("osm-%v", snapshot.Name),
+									SecretName: snapshot.OSMSecretName(),
 								},
 							},
 						},

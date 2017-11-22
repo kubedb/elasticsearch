@@ -22,6 +22,8 @@ func (c *Controller) ensureStatefulSet(elasticsearch *tapi.Elasticsearch, name s
 		return err
 	}
 	if found {
+		// This will update replicas
+
 		_statefulset, err := c.Client.AppsV1beta1().StatefulSets(elasticsearch.Namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -35,7 +37,8 @@ func (c *Controller) ensureStatefulSet(elasticsearch *tapi.Elasticsearch, name s
 					totalMaster = topology.Master.Replicas
 					replicas = totalMaster
 				} else {
-					totalMaster = elasticsearch.Spec.Replicas
+					replicas = elasticsearch.Spec.Replicas
+					totalMaster = replicas
 				}
 				if totalMaster == 0 {
 					totalMaster = 1
@@ -120,7 +123,7 @@ func (c *Controller) findStatefulSet(elasticsearch *tapi.Elasticsearch, name str
 
 	if statefulSet.Labels[tapi.LabelDatabaseKind] != tapi.ResourceKindElasticsearch ||
 		statefulSet.Labels[tapi.LabelDatabaseName] != elasticsearchName {
-		return false, fmt.Errorf(`Intended statefulSet "%v" already exists`, name)
+		return false, fmt.Errorf(`intended statefulSet "%v" already exists`, name)
 	}
 
 	return true, nil
@@ -320,7 +323,7 @@ func (c *Controller) createStatefulSet(elasticsearch *tapi.Elasticsearch, name s
 			return nil, err
 		}
 
-		_elasticsearch, err := kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
+		es, err := kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
 			in.Spec.CertificateSecret = certSecretVolumeSource
 			return in
 		})
@@ -328,28 +331,28 @@ func (c *Controller) createStatefulSet(elasticsearch *tapi.Elasticsearch, name s
 			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return nil, err
 		}
-		elasticsearch = _elasticsearch
+		elasticsearch = es
 	}
 
 	// Add CertSecretVolume for Certificates
 	addCertSecretVolume(statefulSet, elasticsearch.Spec.CertificateSecret, isClientNode)
 
 	if isClientNode {
-		if elasticsearch.Spec.AuthSecret == nil {
+		if elasticsearch.Spec.DatabaseSecret == nil {
 			authSecretVolumeSource, err := c.createAuthSecret(elasticsearch)
 			if err != nil {
 				return nil, err
 			}
 
-			_elasticsearch, err := kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
-				in.Spec.AuthSecret = authSecretVolumeSource
+			es, err := kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *tapi.Elasticsearch) *tapi.Elasticsearch {
+				in.Spec.DatabaseSecret = authSecretVolumeSource
 				return in
 			})
 			if err != nil {
 				c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 				return nil, err
 			}
-			elasticsearch = _elasticsearch
+			elasticsearch = es
 		}
 
 		containers := statefulSet.Spec.Template.Spec.Containers
@@ -364,7 +367,7 @@ func (c *Controller) createStatefulSet(elasticsearch *tapi.Elasticsearch, name s
 		}
 
 		// Add CertSecretVolume for Certificates
-		addAuthSecretVolume(statefulSet, elasticsearch.Spec.AuthSecret)
+		addAuthSecretVolume(statefulSet, elasticsearch.Spec.DatabaseSecret)
 	}
 
 	// Add Data volume for StatefulSet

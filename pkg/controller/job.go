@@ -60,8 +60,8 @@ func (c *Controller) createRestoreJob(elastic *api.Elasticsearch, snapshot *api.
 				Spec: core.PodSpec{
 					Containers: []core.Container{
 						{
-							Name:  SnapshotProcess_Restore,
-							Image: docker.ImageElasticdump + ":" + c.opt.ElasticDumpTag,
+							Name:            SnapshotProcess_Restore,
+							Image:           docker.ImageElasticdump + ":" + c.opt.ElasticDumpTag,
 							ImagePullPolicy: core.PullAlways,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Restore),
@@ -80,7 +80,7 @@ func (c *Controller) createRestoreJob(elastic *api.Elasticsearch, snapshot *api.
 									ValueFrom: &core.EnvVarSource{
 										SecretKeyRef: &core.SecretKeySelector{
 											LocalObjectReference: core.LocalObjectReference{
-												Name: elastic.Spec.AuthSecret.SecretName,
+												Name: elastic.Spec.DatabaseSecret.SecretName,
 											},
 											Key: "ADMIN_PASSWORD",
 										},
@@ -115,7 +115,7 @@ func (c *Controller) createRestoreJob(elastic *api.Elasticsearch, snapshot *api.
 							Name: "osmconfig",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
-									SecretName: fmt.Sprintf("osm-%v", snapshot.Name),
+									SecretName: snapshot.OSMSecretName(),
 								},
 							},
 						},

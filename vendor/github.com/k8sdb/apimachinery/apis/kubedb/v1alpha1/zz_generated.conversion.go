@@ -425,6 +425,7 @@ func autoConvert_v1alpha1_ElasticsearchSpec_To_kubedb_ElasticsearchSpec(in *Elas
 	out.Version = types.StrYo(in.Version)
 	out.Replicas = in.Replicas
 	out.Topology = (*kubedb.ElasticsearchClusterTopology)(unsafe.Pointer(in.Topology))
+	out.EnableSSL = in.EnableSSL
 	out.CertificateSecret = (*core_v1.SecretVolumeSource)(unsafe.Pointer(in.CertificateSecret))
 	out.DatabaseSecret = (*core_v1.SecretVolumeSource)(unsafe.Pointer(in.DatabaseSecret))
 	out.Storage = (*core_v1.PersistentVolumeClaimSpec)(unsafe.Pointer(in.Storage))
@@ -449,6 +450,7 @@ func autoConvert_kubedb_ElasticsearchSpec_To_v1alpha1_ElasticsearchSpec(in *kube
 	out.Version = types.StrYo(in.Version)
 	out.Replicas = in.Replicas
 	out.Topology = (*ElasticsearchClusterTopology)(unsafe.Pointer(in.Topology))
+	out.EnableSSL = in.EnableSSL
 	out.CertificateSecret = (*core_v1.SecretVolumeSource)(unsafe.Pointer(in.CertificateSecret))
 	out.DatabaseSecret = (*core_v1.SecretVolumeSource)(unsafe.Pointer(in.DatabaseSecret))
 	out.Storage = (*core_v1.PersistentVolumeClaimSpec)(unsafe.Pointer(in.Storage))

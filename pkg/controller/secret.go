@@ -132,7 +132,7 @@ func (c *Controller) findAuthSecret(elasticsearch *api.Elasticsearch) (*core.Sec
 
 	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch ||
 		secret.Labels[api.LabelDatabaseName] != elasticsearch.Name {
-		return nil, fmt.Errorf(`Intended secret "%v" already exists`, name)
+		return nil, fmt.Errorf(`intended secret "%v" already exists`, name)
 	}
 
 	return secret, nil

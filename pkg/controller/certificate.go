@@ -1,22 +1,22 @@
 package controller
 
 import (
+	cryptorand "crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"errors"
-	"fmt"
-	"os/exec"
-
-	cryptorand "crypto/rand"
 	"crypto/x509/pkix"
 	"encoding/asn1"
-	"github.com/appscode/go/io"
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	"k8s.io/client-go/util/cert"
+	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"net"
+	"os/exec"
 	"time"
+
+	"github.com/appscode/go/io"
+	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	"k8s.io/client-go/util/cert"
 )
 
 var certsDir = "/tmp/certs/certs"

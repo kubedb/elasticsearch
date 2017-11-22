@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -43,6 +42,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		"Successfully validate Elasticsearch",
 	)
 	// Check DormantDatabase
+	// return True (as matched) only if Elasticsearch matched with DormantDatabase
+	// If matched, It will be resumed
 	if matched, err := c.matchDormantDatabase(elasticsearch); err != nil || matched {
 		return err
 	}
@@ -74,12 +75,12 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		return err
 	}
 
-	_elasticsearch, err := c.ExtClient.Elasticsearchs(elasticsearch.Namespace).Get(elasticsearch.Name, metav1.GetOptions{})
+	es, err := c.ExtClient.Elasticsearchs(elasticsearch.Namespace).Get(elasticsearch.Name, metav1.GetOptions{})
 	if err != nil {
 		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToGet, err.Error())
 		return err
 	}
-	elasticsearch = _elasticsearch
+	elasticsearch = es
 	kutildb.AssignTypeKind(elasticsearch)
 
 	if elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
@@ -218,16 +219,6 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) error {
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
-		if topology.Client.Prefix == topology.Master.Prefix {
-			return errors.New("client & master node should not have same prefix")
-		}
-		if topology.Client.Prefix == topology.Data.Prefix {
-			return errors.New("client & data node should not have same prefix")
-		}
-		if topology.Master.Prefix == topology.Data.Prefix {
-			return errors.New("master & data node should not have same prefix")
-		}
-
 		clientName := elasticsearch.OffshootName()
 		if topology.Client.Prefix != "" {
 			clientName = fmt.Sprintf("%v-%v", topology.Client.Prefix, clientName)
@@ -258,6 +249,7 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) e
 	}
 
 	// Need some time to build elasticsearch cluster. Nodes will communicate with each other
+	// TODO: find better way
 	time.Sleep(time.Minute)
 
 	_, err := kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -268,8 +260,6 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) e
 		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 		return err
 	}
-
-
 
 	return nil
 }
@@ -331,7 +321,7 @@ func (c *Controller) initialize(elastic *api.Elasticsearch) error {
 		return err
 	}
 
-	jobSuccess := c.CheckDatabaseRestoreJob(job, elastic, c.recorder, durationCheckRestoreJob)
+	jobSuccess := c.CheckDatabaseRestoreJob(snapshot, job, elastic, c.recorder, durationCheckRestoreJob)
 	if jobSuccess {
 		c.recorder.Event(
 			elastic.ObjectReference(),
@@ -350,33 +340,33 @@ func (c *Controller) initialize(elastic *api.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) pause(elastic *api.Elasticsearch) error {
-	if elastic.Annotations != nil {
-		if val, found := elastic.Annotations["kubedb.com/ignore"]; found {
+func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
+	if elasticsearch.Annotations != nil {
+		if val, found := elasticsearch.Annotations["kubedb.com/ignore"]; found {
 			//TODO: Add Event Reason "Ignored"
-			c.recorder.Event(elastic.ObjectReference(), core.EventTypeNormal, "Ignored", val)
+			c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeNormal, "Ignored", val)
 			return nil
 		}
 	}
 
-	c.recorder.Event(elastic.ObjectReference(), core.EventTypeNormal, eventer.EventReasonPausing, "Pausing Elasticsearch")
+	c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeNormal, eventer.EventReasonPausing, "Pausing Elasticsearch")
 
-	if elastic.Spec.DoNotPause {
+	if elasticsearch.Spec.DoNotPause {
 		c.recorder.Eventf(
-			elastic.ObjectReference(),
+			elasticsearch.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToPause,
 			`Elasticsearch "%v" is locked.`,
-			elastic.Name,
+			elasticsearch.Name,
 		)
 
-		if err := c.reCreateElastic(elastic); err != nil {
+		if err := c.reCreateElastic(elasticsearch); err != nil {
 			c.recorder.Eventf(
-				elastic.ObjectReference(),
+				elasticsearch.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToCreate,
 				`Failed to recreate Elasticsearch: "%v". Reason: %v`,
-				elastic.Name,
+				elasticsearch.Name,
 				err,
 			)
 			return err
@@ -384,31 +374,31 @@ func (c *Controller) pause(elastic *api.Elasticsearch) error {
 		return nil
 	}
 
-	if _, err := c.createDormantDatabase(elastic); err != nil {
+	if _, err := c.createDormantDatabase(elasticsearch); err != nil {
 		c.recorder.Eventf(
-			elastic.ObjectReference(),
+			elasticsearch.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToCreate,
 			`Failed to create DormantDatabase: "%v". Reason: %v`,
-			elastic.Name,
+			elasticsearch.Name,
 			err,
 		)
 		return err
 	}
 	c.recorder.Eventf(
-		elastic.ObjectReference(),
+		elasticsearch.ObjectReference(),
 		core.EventTypeNormal,
 		eventer.EventReasonSuccessfulCreate,
 		`Successfully created DormantDatabase: "%v"`,
-		elastic.Name,
+		elasticsearch.Name,
 	)
 
-	c.cronController.StopBackupScheduling(elastic.ObjectMeta)
+	c.cronController.StopBackupScheduling(elasticsearch.ObjectMeta)
 
-	if elastic.Spec.Monitor != nil {
-		if err := c.deleteMonitor(elastic); err != nil {
+	if elasticsearch.Spec.Monitor != nil {
+		if err := c.deleteMonitor(elasticsearch); err != nil {
 			c.recorder.Eventf(
-				elastic.ObjectReference(),
+				elasticsearch.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToDeleteMonitor,
 				"Failed to delete monitoring system. Reason: %v",
@@ -418,7 +408,7 @@ func (c *Controller) pause(elastic *api.Elasticsearch) error {
 			return nil
 		}
 		c.recorder.Event(
-			elastic.ObjectReference(),
+			elasticsearch.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessfulMonitorDelete,
 			"Successfully deleted monitoring system.",
@@ -433,7 +423,6 @@ func (c *Controller) update(oldElasticsearch, updatedElasticsearch *api.Elastics
 		c.recorder.Event(updatedElasticsearch, core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
 		return err
 	}
-
 	// Event for successful validation
 	c.recorder.Event(
 		updatedElasticsearch.ObjectReference(),
@@ -480,19 +469,19 @@ func (c *Controller) update(oldElasticsearch, updatedElasticsearch *api.Elastics
 	return nil
 }
 
-func (c *Controller) reCreateElastic(elastic *api.Elasticsearch) error {
-	_elastic := &api.Elasticsearch{
+func (c *Controller) reCreateElastic(elasticsearch *api.Elasticsearch) error {
+	es := &api.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        elastic.Name,
-			Namespace:   elastic.Namespace,
-			Labels:      elastic.Labels,
-			Annotations: elastic.Annotations,
+			Name:        elasticsearch.Name,
+			Namespace:   elasticsearch.Namespace,
+			Labels:      elasticsearch.Labels,
+			Annotations: elasticsearch.Annotations,
 		},
-		Spec:   elastic.Spec,
-		Status: elastic.Status,
+		Spec:   elasticsearch.Spec,
+		Status: elasticsearch.Status,
 	}
 
-	if _, err := c.ExtClient.Elasticsearchs(_elastic.Namespace).Create(_elastic); err != nil {
+	if _, err := c.ExtClient.Elasticsearchs(es.Namespace).Create(es); err != nil {
 		return err
 	}
 

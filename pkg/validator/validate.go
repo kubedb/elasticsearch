@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"errors"
 	"fmt"
 
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
@@ -11,16 +12,28 @@ import (
 
 func ValidateElasticsearch(client kubernetes.Interface, elasticsearch *tapi.Elasticsearch) error {
 	if elasticsearch.Spec.Version == "" {
-		return fmt.Errorf(`Object 'Version' is missing in '%v'`, elasticsearch.Spec)
+		return fmt.Errorf(`object 'Version' is missing in '%v'`, elasticsearch.Spec)
 	}
 
 	if err := docker.CheckDockerImageVersion(docker.ImageElasticsearch, string(elasticsearch.Spec.Version)); err != nil {
-		return fmt.Errorf(`Image %v:%v not found`, docker.ImageElasticsearch, elasticsearch.Spec.Version)
+		return fmt.Errorf(`image %v:%v not found`, docker.ImageElasticsearch, elasticsearch.Spec.Version)
+	}
+
+	topology := elasticsearch.Spec.Topology
+	if topology != nil {
+		if topology.Client.Prefix == topology.Master.Prefix {
+			return errors.New("client & master node should not have same prefix")
+		}
+		if topology.Client.Prefix == topology.Data.Prefix {
+			return errors.New("client & data node should not have same prefix")
+		}
+		if topology.Master.Prefix == topology.Data.Prefix {
+			return errors.New("master & data node should not have same prefix")
+		}
 	}
 
 	if elasticsearch.Spec.Storage != nil {
-		var err error
-		if err = amv.ValidateStorage(client, elasticsearch.Spec.Storage); err != nil {
+		if err := amv.ValidateStorage(client, elasticsearch.Spec.Storage); err != nil {
 			return err
 		}
 	}

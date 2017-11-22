@@ -5,16 +5,16 @@ import (
 
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	core "k8s.io/api/core/v1"
 )
 
 var (
-	LabelNodeRoleMaster string = "node.role.master"
-	LabelNodeRoleClient string = "node.role.client"
-	LabelNodeRoleData   string = "node.role.data"
+	LabelNodeRoleMaster = "node.role.master"
+	LabelNodeRoleClient = "node.role.client"
+	LabelNodeRoleData   = "node.role.data"
 )
 
 func (c *Controller) ensureService(elasticsearch *tapi.Elasticsearch) error {
@@ -72,7 +72,7 @@ func (c *Controller) findService(elasticsearch *tapi.Elasticsearch, name string)
 	}
 
 	if service.Spec.Selector[tapi.LabelDatabaseName] != elasticsearchName {
-		return false, fmt.Errorf(`Intended service "%v" already exists`, name)
+		return false, fmt.Errorf(`intended service "%v" already exists`, name)
 	}
 
 	return true, nil
@@ -133,15 +133,6 @@ func (c *Controller) createDiscoveryService(elastic *tapi.Elasticsearch) error {
 		},
 	}
 	svc.Spec.Selector[LabelNodeRoleMaster] = "set"
-	if elastic.Spec.Monitor != nil &&
-		elastic.Spec.Monitor.Agent == tapi.AgentCoreosPrometheus &&
-		elastic.Spec.Monitor.Prometheus != nil {
-		svc.Spec.Ports = append(svc.Spec.Ports, core.ServicePort{
-			Name:       tapi.PrometheusExporterPortName,
-			Port:       tapi.PrometheusExporterPortNumber,
-			TargetPort: intstr.FromString(tapi.PrometheusExporterPortName),
-		})
-	}
 
 	if _, err := c.Client.CoreV1().Services(elastic.Namespace).Create(svc); err != nil {
 		return err
