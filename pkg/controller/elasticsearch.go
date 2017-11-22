@@ -217,33 +217,36 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 }
 
 func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) error {
+
+	c.ensureCertSecret(elasticsearch)
+	c.ensureDatabaseSecret(elasticsearch)
+
+	if c.opt.EnableRbac {
+		// Ensure ClusterRoles for database statefulsets
+		if err := c.ensureRBACStuff(elasticsearch); err != nil {
+			return err
+		}
+	}
+
+	es, err := c.ExtClient.Elasticsearchs(elasticsearch.Namespace).Get(elasticsearch.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	elasticsearch = es
+
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
-		clientName := elasticsearch.OffshootName()
-		if topology.Client.Prefix != "" {
-			clientName = fmt.Sprintf("%v-%v", topology.Client.Prefix, clientName)
-		}
-		if err := c.ensureStatefulSet(elasticsearch, clientName, false, false, true, true); err != nil {
+		if err := c.ensureClientNode(elasticsearch); err != nil {
 			return err
 		}
-
-		masterName := elasticsearch.OffshootName()
-		if topology.Master.Prefix != "" {
-			masterName = fmt.Sprintf("%v-%v", topology.Master.Prefix, masterName)
-		}
-		if err := c.ensureStatefulSet(elasticsearch, masterName, true, false, false, true); err != nil {
+		if err := c.ensureMasterNode(elasticsearch); err != nil {
 			return err
 		}
-
-		dataName := elasticsearch.OffshootName()
-		if topology.Data.Prefix != "" {
-			dataName = fmt.Sprintf("%v-%v", topology.Data.Prefix, dataName)
-		}
-		if err := c.ensureStatefulSet(elasticsearch, dataName, false, true, false, true); err != nil {
+		if err := c.ensureDataNode(elasticsearch); err != nil {
 			return err
 		}
 	} else {
-		if err := c.ensureStatefulSet(elasticsearch, elasticsearch.OffshootName(), true, true, true, false); err != nil {
+		if err := c.ensureCombinedNode(elasticsearch); err != nil {
 			return err
 		}
 	}
@@ -252,7 +255,7 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) e
 	// TODO: find better way
 	time.Sleep(time.Minute)
 
-	_, err := kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+	_, err = kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Status.Phase = api.DatabasePhaseRunning
 		return in
 	})

@@ -7,12 +7,53 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/io"
 	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	kutildb "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1/util"
+	"github.com/k8sdb/apimachinery/pkg/eventer"
 	"golang.org/x/crypto/bcrypt"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/cert"
 )
+
+
+func (c *Controller) ensureCertSecret(elasticsearch *api.Elasticsearch) error {
+	certSecretVolumeSource := elasticsearch.Spec.CertificateSecret
+	if certSecretVolumeSource == nil {
+		var err error
+		if certSecretVolumeSource, err = c.createCertSecret(elasticsearch); err != nil {
+			return err
+		}
+		_, err = kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+			in.Spec.CertificateSecret = certSecretVolumeSource
+			return in
+		})
+		if err != nil {
+			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Controller) ensureDatabaseSecret(elasticsearch *api.Elasticsearch) error {
+	databaseSecretVolume := elasticsearch.Spec.DatabaseSecret
+	if databaseSecretVolume == nil {
+		var err error
+		if databaseSecretVolume, err = c.createAuthSecret(elasticsearch); err != nil {
+			return err
+		}
+		_, err = kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+			in.Spec.DatabaseSecret = databaseSecretVolume
+			return in
+		})
+		if err != nil {
+			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			return err
+		}
+	}
+	return nil
+}
 
 func (c *Controller) findCertSecret(elasticsearch *api.Elasticsearch) (*core.Secret, error) {
 	name := fmt.Sprintf("%v-cert", elasticsearch.OffshootName())
@@ -35,7 +76,6 @@ func (c *Controller) findCertSecret(elasticsearch *api.Elasticsearch) (*core.Sec
 }
 
 func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.SecretVolumeSource, error) {
-
 	certSecret, err := c.findCertSecret(elasticsearch)
 	if err != nil {
 		return nil, err
@@ -113,9 +153,11 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 		return nil, err
 	}
 
-	return &core.SecretVolumeSource{
+	secretVolumeSource := &core.SecretVolumeSource{
 		SecretName: secret.Name,
-	}, nil
+	}
+
+	return secretVolumeSource, nil
 }
 
 func (c *Controller) findAuthSecret(elasticsearch *api.Elasticsearch) (*core.Secret, error) {
@@ -265,8 +307,8 @@ func (c *Controller) createAuthSecret(elasticsearch *api.Elasticsearch) (*core.S
 		return nil, err
 	}
 
-	return &core.SecretVolumeSource{
+	secretVolumeSource := &core.SecretVolumeSource{
 		SecretName: secret.Name,
-	}, nil
-
+	}
+	return secretVolumeSource, nil
 }

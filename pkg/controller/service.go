@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	LabelNodeRoleMaster = "node.role.master"
-	LabelNodeRoleClient = "node.role.client"
-	LabelNodeRoleData   = "node.role.data"
+	NodeRoleMaster = "node.role.master"
+	NodeRoleClient = "node.role.client"
+	NodeRoleData   = "node.role.data"
 )
 
 func (c *Controller) ensureService(elasticsearch *tapi.Elasticsearch) error {
@@ -95,7 +95,7 @@ func (c *Controller) createService(elastic *tapi.Elasticsearch) error {
 			Selector: elastic.OffshootLabels(),
 		},
 	}
-	svc.Spec.Selector[LabelNodeRoleClient] = "set"
+	svc.Spec.Selector[NodeRoleClient] = "set"
 
 	if elastic.Spec.Monitor != nil &&
 		elastic.Spec.Monitor.Agent == tapi.AgentCoreosPrometheus &&
@@ -114,12 +114,13 @@ func (c *Controller) createService(elastic *tapi.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) createDiscoveryService(elastic *tapi.Elasticsearch) error {
-	serviceName := fmt.Sprintf("%v-discovery", elastic.Name)
+func (c *Controller) createDiscoveryService(elasticsearch *tapi.Elasticsearch) error {
+	// TODO
+	serviceName := fmt.Sprintf("%v-discovery", elasticsearch.Name)
 	svc := &core.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceName,
-			Labels: elastic.OffshootLabels(),
+			Labels: elasticsearch.OffshootLabels(),
 		},
 		Spec: core.ServiceSpec{
 			Ports: []core.ServicePort{
@@ -129,12 +130,12 @@ func (c *Controller) createDiscoveryService(elastic *tapi.Elasticsearch) error {
 					TargetPort: intstr.FromString("transport"),
 				},
 			},
-			Selector: elastic.OffshootLabels(),
+			Selector: elasticsearch.OffshootLabels(),
 		},
 	}
-	svc.Spec.Selector[LabelNodeRoleMaster] = "set"
+	svc.Spec.Selector[NodeRoleMaster] = "set"
 
-	if _, err := c.Client.CoreV1().Services(elastic.Namespace).Create(svc); err != nil {
+	if _, err := c.Client.CoreV1().Services(elasticsearch.Namespace).Create(svc); err != nil {
 		return err
 	}
 

@@ -32,6 +32,8 @@ func ValidateElasticsearch(client kubernetes.Interface, elasticsearch *tapi.Elas
 		}
 	}
 
+
+
 	if elasticsearch.Spec.Storage != nil {
 		if err := amv.ValidateStorage(client, elasticsearch.Spec.Storage); err != nil {
 			return err
