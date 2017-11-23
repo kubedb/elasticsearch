@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/util/cert"
 )
 
-
 func (c *Controller) ensureCertSecret(elasticsearch *api.Elasticsearch) error {
 	certSecretVolumeSource := elasticsearch.Spec.CertificateSecret
 	if certSecretVolumeSource == nil {
