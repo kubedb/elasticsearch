@@ -102,6 +102,14 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 				err,
 			)
 		}
+		_, err = kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+			in.Status.Phase = api.DatabasePhaseRunning
+			return in
+		})
+		if err != nil {
+			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			return err
+		}
 	}
 
 	c.recorder.Event(
@@ -245,6 +253,7 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) e
 		if err := c.ensureDataNode(elasticsearch); err != nil {
 			return err
 		}
+
 	} else {
 		if err := c.ensureCombinedNode(elasticsearch); err != nil {
 			return err
@@ -253,7 +262,7 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) e
 
 	// Need some time to build elasticsearch cluster. Nodes will communicate with each other
 	// TODO: find better way
-	time.Sleep(time.Minute)
+	time.Sleep(time.Second * 30)
 
 	_, err = kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Status.Phase = api.DatabasePhaseRunning

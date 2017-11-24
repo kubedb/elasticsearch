@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"gopkg.in/olivere/elastic.v5"
 )
 
 func (f *Invocation) CombinedElasticsearch() *api.Elasticsearch {
@@ -100,6 +101,34 @@ func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) Gomeg
 			elasticsearch, err := f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return elasticsearch.Status.Phase == api.DatabasePhaseRunning
+		},
+		time.Minute*5,
+		time.Second*5,
+	)
+}
+
+func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() bool {
+			client, err := f.GetElasticClient(meta)
+			if err != nil {
+				return false
+			}
+			client.Stop()
+			return true
+		},
+		time.Minute*5,
+		time.Second*5,
+	)
+}
+
+func (f *Framework) EventuallyElasticsearchIndicesCount(client *elastic.Client) GomegaAsyncAssertion {
+	return Eventually(
+		func() int {
+			count, err := f.CountIndex(client)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(Equal(count))
+			return count
 		},
 		time.Minute*5,
 		time.Second*5,

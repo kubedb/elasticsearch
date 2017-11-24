@@ -268,6 +268,21 @@ var _ = Describe("Elasticsearch", func() {
 				By("Create Secret")
 				f.CreateSecret(secret)
 
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating new indices")
+				err = f.CreateIndex(elasticClient, 2)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking new indices")
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+				elasticClient.Stop()
+
 				By("Create Snapshot")
 				f.CreateSnapshot(snapshot)
 
@@ -291,6 +306,15 @@ var _ = Describe("Elasticsearch", func() {
 
 				// Create and wait for running Elasticsearch
 				createAndWaitForRunning()
+
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking indices")
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 
 				// Delete test resource
 				deleteTestResouce()

@@ -1,5 +1,5 @@
 hash: e094a0c36c1a8c85ddf03454399e831eb47741773078dad2daf20a40bba40bcc
-updated: 2017-11-23T12:05:29.017432309+06:00
+updated: 2017-11-24T09:54:54.5072392+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -113,6 +113,10 @@ imports:
   - uuid
 - name: github.com/docker/libtrust
   version: 9cbd2a1374f46905c68a4eb3694a130610adc62a
+- name: github.com/docker/spdystream
+  version: 449fdfce4d962303d702fec724ef0ad181c92528
+  subpackages:
+  - spdy
 - name: github.com/emicklei/go-restful
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
   subpackages:
@@ -302,7 +306,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/spf13/cobra
-  version: fb02817f3c2930f6a29c18a046759de969290022
+  version: 1be1d2841c773c01bee8289f55f7463b6e2c2539
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -396,6 +400,11 @@ imports:
   subpackages:
   - backoff
   - uritemplates
+- name: gopkg.in/olivere/elastic.v5
+  version: fe561fcbb260f7465f78c60e7da0012d94645afb
+  subpackages:
+  - config
+  - uritemplates
 - name: gopkg.in/robfig/cron.v2
   version: ca60c6d796d4b1f7bb2a8fd5271d8a59aeffb4bf
   repo: https://github.com/appscode/cron.git
@@ -469,6 +478,8 @@ imports:
   - pkg/util/diff
   - pkg/util/errors
   - pkg/util/framer
+  - pkg/util/httpstream
+  - pkg/util/httpstream/spdy
   - pkg/util/intstr
   - pkg/util/json
   - pkg/util/jsonmergepatch
@@ -484,6 +495,7 @@ imports:
   - pkg/version
   - pkg/watch
   - third_party/forked/golang/json
+  - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
   version: 60bf397d7966ab2285d3ba7701ead2cc376111d4
@@ -527,9 +539,11 @@ imports:
   - tools/clientcmd/api/v1
   - tools/metrics
   - tools/pager
+  - tools/portforward
   - tools/record
   - tools/reference
   - transport
+  - transport/spdy
   - util/cert
   - util/flowcontrol
   - util/homedir

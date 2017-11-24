@@ -71,6 +71,8 @@ func (c *Controller) ensureStatefulSet(
 			in.Spec.Template.Spec.ServiceAccountName = elasticsearch.Name
 		}
 
+		in.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
+
 		return in
 	})
 
@@ -276,16 +278,6 @@ func upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elastics
 				Add: []core.Capability{"IPC_LOCK", "SYS_RESOURCE"},
 			},
 		},
-		VolumeMounts: []core.VolumeMount{
-			{
-				Name:      "data",
-				MountPath: "/data",
-			},
-			{
-				Name:      "certs",
-				MountPath: "/elasticsearch/config/certs",
-			},
-		},
 	}
 	containers := statefulSet.Spec.Template.Spec.Containers
 	containers = kutilcore.UpsertContainer(containers, container)
@@ -327,7 +319,7 @@ func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elasticsearch,
 	// To do this, Upsert Container first
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
 		if container.Name == tapi.ResourceNameElasticsearch {
-			statefulSet.Spec.Template.Spec.Containers[i].Env = kutilcore.UpsertEnvVars(container.Env, envs...)
+			statefulSet.Spec.Template.Spec.Containers[i].Env = kutilcore.UpsertEnvVars(container.Env, envList...)
 			return statefulSet
 		}
 	}
