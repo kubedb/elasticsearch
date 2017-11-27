@@ -8,9 +8,9 @@ import (
 	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/k8sdb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	. "github.com/onsi/gomega"
+	"gopkg.in/olivere/elastic.v5"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"gopkg.in/olivere/elastic.v5"
 )
 
 func (f *Invocation) CombinedElasticsearch() *api.Elasticsearch {

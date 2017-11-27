@@ -296,7 +296,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Create elasticsearch from snapshot")
-				elasticsearch = f.CombinedElasticsearch()
+				*elasticsearch = *f.CombinedElasticsearch()
 				elasticsearch.Spec.Init = &tapi.InitSpec{
 					SnapshotSource: &tapi.SnapshotSourceSpec{
 						Namespace: snapshot.Namespace,
@@ -318,7 +318,7 @@ var _ = Describe("Elasticsearch", func() {
 
 				// Delete test resource
 				deleteTestResouce()
-				elasticsearch = oldElasticsearch
+				*elasticsearch = *oldElasticsearch
 				// Delete test resource
 				deleteTestResouce()
 			})
@@ -373,16 +373,11 @@ var _ = Describe("Elasticsearch", func() {
 					// Create and wait for running Elasticsearch
 					createAndWaitForRunning()
 
-					_elasticserch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
 					By("Delete elasticsearch")
 					f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 
 					By("Wait for elasticsearch to be paused")
 					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
-
-					elasticsearch.Spec = _elasticserch.Spec
 
 					// Create Elasticsearch object again to resume it
 					By("Create Elasticsearch: " + elasticsearch.Name)
@@ -394,9 +389,6 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Wait for Running elasticsearch")
 					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
-
-					elasticsearch, err = f.GetElasticsearch(elasticsearch.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
 
 					// Delete test resource
 					deleteTestResouce()

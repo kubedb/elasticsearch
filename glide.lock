@@ -1,5 +1,5 @@
 hash: e094a0c36c1a8c85ddf03454399e831eb47741773078dad2daf20a40bba40bcc
-updated: 2017-11-24T09:54:54.5072392+06:00
+updated: 2017-11-27T11:58:54.696260892+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -216,7 +216,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/k8sdb/apimachinery
-  version: cfc4501f0cc8140732c27ce48d9c0dbb40bbc96a
+  version: ea36019dfff7e45544fd9ad53debd47fcee0ac5c
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -370,7 +370,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: 92db9b55d2aa90e54a33cfaa8caf354afae68157
+  version: b804618854e387dc7fdd9e50496183ddcbb4b120
   subpackages:
   - gensupport
   - googleapi
@@ -401,7 +401,7 @@ imports:
   - backoff
   - uritemplates
 - name: gopkg.in/olivere/elastic.v5
-  version: fe561fcbb260f7465f78c60e7da0012d94645afb
+  version: 79ff368708b3a2a9da641dc831d95fd0782bf4ef
   subpackages:
   - config
   - uritemplates

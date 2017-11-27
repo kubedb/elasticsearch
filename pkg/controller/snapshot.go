@@ -59,13 +59,13 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 	if err != nil {
 		return nil, err
 	}
-	elastic, err := c.ExtClient.Elasticsearchs(snapshot.Namespace).Get(databaseName, metav1.GetOptions{})
+	elasticsearch, err := c.ExtClient.Elasticsearchs(snapshot.Namespace).Get(databaseName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	persistentVolume, err := c.getVolumeForSnapshot(elastic.Spec.Storage, jobName, snapshot.Namespace)
+	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.Storage, jobName, snapshot.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 									ValueFrom: &core.EnvVarSource{
 										SecretKeyRef: &core.SecretKeySelector{
 											LocalObjectReference: core.LocalObjectReference{
-												Name: elastic.Spec.DatabaseSecret.SecretName,
+												Name: elasticsearch.Spec.DatabaseSecret.SecretName,
 											},
 											Key: "READALL_PASSWORD",
 										},
@@ -147,7 +147,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							Name: "certs",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
-									SecretName: elastic.Spec.CertificateSecret.SecretName,
+									SecretName: elasticsearch.Spec.CertificateSecret.SecretName,
 									Items: []core.KeyToPath{
 										{
 											Key:  "ca.pem",

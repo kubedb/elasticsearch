@@ -306,7 +306,7 @@ func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elasticsearch,
 		},
 		{
 			Name:  "DISCOVERY_SERVICE",
-			Value: fmt.Sprintf("%v-discovery", elasticsearch.OffshootName()),
+			Value: elasticsearch.MasterServiceName(),
 		},
 		{
 			Name:  "SSL_ENABLE",

@@ -243,29 +243,29 @@ func (c *Controller) ensureCustomResourceDefinition() {
 	}
 }
 
-func (c *Controller) pushFailureEvent(elastic *api.Elasticsearch, reason string) {
+func (c *Controller) pushFailureEvent(elasticsearch *api.Elasticsearch, reason string) {
 	c.recorder.Eventf(
-		elastic.ObjectReference(),
+		elasticsearch.ObjectReference(),
 		core.EventTypeWarning,
 		eventer.EventReasonFailedToStart,
 		`Fail to be ready Elasticsearch: "%v". Reason: %v`,
-		elastic.Name,
+		elasticsearch.Name,
 		reason,
 	)
 
 	var err error
-	if elastic, err = c.ExtClient.Elasticsearchs(elastic.Namespace).Get(elastic.Name, metav1.GetOptions{}); err != nil {
+	if elasticsearch, err = c.ExtClient.Elasticsearchs(elasticsearch.Namespace).Get(elasticsearch.Name, metav1.GetOptions{}); err != nil {
 		log.Errorln(err)
 		return
 	}
 
-	_, err = kutildb.TryPatchElasticsearch(c.ExtClient, elastic.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+	es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Status.Phase = api.DatabasePhaseFailed
 		in.Status.Reason = reason
 		return in
 	})
 	if err != nil {
-		c.recorder.Eventf(elastic.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 	}
-
+	*elasticsearch = *es
 }

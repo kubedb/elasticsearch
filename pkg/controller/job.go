@@ -25,8 +25,8 @@ const (
 	snapshotType_DumpRestore = "dump-restore"
 )
 
-func (c *Controller) createRestoreJob(elastic *api.Elasticsearch, snapshot *api.Snapshot) (*batch.Job, error) {
-	databaseName := elastic.Name
+func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot *api.Snapshot) (*batch.Job, error) {
+	databaseName := elasticsearch.Name
 	jobName := rand.WithUniqSuffix(snapshot.OffshootName())
 	jobLabel := map[string]string{
 		api.LabelDatabaseName: databaseName,
@@ -39,7 +39,7 @@ func (c *Controller) createRestoreJob(elastic *api.Elasticsearch, snapshot *api.
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	persistentVolume, err := c.getVolumeForSnapshot(elastic.Spec.Storage, jobName, elastic.Namespace)
+	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.Storage, jobName, elasticsearch.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (c *Controller) createRestoreJob(elastic *api.Elasticsearch, snapshot *api.
 									ValueFrom: &core.EnvVarSource{
 										SecretKeyRef: &core.SecretKeySelector{
 											LocalObjectReference: core.LocalObjectReference{
-												Name: elastic.Spec.DatabaseSecret.SecretName,
+												Name: elasticsearch.Spec.DatabaseSecret.SecretName,
 											},
 											Key: "ADMIN_PASSWORD",
 										},
@@ -123,7 +123,7 @@ func (c *Controller) createRestoreJob(elastic *api.Elasticsearch, snapshot *api.
 							Name: "certs",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
-									SecretName: elastic.Spec.CertificateSecret.SecretName,
+									SecretName: elasticsearch.Spec.CertificateSecret.SecretName,
 									Items: []core.KeyToPath{
 										{
 											Key:  "ca.pem",
@@ -158,5 +158,5 @@ func (c *Controller) createRestoreJob(elastic *api.Elasticsearch, snapshot *api.
 		}
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, volume)
 	}
-	return c.Client.BatchV1().Jobs(elastic.Namespace).Create(job)
+	return c.Client.BatchV1().Jobs(elasticsearch.Namespace).Create(job)
 }

@@ -38,19 +38,18 @@ func (c *Controller) ensureService(elasticsearch *tapi.Elasticsearch) error {
 		}
 	}
 
-	discoveryService := fmt.Sprintf("%s-discovery", name)
-	found, err = c.findService(elasticsearch, discoveryService)
+	found, err = c.findService(elasticsearch, elasticsearch.MasterServiceName())
 	if err != nil {
 		return err
 	}
 	if !found {
-		// create database Discovery Service
-		if err := c.createDiscoveryService(elasticsearch); err != nil {
+		// create database Master Service
+		if err := c.createMasterService(elasticsearch); err != nil {
 			c.recorder.Eventf(
 				elasticsearch.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToCreate,
-				"Failed to create Discovery Service. Reason: %v",
+				"Failed to create Master Service. Reason: %v",
 				err,
 			)
 			return err
@@ -78,11 +77,11 @@ func (c *Controller) findService(elasticsearch *tapi.Elasticsearch, name string)
 	return true, nil
 }
 
-func (c *Controller) createService(elastic *tapi.Elasticsearch) error {
+func (c *Controller) createService(elasticsearch *tapi.Elasticsearch) error {
 	svc := &core.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   elastic.Name,
-			Labels: elastic.OffshootLabels(),
+			Name:   elasticsearch.OffshootName(),
+			Labels: elasticsearch.OffshootLabels(),
 		},
 		Spec: core.ServiceSpec{
 			Ports: []core.ServicePort{
@@ -92,14 +91,14 @@ func (c *Controller) createService(elastic *tapi.Elasticsearch) error {
 					TargetPort: intstr.FromString("http"),
 				},
 			},
-			Selector: elastic.OffshootLabels(),
+			Selector: elasticsearch.OffshootLabels(),
 		},
 	}
 	svc.Spec.Selector[NodeRoleClient] = "set"
 
-	if elastic.Spec.Monitor != nil &&
-		elastic.Spec.Monitor.Agent == tapi.AgentCoreosPrometheus &&
-		elastic.Spec.Monitor.Prometheus != nil {
+	if elasticsearch.Spec.Monitor != nil &&
+		elasticsearch.Spec.Monitor.Agent == tapi.AgentCoreosPrometheus &&
+		elasticsearch.Spec.Monitor.Prometheus != nil {
 		svc.Spec.Ports = append(svc.Spec.Ports, core.ServicePort{
 			Name:       tapi.PrometheusExporterPortName,
 			Port:       tapi.PrometheusExporterPortNumber,
@@ -107,16 +106,15 @@ func (c *Controller) createService(elastic *tapi.Elasticsearch) error {
 		})
 	}
 
-	if _, err := c.Client.CoreV1().Services(elastic.Namespace).Create(svc); err != nil {
+	if _, err := c.Client.CoreV1().Services(elasticsearch.Namespace).Create(svc); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *Controller) createDiscoveryService(elasticsearch *tapi.Elasticsearch) error {
-	// TODO
-	serviceName := fmt.Sprintf("%v-discovery", elasticsearch.Name)
+func (c *Controller) createMasterService(elasticsearch *tapi.Elasticsearch) error {
+	serviceName := elasticsearch.MasterServiceName()
 	svc := &core.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceName,

@@ -23,7 +23,7 @@ func (c *Controller) ensureCertSecret(elasticsearch *api.Elasticsearch) error {
 		if certSecretVolumeSource, err = c.createCertSecret(elasticsearch); err != nil {
 			return err
 		}
-		_, err = kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+		es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Spec.CertificateSecret = certSecretVolumeSource
 			return in
 		})
@@ -31,6 +31,7 @@ func (c *Controller) ensureCertSecret(elasticsearch *api.Elasticsearch) error {
 			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
+		*elasticsearch = *es
 	}
 	return nil
 }
@@ -39,10 +40,10 @@ func (c *Controller) ensureDatabaseSecret(elasticsearch *api.Elasticsearch) erro
 	databaseSecretVolume := elasticsearch.Spec.DatabaseSecret
 	if databaseSecretVolume == nil {
 		var err error
-		if databaseSecretVolume, err = c.createAuthSecret(elasticsearch); err != nil {
+		if databaseSecretVolume, err = c.createDatabaseSecret(elasticsearch); err != nil {
 			return err
 		}
-		_, err = kutildb.TryPatchElasticsearch(c.ExtClient, elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+		es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Spec.DatabaseSecret = databaseSecretVolume
 			return in
 		})
@@ -50,6 +51,7 @@ func (c *Controller) ensureDatabaseSecret(elasticsearch *api.Elasticsearch) erro
 			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
+		*elasticsearch = *es
 	}
 	return nil
 }
@@ -159,7 +161,7 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 	return secretVolumeSource, nil
 }
 
-func (c *Controller) findAuthSecret(elasticsearch *api.Elasticsearch) (*core.Secret, error) {
+func (c *Controller) findDatabaseSecret(elasticsearch *api.Elasticsearch) (*core.Secret, error) {
 	name := fmt.Sprintf("%v-auth", elasticsearch.OffshootName())
 
 	secret, err := c.Client.CoreV1().Secrets(elasticsearch.Namespace).Get(name, metav1.GetOptions{})
@@ -257,14 +259,14 @@ sg_readall:
     - readall
 `
 
-func (c *Controller) createAuthSecret(elasticsearch *api.Elasticsearch) (*core.SecretVolumeSource, error) {
-	authSecret, err := c.findAuthSecret(elasticsearch)
+func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*core.SecretVolumeSource, error) {
+	databaseSecret, err := c.findDatabaseSecret(elasticsearch)
 	if err != nil {
 		return nil, err
 	}
-	if authSecret != nil {
+	if databaseSecret != nil {
 		return &core.SecretVolumeSource{
-			SecretName: authSecret.Name,
+			SecretName: databaseSecret.Name,
 		}, nil
 	}
 
@@ -306,8 +308,7 @@ func (c *Controller) createAuthSecret(elasticsearch *api.Elasticsearch) (*core.S
 		return nil, err
 	}
 
-	secretVolumeSource := &core.SecretVolumeSource{
+	return &core.SecretVolumeSource{
 		SecretName: secret.Name,
-	}
-	return secretVolumeSource, nil
+	}, nil
 }

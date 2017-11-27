@@ -268,6 +268,13 @@ func (s *SearchService) StoredFields(fields ...string) *SearchService {
 	return s
 }
 
+// TrackScores is applied when sorting and controls if scores will be
+// tracked as well. Defaults to false.
+func (s *SearchService) TrackScores(trackScores bool) *SearchService {
+	s.searchSource = s.searchSource.TrackScores(trackScores)
+	return s
+}
+
 // SearchAfter allows a different form of pagination by using a live cursor,
 // using the results of the previous page to help the retrieval of the next.
 //
@@ -430,6 +437,10 @@ func (r *SearchResult) Each(typ reflect.Type) []interface{} {
 	var slice []interface{}
 	for _, hit := range r.Hits.Hits {
 		v := reflect.New(typ).Elem()
+		if hit.Source == nil {
+			slice = append(slice, v.Interface())
+			continue
+		}
 		if err := json.Unmarshal(*hit.Source, v.Addr().Interface()); err == nil {
 			slice = append(slice, v.Interface())
 		}

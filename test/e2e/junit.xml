@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="1" failures="0" time="274.700656554">
+  <testsuite tests="2" failures="1" time="877.28899735">
       <testcase name="Elasticsearch Test General - should run successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
@@ -26,5 +26,19 @@
       </testcase>
       <testcase name="Elasticsearch Test Snapshot In Swift should take Snapshot successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Initialize should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Resume With original Elasticsearch should resume DormantDatabase successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test SnapshotScheduler With Startup should run schedular successfully" classname="e2e Suite" time="220.673794407"></testcase>
+      <testcase name="Elasticsearch Test SnapshotScheduler With Update should run schedular successfully" classname="e2e Suite" time="654.377128478">
+          <failure type="Failure">/home/shahriar/go/src/github.com/k8sdb/elasticsearch/test/e2e/elasticsearch_test.go:471&#xA;Timed out after 600.000s.&#xA;Expected to have snapshot more than 3&#xA;/home/shahriar/go/src/github.com/k8sdb/elasticsearch/test/e2e/elasticsearch_test.go:468</failure>
+          <system-out>[BeforeEach] Elasticsearch&#xA;  /home/shahriar/go/src/github.com/k8sdb/elasticsearch/test/e2e/elasticsearch_test.go:38&#xA;[BeforeEach] SnapshotScheduler&#xA;  /home/shahriar/go/src/github.com/k8sdb/elasticsearch/test/e2e/elasticsearch_test.go:406&#xA;[It] should run schedular successfully&#xA;  /home/shahriar/go/src/github.com/k8sdb/elasticsearch/test/e2e/elasticsearch_test.go:471&#xA;�[1mSTEP�[0m: Create Elasticsearch: elasticsearch-svjsbd&#xA;�[1mSTEP�[0m: Wait for Running elasticsearch&#xA;�[1mSTEP�[0m: Create Secret&#xA;�[1mSTEP�[0m: Update elasticsearch&#xA;�[1mSTEP�[0m: Count multiple Snapshot&#xA;[AfterEach] SnapshotScheduler&#xA;  /home/shahriar/go/src/github.com/k8sdb/elasticsearch/test/e2e/elasticsearch_test.go:402&#xA;</system-out>
       </testcase>
   </testsuite>
