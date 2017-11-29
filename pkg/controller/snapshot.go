@@ -27,7 +27,6 @@ func (c *Controller) ValidateSnapshot(snapshot *api.Snapshot) error {
 		return fmt.Errorf(`object 'DatabaseName' is missing in '%v'`, snapshot.Spec)
 	}
 
-
 	if err := docker.CheckDockerImageVersion(docker.ImageElasticdump, c.opt.ElasticDumpTag); err != nil {
 		return fmt.Errorf(`image %v:%v not found`, docker.ImageElasticdump, c.opt.ElasticDumpTag)
 	}

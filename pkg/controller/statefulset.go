@@ -34,8 +34,8 @@ func (c *Controller) ensureStatefulSet(
 		Namespace: elasticsearch.Namespace,
 	}
 
-	if replicas <= 0 {
-		replicas = 1
+	if replicas < 0 {
+		replicas = 0
 	}
 
 	statefulset, err := kutilapps.CreateOrPatchStatefulSet(c.Client, statefulsetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
@@ -80,24 +80,26 @@ func (c *Controller) ensureStatefulSet(
 		return err
 	}
 
-	// Check StatefulSet Pod status
-	if err := c.CheckStatefulSetPodStatus(statefulset, durationCheckStatefulSet); err != nil {
-		c.recorder.Eventf(
-			elasticsearch.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToStart,
-			"Failed to create StatefulSet. Reason: %v",
-			err,
-		)
+	if replicas > 0 {
+		// Check StatefulSet Pod status
+		if err := c.CheckStatefulSetPodStatus(statefulset, durationCheckStatefulSet); err != nil {
+			c.recorder.Eventf(
+				elasticsearch.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToStart,
+				"Failed to create StatefulSet. Reason: %v",
+				err,
+			)
 
-		return err
-	} else {
-		c.recorder.Event(
-			elasticsearch.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			"Successfully created StatefulSet",
-		)
+			return err
+		} else {
+			c.recorder.Event(
+				elasticsearch.ObjectReference(),
+				core.EventTypeNormal,
+				eventer.EventReasonSuccessfulCreate,
+				"Successfully created StatefulSet",
+			)
+		}
 	}
 
 	return nil
@@ -144,8 +146,8 @@ func (c *Controller) ensureMasterNode(elasticsearch *tapi.Elasticsearch) error {
 	labels[NodeRoleMaster] = "set"
 
 	replicas := masterNode.Replicas
-	if replicas <= 0 {
-		replicas = 1
+	if replicas < 0 {
+		replicas = 0
 	}
 
 	envList := []core.EnvVar{
@@ -207,8 +209,8 @@ func (c *Controller) ensureCombinedNode(elasticsearch *tapi.Elasticsearch) error
 	labels[NodeRoleData] = "set"
 
 	replicas := elasticsearch.Spec.Replicas
-	if replicas <= 0 {
-		replicas = 1
+	if replicas < 0 {
+		replicas = 0
 	}
 
 	envList := []core.EnvVar{

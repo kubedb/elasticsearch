@@ -9,7 +9,6 @@ import (
 
 type Framework struct {
 	restConfig   *rest.Config
-	restClient   rest.Interface
 	kubeClient   kubernetes.Interface
 	extClient    cs.KubedbV1alpha1Interface
 	namespace    string
@@ -17,10 +16,9 @@ type Framework struct {
 	StorageClass string
 }
 
-func New(restConfig *rest.Config, restClient rest.Interface, kubeClient kubernetes.Interface, extClient cs.KubedbV1alpha1Interface, storageClass string) *Framework {
+func New(restConfig *rest.Config, kubeClient kubernetes.Interface, extClient cs.KubedbV1alpha1Interface, storageClass string) *Framework {
 	return &Framework{
 		restConfig:   restConfig,
-		restClient:   restClient,
 		kubeClient:   kubeClient,
 		extClient:    extClient,
 		name:         "elasticsearch-operator",
