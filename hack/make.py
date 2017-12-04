@@ -35,7 +35,7 @@ import subprocess
 import sys
 from os.path import expandvars, join, dirname
 
-libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/k8sdb/elasticsearch'
+libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/kubedb/elasticsearch'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
     'es-operator': {

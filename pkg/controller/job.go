@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
-	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/k8sdb/apimachinery/pkg/docker"
-	"github.com/k8sdb/apimachinery/pkg/storage"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/apimachinery/pkg/docker"
+	"github.com/kubedb/apimachinery/pkg/storage"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

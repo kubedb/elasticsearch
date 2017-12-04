@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/io"
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
+	tapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"k8s.io/client-go/util/cert"
 )
 

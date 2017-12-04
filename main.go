@@ -4,8 +4,8 @@ import (
 	"log"
 
 	logs "github.com/appscode/go/log/golog"
-	_ "github.com/k8sdb/apimachinery/client/scheme"
-	"github.com/k8sdb/elasticsearch/pkg/cmds"
+	_ "github.com/kubedb/apimachinery/client/scheme"
+	"github.com/kubedb/elasticsearch/pkg/cmds"
 )
 
 func main() {

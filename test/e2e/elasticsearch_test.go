@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/appscode/go/types"
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/k8sdb/elasticsearch/test/e2e/framework"
-	"github.com/k8sdb/elasticsearch/test/e2e/matcher"
+	tapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/elasticsearch/test/e2e/framework"
+	"github.com/kubedb/elasticsearch/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"

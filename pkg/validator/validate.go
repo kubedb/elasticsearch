@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/k8sdb/apimachinery/pkg/docker"
-	amv "github.com/k8sdb/apimachinery/pkg/validator"
+	tapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/apimachinery/pkg/docker"
+	amv "github.com/kubedb/apimachinery/pkg/validator"
 	"k8s.io/client-go/kubernetes"
 )
 

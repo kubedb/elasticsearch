@@ -8,14 +8,14 @@ GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
 ROOT=$GOPATH
-REPO_ROOT=$GOPATH/src/github.com/k8sdb/elasticsearch
+REPO_ROOT=$GOPATH/src/github.com/kubedb/elasticsearch
 
 source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=es-operator
 
-DIST=$GOPATH/src/github.com/k8sdb/elasticsearch/dist
+DIST=$GOPATH/src/github.com/kubedb/elasticsearch/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
 	export $(cat $DIST/.tag | xargs)
