@@ -4,7 +4,6 @@ Run Elasticsearch in Kubernetes
 
 ### Synopsis
 
-
 Run Elasticsearch in Kubernetes
 
 ```
@@ -15,7 +14,7 @@ es-operator run [flags]
 
 ```
       --address string             Address to listen on for web interface and telemetry. (default ":8080")
-      --elasticdump.tag string     Tag of elasticdump (default "canary")
+      --elasticdump.tag string     Tag of elasticdump (default "5.6.3")
       --exporter-tag string        Tag of kubedb/operator used as exporter (default "0.7.1")
       --governing-service string   Governing service for database statefulset (default "kubedb")
   -h, --help                       help for run
@@ -40,5 +39,6 @@ es-operator run [flags]
 ```
 
 ### SEE ALSO
+
 * [es-operator](es-operator.md)	 - 
 

@@ -6,7 +6,6 @@
 
 
 
-
 ### Options
 
 ```
@@ -24,7 +23,7 @@
 ```
 
 ### SEE ALSO
-* [es-operator discover](es-operator_discover.md)	 - Discover Elasticsearch Endpoints
+
 * [es-operator run](es-operator_run.md)	 - Run Elasticsearch in Kubernetes
 * [es-operator version](es-operator_version.md)	 - Prints binary version number.
 
