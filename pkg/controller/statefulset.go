@@ -5,9 +5,9 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	kutilapps "github.com/appscode/kutil/apps/v1beta1"
-	kutilcore "github.com/appscode/kutil/core/v1"
-	tapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	app_util "github.com/appscode/kutil/apps/v1beta1"
+	core_util "github.com/appscode/kutil/core/v1"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/pkg/docker"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	apps "k8s.io/api/apps/v1beta1"
@@ -17,7 +17,7 @@ import (
 )
 
 func (c *Controller) ensureStatefulSet(
-	elasticsearch *tapi.Elasticsearch,
+	elasticsearch *api.Elasticsearch,
 	statefulsetName string,
 	labels map[string]string,
 	replicas int32,
@@ -38,7 +38,7 @@ func (c *Controller) ensureStatefulSet(
 		replicas = 0
 	}
 
-	statefulset, err := kutilapps.CreateOrPatchStatefulSet(c.Client, statefulsetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
+	statefulset, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulsetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
 		in = upsertObjectMeta(in, labels, elasticsearch.StatefulSetAnnotations())
 
 		in.Spec.Replicas = types.Int32P(replicas)
@@ -105,7 +105,7 @@ func (c *Controller) ensureStatefulSet(
 	return nil
 }
 
-func (c *Controller) ensureClientNode(elasticsearch *tapi.Elasticsearch) error {
+func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) error {
 	statefulsetName := elasticsearch.OffshootName()
 	clientNode := elasticsearch.Spec.Topology.Client
 
@@ -134,7 +134,7 @@ func (c *Controller) ensureClientNode(elasticsearch *tapi.Elasticsearch) error {
 	return c.ensureStatefulSet(elasticsearch, statefulsetName, labels, clientNode.Replicas, envList, true)
 }
 
-func (c *Controller) ensureMasterNode(elasticsearch *tapi.Elasticsearch) error {
+func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) error {
 	statefulsetName := elasticsearch.OffshootName()
 	masterNode := elasticsearch.Spec.Topology.Master
 
@@ -172,7 +172,7 @@ func (c *Controller) ensureMasterNode(elasticsearch *tapi.Elasticsearch) error {
 	return c.ensureStatefulSet(elasticsearch, statefulsetName, labels, masterNode.Replicas, envList, false)
 }
 
-func (c *Controller) ensureDataNode(elasticsearch *tapi.Elasticsearch) error {
+func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) error {
 	statefulsetName := elasticsearch.OffshootName()
 	dataNode := elasticsearch.Spec.Topology.Data
 
@@ -201,7 +201,7 @@ func (c *Controller) ensureDataNode(elasticsearch *tapi.Elasticsearch) error {
 	return c.ensureStatefulSet(elasticsearch, statefulsetName, labels, dataNode.Replicas, envList, false)
 }
 
-func (c *Controller) ensureCombinedNode(elasticsearch *tapi.Elasticsearch) error {
+func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) error {
 	statefulsetName := elasticsearch.OffshootName()
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleClient] = "set"
@@ -227,7 +227,7 @@ func (c *Controller) ensureCombinedNode(elasticsearch *tapi.Elasticsearch) error
 	return c.ensureStatefulSet(elasticsearch, statefulsetName, labels, replicas, envList, true)
 }
 
-func (c *Controller) checkStatefulSet(elasticsearch *tapi.Elasticsearch, name string) error {
+func (c *Controller) checkStatefulSet(elasticsearch *api.Elasticsearch, name string) error {
 	elasticsearchName := elasticsearch.OffshootName()
 	// SatatefulSet for Elasticsearch database
 	statefulSet, err := c.Client.AppsV1beta1().StatefulSets(elasticsearch.Namespace).Get(name, metav1.GetOptions{})
@@ -239,8 +239,8 @@ func (c *Controller) checkStatefulSet(elasticsearch *tapi.Elasticsearch, name st
 		}
 	}
 
-	if statefulSet.Labels[tapi.LabelDatabaseKind] != tapi.ResourceKindElasticsearch ||
-		statefulSet.Labels[tapi.LabelDatabaseName] != elasticsearchName {
+	if statefulSet.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch ||
+		statefulSet.Labels[api.LabelDatabaseName] != elasticsearchName {
 		return fmt.Errorf(`intended statefulSet "%v" already exists`, name)
 	}
 
@@ -248,8 +248,8 @@ func (c *Controller) checkStatefulSet(elasticsearch *tapi.Elasticsearch, name st
 }
 
 func upsertObjectMeta(statefulSet *apps.StatefulSet, labels, annotations map[string]string) *apps.StatefulSet {
-	statefulSet.Labels = kutilcore.UpsertMap(statefulSet.Labels, labels)
-	statefulSet.Annotations = kutilcore.UpsertMap(statefulSet.Annotations, annotations)
+	statefulSet.Labels = core_util.UpsertMap(statefulSet.Labels, labels)
+	statefulSet.Annotations = core_util.UpsertMap(statefulSet.Annotations, annotations)
 	return statefulSet
 }
 
@@ -264,14 +264,14 @@ func upsertInitContainer(statefulSet *apps.StatefulSet) *apps.StatefulSet {
 		},
 	}
 	initContainers := statefulSet.Spec.Template.Spec.InitContainers
-	initContainers = kutilcore.UpsertContainer(initContainers, container)
+	initContainers = core_util.UpsertContainer(initContainers, container)
 	statefulSet.Spec.Template.Spec.InitContainers = initContainers
 	return statefulSet
 }
 
-func upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elasticsearch) *apps.StatefulSet {
+func upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
 	container := core.Container{
-		Name:            tapi.ResourceNameElasticsearch,
+		Name:            api.ResourceNameElasticsearch,
 		Image:           fmt.Sprintf("%v:%v", docker.ImageElasticsearch, elasticsearch.Spec.Version),
 		ImagePullPolicy: core.PullIfNotPresent,
 		SecurityContext: &core.SecurityContext{
@@ -282,12 +282,12 @@ func upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elastics
 		},
 	}
 	containers := statefulSet.Spec.Template.Spec.Containers
-	containers = kutilcore.UpsertContainer(containers, container)
+	containers = core_util.UpsertContainer(containers, container)
 	statefulSet.Spec.Template.Spec.Containers = containers
 	return statefulSet
 }
 
-func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elasticsearch, envs []core.EnvVar) *apps.StatefulSet {
+func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, envs []core.EnvVar) *apps.StatefulSet {
 
 	envList := []core.EnvVar{
 		{
@@ -320,8 +320,8 @@ func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elasticsearch,
 
 	// To do this, Upsert Container first
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
-		if container.Name == tapi.ResourceNameElasticsearch {
-			statefulSet.Spec.Template.Spec.Containers[i].Env = kutilcore.UpsertEnvVars(container.Env, envList...)
+		if container.Name == api.ResourceNameElasticsearch {
+			statefulSet.Spec.Template.Spec.Containers[i].Env = core_util.UpsertEnvVars(container.Env, envList...)
 			return statefulSet
 		}
 	}
@@ -351,7 +351,7 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 	}
 
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
-		if container.Name == tapi.ResourceNameElasticsearch {
+		if container.Name == api.ResourceNameElasticsearch {
 			statefulSet.Spec.Template.Spec.Containers[i].Ports = getPorts()
 			return statefulSet
 		}
@@ -360,29 +360,29 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 	return statefulSet
 }
 
-func upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elasticsearch, tag string) *apps.StatefulSet {
+func upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, tag string) *apps.StatefulSet {
 	if elasticsearch.Spec.Monitor != nil &&
-		elasticsearch.Spec.Monitor.Agent == tapi.AgentCoreosPrometheus &&
+		elasticsearch.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
 		elasticsearch.Spec.Monitor.Prometheus != nil {
 		container := core.Container{
 			Name: "exporter",
 			Args: []string{
 				"export",
-				fmt.Sprintf("--address=:%d", tapi.PrometheusExporterPortNumber),
+				fmt.Sprintf("--address=:%d", api.PrometheusExporterPortNumber),
 				"--v=3",
 			},
 			Image:           docker.ImageOperator + ":" + tag,
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{
 				{
-					Name:          tapi.PrometheusExporterPortName,
+					Name:          api.PrometheusExporterPortName,
 					Protocol:      core.ProtocolTCP,
-					ContainerPort: int32(tapi.PrometheusExporterPortNumber),
+					ContainerPort: int32(api.PrometheusExporterPortNumber),
 				},
 			},
 		}
 		containers := statefulSet.Spec.Template.Spec.Containers
-		containers = kutilcore.UpsertContainer(containers, container)
+		containers = core_util.UpsertContainer(containers, container)
 		statefulSet.Spec.Template.Spec.Containers = containers
 	}
 	return statefulSet
@@ -414,13 +414,13 @@ func upsertCertificate(statefulset *apps.StatefulSet, secretName string, isClien
 	}
 
 	for i, container := range statefulset.Spec.Template.Spec.Containers {
-		if container.Name == tapi.ResourceNameElasticsearch {
+		if container.Name == api.ResourceNameElasticsearch {
 			volumeMount := core.VolumeMount{
 				Name:      "certs",
 				MountPath: "/elasticsearch/config/certs",
 			}
 			volumeMounts := container.VolumeMounts
-			volumeMounts = kutilcore.UpsertVolumeMount(volumeMounts, volumeMount)
+			volumeMounts = core_util.UpsertVolumeMount(volumeMounts, volumeMount)
 			statefulset.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
 
 			volume := core.Volume{
@@ -430,7 +430,7 @@ func upsertCertificate(statefulset *apps.StatefulSet, secretName string, isClien
 				},
 			}
 			volumes := statefulset.Spec.Template.Spec.Volumes
-			volumes = kutilcore.UpsertVolume(volumes, volume)
+			volumes = core_util.UpsertVolume(volumes, volume)
 			statefulset.Spec.Template.Spec.Volumes = volumes
 			return statefulset
 		}
@@ -440,13 +440,13 @@ func upsertCertificate(statefulset *apps.StatefulSet, secretName string, isClien
 
 func upsertDatabaseSecret(statefulset *apps.StatefulSet, secretName string) *apps.StatefulSet {
 	for i, container := range statefulset.Spec.Template.Spec.Containers {
-		if container.Name == tapi.ResourceNameElasticsearch {
+		if container.Name == api.ResourceNameElasticsearch {
 			volumeMount := core.VolumeMount{
 				Name:      "sgconfig",
 				MountPath: "/elasticsearch/plugins/search-guard-5/sgconfig",
 			}
 			volumeMounts := container.VolumeMounts
-			volumeMounts = kutilcore.UpsertVolumeMount(volumeMounts, volumeMount)
+			volumeMounts = core_util.UpsertVolumeMount(volumeMounts, volumeMount)
 			statefulset.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
 
 			volume := core.Volume{
@@ -458,7 +458,7 @@ func upsertDatabaseSecret(statefulset *apps.StatefulSet, secretName string) *app
 				},
 			}
 			volumes := statefulset.Spec.Template.Spec.Volumes
-			volumes = kutilcore.UpsertVolume(volumes, volume)
+			volumes = core_util.UpsertVolume(volumes, volume)
 			statefulset.Spec.Template.Spec.Volumes = volumes
 			return statefulset
 		}
@@ -466,15 +466,15 @@ func upsertDatabaseSecret(statefulset *apps.StatefulSet, secretName string) *app
 	return statefulset
 }
 
-func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elasticsearch) *apps.StatefulSet {
+func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
-		if container.Name == tapi.ResourceNameElasticsearch {
+		if container.Name == api.ResourceNameElasticsearch {
 			volumeMount := core.VolumeMount{
 				Name:      "data",
 				MountPath: "/data",
 			}
 			volumeMounts := container.VolumeMounts
-			volumeMounts = kutilcore.UpsertVolumeMount(volumeMounts, volumeMount)
+			volumeMounts = core_util.UpsertVolumeMount(volumeMounts, volumeMount)
 			statefulSet.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
 
 			pvcSpec := elasticsearch.Spec.Storage
@@ -496,7 +496,7 @@ func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elastic
 					Spec: *pvcSpec,
 				}
 				volumeClaims := statefulSet.Spec.VolumeClaimTemplates
-				volumeClaims = kutilcore.UpsertVolumeClaim(volumeClaims, volumeClaim)
+				volumeClaims = core_util.UpsertVolumeClaim(volumeClaims, volumeClaim)
 				statefulSet.Spec.VolumeClaimTemplates = volumeClaims
 			} else {
 				// Attach Empty directory
@@ -516,7 +516,7 @@ func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *tapi.Elastic
 					},
 				}
 				volumes := statefulSet.Spec.Template.Spec.Volumes
-				volumes = kutilcore.UpsertVolume(volumes, volume)
+				volumes = core_util.UpsertVolume(volumes, volume)
 				statefulSet.Spec.Template.Spec.Volumes = volumes
 				return statefulSet
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	tapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	tcs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -14,7 +14,7 @@ import (
 
 func ExportReport(
 	kubeClient kubernetes.Interface,
-	dbClient tcs.KubedbV1alpha1Interface,
+	dbClient cs.KubedbV1alpha1Interface,
 	namespace string,
 	kubedbName string,
 	index string,
@@ -52,7 +52,7 @@ func ExportReport(
 		indices = append(indices, index)
 	}
 
-	esSummary := make(map[string]*tapi.ElasticsearchSummary)
+	esSummary := make(map[string]*api.ElasticsearchSummary)
 	for _, index := range indices {
 		info, err := getDataFromIndex(client, index)
 		if err != nil {
@@ -64,13 +64,13 @@ func ExportReport(
 
 	completionTime := metav1.Now()
 
-	r := &tapi.Report{
+	r := &api.Report{
 		TypeMeta:   elastic.TypeMeta,
 		ObjectMeta: elastic.ObjectMeta,
-		Summary: tapi.ReportSummary{
+		Summary: api.ReportSummary{
 			Elasticsearch: esSummary,
 		},
-		Status: tapi.ReportStatus{
+		Status: api.ReportStatus{
 			StartTime:      &startTime,
 			CompletionTime: &completionTime,
 		},

@@ -3,7 +3,7 @@ package controller
 import (
 	"fmt"
 
-	tapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +17,7 @@ var (
 	NodeRoleData   = "node.role.data"
 )
 
-func (c *Controller) ensureService(elasticsearch *tapi.Elasticsearch) error {
+func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) error {
 	name := elasticsearch.OffshootName()
 	// Check if service name exists
 	found, err := c.findService(elasticsearch, name)
@@ -58,7 +58,7 @@ func (c *Controller) ensureService(elasticsearch *tapi.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) findService(elasticsearch *tapi.Elasticsearch, name string) (bool, error) {
+func (c *Controller) findService(elasticsearch *api.Elasticsearch, name string) (bool, error) {
 	elasticsearchName := elasticsearch.OffshootName()
 
 	service, err := c.Client.CoreV1().Services(elasticsearch.Namespace).Get(name, metav1.GetOptions{})
@@ -70,14 +70,14 @@ func (c *Controller) findService(elasticsearch *tapi.Elasticsearch, name string)
 		}
 	}
 
-	if service.Spec.Selector[tapi.LabelDatabaseName] != elasticsearchName {
+	if service.Spec.Selector[api.LabelDatabaseName] != elasticsearchName {
 		return false, fmt.Errorf(`intended service "%v" already exists`, name)
 	}
 
 	return true, nil
 }
 
-func (c *Controller) createService(elasticsearch *tapi.Elasticsearch) error {
+func (c *Controller) createService(elasticsearch *api.Elasticsearch) error {
 	svc := &core.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   elasticsearch.OffshootName(),
@@ -97,12 +97,12 @@ func (c *Controller) createService(elasticsearch *tapi.Elasticsearch) error {
 	svc.Spec.Selector[NodeRoleClient] = "set"
 
 	if elasticsearch.Spec.Monitor != nil &&
-		elasticsearch.Spec.Monitor.Agent == tapi.AgentCoreosPrometheus &&
+		elasticsearch.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
 		elasticsearch.Spec.Monitor.Prometheus != nil {
 		svc.Spec.Ports = append(svc.Spec.Ports, core.ServicePort{
-			Name:       tapi.PrometheusExporterPortName,
-			Port:       tapi.PrometheusExporterPortNumber,
-			TargetPort: intstr.FromString(tapi.PrometheusExporterPortName),
+			Name:       api.PrometheusExporterPortName,
+			Port:       api.PrometheusExporterPortNumber,
+			TargetPort: intstr.FromString(api.PrometheusExporterPortName),
 		})
 	}
 
@@ -113,7 +113,7 @@ func (c *Controller) createService(elasticsearch *tapi.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) createMasterService(elasticsearch *tapi.Elasticsearch) error {
+func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) error {
 	serviceName := elasticsearch.MasterServiceName()
 	svc := &core.Service{
 		ObjectMeta: metav1.ObjectMeta{

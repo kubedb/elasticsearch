@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/io"
-	tapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"k8s.io/client-go/util/cert"
 )
 
@@ -58,7 +58,7 @@ func createCaCertificate(certPath string) (*rsa.PrivateKey, *x509.Certificate, e
 	return caKey, caCert, nil
 }
 
-func createNodeCertificate(certPath string, elasticsearch *tapi.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
+func createNodeCertificate(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
 	name := elasticsearch.OffshootName()
 
 	cfg := cert.Config{

@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 
-	tapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/pkg/docker"
 	amv "github.com/kubedb/apimachinery/pkg/validator"
 	"k8s.io/client-go/kubernetes"
 )
 
-func ValidateElasticsearch(client kubernetes.Interface, elasticsearch *tapi.Elasticsearch) error {
+func ValidateElasticsearch(client kubernetes.Interface, elasticsearch *api.Elasticsearch) error {
 	if elasticsearch.Spec.Version == "" {
 		return fmt.Errorf(`object 'Version' is missing in '%v'`, elasticsearch.Spec)
 	}
