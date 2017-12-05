@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	logs "github.com/appscode/go/log/golog"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
@@ -38,6 +39,7 @@ var (
 )
 
 func TestE2e(t *testing.T) {
+	logs.InitLogs()
 	RegisterFailHandler(Fail)
 	SetDefaultEventuallyTimeout(TIMEOUT)
 
@@ -57,7 +59,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	// Clients
 	kubeClient := kubernetes.NewForConfigOrDie(config)
-	restClient := kubeClient.RESTClient()
+	//restClient := kubeClient.RESTClient()
 	apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
 	extClient := cs.NewForConfigOrDie(config)
 	promClient, err := pcm.NewForConfig(config)
@@ -65,7 +67,7 @@ var _ = BeforeSuite(func() {
 		log.Fatalln(err)
 	}
 	// Framework
-	root = framework.New(config, restClient, kubeClient, extClient, storageClass)
+	root = framework.New(config, kubeClient, extClient, storageClass)
 
 	By("Using namespace " + root.Namespace())
 
@@ -85,6 +87,10 @@ var _ = BeforeSuite(func() {
 
 	// Controller
 	ctrl = controller.New(kubeClient, apiExtKubeClient, extClient, promClient, cronController, opt)
+	err = ctrl.Setup()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	ctrl.Run()
 	root.EventuallyTPR().Should(Succeed())
 })
