@@ -523,6 +523,7 @@ func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *api.Elastics
 				return statefulSet
 
 			}
+			break
 		}
 	}
 	return statefulSet
