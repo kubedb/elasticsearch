@@ -293,6 +293,7 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) e
 }
 
 func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) {
+	kutildb.AssignTypeKind(elasticsearch)
 	// Setup Schedule backup
 	if elasticsearch.Spec.BackupSchedule != nil {
 		err := c.cronController.ScheduleBackup(elasticsearch, elasticsearch.ObjectMeta, elasticsearch.Spec.BackupSchedule)
@@ -448,14 +449,10 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 func (c *Controller) update(oldElasticsearch, updatedElasticsearch *api.Elasticsearch) error {
 	if updatedElasticsearch.Annotations != nil {
 		if _, found := updatedElasticsearch.Annotations["kubedb.com/ignore"]; found {
-			_, err := kutildb.PatchElasticsearch(c.ExtClient, updatedElasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+			kutildb.PatchElasticsearch(c.ExtClient, updatedElasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 				delete(in.Annotations, "kubedb.com/ignore")
 				return in
 			})
-			if err != nil {
-				c.recorder.Eventf(updatedElasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-				return err
-			}
 			return nil
 		}
 	}

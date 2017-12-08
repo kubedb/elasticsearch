@@ -7,7 +7,7 @@ import (
 
 	v "github.com/appscode/go/version"
 	"github.com/jpillora/go-ogle-analytics"
-	_ "github.com/kubedb/apimachinery/client/scheme"
+	"github.com/kubedb/apimachinery/client/scheme"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -33,6 +33,7 @@ func NewRootCmd(version string) *cobra.Command {
 					client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(version))
 				}
 			}
+			scheme.AddToScheme(scheme.Scheme)
 		},
 	}
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
