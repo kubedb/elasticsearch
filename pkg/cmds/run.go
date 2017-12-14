@@ -29,9 +29,9 @@ func NewCmdRun(version string) *cobra.Command {
 	)
 
 	opt := controller.Options{
-		ElasticDumpTag:    "5.6.3",
+		ElasticDumpTag:    "3.3.1",
 		OperatorNamespace: namespace(),
-		ExporterTag:       "0.7.1",
+		ExporterTag:       "0.7.2",
 		GoverningService:  "kubedb",
 		Address:           ":8080",
 		EnableRbac:        false,

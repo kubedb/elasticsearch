@@ -10,9 +10,9 @@ REPO_ROOT="$GOPATH/src/github.com/kubedb/elasticsearch"
 source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 IMG=elasticdump
-TAG=2.4.2
+TAG=3.3.1
 
-pushd "$REPO_ROOT/hack/docker/elasticdump"
+pushd "$REPO_ROOT/hack/docker/elasticdump/3.3.1"
 
 binary_repo $@
 

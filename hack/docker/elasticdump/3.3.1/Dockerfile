@@ -13,7 +13,7 @@ RUN set -x \
   && npm install npm -g \
   && npm install -g n \
   && n stable \
-  && npm install elasticdump@3.0.0 -g \
+  && npm install elasticdump@3.3.1 -g \
   && ln -s /usr/bin/nodejs /usr/bin/node \
   && pip install --upgrade pip \
   && pip install pyyaml \
