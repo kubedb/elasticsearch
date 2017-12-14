@@ -1,5 +1,5 @@
 hash: 584486ff97d38f1ecc798daa5df864becd28ad3c548ecadeb050903d7c0a74e0
-updated: 2017-12-11T11:39:01.664199937+06:00
+updated: 2017-12-14T09:17:30.301724894-08:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -7,14 +7,14 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 0042f7fe164fd03992cfa5ea70a98615516be99b
+  version: cb650d0b1a3c04a86595cf2a31fa704dbf1bc42a
   subpackages:
   - context
   - crypto/rand
   - encoding/json/types
   - encoding/yaml
   - hold
-  - io
+  - ioutil
   - log
   - log/golog
   - runtime
@@ -129,7 +129,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/go-ini/ini
-  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
+  version: 2e44421e256d82ebbf3d4d4fcabe8930b905eff3
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -144,7 +144,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -215,7 +215,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kubedb/apimachinery
-  version: 29d9015df0562fa64b3fd149542bec4317733432
+  version: 30878870d62af296af35878361b833b3df6bdabb
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -249,7 +249,7 @@ imports:
   - idgen
   - signal
 - name: github.com/ncw/swift
-  version: c95c6e5c2d1a3d37fc44c8c6dc9e231c7500667d
+  version: 067578e41c8dd06bf557d02a92a77bd35e97c05a
 - name: github.com/onsi/gomega
   version: c893efa28eb45626cdaa76c9f653b62488858837
   subpackages:
@@ -271,7 +271,7 @@ imports:
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/prometheus/client_golang
   version: c5b7fccd204277076155f10851dad72b76a49317
   subpackages:
@@ -328,7 +328,6 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
-  - websocket
 - name: golang.org/x/oauth2
   version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
   subpackages:
@@ -369,14 +368,14 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: ba22d24b46e8ea8b6dea3b8782695cece79574d4
+  version: 7219ace1c3535de1864b2706ea9397ad2d269f07
   subpackages:
   - gensupport
   - googleapi
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 9d8544a6b2c7df9cff240fcf92d7b2f59bc13416
+  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
   subpackages:
   - internal
   - internal/app_identity
@@ -395,7 +394,7 @@ imports:
   - bson
   - internal/json
 - name: gopkg.in/olivere/elastic.v3
-  version: b3b762ecb4a4acb9dafd3e0de5ba597a117c83f8
+  version: eaecbad7a83e6b60f131825553e5eb7fd5a50b41
   subpackages:
   - backoff
   - uritemplates
