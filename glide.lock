@@ -1,5 +1,5 @@
 hash: 584486ff97d38f1ecc798daa5df864becd28ad3c548ecadeb050903d7c0a74e0
-updated: 2017-12-14T09:17:30.301724894-08:00
+updated: 2017-12-15T12:25:15.560378006+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -144,7 +144,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -229,7 +229,7 @@ imports:
   - pkg/storage
   - pkg/validator
 - name: github.com/kubernetes/apimachinery
-  version: a04e753f5223cf882db01ac64212682ea28767b4
+  version: 23bc0b9defba312e3b5938fa0d0581f3e882f862
   subpackages:
   - pkg/conversion
 - name: github.com/mailru/easyjson
@@ -271,7 +271,7 @@ imports:
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/errors
-  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+  version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/prometheus/client_golang
   version: c5b7fccd204277076155f10851dad72b76a49317
   subpackages:
@@ -328,6 +328,7 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
+  - websocket
 - name: golang.org/x/oauth2
   version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
   subpackages:
@@ -368,14 +369,14 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: 7219ace1c3535de1864b2706ea9397ad2d269f07
+  version: f4694fe510ef1f58a08157aa15e795ffea4d4766
   subpackages:
   - gensupport
   - googleapi
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
   subpackages:
   - internal
   - internal/app_identity
@@ -394,7 +395,7 @@ imports:
   - bson
   - internal/json
 - name: gopkg.in/olivere/elastic.v3
-  version: eaecbad7a83e6b60f131825553e5eb7fd5a50b41
+  version: b3b762ecb4a4acb9dafd3e0de5ba597a117c83f8
   subpackages:
   - backoff
   - uritemplates

@@ -29,16 +29,16 @@ func createCaCertificate(certPath string) (*rsa.PrivateKey, *x509.Certificate, e
 
 	caKey, err := cert.NewPrivateKey()
 	if err != nil {
-		return nil, nil, errors.New("Failed to generate key for CA certificate")
+		return nil, nil, errors.New("failed to generate key for CA certificate")
 	}
 
 	caCert, err := cert.NewSelfSignedCACert(cfg, caKey)
 	if err != nil {
-		return nil, nil, errors.New("Failed to generate CA certificate")
+		return nil, nil, errors.New("failed to generate CA certificate")
 	}
 	caCertByte := cert.EncodeCertPEM(caCert)
 	if !ioutil.WriteString(fmt.Sprintf("%s/ca.pem", certPath), string(caCertByte)) {
-		return nil, nil, errors.New("Failed to write CA certificate")
+		return nil, nil, errors.New("failed to write CA certificate")
 	}
 
 	_, err = exec.Command(
@@ -52,7 +52,7 @@ func createCaCertificate(certPath string) (*rsa.PrivateKey, *x509.Certificate, e
 		"-noprompt",
 	).Output()
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to generate truststore.jks")
+		return nil, nil, fmt.Errorf("failed to generate truststore.jks")
 	}
 
 	return caKey, caCert, nil
@@ -188,7 +188,7 @@ func createAdminCertificate(certPath string, caKey *rsa.PrivateKey, caCert *x509
 	).Output()
 
 	if err != nil {
-		return errors.New("failed to generate sgadmin-keystore.jks")
+		return errors.New("failed to generate sgadmin.jks")
 	}
 
 	return nil
