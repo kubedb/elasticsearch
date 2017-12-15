@@ -9,6 +9,7 @@ import (
 	"github.com/appscode/go/log"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
+	"github.com/kubedb/apimachinery/pkg/docker"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"github.com/kubedb/apimachinery/pkg/storage"
 	"github.com/kubedb/elasticsearch/pkg/validator"
@@ -30,7 +31,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 	*elasticsearch = *es
 
-	if err := validator.ValidateElasticsearch(c.Client, elasticsearch); err != nil {
+	if err := validator.ValidateElasticsearch(c.Client, elasticsearch, c.opt.Docker); err != nil {
 		c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
 		return err
 	}
@@ -336,6 +337,10 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 		return err
 	}
 
+	if err := docker.CheckDockerImageVersion(c.opt.Docker.GetToolsImage(elasticsearch), string(elasticsearch.Spec.Version)); err != nil {
+		return fmt.Errorf(`image %s not found`, c.opt.Docker.GetToolsImageWithTag(elasticsearch))
+	}
+
 	secret, err := storage.NewOSMSecret(c.Client, snapshot)
 	if err != nil {
 		return err
@@ -457,7 +462,7 @@ func (c *Controller) update(oldElasticsearch, updatedElasticsearch *api.Elastics
 		}
 	}
 
-	if err := validator.ValidateElasticsearch(c.Client, updatedElasticsearch); err != nil {
+	if err := validator.ValidateElasticsearch(c.Client, updatedElasticsearch, c.opt.Docker); err != nil {
 		c.recorder.Event(updatedElasticsearch, core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
 		return err
 	}

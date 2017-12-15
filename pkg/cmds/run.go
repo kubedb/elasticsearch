@@ -12,9 +12,9 @@ import (
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
-	"github.com/kubedb/apimachinery/pkg/docker"
 	"github.com/kubedb/apimachinery/pkg/migrator"
 	"github.com/kubedb/elasticsearch/pkg/controller"
+	"github.com/kubedb/elasticsearch/pkg/docker"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -29,9 +29,11 @@ func NewCmdRun(version string) *cobra.Command {
 	)
 
 	opt := controller.Options{
-		ElasticDumpTag:    "3.3.1",
+		Docker: docker.Docker{
+			Registry:    "kbuedb",
+			ExporterTag: "0.8.0",
+		},
 		OperatorNamespace: namespace(),
-		ExporterTag:       "0.7.2",
 		GoverningService:  "kubedb",
 		Address:           ":8080",
 		EnableRbac:        false,
@@ -45,11 +47,6 @@ func NewCmdRun(version string) *cobra.Command {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
 				log.Fatalf("Could not get kubernetes config: %s", err)
-			}
-
-			// Check elasticdump docker image tag
-			if err := docker.CheckDockerImageVersion(docker.ImageElasticdump, opt.ElasticDumpTag); err != nil {
-				log.Fatalf(`Image %v:%v not found.`, docker.ImageElasticdump, opt.ElasticDumpTag)
 			}
 
 			client := kubernetes.NewForConfigOrDie(config)
@@ -94,11 +91,10 @@ func NewCmdRun(version string) *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", opt.GoverningService, "Governing service for database statefulset")
-	cmd.Flags().StringVar(&opt.ExporterTag, "exporter-tag", opt.ExporterTag, "Tag of kubedb/operator used as exporter")
+	cmd.Flags().StringVar(&opt.Docker.Registry, "docker-registry", opt.Docker.Registry, "User provided docker repository")
+	cmd.Flags().StringVar(&opt.Docker.ExporterTag, "exporter-tag", opt.Docker.ExporterTag, "Tag of kubedb/operator used as exporter")
 	cmd.Flags().StringVar(&opt.Address, "address", opt.Address, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().BoolVar(&opt.EnableRbac, "rbac", opt.EnableRbac, "Enable RBAC for database workloads")
-	// elasticdump flags
-	cmd.Flags().StringVar(&opt.ElasticDumpTag, "elasticdump.tag", opt.ElasticDumpTag, "Tag of elasticdump")
 
 	return cmd
 }
