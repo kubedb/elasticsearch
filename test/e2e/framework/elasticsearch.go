@@ -23,7 +23,7 @@ func (f *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version:   types.StrYo("5.6.3"),
+			Version:   types.StrYo("5.6.4"),
 			Replicas:  1,
 			EnableSSL: true,
 		},
@@ -40,7 +40,7 @@ func (f *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version: types.StrYo("5.6.3"),
+			Version: types.StrYo("5.6.4"),
 			Topology: &api.ElasticsearchClusterTopology{
 				Master: api.ElasticsearchNode{
 					Replicas: 1,

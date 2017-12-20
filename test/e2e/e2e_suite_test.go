@@ -21,6 +21,7 @@ import (
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"github.com/kubedb/elasticsearch/pkg/docker"
 )
 
 var storageClass string
@@ -80,7 +81,9 @@ var _ = BeforeSuite(func() {
 	cronController.StartCron()
 
 	opt := controller.Options{
-		ElasticDumpTag:    "5.6.3",
+		Docker: docker.Docker{
+			Registry: "kubedb",
+		},
 		OperatorNamespace: root.Namespace(),
 		GoverningService:  api.DatabaseNamePrefix,
 	}

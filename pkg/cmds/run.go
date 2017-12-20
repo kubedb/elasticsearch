@@ -30,7 +30,7 @@ func NewCmdRun(version string) *cobra.Command {
 
 	opt := controller.Options{
 		Docker: docker.Docker{
-			Registry:    "kbuedb",
+			Registry:    "kubedb",
 			ExporterTag: "0.8.0",
 		},
 		OperatorNamespace: namespace(),
