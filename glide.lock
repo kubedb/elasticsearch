@@ -1,5 +1,5 @@
 hash: c83113e9026347aeb88251bcf6b5b6d38be57c4ab0a51d827f68c1f9683617c7
-updated: 2017-12-15T14:44:14.749633179+06:00
+updated: 2017-12-20T10:23:57.741677838+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -22,7 +22,7 @@ imports:
   - version
   - wait
 - name: github.com/appscode/kutil
-  version: e0c1936a0ec86173f8278752bef81964b4ffbea5
+  version: 320e37a0c32de9129b455f52d681871a14391950
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -36,7 +36,7 @@ imports:
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/osm
-  version: b3ed1c7835d33f312616b260a949589cf33311ee
+  version: ec3d9489c057fa228cd223c929622f3d341a4e8e
   subpackages:
   - context
 - name: github.com/appscode/pat
@@ -229,7 +229,7 @@ imports:
   - pkg/storage
   - pkg/validator
 - name: github.com/kubernetes/apimachinery
-  version: 23bc0b9defba312e3b5938fa0d0581f3e882f862
+  version: 20bbfef868144faf29af69ddb2f01646ead5c1a1
   subpackages:
   - pkg/conversion
 - name: github.com/mailru/easyjson
@@ -369,7 +369,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: f4694fe510ef1f58a08157aa15e795ffea4d4766
+  version: cf39d2072c48ea15238bddbc2caac7dfec109a04
   subpackages:
   - gensupport
   - googleapi
