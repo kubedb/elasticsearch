@@ -139,3 +139,20 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) error
 
 	return nil
 }
+
+func (c *Controller) deleteService(name, namespace string) error {
+	service, err := c.Client.CoreV1().Services(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	if service.Spec.Selector[api.LabelDatabaseName] != name {
+		return nil
+	}
+
+	return c.Client.CoreV1().Services(namespace).Delete(name, nil)
+}

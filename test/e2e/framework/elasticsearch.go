@@ -43,15 +43,15 @@ func (f *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 			Version: types.StrYo("5.6.4"),
 			Topology: &api.ElasticsearchClusterTopology{
 				Master: api.ElasticsearchNode{
-					Replicas: 1,
+					Replicas: 2,
 					Prefix:   "master",
 				},
 				Data: api.ElasticsearchNode{
-					Replicas: 1,
+					Replicas: 2,
 					Prefix:   "data",
 				},
 				Client: api.ElasticsearchNode{
-					Replicas: 1,
+					Replicas: 2,
 					Prefix:   "client",
 				},
 			},

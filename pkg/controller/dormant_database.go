@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,11 +32,11 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		},
 	}
 	// Delete Service
-	if err := c.DeleteService(elasticsearch.OffshootName(), dormantDb.Namespace); err != nil {
+	if err := c.deleteService(elasticsearch.OffshootName(), dormantDb.Namespace); err != nil {
 		log.Errorln(err)
 		return err
 	}
-	if err := c.DeleteService(elasticsearch.MasterServiceName(), dormantDb.Namespace); err != nil {
+	if err := c.deleteService(elasticsearch.MasterServiceName(), dormantDb.Namespace); err != nil {
 		log.Errorln(err)
 		return err
 	}
@@ -46,7 +47,11 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		if topology.Client.Prefix != "" {
 			clientName = fmt.Sprintf("%v-%v", topology.Client.Prefix, clientName)
 		}
-		if err := c.DeleteStatefulSet(clientName, dormantDb.Namespace); err != nil {
+		err := apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
+			Name:      clientName,
+			Namespace: dormantDb.Namespace,
+		})
+		if err != nil {
 			return err
 		}
 
@@ -54,7 +59,11 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		if topology.Master.Prefix != "" {
 			masterName = fmt.Sprintf("%v-%v", topology.Master.Prefix, masterName)
 		}
-		if err := c.DeleteStatefulSet(masterName, dormantDb.Namespace); err != nil {
+		err = apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
+			Name:      masterName,
+			Namespace: dormantDb.Namespace,
+		})
+		if err != nil {
 			return err
 		}
 
@@ -62,11 +71,19 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		if topology.Data.Prefix != "" {
 			dataName = fmt.Sprintf("%v-%v", topology.Data.Prefix, dataName)
 		}
-		if err := c.DeleteStatefulSet(dataName, dormantDb.Namespace); err != nil {
+		err = apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
+			Name:      dataName,
+			Namespace: dormantDb.Namespace,
+		})
+		if err != nil {
 			return err
 		}
 	} else {
-		if err := c.DeleteStatefulSet(dormantDb.OffshootName(), dormantDb.Namespace); err != nil {
+		err := apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
+			Name:      dormantDb.OffshootName(),
+			Namespace: dormantDb.Namespace,
+		})
+		if err != nil {
 			return err
 		}
 	}

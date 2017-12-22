@@ -37,7 +37,7 @@ func (c *Controller) ensureStatefulSet(
 		replicas = 1
 	}
 
-	statefulset, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulsetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
+	statefulset, _, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulsetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
 		in = upsertObjectMeta(in, labels, elasticsearch.StatefulSetAnnotations())
 
 		in.Spec.Replicas = types.Int32P(replicas)
@@ -80,7 +80,7 @@ func (c *Controller) ensureStatefulSet(
 	}
 
 	// Check StatefulSet Pod status
-	if err := c.CheckStatefulSetPodStatus(statefulset, durationCheckStatefulSet); err != nil {
+	if err := c.CheckStatefulSetPodStatus(statefulset); err != nil {
 		c.recorder.Eventf(
 			elasticsearch.ObjectReference(),
 			core.EventTypeWarning,
@@ -99,6 +99,17 @@ func (c *Controller) ensureStatefulSet(
 		)
 	}
 
+	return nil
+}
+
+func (c *Controller) CheckStatefulSetPodStatus(statefulSet *apps.StatefulSet) error {
+	if err := app_util.WaitUntilStatefulSetReady(c.Client, statefulSet.ObjectMeta); err != nil {
+		return err
+	}
+
+	if err := core_util.WaitUntilPodRunningBySelector(c.Client, statefulSet.Namespace, statefulSet.Spec.Selector); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/runtime"
+	stringz "github.com/appscode/go/strings"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
@@ -31,7 +32,7 @@ func NewCmdRun(version string) *cobra.Command {
 	opt := controller.Options{
 		Docker: docker.Docker{
 			Registry:    "kubedb",
-			ExporterTag: "0.8.0",
+			ExporterTag: stringz.Val(version, "canary"),
 		},
 		OperatorNamespace: namespace(),
 		GoverningService:  "kubedb",
