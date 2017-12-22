@@ -23,7 +23,7 @@ import:
 - package: github.com/spf13/pflag
   version: master
 - package: github.com/appscode/kutil
-  version: kubedb
+  version: master
 - package: k8s.io/api
   version: release-1.8
 - package: k8s.io/apimachinery
