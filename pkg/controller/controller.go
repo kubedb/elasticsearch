@@ -92,11 +92,8 @@ func (c *Controller) Setup() error {
 }
 
 func (c *Controller) Run() {
-	// Start Cron
-	c.cronController.StartCron()
-
 	// Watch Elasticsearch TPR objects
-	go c.watchElastic()
+	go c.watchElasticsearch_()
 	// Watch Snapshot with labelSelector only for Elasticsearch
 	go c.watchSnapshot()
 	// Watch DormantDatabase with labelSelector only for Elasticsearch
@@ -113,7 +110,17 @@ func (c *Controller) RunAndHold() {
 	hold.Hold()
 }
 
-func (c *Controller) watchElastic() {
+func (c *Controller) watchElasticsearch() {
+	c.initWatcher()
+
+	stop := make(chan struct{})
+	defer close(stop)
+
+	c.runWatcher(1, stop)
+	select {}
+}
+
+func (c *Controller) watchElasticsearch_() {
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
 			return c.ExtClient.Elasticsearchs(core.NamespaceAll).List(metav1.ListOptions{})
