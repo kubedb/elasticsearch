@@ -23,7 +23,7 @@ func (c *Controller) ensureCertSecret(elasticsearch *api.Elasticsearch) error {
 		if certSecretVolumeSource, err = c.createCertSecret(elasticsearch); err != nil {
 			return err
 		}
-		es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			// This will ignore processing all kind of Update while creating
 			if in.Annotations == nil {
 				in.Annotations = make(map[string]string)
@@ -48,7 +48,7 @@ func (c *Controller) ensureDatabaseSecret(elasticsearch *api.Elasticsearch) erro
 		if databaseSecretVolume, err = c.createDatabaseSecret(elasticsearch); err != nil {
 			return err
 		}
-		es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			// This will ignore processing all kind of Update while creating
 			if in.Annotations == nil {
 				in.Annotations = make(map[string]string)

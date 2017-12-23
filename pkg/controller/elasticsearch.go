@@ -9,6 +9,7 @@ import (
 	"github.com/appscode/go/log"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
+	"github.com/kubedb/apimachinery/pkg/docker"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"github.com/kubedb/apimachinery/pkg/storage"
 	"github.com/kubedb/elasticsearch/pkg/validator"
@@ -18,7 +19,7 @@ import (
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
-	es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+	es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		t := metav1.Now()
 		in.Status.CreationTime = &t
 		in.Status.Phase = api.DatabasePhaseCreating
@@ -30,7 +31,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 	*elasticsearch = *es
 
-	if err := validator.ValidateElasticsearch(c.Client, elasticsearch); err != nil {
+	if err := validator.ValidateElasticsearch(c.Client, elasticsearch, c.opt.Docker); err != nil {
 		c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
 		return err
 	}
@@ -77,7 +78,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 
 	if elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
-		es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Status.Phase = api.DatabasePhaseInitializing
 			return in
 		})
@@ -97,7 +98,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			)
 		}
 
-		es, err = kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+		es, _, err = kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Status.Phase = api.DatabasePhaseRunning
 			return in
 		})
@@ -211,7 +212,7 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 		return sendEvent("Elasticsearch spec mismatches with OriginSpec in DormantDatabases")
 	}
 
-	es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+	es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		// This will ignore processing all kind of Update while creating
 		if in.Annotations == nil {
 			in.Annotations = make(map[string]string)
@@ -229,7 +230,7 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 		return sendEvent(`failed to resume Elasticsearch "%v" from DormantDatabase "%v". Error: %v`, elasticsearch.Name, elasticsearch.Name, err)
 	}
 
-	_, err = kutildb.PatchDormantDatabase(c.ExtClient, dormantDb, func(in *api.DormantDatabase) *api.DormantDatabase {
+	_, _, err = kutildb.PatchDormantDatabase(c.ExtClient, dormantDb, func(in *api.DormantDatabase) *api.DormantDatabase {
 		in.Spec.Resume = true
 		return in
 	})
@@ -279,7 +280,7 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) e
 	// TODO: find better way
 	time.Sleep(time.Second * 30)
 
-	es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+	es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Status.Phase = api.DatabasePhaseRunning
 		return in
 	})
@@ -334,6 +335,10 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 	snapshot, err := c.ExtClient.Snapshots(namespace).Get(snapshotSource.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
+	}
+
+	if err := docker.CheckDockerImageVersion(c.opt.Docker.GetToolsImage(elasticsearch), string(elasticsearch.Spec.Version)); err != nil {
+		return fmt.Errorf(`image %s not found`, c.opt.Docker.GetToolsImageWithTag(elasticsearch))
 	}
 
 	secret, err := storage.NewOSMSecret(c.Client, snapshot)
@@ -457,7 +462,7 @@ func (c *Controller) update(oldElasticsearch, updatedElasticsearch *api.Elastics
 		}
 	}
 
-	if err := validator.ValidateElasticsearch(c.Client, updatedElasticsearch); err != nil {
+	if err := validator.ValidateElasticsearch(c.Client, updatedElasticsearch, c.opt.Docker); err != nil {
 		c.recorder.Event(updatedElasticsearch, core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
 		return err
 	}

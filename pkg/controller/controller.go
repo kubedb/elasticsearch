@@ -13,6 +13,7 @@ import (
 	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
 	"github.com/kubedb/apimachinery/pkg/eventer"
+	"github.com/kubedb/elasticsearch/pkg/docker"
 	core "k8s.io/api/core/v1"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -27,12 +28,9 @@ import (
 )
 
 type Options struct {
-	// Tag of elasticdump
-	ElasticDumpTag string
+	Docker docker.Docker
 	// Exporter namespace
 	OperatorNamespace string
-	// Exporter tag
-	ExporterTag string
 	// Governing service
 	GoverningService string
 	// Address to listen on for web interface and telemetry.
@@ -227,7 +225,7 @@ func (c *Controller) pushFailureEvent(elasticsearch *api.Elasticsearch, reason s
 		return
 	}
 
-	es, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+	es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Status.Phase = api.DatabasePhaseFailed
 		in.Status.Reason = reason
 		return in

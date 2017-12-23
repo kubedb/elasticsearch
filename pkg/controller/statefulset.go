@@ -8,7 +8,6 @@ import (
 	app_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/kubedb/apimachinery/pkg/docker"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
@@ -34,11 +33,11 @@ func (c *Controller) ensureStatefulSet(
 		Namespace: elasticsearch.Namespace,
 	}
 
-	if replicas < 0 {
-		replicas = 0
+	if replicas <= 0 {
+		replicas = 1
 	}
 
-	statefulset, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulsetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
+	statefulset, _, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulsetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
 		in = upsertObjectMeta(in, labels, elasticsearch.StatefulSetAnnotations())
 
 		in.Spec.Replicas = types.Int32P(replicas)
@@ -50,7 +49,7 @@ func (c *Controller) ensureStatefulSet(
 		}
 
 		in = upsertInitContainer(in)
-		in = upsertContainer(in, elasticsearch)
+		in = c.upsertContainer(in, elasticsearch)
 		in = upsertEnv(in, elasticsearch, envList)
 		in = upsertPort(in, isClient)
 
@@ -60,7 +59,7 @@ func (c *Controller) ensureStatefulSet(
 		in.Spec.Template.Spec.Tolerations = elasticsearch.Spec.Tolerations
 
 		if isClient {
-			in = upsertMonitoringContainer(in, elasticsearch, c.opt.ExporterTag)
+			in = c.upsertMonitoringContainer(in, elasticsearch)
 			in = upsertDatabaseSecret(in, elasticsearch.Spec.DatabaseSecret.SecretName)
 		}
 
@@ -80,28 +79,37 @@ func (c *Controller) ensureStatefulSet(
 		return err
 	}
 
-	if replicas > 0 {
-		// Check StatefulSet Pod status
-		if err := c.CheckStatefulSetPodStatus(statefulset, durationCheckStatefulSet); err != nil {
-			c.recorder.Eventf(
-				elasticsearch.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToStart,
-				"Failed to create StatefulSet. Reason: %v",
-				err,
-			)
+	// Check StatefulSet Pod status
+	if err := c.CheckStatefulSetPodStatus(statefulset); err != nil {
+		c.recorder.Eventf(
+			elasticsearch.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToStart,
+			"Failed to create StatefulSet. Reason: %v",
+			err,
+		)
 
-			return err
-		} else {
-			c.recorder.Event(
-				elasticsearch.ObjectReference(),
-				core.EventTypeNormal,
-				eventer.EventReasonSuccessfulCreate,
-				"Successfully created StatefulSet",
-			)
-		}
+		return err
+	} else {
+		c.recorder.Event(
+			elasticsearch.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulCreate,
+			"Successfully created StatefulSet",
+		)
 	}
 
+	return nil
+}
+
+func (c *Controller) CheckStatefulSetPodStatus(statefulSet *apps.StatefulSet) error {
+	if err := app_util.WaitUntilStatefulSetReady(c.Client, statefulSet.ObjectMeta); err != nil {
+		return err
+	}
+
+	if err := core_util.WaitUntilPodRunningBySelector(c.Client, statefulSet.Namespace, statefulSet.Spec.Selector); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -146,8 +154,8 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) error {
 	labels[NodeRoleMaster] = "set"
 
 	replicas := masterNode.Replicas
-	if replicas < 0 {
-		replicas = 0
+	if replicas <= 0 {
+		replicas = 1
 	}
 
 	envList := []core.EnvVar{
@@ -209,8 +217,8 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) error 
 	labels[NodeRoleData] = "set"
 
 	replicas := elasticsearch.Spec.Replicas
-	if replicas < 0 {
-		replicas = 0
+	if replicas <= 0 {
+		replicas = 1
 	}
 
 	envList := []core.EnvVar{
@@ -269,10 +277,10 @@ func upsertInitContainer(statefulSet *apps.StatefulSet) *apps.StatefulSet {
 	return statefulSet
 }
 
-func upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
+func (c *Controller) upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
 	container := core.Container{
 		Name:            api.ResourceNameElasticsearch,
-		Image:           fmt.Sprintf("%v:%v", docker.ImageElasticsearch, elasticsearch.Spec.Version),
+		Image:           c.opt.Docker.GetImageWithTag(elasticsearch),
 		ImagePullPolicy: core.PullIfNotPresent,
 		SecurityContext: &core.SecurityContext{
 			Privileged: types.BoolP(false),
@@ -360,7 +368,7 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 	return statefulSet
 }
 
-func upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, tag string) *apps.StatefulSet {
+func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
 	if elasticsearch.Spec.Monitor != nil &&
 		elasticsearch.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
 		elasticsearch.Spec.Monitor.Prometheus != nil {
@@ -371,7 +379,7 @@ func upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api
 				fmt.Sprintf("--address=:%d", api.PrometheusExporterPortNumber),
 				"--v=3",
 			},
-			Image:           docker.ImageOperator + ":" + tag,
+			Image:           c.opt.Docker.GetOperatorImageWithTag(elasticsearch),
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{
 				{

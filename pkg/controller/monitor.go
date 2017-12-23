@@ -3,8 +3,8 @@ package controller
 import (
 	"fmt"
 
-	"github.com/appscode/kutil/tools/monitoring/agents"
-	mona "github.com/appscode/kutil/tools/monitoring/api"
+	"github.com/appscode/kube-mon/agents"
+	mona "github.com/appscode/kube-mon/api"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 )
 
@@ -27,7 +27,8 @@ func (c *Controller) addMonitor(elastic *api.Elasticsearch) error {
 	if err != nil {
 		return err
 	}
-	return agent.Add(elastic.StatsAccessor(), elastic.Spec.Monitor)
+	_, err = agent.CreateOrUpdate(elastic.StatsAccessor(), elastic.Spec.Monitor)
+	return err
 }
 
 func (c *Controller) deleteMonitor(elastic *api.Elasticsearch) error {
@@ -35,7 +36,8 @@ func (c *Controller) deleteMonitor(elastic *api.Elasticsearch) error {
 	if err != nil {
 		return err
 	}
-	return agent.Delete(elastic.StatsAccessor(), elastic.Spec.Monitor)
+	_, err = agent.Delete(elastic.StatsAccessor())
+	return err
 }
 
 func (c *Controller) updateMonitor(oldElastic, updatedElastic *api.Elasticsearch) error {
@@ -49,5 +51,6 @@ func (c *Controller) updateMonitor(oldElastic, updatedElastic *api.Elasticsearch
 	if err != nil {
 		return err
 	}
-	return agent.Update(updatedElastic.StatsAccessor(), oldElastic.Spec.Monitor, updatedElastic.Spec.Monitor)
+	_, err = agent.CreateOrUpdate(updatedElastic.StatsAccessor(), updatedElastic.Spec.Monitor)
+	return err
 }

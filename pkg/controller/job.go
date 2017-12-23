@@ -2,22 +2,13 @@ package controller
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/kubedb/apimachinery/pkg/docker"
 	"github.com/kubedb/apimachinery/pkg/storage"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	// Duration in Minute
-	// Check whether pod under StatefulSet is running or not
-	// Continue checking for this duration until failure
-	durationCheckStatefulSet = time.Minute * 30
 )
 
 const (
@@ -61,7 +52,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 					Containers: []core.Container{
 						{
 							Name:            SnapshotProcess_Restore,
-							Image:           docker.ImageElasticdump + ":" + c.opt.ElasticDumpTag,
+							Image:           c.opt.Docker.GetToolsImageWithTag(elasticsearch),
 							ImagePullPolicy: core.PullAlways,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Restore),
@@ -200,7 +191,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 					Containers: []core.Container{
 						{
 							Name:  SnapshotProcess_Backup,
-							Image: docker.ImageElasticdump + ":" + c.opt.ElasticDumpTag,
+							Image: c.opt.Docker.GetToolsImageWithTag(elasticsearch),
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, SnapshotProcess_Backup),
 								fmt.Sprintf(`--host=%s`, databaseName),
