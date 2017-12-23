@@ -1,5 +1,5 @@
 hash: bd97390b4b5ab1d512076db8e7a8fa9a3a3b9c5e2b60603184fa309f140d8730
-updated: 2017-12-22T23:53:53.421241693-05:00
+updated: 2017-12-22T23:57:44.993737747-05:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -9,11 +9,13 @@ imports:
 - name: github.com/appscode/go
   version: f08cee5a2aa53a1ab6d30e4ae11e381d1b265f81
   subpackages:
+  - analytics
   - context
   - crypto/rand
   - encoding/json/types
   - encoding/yaml
   - hold
+  - homedir
   - ioutil
   - log
   - log/golog
@@ -37,6 +39,7 @@ imports:
   - core/v1
   - meta
   - rbac/v1beta1
+  - tools/analytics
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/osm
@@ -400,9 +403,6 @@ imports:
   - internal/json
 - name: gopkg.in/olivere/elastic.v3
   version: b3b762ecb4a4acb9dafd3e0de5ba597a117c83f8
-  subpackages:
-  - backoff
-  - uritemplates
 - name: gopkg.in/olivere/elastic.v5
   version: 79ff368708b3a2a9da641dc831d95fd0782bf4ef
   subpackages:
