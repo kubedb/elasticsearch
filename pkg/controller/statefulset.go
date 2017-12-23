@@ -103,11 +103,13 @@ func (c *Controller) ensureStatefulSet(
 }
 
 func (c *Controller) CheckStatefulSetPodStatus(statefulSet *apps.StatefulSet) error {
-	if err := app_util.WaitUntilStatefulSetReady(c.Client, statefulSet.ObjectMeta); err != nil {
-		return err
-	}
-
-	if err := core_util.WaitUntilPodRunningBySelector(c.Client, statefulSet.Namespace, statefulSet.Spec.Selector); err != nil {
+	err := core_util.WaitUntilPodRunningBySelector(
+		c.Client,
+		statefulSet.Namespace,
+		statefulSet.Spec.Selector,
+		int(types.Int32(statefulSet.Spec.Replicas)),
+	)
+	if err != nil {
 		return err
 	}
 	return nil

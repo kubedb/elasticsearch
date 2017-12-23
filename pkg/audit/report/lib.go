@@ -1,12 +1,12 @@
 package report
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"gopkg.in/olivere/elastic.v5"
-	"context"
 )
 
 func newClient(host, port string) (*elastic.Client, error) {
