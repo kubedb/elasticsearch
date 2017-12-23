@@ -1,5 +1,5 @@
-hash: 3a07cced11ccada6f755c13736f89fed498d3ca51944b67250345f640b31f5e6
-updated: 2017-12-22T17:06:45.971100614+06:00
+hash: bd97390b4b5ab1d512076db8e7a8fa9a3a3b9c5e2b60603184fa309f140d8730
+updated: 2017-12-22T23:53:53.421241693-05:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -30,7 +30,7 @@ imports:
   - agents/prometheusbuiltin
   - api
 - name: github.com/appscode/kutil
-  version: 543454628a918137145df3eb2d3903389fcccfe0
+  version: e5c3cba960d607c3a2fcce50dad4ba14097a2a37
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -148,7 +148,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -233,7 +233,7 @@ imports:
   - pkg/storage
   - pkg/validator
 - name: github.com/kubernetes/apimachinery
-  version: 20bbfef868144faf29af69ddb2f01646ead5c1a1
+  version: dcc11a9b153f8007ca6618ebc9e7e185f2eaaac6
   subpackages:
   - pkg/conversion
 - name: github.com/mailru/easyjson
@@ -275,7 +275,7 @@ imports:
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/prometheus/client_golang
   version: c5b7fccd204277076155f10851dad72b76a49317
   subpackages:
@@ -373,7 +373,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: 905d2b6c9443c02c46229c39d60442903a68c229
+  version: 272e2963aad1a56aba54e1167c47abff8d37ac08
   subpackages:
   - gensupport
   - googleapi
@@ -415,7 +415,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
-  version: 9b9dca205a15b6ce9ef10091f05d60a13fdcf418
+  version: 4df58c811fe2e65feb879227b2b245e4dc26e7ad
   subpackages:
   - admissionregistration/v1alpha1
   - apps/v1beta1
@@ -501,7 +501,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
-  version: 60bf397d7966ab2285d3ba7701ead2cc376111d4
+  version: 7656f45ccb3db63d177f734a9e5f6a116f08ad4f
   subpackages:
   - discovery
   - dynamic
