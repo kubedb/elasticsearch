@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/appscode/go/homedir"
 	logs "github.com/appscode/go/log/golog"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
@@ -49,8 +50,7 @@ func TestE2e(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 
-	userHome, err := homedir.Dir()
-	Expect(err).NotTo(HaveOccurred())
+	userHome := homedir.HomeDir()
 
 	// Kubernetes config
 	kubeconfigPath := filepath.Join(userHome, ".kube/config")
@@ -81,7 +81,7 @@ var _ = BeforeSuite(func() {
 
 	opt := controller.Options{
 		Docker: docker.Docker{
-			Registry: "kubedb",
+			Registry: "aerokite",
 		},
 		OperatorNamespace: root.Namespace(),
 		GoverningService:  api.DatabaseNamePrefix,

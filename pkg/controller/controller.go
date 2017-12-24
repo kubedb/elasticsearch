@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/appscode/go/hold"
@@ -20,11 +19,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/workqueue"
 )
 
 type Options struct {
@@ -37,6 +36,8 @@ type Options struct {
 	Address string
 	// Enable RBAC for database workloads
 	EnableRbac bool
+	//Max number requests for retries
+	MaxNumRequeues int
 }
 
 type Controller struct {
@@ -53,6 +54,11 @@ type Controller struct {
 	opt Options
 	// sync time to sync the list.
 	syncPeriod time.Duration
+
+	// Workqueue
+	indexer  cache.Indexer
+	queue    workqueue.RateLimitingInterface
+	informer cache.Controller
 }
 
 var _ amc.Snapshotter = &Controller{}
@@ -93,7 +99,7 @@ func (c *Controller) Setup() error {
 
 func (c *Controller) Run() {
 	// Watch Elasticsearch TPR objects
-	go c.watchElasticsearch_()
+	go c.watchElasticsearch()
 	// Watch Snapshot with labelSelector only for Elasticsearch
 	go c.watchSnapshot()
 	// Watch DormantDatabase with labelSelector only for Elasticsearch
@@ -118,56 +124,6 @@ func (c *Controller) watchElasticsearch() {
 
 	c.runWatcher(1, stop)
 	select {}
-}
-
-func (c *Controller) watchElasticsearch_() {
-	lw := &cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.ExtClient.Elasticsearchs(core.NamespaceAll).List(metav1.ListOptions{})
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.ExtClient.Elasticsearchs(core.NamespaceAll).Watch(metav1.ListOptions{})
-		},
-	}
-
-	_, cacheController := cache.NewInformer(
-		lw,
-		&api.Elasticsearch{},
-		c.syncPeriod,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				elastic := obj.(*api.Elasticsearch)
-				if elastic.Status.CreationTime == nil {
-					if err := c.create(elastic.DeepCopy()); err != nil {
-						log.Errorln(err)
-						c.pushFailureEvent(elastic, err.Error())
-					}
-				}
-			},
-			DeleteFunc: func(obj interface{}) {
-				elastic := obj.(*api.Elasticsearch)
-				if err := c.pause(elastic.DeepCopy()); err != nil {
-					log.Errorln(err)
-				}
-			},
-			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*api.Elasticsearch)
-				if !ok {
-					return
-				}
-				newObj, ok := new.(*api.Elasticsearch)
-				if !ok {
-					return
-				}
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					if err := c.update(oldObj, newObj.DeepCopy()); err != nil {
-						log.Errorln(err)
-					}
-				}
-			},
-		},
-	)
-	cacheController.Run(wait.NeverStop)
 }
 
 func (c *Controller) watchSnapshot() {
@@ -240,5 +196,5 @@ func (c *Controller) pushFailureEvent(elasticsearch *api.Elasticsearch, reason s
 	if err != nil {
 		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 	}
-	*elasticsearch = *es
+	elasticsearch.Status = es.Status
 }

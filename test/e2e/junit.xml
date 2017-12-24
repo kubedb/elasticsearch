@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="1" failures="0" time="114.335097348">
+  <testsuite tests="1" failures="0" time="111.530576953">
       <testcase name="Elasticsearch Test General - should run successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="106.948994537"></testcase>
+      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
       <testcase name="Elasticsearch Test General With PVC should run successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
@@ -26,18 +28,6 @@
           <skipped></skipped>
       </testcase>
       <testcase name="Elasticsearch Test Initialize should run successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="Elasticsearch Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="Elasticsearch Test Resume With original Elasticsearch should resume DormantDatabase successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="Elasticsearch Test SnapshotScheduler With Startup should run schedular successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="Elasticsearch Test SnapshotScheduler With Update should run schedular successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
   </testsuite>

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/kutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/apimachinery/pkg/docker"
@@ -19,39 +20,48 @@ import (
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
-	es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-		t := metav1.Now()
-		in.Status.CreationTime = &t
-		in.Status.Phase = api.DatabasePhaseCreating
-		return in
-	})
-	if err != nil {
-		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-		return err
-	}
-	*elasticsearch = *es
 
 	if err := validator.ValidateElasticsearch(c.Client, elasticsearch, c.opt.Docker); err != nil {
-		c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
+		c.recorder.Event(
+			elasticsearch.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonInvalid,
+			err.Error(),
+		)
+		return nil // user error so just record error and don't retry.
+	}
+
+	if elasticsearch.Status.CreationTime == nil {
+		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+			t := metav1.Now()
+			in.Status.CreationTime = &t
+			in.Status.Phase = api.DatabasePhaseCreating
+			return in
+		})
+		if err != nil {
+			c.recorder.Eventf(
+				elasticsearch.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				err.Error(),
+			)
+			return err
+		}
+		elasticsearch.Status = es.Status
+	}
+
+	// Dynamic Defaulting
+	// Assign Default Monitoring Port
+	if err := c.setMonitoringPort(elasticsearch); err != nil {
 		return err
 	}
 
-	// Event for successful validation
-	c.recorder.Event(
-		elasticsearch.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonSuccessfulValidate,
-		"Successfully validate Elasticsearch",
-	)
 	// Check DormantDatabase
 	// return True (as matched) only if Elasticsearch matched with DormantDatabase
 	// If matched, It will be resumed
 	if matched, err := c.matchDormantDatabase(elasticsearch); err != nil || matched {
 		return err
 	}
-
-	// Event for notification that kubernetes objects are creating
-	c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCreating, "Creating Kubernetes objects")
 
 	// create Governing Service
 	governingService := c.opt.GoverningService
@@ -68,16 +78,34 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// ensure database Service
-	if err := c.ensureService(elasticsearch); err != nil {
+	vt1, err := c.ensureService(elasticsearch)
+	if err != nil {
 		return err
 	}
 
 	// ensure database StatefulSet
-	if err := c.ensureElasticsearchNode(elasticsearch); err != nil {
+	vt2, err := c.ensureElasticsearchNode(elasticsearch)
+	if err != nil {
 		return err
 	}
 
-	if elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
+	if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated {
+		c.recorder.Event(
+			elasticsearch.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessful,
+			"Successfully created Elasticsearch",
+		)
+	} else if vt1 == kutil.VerbPatched || vt2 == kutil.VerbPatched {
+		c.recorder.Event(
+			elasticsearch.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessful,
+			"Successfully patched Elasticsearch",
+		)
+	}
+
+	if vt2 == kutil.VerbCreated && elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
 		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Status.Phase = api.DatabasePhaseInitializing
 			return in
@@ -86,7 +114,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
-		*elasticsearch = *es
+		elasticsearch.Status = es.Status
 
 		if err := c.initialize(elasticsearch); err != nil {
 			c.recorder.Eventf(
@@ -106,15 +134,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
-		*elasticsearch = *es
+		elasticsearch.Status = es.Status
 	}
-
-	c.recorder.Event(
-		elasticsearch.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonSuccessfulCreate,
-		"Successfully created Elasticsearch",
-	)
 
 	// Ensure Schedule backup
 	c.ensureBackupScheduler(elasticsearch)
@@ -137,6 +158,30 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			eventer.EventReasonSuccessfulMonitorAdd,
 			"Successfully added monitoring system.",
 		)
+	}
+	return nil
+}
+
+func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
+	if elasticsearch.Spec.Monitor != nil &&
+		elasticsearch.Spec.Monitor.Prometheus != nil {
+		if elasticsearch.Spec.Monitor.Prometheus.Port == 0 {
+			es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+				in.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
+				return in
+			})
+
+			if err != nil {
+				c.recorder.Eventf(
+					elasticsearch.ObjectReference(),
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToUpdate,
+					err.Error(),
+				)
+				return err
+			}
+			elasticsearch.Spec = es.Spec
+		}
 	}
 	return nil
 }
@@ -242,37 +287,48 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 	return true, nil
 }
 
-func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) error {
+func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
+	var err error
 
-	if err := c.ensureCertSecret(elasticsearch); err != nil {
-		return err
+	if err = c.ensureCertSecret(elasticsearch); err != nil {
+		return kutil.VerbUnchanged, err
 	}
-	if err := c.ensureDatabaseSecret(elasticsearch); err != nil {
-		return err
+	if err = c.ensureDatabaseSecret(elasticsearch); err != nil {
+		return kutil.VerbUnchanged, err
 	}
 
 	if c.opt.EnableRbac {
 		// Ensure ClusterRoles for database statefulsets
-		if err := c.ensureRBACStuff(elasticsearch); err != nil {
-			return err
+		if err = c.ensureRBACStuff(elasticsearch); err != nil {
+			return kutil.VerbUnchanged, err
 		}
 	}
 
+	vt := kutil.VerbUnchanged
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
-		if err := c.ensureClientNode(elasticsearch); err != nil {
-			return err
+		vt1, err := c.ensureClientNode(elasticsearch)
+		if err != nil {
+			return kutil.VerbUnchanged, err
 		}
-		if err := c.ensureMasterNode(elasticsearch); err != nil {
-			return err
+		vt2, err := c.ensureMasterNode(elasticsearch)
+		if err != nil {
+			return kutil.VerbUnchanged, err
 		}
-		if err := c.ensureDataNode(elasticsearch); err != nil {
-			return err
+		vt3, err := c.ensureDataNode(elasticsearch)
+		if err != nil {
+			return kutil.VerbUnchanged, err
 		}
 
+		if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated && vt3 == kutil.VerbCreated {
+			vt = kutil.VerbCreated
+		} else if vt1 == kutil.VerbPatched || vt2 == kutil.VerbPatched || vt3 == kutil.VerbPatched {
+			vt = kutil.VerbPatched
+		}
 	} else {
-		if err := c.ensureCombinedNode(elasticsearch); err != nil {
-			return err
+		vt, err = c.ensureCombinedNode(elasticsearch)
+		if err != nil {
+			return kutil.VerbUnchanged, err
 		}
 	}
 
@@ -286,11 +342,11 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) e
 	})
 	if err != nil {
 		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-		return err
+		return kutil.VerbUnchanged, err
 	}
-	*elasticsearch = *es
+	elasticsearch.Status = es.Status
 
-	return nil
+	return vt, nil
 }
 
 func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) {
@@ -375,38 +431,33 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 }
 
 func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
-	if elasticsearch.Annotations != nil {
-		if val, found := elasticsearch.Annotations["kubedb.com/ignore"]; found {
-			//TODO: Add Event Reason "Ignored"
-			c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeNormal, "Ignored", val)
-			return nil
-		}
-	}
 
 	c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeNormal, eventer.EventReasonPausing, "Pausing Elasticsearch")
 
-	if elasticsearch.Spec.DoNotPause {
-		c.recorder.Eventf(
-			elasticsearch.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToPause,
-			`Elasticsearch "%v" is locked.`,
-			elasticsearch.Name,
-		)
-
-		if err := c.reCreateElastic(elasticsearch); err != nil {
+	/*
+		if elasticsearch.Spec.DoNotPause {
 			c.recorder.Eventf(
 				elasticsearch.ObjectReference(),
 				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				`Failed to recreate Elasticsearch: "%v". Reason: %v`,
+				eventer.EventReasonFailedToPause,
+				`Elasticsearch "%v" is locked.`,
 				elasticsearch.Name,
-				err,
 			)
-			return err
+
+			if err := c.reCreateElastic(elasticsearch); err != nil {
+				c.recorder.Eventf(
+					elasticsearch.ObjectReference(),
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToCreate,
+					`Failed to recreate Elasticsearch: "%v". Reason: %v`,
+					elasticsearch.Name,
+					err,
+				)
+				return err
+			}
+			return nil
 		}
-		return nil
-	}
+	*/
 
 	if _, err := c.createDormantDatabase(elasticsearch); err != nil {
 		c.recorder.Eventf(
@@ -451,67 +502,7 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) update(oldElasticsearch, updatedElasticsearch *api.Elasticsearch) error {
-	if updatedElasticsearch.Annotations != nil {
-		if _, found := updatedElasticsearch.Annotations["kubedb.com/ignore"]; found {
-			kutildb.PatchElasticsearch(c.ExtClient, updatedElasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-				delete(in.Annotations, "kubedb.com/ignore")
-				return in
-			})
-			return nil
-		}
-	}
-
-	if err := validator.ValidateElasticsearch(c.Client, updatedElasticsearch, c.opt.Docker); err != nil {
-		c.recorder.Event(updatedElasticsearch, core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
-		return err
-	}
-	// Event for successful validation
-	c.recorder.Event(
-		updatedElasticsearch.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonSuccessfulValidate,
-		"Successfully validate Elasticsearch",
-	)
-
-	if err := c.ensureService(updatedElasticsearch); err != nil {
-		return err
-	}
-
-	if !reflect.DeepEqual(oldElasticsearch.Spec.Topology, updatedElasticsearch.Spec.Topology) ||
-		oldElasticsearch.Spec.Replicas != updatedElasticsearch.Spec.Replicas {
-		if err := c.ensureElasticsearchNode(updatedElasticsearch); err != nil {
-			return err
-		}
-	}
-
-	if !reflect.DeepEqual(updatedElasticsearch.Spec.BackupSchedule, oldElasticsearch.Spec.BackupSchedule) {
-		c.ensureBackupScheduler(updatedElasticsearch)
-	}
-
-	if !reflect.DeepEqual(oldElasticsearch.Spec.Monitor, updatedElasticsearch.Spec.Monitor) {
-		if err := c.updateMonitor(oldElasticsearch, updatedElasticsearch); err != nil {
-			c.recorder.Eventf(
-				updatedElasticsearch.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToUpdateMonitor,
-				"Failed to update monitoring system. Reason: %v",
-				err,
-			)
-			log.Errorln(err)
-			return nil
-		}
-		c.recorder.Event(
-			updatedElasticsearch.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulMonitorUpdate,
-			"Successfully updated monitoring system.",
-		)
-	}
-
-	return nil
-}
-
+/*
 func (c *Controller) reCreateElastic(elasticsearch *api.Elasticsearch) error {
 	es := &api.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
@@ -530,3 +521,4 @@ func (c *Controller) reCreateElastic(elasticsearch *api.Elasticsearch) error {
 
 	return nil
 }
+*/

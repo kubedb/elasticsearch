@@ -22,21 +22,21 @@ import (
 func (c *Controller) initWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (rt.Object, error) {
-			return c.ExtClient.Memcacheds(metav1.NamespaceAll).List(metav1.ListOptions{})
+			return c.ExtClient.Elasticsearchs(metav1.NamespaceAll).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.ExtClient.Memcacheds(metav1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.ExtClient.Elasticsearchs(metav1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 
 	// create the workqueue
-	c.queue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "memcached")
+	c.queue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "elasticsearch")
 
 	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
-	// whenever the cache is updated, the Memcached key is added to the workqueue.
+	// whenever the cache is updated, the Elasticsearch key is added to the workqueue.
 	// Note that when we finally process the item from the workqueue, we might see a newer version
-	// of the Memcached than the version which was responsible for triggering the update.
-	c.indexer, c.informer = cache.NewIndexerInformer(lw, &api.Memcached{}, c.syncPeriod, cache.ResourceEventHandlerFuncs{
+	// of the Elasticsearch than the version which was responsible for triggering the update.
+	c.indexer, c.informer = cache.NewIndexerInformer(lw, &api.Elasticsearch{}, c.syncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
@@ -52,17 +52,17 @@ func (c *Controller) initWatcher() {
 			}
 		},
 		UpdateFunc: func(old, new interface{}) {
-			oldObj, ok := old.(*api.Memcached)
+			oldObj, ok := old.(*api.Elasticsearch)
 			if !ok {
-				log.Errorln("Invalid Memcached object")
+				log.Errorln("Invalid Elasticsearch object")
 				return
 			}
-			newObj, ok := new.(*api.Memcached)
+			newObj, ok := new.(*api.Elasticsearch)
 			if !ok {
-				log.Errorln("Invalid Memcached object")
+				log.Errorln("Invalid Elasticsearch object")
 				return
 			}
-			if newObj.DeletionTimestamp != nil || !MemcachedEqual(oldObj, newObj) {
+			if newObj.DeletionTimestamp != nil || !ElasticsearchEqual(oldObj, newObj) {
 				key, err := cache.MetaNamespaceKeyFunc(new)
 				if err == nil {
 					c.queue.Add(key)
@@ -72,8 +72,8 @@ func (c *Controller) initWatcher() {
 	}, cache.Indexers{})
 }
 
-func MemcachedEqual(old, new *api.Memcached) bool {
-	var oldSpec, newSpec *api.MemcachedSpec
+func ElasticsearchEqual(old, new *api.Elasticsearch) bool {
+	var oldSpec, newSpec *api.ElasticsearchSpec
 	if old != nil {
 		oldSpec = &old.Spec
 	}
@@ -97,7 +97,7 @@ func MemcachedEqual(old, new *api.Memcached) bool {
 	}
 	if !cmp.Equal(oldSpec, newSpec, opts...) {
 		diff := cmp.Diff(oldSpec, newSpec, opts...)
-		log.Infoln("Memcached %s/%s has changed. Diff: %s", new.Namespace, new.Name, diff)
+		log.Infof("Elasticsearch %s/%s has changed. Diff: %s\n", new.Namespace, new.Name, diff)
 		return false
 	}
 	return true
@@ -108,13 +108,13 @@ func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
 
 	// Let the workers stop when we are done
 	defer c.queue.ShutDown()
-	log.Infof("Starting Memcached controller")
+	log.Infoln("Starting Elasticsearch controller")
 
 	go c.informer.Run(stopCh)
 
 	// Wait for all involved caches to be synced, before processing items from the queue is started
 	if !cache.WaitForCacheSync(stopCh, c.informer.HasSynced) {
-		runtime.HandleError(fmt.Errorf("Timed out waiting for caches to sync"))
+		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
 		return
 	}
 
@@ -123,7 +123,7 @@ func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
 	}
 
 	<-stopCh
-	log.Infof("Stopping Memcached controller")
+	log.Infoln("Stopping Elasticsearch controller")
 
 }
 
@@ -139,25 +139,25 @@ func (c *Controller) processNextItem() bool {
 		return false
 	}
 	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
-	// This allows safe parallel processing because two Memcacheds with the same key are never processed in
+	// This allows safe parallel processing because two Elasticsearchs with the same key are never processed in
 	// parallel.
 	defer c.queue.Done(key)
 
 	// Invoke the method containing the business logic
-	err := c.runMemcached(key.(string))
+	err := c.runElasticsearch(key.(string))
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
 		// an outdated error history.
 		c.queue.Forget(key)
-		log.Debugln("Finished Processing key: %v", key)
+		log.Debugf("Finished Processing key: %v\n", key)
 		return true
 	}
-	log.Errorf("Failed to process Memcached %v. Reason: %s", key, err)
+	log.Errorf("Failed to process Memcached %v. Reason: %s\n", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.queue.NumRequeues(key) < c.opt.MaxNumRequeues {
-		log.Infof("Error syncing crd %v: %v", key, err)
+		log.Infof("Error syncing crd %v: %v\n", key, err)
 
 		// Re-enqueue the key rate limited. Based on the rate limiter on the
 		// queue and the re-enqueue history, the key will be processed later again.
@@ -166,47 +166,49 @@ func (c *Controller) processNextItem() bool {
 	}
 
 	c.queue.Forget(key)
-	log.Debugln("Finished Processing key: %v", key)
+	log.Debugf("Finished Processing key: %v\n", key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
-	log.Infof("Dropping deployment %q out of the queue: %v", key, err)
+	log.Infof("Dropping deployment %q out of the queue: %v\n", key, err)
 	return true
 }
 
-func (c *Controller) runMemcached(key string) error {
-	log.Debugln("started processing, key: %v", key)
+func (c *Controller) runElasticsearch(key string) error {
+	log.Debugf("started processing, key: %v\n", key)
 	obj, exists, err := c.indexer.GetByKey(key)
 	if err != nil {
-		log.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		log.Errorf("Fetching object with key %s from store failed with %v\n", key, err)
 		return err
 	}
 
 	if !exists {
-		log.Debugf("Memcached %s does not exist anymore\n", key)
+		log.Debugf("Elasticsearch %s does not exist anymore\n", key)
 	} else {
 		// Note that you also have to check the uid if you have a local controlled resource, which
-		// is dependent on the actual instance, to detect that a Memcached was recreated with the same name
-		memcached := obj.(*api.Memcached).DeepCopy()
-		if memcached.DeletionTimestamp != nil {
-			if core_util.HasFinalizer(memcached.ObjectMeta, "kubedb.com") {
-				if err := c.pause(memcached); err != nil {
+		// is dependent on the actual instance, to detect that a Elasticsearch was recreated with the same name
+		elasticsearch := obj.(*api.Elasticsearch).DeepCopy()
+		if elasticsearch.DeletionTimestamp != nil {
+			if core_util.HasFinalizer(elasticsearch.ObjectMeta, "kubedb.com") {
+				util.AssignTypeKind(elasticsearch)
+				if err := c.pause(elasticsearch); err != nil {
 					log.Errorln(err)
 					return err
 				}
-				memcached, _, err = util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+				elasticsearch, _, err = util.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")
 					return in
 				})
 				return err
 			}
 		} else {
-			memcached, _, err = util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+			elasticsearch, _, err = util.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, "kubedb.com")
 				return in
 			})
-			if err := c.create(memcached); err != nil {
+			util.AssignTypeKind(elasticsearch)
+			if err := c.create(elasticsearch); err != nil {
 				log.Errorln(err)
-				c.pushFailureEvent(memcached, err.Error())
+				c.pushFailureEvent(elasticsearch, err.Error())
 				return err
 			}
 		}

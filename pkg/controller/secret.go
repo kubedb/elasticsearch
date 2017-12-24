@@ -24,11 +24,6 @@ func (c *Controller) ensureCertSecret(elasticsearch *api.Elasticsearch) error {
 			return err
 		}
 		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-			// This will ignore processing all kind of Update while creating
-			if in.Annotations == nil {
-				in.Annotations = make(map[string]string)
-			}
-			in.Annotations["kubedb.com/ignore"] = "set"
 			in.Spec.CertificateSecret = certSecretVolumeSource
 			return in
 		})
@@ -36,7 +31,7 @@ func (c *Controller) ensureCertSecret(elasticsearch *api.Elasticsearch) error {
 			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
-		*elasticsearch = *es
+		elasticsearch.Spec.CertificateSecret = es.Spec.CertificateSecret
 	}
 	return nil
 }
@@ -49,11 +44,6 @@ func (c *Controller) ensureDatabaseSecret(elasticsearch *api.Elasticsearch) erro
 			return err
 		}
 		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-			// This will ignore processing all kind of Update while creating
-			if in.Annotations == nil {
-				in.Annotations = make(map[string]string)
-			}
-			in.Annotations["kubedb.com/ignore"] = "set"
 			in.Spec.DatabaseSecret = databaseSecretVolume
 			return in
 		})
@@ -61,7 +51,7 @@ func (c *Controller) ensureDatabaseSecret(elasticsearch *api.Elasticsearch) erro
 			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
-		*elasticsearch = *es
+		elasticsearch.Spec.DatabaseSecret = es.Spec.DatabaseSecret
 	}
 	return nil
 }
@@ -80,7 +70,7 @@ func (c *Controller) findCertSecret(elasticsearch *api.Elasticsearch) (*core.Sec
 
 	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch ||
 		secret.Labels[api.LabelDatabaseName] != elasticsearch.Name {
-		return nil, fmt.Errorf(`Intended secret "%v" already exists`, name)
+		return nil, fmt.Errorf(`intended secret "%v" already exists`, name)
 	}
 
 	return secret, nil

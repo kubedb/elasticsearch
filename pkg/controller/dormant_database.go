@@ -14,14 +14,15 @@ import (
 )
 
 func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
-	if _, err := c.ExtClient.Elasticsearchs(om.Namespace).Get(om.Name, metav1.GetOptions{}); err != nil {
+	elasticsearch , err := c.ExtClient.Elasticsearchs(om.Namespace).Get(om.Name, metav1.GetOptions{});
+	if err != nil {
 		if !kerr.IsNotFound(err) {
 			return false, err
 		}
 		return false, nil
 	}
 
-	return true, nil
+	return elasticsearch.DeletionTimestamp == nil, nil
 }
 
 func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {

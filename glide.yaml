@@ -38,7 +38,6 @@ import:
   repo: https://github.com/appscode/kubernetes.git
   version: v1.8.3
   vcs: git
-- package: gopkg.in/olivere/elastic.v3
 - package: gopkg.in/olivere/elastic.v5
 testImport:
 - package: github.com/stretchr/testify
