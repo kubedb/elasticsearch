@@ -180,7 +180,7 @@ func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
 				)
 				return err
 			}
-			elasticsearch.Spec = es.Spec
+			elasticsearch.Spec.Monitor = es.Spec.Monitor
 		}
 	}
 	return nil
@@ -269,7 +269,7 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 		return sendEvent(err.Error())
 	}
-	*elasticsearch = *es
+	elasticsearch.Annotations = es.Annotations
 
 	if err := c.ExtClient.Elasticsearchs(elasticsearch.Namespace).Delete(elasticsearch.Name, &metav1.DeleteOptions{}); err != nil {
 		return sendEvent(`failed to resume Elasticsearch "%v" from DormantDatabase "%v". Error: %v`, elasticsearch.Name, elasticsearch.Name, err)
