@@ -81,7 +81,7 @@ var _ = BeforeSuite(func() {
 
 	opt := controller.Options{
 		Docker: docker.Docker{
-			Registry: "aerokite",
+			Registry: "kubedb",
 		},
 		OperatorNamespace: root.Namespace(),
 		GoverningService:  api.DatabaseNamePrefix,
