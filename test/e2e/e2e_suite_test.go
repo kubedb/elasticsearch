@@ -97,10 +97,10 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	err := root.DeleteNamespace()
-	Expect(err).NotTo(HaveOccurred())
-	By("Deleted namespace")
 	root.CleanElasticsearch()
 	root.CleanDormantDatabase()
 	root.CleanSnapshot()
+	err := root.DeleteNamespace()
+	Expect(err).NotTo(HaveOccurred())
+	By("Deleted namespace")
 })
