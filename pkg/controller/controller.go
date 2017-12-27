@@ -182,12 +182,6 @@ func (c *Controller) pushFailureEvent(elasticsearch *api.Elasticsearch, reason s
 		reason,
 	)
 
-	var err error
-	if elasticsearch, err = c.ExtClient.Elasticsearchs(elasticsearch.Namespace).Get(elasticsearch.Name, metav1.GetOptions{}); err != nil {
-		log.Errorln(err)
-		return
-	}
-
 	es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Status.Phase = api.DatabasePhaseFailed
 		in.Status.Reason = reason
