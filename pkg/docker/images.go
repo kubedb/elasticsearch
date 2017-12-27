@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	ImageKubedbOperator        = "operator"
 	ImageElasticsearchOperator = "es-operator"
 	ImageElasticsearch         = "elasticsearch"
 	ImageElasticsearchTools    = "elasticsearch-tools"
@@ -26,7 +27,7 @@ func (d Docker) GetImageWithTag(elasticsearch *api.Elasticsearch) string {
 }
 
 func (d Docker) GetOperatorImage(elasticsearch *api.Elasticsearch) string {
-	return d.Registry + "/" + ImageElasticsearchOperator
+	return d.Registry + "/" + ImageKubedbOperator
 }
 
 func (d Docker) GetOperatorImageWithTag(elasticsearch *api.Elasticsearch) string {
