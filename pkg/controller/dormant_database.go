@@ -127,6 +127,19 @@ func (c *Controller) WipeOutDatabase(dormantDb *api.DormantDatabase) error {
 	if err := c.DeletePersistentVolumeClaims(dormantDb.Namespace, labelSelector); err != nil {
 		return err
 	}
+
+	if dormantDb.Spec.Origin.Spec.Elasticsearch.DatabaseSecret != nil {
+		if err := c.deleteSecret(dormantDb, dormantDb.Spec.Origin.Spec.Elasticsearch.DatabaseSecret); err != nil {
+			return err
+		}
+	}
+
+	if dormantDb.Spec.Origin.Spec.Elasticsearch.CertificateSecret != nil {
+		if err := c.deleteSecret(dormantDb, dormantDb.Spec.Origin.Spec.Elasticsearch.CertificateSecret); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
