@@ -55,7 +55,7 @@ var _ = Describe("Elasticsearch", func() {
 		f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
 		By("WipeOut elasticsearch")
-		_, err := f.TryPatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+		_, err := f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
 			in.Spec.WipeOut = true
 			return in
 		})
@@ -340,7 +340,7 @@ var _ = Describe("Elasticsearch", func() {
 				By("Wait for elasticsearch to be paused")
 				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-				_, err = f.TryPatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+				_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
 					in.Spec.Resume = true
 					return in
 				})
@@ -368,7 +368,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
 			})
 
-			FContext("With original Elasticsearch", func() {
+			Context("With original Elasticsearch", func() {
 				It("should resume DormantDatabase successfully", func() {
 					// Create and wait for running Elasticsearch
 					createAndWaitForRunning()

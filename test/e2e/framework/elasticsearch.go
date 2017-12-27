@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/encoding/json/types"
+	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	. "github.com/onsi/gomega"
@@ -70,7 +71,12 @@ func (f *Framework) GetElasticsearch(meta metav1.ObjectMeta) (*api.Elasticsearch
 }
 
 func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func(*api.Elasticsearch) *api.Elasticsearch) (*api.Elasticsearch, error) {
-	return kutildb.TryPatchElasticsearch(f.extClient, meta, transform)
+	elasticsearch, err := f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	elasticsearch, _, err = kutildb.PatchElasticsearch(f.extClient, elasticsearch, transform)
+	return elasticsearch, err
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
@@ -133,4 +139,17 @@ func (f *Framework) EventuallyElasticsearchIndicesCount(client *elastic.Client) 
 		time.Minute*5,
 		time.Second*5,
 	)
+}
+
+func (f *Framework) CleanElasticsearch() {
+	elasticsearchList, err := f.extClient.Elasticsearchs(f.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return
+	}
+	for _, e := range elasticsearchList.Items {
+		kutildb.PatchElasticsearch(f.extClient, &e, func(in *api.Elasticsearch) *api.Elasticsearch {
+			in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")
+			return in
+		})
+	}
 }
