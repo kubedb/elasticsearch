@@ -13,13 +13,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) CombinedElasticsearch() *api.Elasticsearch {
+func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 	return &api.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("elasticsearch"),
-			Namespace: f.namespace,
+			Namespace: i.namespace,
 			Labels: map[string]string{
-				"app": f.app,
+				"app": i.app,
 			},
 		},
 		Spec: api.ElasticsearchSpec{
@@ -30,13 +30,13 @@ func (f *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 	}
 }
 
-func (f *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
+func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 	return &api.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("elasticsearch"),
-			Namespace: f.namespace,
+			Namespace: i.namespace,
 			Labels: map[string]string{
-				"app": f.app,
+				"app": i.app,
 			},
 		},
 		Spec: api.ElasticsearchSpec{

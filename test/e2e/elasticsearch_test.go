@@ -113,7 +113,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		Context("DoNotPause", func() {
+		XContext("DoNotPause", func() {
 			BeforeEach(func() {
 				elasticsearch.Spec.DoNotPause = true
 			})
@@ -210,7 +210,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should take Snapshot successfully", shouldTakeSnapshot)
 			})
 
-			Context("In GCS", func() {
+			XContext("In GCS", func() {
 				BeforeEach(func() {
 					secret = f.SecretForGCSBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
@@ -222,7 +222,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should take Snapshot successfully", shouldTakeSnapshot)
 			})
 
-			Context("In Azure", func() {
+			XContext("In Azure", func() {
 				BeforeEach(func() {
 					secret = f.SecretForAzureBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
@@ -234,7 +234,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should take Snapshot successfully", shouldTakeSnapshot)
 			})
 
-			Context("In Swift", func() {
+			XContext("In Swift", func() {
 				BeforeEach(func() {
 					secret = f.SecretForSwiftBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
@@ -368,7 +368,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
 			})
 
-			Context("With original Elasticsearch", func() {
+			FContext("With original Elasticsearch", func() {
 				It("should resume DormantDatabase successfully", func() {
 					// Create and wait for running Elasticsearch
 					createAndWaitForRunning()

@@ -11,6 +11,8 @@ import (
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
+	drmnc "github.com/kubedb/apimachinery/pkg/controller/dormant_database"
+	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"github.com/kubedb/elasticsearch/pkg/docker"
 	core "k8s.io/api/core/v1"
@@ -42,12 +44,10 @@ type Options struct {
 
 type Controller struct {
 	*amc.Controller
-	// Api Extension Client
-	ApiExtKubeClient crd_cs.ApiextensionsV1beta1Interface
 	// Prometheus client
 	promClient pcm.MonitoringV1Interface
 	// Cron Controller
-	cronController amc.CronControllerInterface
+	cronController snapc.CronControllerInterface
 	// Event Recorder
 	recorder record.EventRecorder
 	// Flag data
@@ -61,28 +61,28 @@ type Controller struct {
 	informer cache.Controller
 }
 
-var _ amc.Snapshotter = &Controller{}
-var _ amc.Deleter = &Controller{}
+var _ snapc.Snapshotter = &Controller{}
+var _ drmnc.Deleter = &Controller{}
 
 func New(
 	client kubernetes.Interface,
 	apiExtKubeClient crd_cs.ApiextensionsV1beta1Interface,
 	extClient cs.KubedbV1alpha1Interface,
 	promClient pcm.MonitoringV1Interface,
-	cronController amc.CronControllerInterface,
+	cronController snapc.CronControllerInterface,
 	opt Options,
 ) *Controller {
 	return &Controller{
 		Controller: &amc.Controller{
-			Client:    client,
-			ExtClient: extClient,
+			Client:           client,
+			ExtClient:        extClient,
+			ApiExtKubeClient: apiExtKubeClient,
 		},
-		ApiExtKubeClient: apiExtKubeClient,
-		promClient:       promClient,
-		cronController:   cronController,
-		recorder:         eventer.NewEventRecorder(client, "Elasticsearch operator"),
-		opt:              opt,
-		syncPeriod:       time.Minute * 2,
+		promClient:     promClient,
+		cronController: cronController,
+		recorder:       eventer.NewEventRecorder(client, "Elasticsearch operator"),
+		opt:            opt,
+		syncPeriod:     time.Minute * 2,
 	}
 }
 
@@ -146,7 +146,7 @@ func (c *Controller) watchSnapshot() {
 		},
 	}
 
-	amc.NewSnapshotController(c.Client, c.ApiExtKubeClient, c.ExtClient, c, lw, c.syncPeriod).Run()
+	snapc.NewController(c.Controller, c, lw, c.syncPeriod).Run()
 }
 
 func (c *Controller) watchDormantDatabase() {
@@ -169,7 +169,7 @@ func (c *Controller) watchDormantDatabase() {
 		},
 	}
 
-	amc.NewDormantDbController(c.Client, c.ApiExtKubeClient, c.ExtClient, c, lw, c.syncPeriod).Run()
+	drmnc.NewController(c.Controller, c, lw, c.syncPeriod).Run()
 }
 
 func (c *Controller) pushFailureEvent(elasticsearch *api.Elasticsearch, reason string) {

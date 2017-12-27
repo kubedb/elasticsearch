@@ -20,7 +20,6 @@ import (
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
-
 	if err := validator.ValidateElasticsearch(c.Client, elasticsearch, c.opt.Docker); err != nil {
 		c.recorder.Event(
 			elasticsearch.ObjectReference(),
@@ -57,9 +56,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// Check DormantDatabase
-	// return True (as matched) only if Elasticsearch matched with DormantDatabase
-	// If matched, It will be resumed
-	if matched, err := c.matchDormantDatabase(elasticsearch); err != nil || matched {
+	// It can be used as resumed
+	if err := c.matchDormantDatabase(elasticsearch); err != nil {
 		return err
 	}
 
@@ -186,7 +184,7 @@ func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (bool, error) {
+func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) error {
 	// Check if DormantDatabase exists or not
 	dormantDb, err := c.ExtClient.DormantDatabases(elasticsearch.Namespace).Get(elasticsearch.Name, metav1.GetOptions{})
 	if err != nil {
@@ -199,12 +197,12 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 				elasticsearch.Name,
 				err,
 			)
-			return false, err
+			return err
 		}
-		return false, nil
+		return nil
 	}
 
-	var sendEvent = func(message string, args ...interface{}) (bool, error) {
+	var sendEvent = func(message string, args ...interface{}) error {
 		c.recorder.Eventf(
 			elasticsearch.ObjectReference(),
 			core.EventTypeWarning,
@@ -212,7 +210,7 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 			message,
 			args,
 		)
-		return false, fmt.Errorf(message, args)
+		return fmt.Errorf(message, args)
 	}
 
 	// Check DatabaseKind
@@ -257,34 +255,7 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) (boo
 		return sendEvent("Elasticsearch spec mismatches with OriginSpec in DormantDatabases")
 	}
 
-	es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-		// This will ignore processing all kind of Update while creating
-		if in.Annotations == nil {
-			in.Annotations = make(map[string]string)
-		}
-		in.Annotations["kubedb.com/ignore"] = "set"
-		return in
-	})
-	if err != nil {
-		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-		return sendEvent(err.Error())
-	}
-	elasticsearch.Annotations = es.Annotations
-
-	if err := c.ExtClient.Elasticsearchs(elasticsearch.Namespace).Delete(elasticsearch.Name, &metav1.DeleteOptions{}); err != nil {
-		return sendEvent(`failed to resume Elasticsearch "%v" from DormantDatabase "%v". Error: %v`, elasticsearch.Name, elasticsearch.Name, err)
-	}
-
-	_, _, err = kutildb.PatchDormantDatabase(c.ExtClient, dormantDb, func(in *api.DormantDatabase) *api.DormantDatabase {
-		in.Spec.Resume = true
-		return in
-	})
-	if err != nil {
-		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-		return sendEvent(err.Error())
-	}
-
-	return true, nil
+	return kutildb.DeleteDormantDatabase(c.ExtClient, dormantDb.ObjectMeta)
 }
 
 func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {

@@ -12,7 +12,7 @@ import (
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
-	amc "github.com/kubedb/apimachinery/pkg/controller"
+	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
 	"github.com/kubedb/elasticsearch/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/docker"
 	"github.com/kubedb/elasticsearch/test/e2e/framework"
@@ -75,7 +75,7 @@ var _ = BeforeSuite(func() {
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 
-	cronController := amc.NewCronController(kubeClient, extClient)
+	cronController := snapc.NewCronController(kubeClient, extClient)
 	// Start Cron
 	cronController.StartCron()
 
@@ -94,7 +94,6 @@ var _ = BeforeSuite(func() {
 		log.Fatalln(err)
 	}
 	ctrl.Run()
-	root.EventuallyTPR().Should(Succeed())
 })
 
 var _ = AfterSuite(func() {

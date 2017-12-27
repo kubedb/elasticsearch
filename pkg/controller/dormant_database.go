@@ -14,7 +14,7 @@ import (
 )
 
 func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
-	elasticsearch , err := c.ExtClient.Elasticsearchs(om.Namespace).Get(om.Name, metav1.GetOptions{});
+	elasticsearch, err := c.ExtClient.Elasticsearchs(om.Namespace).Get(om.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kerr.IsNotFound(err) {
 			return false, err
@@ -44,41 +44,58 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 
 	topology := dormantDb.Spec.Origin.Spec.Elasticsearch.Topology
 	if topology != nil {
-		clientName := dormantDb.OffshootName()
-		if topology.Client.Prefix != "" {
-			clientName = fmt.Sprintf("%v-%v", topology.Client.Prefix, clientName)
-		}
-		err := apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
-			Name:      clientName,
-			Namespace: dormantDb.Namespace,
-		})
-		if err != nil {
-			return err
+
+		deleteStatefulSet := func(err chan<- error) error {
+			clientName := dormantDb.OffshootName()
+			if topology.Client.Prefix != "" {
+				clientName = fmt.Sprintf("%v-%v", topology.Client.Prefix, clientName)
+			}
+			go func() {
+				err2 := apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
+					Name:      clientName,
+					Namespace: dormantDb.Namespace,
+				})
+				err <- err2
+			}()
+
+			masterName := dormantDb.OffshootName()
+			if topology.Master.Prefix != "" {
+				masterName = fmt.Sprintf("%v-%v", topology.Master.Prefix, masterName)
+			}
+			go func() {
+				err2 := apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
+					Name:      masterName,
+					Namespace: dormantDb.Namespace,
+				})
+				err <- err2
+			}()
+
+			dataName := dormantDb.OffshootName()
+			if topology.Data.Prefix != "" {
+				dataName = fmt.Sprintf("%v-%v", topology.Data.Prefix, dataName)
+			}
+			go func() {
+				err2 := apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
+					Name:      dataName,
+					Namespace: dormantDb.Namespace,
+				})
+				err <- err2
+			}()
+
+			return nil
 		}
 
-		masterName := dormantDb.OffshootName()
-		if topology.Master.Prefix != "" {
-			masterName = fmt.Sprintf("%v-%v", topology.Master.Prefix, masterName)
-		}
-		err = apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
-			Name:      masterName,
-			Namespace: dormantDb.Namespace,
-		})
-		if err != nil {
-			return err
+		errors := make(chan error, 3)
+
+		go deleteStatefulSet(errors)
+
+		for i := 1; i <= 3; i++ {
+			err := <-errors
+			if err != nil {
+				return err
+			}
 		}
 
-		dataName := dormantDb.OffshootName()
-		if topology.Data.Prefix != "" {
-			dataName = fmt.Sprintf("%v-%v", topology.Data.Prefix, dataName)
-		}
-		err = apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
-			Name:      dataName,
-			Namespace: dormantDb.Namespace,
-		})
-		if err != nil {
-			return err
-		}
 	} else {
 		err := apps_util.DeleteStatefulSet(c.Client, metav1.ObjectMeta{
 			Name:      dormantDb.OffshootName(),
@@ -161,7 +178,7 @@ func (c *Controller) createDormantDatabase(elasticsearch *api.Elasticsearch) (*a
 					Annotations: elasticsearch.Annotations,
 				},
 				Spec: api.OriginSpec{
-					Elasticsearch: &elasticsearch.Spec,
+					Elasticsearch: &(elasticsearch.Spec),
 				},
 			},
 		},

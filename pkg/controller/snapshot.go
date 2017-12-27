@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	SnapshotProcess_Backup  = "backup"
-	snapshotType_DumpBackup = "dump-backup"
+	snapshotProcessBackup  = "backup"
+	snapshotTypeDumpBackup = "dump-backup"
 )
 
 func (c *Controller) ValidateSnapshot(snapshot *api.Snapshot) error {
@@ -45,6 +45,12 @@ func (c *Controller) GetDatabase(snapshot *api.Snapshot) (runtime.Object, error)
 }
 
 func (c *Controller) WipeOutSnapshot(snapshot *api.Snapshot) error {
+	if snapshot.Spec.Local != nil {
+		local := snapshot.Spec.Local
+		if local.VolumeSource.EmptyDir != nil {
+			return nil
+		}
+	}
 	return c.DeleteSnapshotData(snapshot)
 }
 

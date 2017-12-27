@@ -13,13 +13,13 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func (f *Invocation) Snapshot() *api.Snapshot {
+func (i *Invocation) Snapshot() *api.Snapshot {
 	return &api.Snapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("snapshot"),
-			Namespace: f.namespace,
+			Namespace: i.namespace,
 			Labels: map[string]string{
-				"app": f.app,
+				"app": i.app,
 				api.LabelDatabaseKind: api.ResourceKindElasticsearch,
 			},
 		},
@@ -65,7 +65,6 @@ func (f *Framework) EventuallySnapshotDataFound(snapshot *api.Snapshot) GomegaAs
 }
 
 func (f *Framework) EventuallySnapshotCount(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-
 	labelMap := map[string]string{
 		api.LabelDatabaseKind: api.ResourceKindElasticsearch,
 		api.LabelDatabaseName: meta.Name,

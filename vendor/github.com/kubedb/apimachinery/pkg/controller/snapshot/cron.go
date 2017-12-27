@@ -1,4 +1,4 @@
-package controller
+package snapshot
 
 import (
 	"errors"
@@ -50,7 +50,7 @@ func NewCronController(client kubernetes.Interface, extClient cs.KubedbV1alpha1I
 		extClient:     extClient,
 		cron:          cron.New(),
 		cronEntryIDs:  cmap.New(),
-		eventRecorder: eventer.NewEventRecorder(client, "Cron Controller"),
+		eventRecorder: eventer.NewEventRecorder(client, "Cron controller"),
 	}
 }
 
@@ -156,7 +156,7 @@ func (s *snapshotInvoker) validateScheduler(checkDuration time.Duration) error {
 	}
 
 	if !snapshotSuccess {
-		return errors.New("Failed to complete initial snapshot")
+		return errors.New("failed to complete initial snapshot")
 	}
 
 	return nil
