@@ -6,10 +6,9 @@ import (
 
 	"github.com/appscode/go/log"
 	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/google/go-cmp/cmp"
+	meta_util "github.com/appscode/kutil/meta"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -62,7 +61,7 @@ func (c *Controller) initWatcher() {
 				log.Errorln("Invalid Elasticsearch object")
 				return
 			}
-			if newObj.DeletionTimestamp != nil || !ElasticsearchEqual(oldObj, newObj) {
+			if newObj.DeletionTimestamp != nil || !elasticsearchEqual(oldObj, newObj) {
 				key, err := cache.MetaNamespaceKeyFunc(new)
 				if err == nil {
 					c.queue.Add(key)
@@ -72,31 +71,9 @@ func (c *Controller) initWatcher() {
 	}, cache.Indexers{})
 }
 
-func ElasticsearchEqual(old, new *api.Elasticsearch) bool {
-	var oldSpec, newSpec *api.ElasticsearchSpec
-	if old != nil {
-		oldSpec = &old.Spec
-	}
-	if new != nil {
-		newSpec = &new.Spec
-	}
-
-	opts := []cmp.Option{
-		cmp.Comparer(func(x, y resource.Quantity) bool {
-			return x.Cmp(y) == 0
-		}),
-		cmp.Comparer(func(x, y *metav1.Time) bool {
-			if x == nil && y == nil {
-				return true
-			}
-			if x != nil && y != nil {
-				return x.Time.Equal(y.Time)
-			}
-			return false
-		}),
-	}
-	if !cmp.Equal(oldSpec, newSpec, opts...) {
-		diff := cmp.Diff(oldSpec, newSpec, opts...)
+func elasticsearchEqual(old, new *api.Elasticsearch) bool {
+	if !meta_util.Equal(old.Spec, new.Spec) {
+		diff := meta_util.Diff(old.Spec, new.Spec)
 		log.Infof("Elasticsearch %s/%s has changed. Diff: %s\n", new.Namespace, new.Name, diff)
 		return false
 	}

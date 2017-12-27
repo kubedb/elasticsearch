@@ -6,7 +6,7 @@ import (
 
 	"github.com/appscode/go/log"
 	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/meta"
+	meta_util "github.com/appscode/kutil/meta"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -51,7 +51,7 @@ func (c *Controller) initWatcher() {
 				return
 			}
 
-			if newObj.DeletionTimestamp != nil || !meta.Equal(oldObj, newObj) {
+			if newObj.DeletionTimestamp != nil || !dormantDatabaseEqual(oldObj, newObj) {
 				key, err := cache.MetaNamespaceKeyFunc(new)
 				if err == nil {
 					c.queue.Add(key)
@@ -59,6 +59,15 @@ func (c *Controller) initWatcher() {
 			}
 		},
 	}, cache.Indexers{})
+}
+
+func dormantDatabaseEqual(old, new *api.DormantDatabase) bool {
+	if !meta_util.Equal(old.Spec, new.Spec) {
+		diff := meta_util.Diff(old.Spec, new.Spec)
+		log.Debugf("DormantDatabase %s/%s has changed. Diff: %s\n", new.Namespace, new.Name, diff)
+		return false
+	}
+	return true
 }
 
 func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
