@@ -53,7 +53,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 						{
 							Name:            snapshotProcessRestore,
 							Image:           c.opt.Docker.GetToolsImageWithTag(elasticsearch),
-							ImagePullPolicy: core.PullAlways,
+							ImagePullPolicy: core.PullIfNotPresent,
 							Args: []string{
 								fmt.Sprintf(`--process=%s`, snapshotProcessRestore),
 								fmt.Sprintf(`--host=%s`, databaseName),

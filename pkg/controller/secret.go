@@ -315,16 +315,14 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 }
 
 func (c *Controller) deleteSecret(dormantDb *api.DormantDatabase, secretVolume *core.SecretVolumeSource) error {
-
-	var secretFound bool = false
-
-	postgresList, err := c.ExtClient.Postgreses(dormantDb.Namespace).List(metav1.ListOptions{})
+	secretFound := false
+	elasticsearchList, err := c.ExtClient.Elasticsearchs(dormantDb.Namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
-	for _, postgres := range postgresList.Items {
-		databaseSecret := postgres.Spec.DatabaseSecret
+	for _, elasticsearch := range elasticsearchList.Items {
+		databaseSecret := elasticsearch.Spec.DatabaseSecret
 		if databaseSecret != nil {
 			if databaseSecret.SecretName == secretVolume.SecretName {
 				secretFound = true
@@ -335,7 +333,7 @@ func (c *Controller) deleteSecret(dormantDb *api.DormantDatabase, secretVolume *
 
 	if !secretFound {
 		labelMap := map[string]string{
-			api.LabelDatabaseKind: api.ResourceKindPostgres,
+			api.LabelDatabaseKind: api.ResourceKindElasticsearch,
 		}
 		dormantDatabaseList, err := c.ExtClient.DormantDatabases(dormantDb.Namespace).List(
 			metav1.ListOptions{
@@ -351,7 +349,7 @@ func (c *Controller) deleteSecret(dormantDb *api.DormantDatabase, secretVolume *
 				continue
 			}
 
-			databaseSecret := ddb.Spec.Origin.Spec.Postgres.DatabaseSecret
+			databaseSecret := ddb.Spec.Origin.Spec.Elasticsearch.DatabaseSecret
 			if databaseSecret != nil {
 				if databaseSecret.SecretName == secretVolume.SecretName {
 					secretFound = true
