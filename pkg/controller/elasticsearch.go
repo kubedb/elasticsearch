@@ -457,12 +457,6 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 			log.Errorln(err)
 			return nil
 		}
-		c.recorder.Event(
-			elasticsearch.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulMonitorDelete,
-			"Successfully deleted monitoring system.",
-		)
 	}
 	return nil
 }
