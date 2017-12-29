@@ -135,7 +135,56 @@ var _ = Describe("Elasticsearch", func() {
 					}
 
 				})
-				It("should run successfully", shouldRunSuccessfully)
+				It("should run successfully", func() {
+					if skipMessage != "" {
+						Skip(skipMessage)
+					}
+					// Create Elasticsearch
+					createAndWaitForRunning()
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Creating new indices")
+					err = f.CreateIndex(elasticClient, 2)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking new indices")
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+					elasticClient.Stop()
+
+					By("Delete postgres")
+					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for elasticsearch to be paused")
+					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+
+					_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+						in.Spec.Resume = true
+						return in
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for DormantDatabase to be deleted")
+					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Wait for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking new indices")
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+				})
 			})
 		})
 
@@ -219,7 +268,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should take Snapshot successfully", shouldTakeSnapshot)
 			})
 
-			Context("In GCS", func() {
+			XContext("In GCS", func() {
 				BeforeEach(func() {
 					secret = f.SecretForGCSBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
@@ -231,7 +280,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should take Snapshot successfully", shouldTakeSnapshot)
 			})
 
-			Context("In Azure", func() {
+			XContext("In Azure", func() {
 				BeforeEach(func() {
 					secret = f.SecretForAzureBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
@@ -243,7 +292,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should take Snapshot successfully", shouldTakeSnapshot)
 			})
 
-			Context("In Swift", func() {
+			XContext("In Swift", func() {
 				BeforeEach(func() {
 					secret = f.SecretForSwiftBackend()
 					snapshot.Spec.StorageSecretName = secret.Name

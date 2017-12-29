@@ -1,6 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="13" failures="13" time="2.74857656">
-      <testcase name="AfterSuite" classname="e2e Suite" time="1.263383153">
-          <failure type="Failure">/home/shahriar/go/src/github.com/kubedb/elasticsearch/test/e2e/e2e_suite_test.go:106&#xA;Expected error:&#xA;    &lt;*errors.StatusError | 0xc4200b4ab0&gt;: {&#xA;        ErrStatus: {&#xA;            TypeMeta: {Kind: &#34;&#34;, APIVersion: &#34;&#34;},&#xA;            ListMeta: {SelfLink: &#34;&#34;, ResourceVersion: &#34;&#34;, Continue: &#34;&#34;},&#xA;            Status: &#34;Failure&#34;,&#xA;            Message: &#34;Operation cannot be fulfilled on namespaces \&#34;elasticsearch-zzhyqt\&#34;: The system is ensuring all content is removed from this namespace.  Upon completion, this namespace will automatically be purged by the system.&#34;,&#xA;            Reason: &#34;Conflict&#34;,&#xA;            Details: {&#xA;                Name: &#34;elasticsearch-zzhyqt&#34;,&#xA;                Group: &#34;&#34;,&#xA;                Kind: &#34;namespaces&#34;,&#xA;                UID: &#34;&#34;,&#xA;                Causes: nil,&#xA;                RetryAfterSeconds: 0,&#xA;            },&#xA;            Code: 409,&#xA;        },&#xA;    }&#xA;    Operation cannot be fulfilled on namespaces &#34;elasticsearch-zzhyqt&#34;: The system is ensuring all content is removed from this namespace.  Upon completion, this namespace will automatically be purged by the system.&#xA;not to have occurred&#xA;/home/shahriar/go/src/github.com/kubedb/elasticsearch/test/e2e/e2e_suite_test.go:104</failure>
+  <testsuite tests="2" failures="0" time="419.343698948">
+      <testcase name="Elasticsearch Test General - should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
       </testcase>
+      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test General With PVC should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test DoNotPause should work successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Snapshot In Local should take Snapshot successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Snapshot In S3 should take Snapshot successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Snapshot In GCS should take Snapshot successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Snapshot In Azure should take Snapshot successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Snapshot In Swift should take Snapshot successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Initialize should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Resume With original Elasticsearch should resume DormantDatabase successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test SnapshotScheduler With Startup should run schedular successfully" classname="e2e Suite" time="171.122750181"></testcase>
+      <testcase name="Elasticsearch Test SnapshotScheduler With Update should run schedular successfully" classname="e2e Suite" time="245.176209607"></testcase>
   </testsuite>
