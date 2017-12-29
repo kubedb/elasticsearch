@@ -135,5 +135,9 @@ func (f *Framework) UpdateSecret(meta metav1.ObjectMeta, transformer func(core.S
 }
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {
-	return f.kubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.kubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }

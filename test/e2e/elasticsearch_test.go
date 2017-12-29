@@ -108,6 +108,7 @@ var _ = Describe("Elasticsearch", func() {
 						},
 						StorageClassName: types.StringP(f.StorageClass),
 					}
+
 				})
 				It("should run successfully", shouldRunSuccessfully)
 			})

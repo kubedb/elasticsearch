@@ -515,15 +515,6 @@ func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *api.Elastics
 				statefulSet.Spec.VolumeClaimTemplates = volumeClaims
 			} else {
 				// Attach Empty directory
-				statefulSet.Spec.Template.Spec.Volumes = append(
-					statefulSet.Spec.Template.Spec.Volumes,
-					core.Volume{
-						Name: "data",
-						VolumeSource: core.VolumeSource{
-							EmptyDir: &core.EmptyDirVolumeSource{},
-						},
-					},
-				)
 				volume := core.Volume{
 					Name: "data",
 					VolumeSource: core.VolumeSource{
