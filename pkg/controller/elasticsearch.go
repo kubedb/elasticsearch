@@ -150,12 +150,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			log.Errorln(err)
 			return nil
 		}
-		c.recorder.Event(
-			elasticsearch.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulMonitorAdd,
-			"Successfully added monitoring system.",
-		)
 	}
 	return nil
 }
