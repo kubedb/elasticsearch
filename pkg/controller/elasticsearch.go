@@ -138,18 +138,16 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	// Ensure Schedule backup
 	c.ensureBackupScheduler(elasticsearch)
 
-	if elasticsearch.Spec.Monitor != nil {
-		if err := c.addMonitor(elasticsearch); err != nil {
-			c.recorder.Eventf(
-				elasticsearch.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToAddMonitor,
-				"Failed to add monitoring system. Reason: %v",
-				err,
-			)
-			log.Errorln(err)
-			return nil
-		}
+	if err := c.manageMonitor(elasticsearch); err != nil {
+		c.recorder.Eventf(
+			elasticsearch.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			"Failed to manage monitoring system. Reason: %v",
+			err,
+		)
+		log.Errorln(err)
+		return nil
 	}
 	return nil
 }
@@ -446,11 +444,11 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 	c.cronController.StopBackupScheduling(elasticsearch.ObjectMeta)
 
 	if elasticsearch.Spec.Monitor != nil {
-		if err := c.deleteMonitor(elasticsearch); err != nil {
+		if _, err := c.deleteMonitor(elasticsearch); err != nil {
 			c.recorder.Eventf(
 				elasticsearch.ObjectReference(),
 				core.EventTypeWarning,
-				eventer.EventReasonFailedToDeleteMonitor,
+				eventer.EventReasonFailedToDelete,
 				"Failed to delete monitoring system. Reason: %v",
 				err,
 			)
