@@ -130,7 +130,7 @@ func (c *Controller) processNextItem() bool {
 		log.Debugf("Finished Processing key: %v\n", key)
 		return true
 	}
-	log.Errorf("Failed to process Memcached %v. Reason: %s\n", key, err)
+	log.Errorf("Failed to process Elasticsearch %v. Reason: %s\n", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.queue.NumRequeues(key) < c.opt.MaxNumRequeues {
