@@ -141,7 +141,8 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 	if snapshot.Spec.SnapshotStorageSpec.Local != nil {
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, core.VolumeMount{
 			Name:      "local",
-			MountPath: snapshot.Spec.SnapshotStorageSpec.Local.Path,
+			MountPath: snapshot.Spec.SnapshotStorageSpec.Local.MountPath,
+			SubPath:   snapshot.Spec.SnapshotStorageSpec.Local.SubPath,
 		})
 		volume := core.Volume{
 			Name:         "local",
@@ -280,7 +281,8 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 	if snapshot.Spec.SnapshotStorageSpec.Local != nil {
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, core.VolumeMount{
 			Name:      "local",
-			MountPath: snapshot.Spec.SnapshotStorageSpec.Local.Path,
+			MountPath: snapshot.Spec.SnapshotStorageSpec.Local.MountPath,
+			SubPath:   snapshot.Spec.SnapshotStorageSpec.Local.SubPath,
 		})
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, core.Volume{
 			Name:         "local",
