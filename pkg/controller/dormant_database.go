@@ -201,7 +201,7 @@ func (c *Controller) createDormantDatabase(elasticsearch *api.Elasticsearch) (*a
 		initSpec, err := json.Marshal(elasticsearch.Spec.Init)
 		if err == nil {
 			dormantDb.Annotations = map[string]string{
-				api.ElasticsearchInitSpec: string(initSpec),
+				api.GenericInitSpec: string(initSpec),
 			}
 		}
 	}

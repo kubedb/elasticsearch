@@ -20,7 +20,7 @@ import (
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
-	if err := validator.ValidateElasticsearch(c.Client, elasticsearch, c.opt.Docker); err != nil {
+	if err := validator.ValidateElasticsearch(c.Client, elasticsearch, &c.opt.Docker); err != nil {
 		c.recorder.Event(
 			elasticsearch.ObjectReference(),
 			core.EventTypeWarning,
@@ -212,7 +212,7 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) erro
 	}
 
 	// Check InitSpec
-	initSpecAnnotationStr := dormantDb.Annotations[api.ElasticsearchInitSpec]
+	initSpecAnnotationStr := dormantDb.Annotations[api.GenericInitSpec]
 	if initSpecAnnotationStr != "" {
 		var initSpecAnnotation *api.InitSpec
 		if err := json.Unmarshal([]byte(initSpecAnnotationStr), &initSpecAnnotation); err != nil {
