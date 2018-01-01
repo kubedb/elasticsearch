@@ -246,7 +246,7 @@ var _ = Describe("Elasticsearch", func() {
 					secret = f.SecretForLocalBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
 					snapshot.Spec.Local = &api.LocalSpec{
-						Path: "/repo",
+						MountPath: "/repo",
 						VolumeSource: core.VolumeSource{
 							EmptyDir: &core.EmptyDirVolumeSource{},
 						},
@@ -408,7 +408,7 @@ var _ = Describe("Elasticsearch", func() {
 
 				if usedInitSpec {
 					Expect(elasticsearch.Spec.Init).Should(BeNil())
-					Expect(elasticsearch.Annotations[api.ElasticsearchInitSpec]).ShouldNot(BeEmpty())
+					Expect(elasticsearch.Annotations[api.GenericInitSpec]).ShouldNot(BeEmpty())
 				}
 			}
 
@@ -457,7 +457,7 @@ var _ = Describe("Elasticsearch", func() {
 						SnapshotStorageSpec: api.SnapshotStorageSpec{
 							StorageSecretName: secret.Name,
 							Local: &api.LocalSpec{
-								Path: "/repo",
+								MountPath: "/repo",
 								VolumeSource: core.VolumeSource{
 									EmptyDir: &core.EmptyDirVolumeSource{},
 								},
@@ -493,7 +493,7 @@ var _ = Describe("Elasticsearch", func() {
 							SnapshotStorageSpec: api.SnapshotStorageSpec{
 								StorageSecretName: secret.Name,
 								Local: &api.LocalSpec{
-									Path: "/repo",
+									MountPath: "/repo",
 									VolumeSource: core.VolumeSource{
 										EmptyDir: &core.EmptyDirVolumeSource{},
 									},
