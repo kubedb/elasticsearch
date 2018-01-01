@@ -58,6 +58,7 @@ func (c *Controller) ensureStatefulSet(
 		in.Spec.Template.Spec.Affinity = elasticsearch.Spec.Affinity
 		in.Spec.Template.Spec.SchedulerName = elasticsearch.Spec.SchedulerName
 		in.Spec.Template.Spec.Tolerations = elasticsearch.Spec.Tolerations
+		in.Spec.Template.Spec.ImagePullSecrets = elasticsearch.Spec.ImagePullSecrets
 
 		if isClient {
 			in = c.upsertMonitoringContainer(in, elasticsearch)
