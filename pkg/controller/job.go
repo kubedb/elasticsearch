@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/crypto/rand"
+	"github.com/appscode/kutil/tools/analytics"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/pkg/storage"
 	batch "k8s.io/api/batch/v1"
@@ -76,6 +77,10 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 											Key: "ADMIN_PASSWORD",
 										},
 									},
+								},
+								{
+									Name:  "APPSCODE_ANALYTICS_CLIENT_ID",
+									Value: analytics.ClientID(),
 								},
 							},
 							Resources: snapshot.Spec.Resources,
@@ -216,6 +221,10 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 											Key: "READALL_PASSWORD",
 										},
 									},
+								},
+								{
+									Name:  "APPSCODE_ANALYTICS_CLIENT_ID",
+									Value: analytics.ClientID(),
 								},
 							},
 							Resources: snapshot.Spec.Resources,

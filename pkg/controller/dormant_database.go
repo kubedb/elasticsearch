@@ -106,9 +106,6 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		}
 	}
 
-	if err := c.deleteRBACStuff(elasticsearch); err != nil {
-		return err
-	}
 	return nil
 }
 

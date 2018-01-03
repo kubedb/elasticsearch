@@ -122,7 +122,7 @@ func (c *Controller) watchElasticsearch() {
 	stop := make(chan struct{})
 	defer close(stop)
 
-	c.runWatcher(1, stop)
+	c.runWatcher(5, stop)
 	select {}
 }
 

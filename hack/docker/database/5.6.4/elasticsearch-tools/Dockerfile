@@ -20,7 +20,7 @@ RUN set -x \
   && pip install elasticsearch
 
 ## osm version
-ENV OSM_VERSION 0.6.0
+ENV OSM_VERSION 0.6.1
 
 RUN set -x \
   && curl "https://cdn.appscode.com/binaries/osm/$OSM_VERSION/osm-linux-amd64" -o /usr/local/bin/osm \
