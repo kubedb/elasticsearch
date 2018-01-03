@@ -280,8 +280,8 @@ func upsertInitContainer(statefulSet *apps.StatefulSet) *apps.StatefulSet {
 
 func (c *Controller) upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
 	container := core.Container{
-		Name:            api.ResourceNameElasticsearch,
-		Image:           c.opt.Docker.GetImageWithTag(elasticsearch),
+		Name:  api.ResourceNameElasticsearch,
+		Image: c.opt.Docker.GetImageWithTag(elasticsearch),
 		SecurityContext: &core.SecurityContext{
 			Privileged: types.BoolP(false),
 			Capabilities: &core.Capabilities{
