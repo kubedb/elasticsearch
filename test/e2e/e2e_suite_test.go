@@ -25,12 +25,10 @@ import (
 )
 
 var storageClass, registry string
-var enableRbac bool
 
 func init() {
 	flag.StringVar(&storageClass, "storageclass", "", "Kubernetes StorageClass name")
 	flag.StringVar(&registry, "docker-registry", "kubedb", "User provided docker repository")
-	flag.BoolVar(&enableRbac, "rbac", false, "Enable RBAC for database workloads")
 }
 
 const (
@@ -89,7 +87,6 @@ var _ = BeforeSuite(func() {
 		OperatorNamespace: root.Namespace(),
 		GoverningService:  api.DatabaseNamePrefix,
 		MaxNumRequeues:    5,
-		EnableRbac:        enableRbac,
 	}
 
 	// Controller
