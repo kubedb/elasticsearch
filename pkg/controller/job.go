@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	snapshotProcessRestore  = "restore"
-	snapshotTypeDumpRestore = "dump-restore"
+	snapshotProcessBackup  = "backup"
+	snapshotProcessRestore = "restore"
 )
 
 func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot *api.Snapshot) (*batch.Job, error) {
@@ -56,7 +56,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							Image:           c.opt.Docker.GetToolsImageWithTag(elasticsearch),
 							ImagePullPolicy: core.PullIfNotPresent,
 							Args: []string{
-								fmt.Sprintf(`--process=%s`, snapshotProcessRestore),
+								snapshotProcessRestore,
 								fmt.Sprintf(`--host=%s`, databaseName),
 								fmt.Sprintf(`--bucket=%s`, bucket),
 								fmt.Sprintf(`--folder=%s`, folderName),
@@ -64,11 +64,11 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							},
 							Env: []core.EnvVar{
 								{
-									Name:  "USERNAME",
+									Name:  "DB_USER",
 									Value: "admin",
 								},
 								{
-									Name: "PASSWORD",
+									Name: "DB_PASSWORD",
 									ValueFrom: &core.EnvVarSource{
 										SecretKeyRef: &core.SecretKeySelector{
 											LocalObjectReference: core.LocalObjectReference{
@@ -87,16 +87,11 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							VolumeMounts: []core.VolumeMount{
 								{
 									Name:      persistentVolume.Name,
-									MountPath: "/var/" + snapshotTypeDumpRestore + "/",
+									MountPath: "/var/data",
 								},
 								{
 									Name:      "osmconfig",
 									MountPath: storage.SecretMountPath,
-									ReadOnly:  true,
-								},
-								{
-									Name:      "certs",
-									MountPath: "/certs",
 									ReadOnly:  true,
 								},
 							},
@@ -113,28 +108,6 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
 									SecretName: snapshot.OSMSecretName(),
-								},
-							},
-						},
-						{
-							Name: "certs",
-							VolumeSource: core.VolumeSource{
-								Secret: &core.SecretVolumeSource{
-									SecretName: elasticsearch.Spec.CertificateSecret.SecretName,
-									Items: []core.KeyToPath{
-										{
-											Key:  "ca.pem",
-											Path: "ca.pem",
-										},
-										{
-											Key:  "client-key.pem",
-											Path: "client-key.pem",
-										},
-										{
-											Key:  "client.pem",
-											Path: "client.pem",
-										},
-									},
 								},
 							},
 						},
@@ -184,6 +157,12 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 
 	// Folder name inside Cloud bucket where backup will be uploaded
 	folderName, _ := snapshot.Location()
+
+	indices, err := c.getAllIndices(elasticsearch)
+	if err != nil {
+		return nil, err
+	}
+
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   jobName,
@@ -197,22 +176,24 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 				Spec: core.PodSpec{
 					Containers: []core.Container{
 						{
-							Name:  snapshotProcessBackup,
-							Image: c.opt.Docker.GetToolsImageWithTag(elasticsearch),
+							Name:            snapshotProcessBackup,
+							Image:           c.opt.Docker.GetToolsImageWithTag(elasticsearch),
+							ImagePullPolicy: core.PullIfNotPresent,
 							Args: []string{
-								fmt.Sprintf(`--process=%s`, snapshotProcessBackup),
+								snapshotProcessBackup,
 								fmt.Sprintf(`--host=%s`, databaseName),
+								fmt.Sprintf(`--indices=%s`, indices),
 								fmt.Sprintf(`--bucket=%s`, bucket),
 								fmt.Sprintf(`--folder=%s`, folderName),
 								fmt.Sprintf(`--snapshot=%s`, snapshot.Name),
 							},
 							Env: []core.EnvVar{
 								{
-									Name:  "USERNAME",
+									Name:  "DB_USER",
 									Value: "readall",
 								},
 								{
-									Name: "PASSWORD",
+									Name: "DB_PASSWORD",
 									ValueFrom: &core.EnvVarSource{
 										SecretKeyRef: &core.SecretKeySelector{
 											LocalObjectReference: core.LocalObjectReference{
@@ -231,16 +212,11 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							VolumeMounts: []core.VolumeMount{
 								{
 									Name:      persistentVolume.Name,
-									MountPath: "/var/" + snapshotTypeDumpBackup + "/",
+									MountPath: "/var/data",
 								},
 								{
 									Name:      "osmconfig",
 									MountPath: storage.SecretMountPath,
-									ReadOnly:  true,
-								},
-								{
-									Name:      "certs",
-									MountPath: "/certs",
 									ReadOnly:  true,
 								},
 							},
@@ -257,28 +233,6 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
 									SecretName: snapshot.OSMSecretName(),
-								},
-							},
-						},
-						{
-							Name: "certs",
-							VolumeSource: core.VolumeSource{
-								Secret: &core.SecretVolumeSource{
-									SecretName: elasticsearch.Spec.CertificateSecret.SecretName,
-									Items: []core.KeyToPath{
-										{
-											Key:  "ca.pem",
-											Path: "ca.pem",
-										},
-										{
-											Key:  "client-key.pem",
-											Path: "client-key.pem",
-										},
-										{
-											Key:  "client.pem",
-											Path: "client.pem",
-										},
-									},
 								},
 							},
 						},

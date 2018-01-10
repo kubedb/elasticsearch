@@ -25,13 +25,15 @@ import (
 )
 
 var (
-	storageClass string
-	registry     string
+	storageClass       string
+	registry           string
+	providedController bool
 )
 
 func init() {
 	flag.StringVar(&storageClass, "storageclass", "", "Kubernetes StorageClass name")
 	flag.StringVar(&registry, "docker-registry", "kubedb", "User provided docker repository")
+	flag.BoolVar(&providedController, "provided-controller", false, "Enable this for provided controller")
 }
 
 const (
@@ -79,27 +81,29 @@ var _ = BeforeSuite(func() {
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 
-	cronController := snapc.NewCronController(kubeClient, extClient)
-	// Start Cron
-	cronController.StartCron()
+	if !providedController {
+		cronController := snapc.NewCronController(kubeClient, extClient)
+		// Start Cron
+		cronController.StartCron()
 
-	opt := controller.Options{
-		Docker: docker.Docker{
-			Registry: registry,
-		},
-		OperatorNamespace: root.Namespace(),
-		GoverningService:  api.DatabaseNamePrefix,
-		MaxNumRequeues:    5,
-		AnalyticsClientID: "$kubedb$elasticsearch$e2e",
-	}
+		opt := controller.Options{
+			Docker: docker.Docker{
+				Registry: registry,
+			},
+			OperatorNamespace: root.Namespace(),
+			GoverningService:  api.DatabaseNamePrefix,
+			MaxNumRequeues:    5,
+			AnalyticsClientID: "$kubedb$elasticsearch$e2e",
+		}
 
-	// Controller
-	ctrl = controller.New(kubeClient, apiExtKubeClient, extClient, promClient, cronController, opt)
-	err = ctrl.Setup()
-	if err != nil {
-		log.Fatalln(err)
+		// Controller
+		ctrl = controller.New(config, kubeClient, apiExtKubeClient, extClient, promClient, cronController, opt)
+		err = ctrl.Setup()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		ctrl.Run()
 	}
-	ctrl.Run()
 })
 
 var _ = AfterSuite(func() {

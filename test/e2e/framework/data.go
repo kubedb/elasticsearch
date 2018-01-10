@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
+	"github.com/kubedb/elasticsearch/pkg/controller"
 	"gopkg.in/olivere/elastic.v5"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -17,7 +18,6 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (*elastic.Client, e
 	if err != nil {
 		return nil, err
 	}
-
 	clientName := es.Name
 
 	if es.Spec.Topology != nil {
@@ -26,9 +26,17 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (*elastic.Client, e
 		}
 	}
 	clientPodName := fmt.Sprintf("%v-0", clientName)
-	fmt.Println(clientPodName)
 
-	url, err := f.getProxyURL(es.Namespace, clientPodName, 9200)
+	c := controller.New(f.restConfig, f.kubeClient, nil, f.extClient, nil, nil, controller.Options{})
+
+	url, err := c.GetProxyURL(f.restConfig, es.Namespace, clientPodName, 9200)
+	if err != nil {
+		return nil, err
+	}
+
+	c.GetElasticClient(es, url)
+
+	es, err = f.GetElasticsearch(meta)
 	if err != nil {
 		return nil, err
 	}
