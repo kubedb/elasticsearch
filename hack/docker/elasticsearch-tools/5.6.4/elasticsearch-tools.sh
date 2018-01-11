@@ -88,8 +88,6 @@ mkdir -p "$DB_DATA_DIR"
 cd "$DB_DATA_DIR"
 rm -rf *
 
-export NODE_TLS_REJECT_UNAUTHORIZED=0
-
 function exit_on_error() {
     echo "$1"
     exit 1
@@ -99,6 +97,8 @@ function exit_on_error() {
 # ref: http://unix.stackexchange.com/a/5279
 echo $DB_HOST $DB_PORT
 while ! nc $DB_HOST $DB_PORT -w 30 > /dev/null; do echo "Waiting... database is not ready yet"; sleep 5; done
+
+export NODE_TLS_REJECT_UNAUTHORIZED=0
 
 case "$op" in
     backup)
