@@ -305,7 +305,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		FContext("Initialize", func() {
+		Context("Initialize", func() {
 			BeforeEach(func() {
 				skipSnapshotDataChecking = false
 				secret = f.SecretForS3Backend()

@@ -95,6 +95,11 @@ function exit_on_error() {
     exit 1
 }
 
+# Wait for elasticsearch to start
+# ref: http://unix.stackexchange.com/a/5279
+echo $DB_HOST $DB_PORT
+while ! nc $DB_HOST $DB_PORT -w 30 > /dev/null; do echo "Waiting... database is not ready yet"; sleep 5; done
+
 case "$op" in
     backup)
         for index in $(echo "$DB_INDICES" | sed "s/,/ /g")

@@ -178,10 +178,10 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 						{
 							Name:            snapshotProcessBackup,
 							Image:           c.opt.Docker.GetToolsImageWithTag(elasticsearch),
-							ImagePullPolicy: core.PullIfNotPresent,
+							ImagePullPolicy: core.PullAlways,
 							Args: []string{
 								snapshotProcessBackup,
-								fmt.Sprintf(`--host=%s`, databaseName),
+								fmt.Sprintf(`--host=%s`, elasticsearch.OffshootName()),
 								fmt.Sprintf(`--indices=%s`, indices),
 								fmt.Sprintf(`--bucket=%s`, bucket),
 								fmt.Sprintf(`--folder=%s`, folderName),

@@ -22,7 +22,7 @@ import (
 )
 
 func (c *Controller) GetElasticClient(elasticsearch *api.Elasticsearch, url string) (*elastic.Client, error) {
-	secret, err := c.Client.Core().Secrets(elasticsearch.Namespace).Get(elasticsearch.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
+	secret, err := c.Client.CoreV1().Secrets(elasticsearch.Namespace).Get(elasticsearch.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

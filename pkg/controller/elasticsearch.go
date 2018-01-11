@@ -103,7 +103,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		)
 	}
 
-	if vt2 == kutil.VerbCreated && elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
+	initialized := elasticsearch.Annotations[api.DatabaseInitialized]
+	if initialized == "" && vt2 == kutil.VerbCreated && elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
 		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Status.Phase = api.DatabasePhaseInitializing
 			return in
@@ -125,6 +126,10 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		}
 
 		es, _, err = kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+			if in.Annotations == nil {
+				in.Annotations = make(map[string]string)
+			}
+			in.Annotations[api.DatabaseInitialized] = "true"
 			in.Status.Phase = api.DatabasePhaseRunning
 			return in
 		})
@@ -170,7 +175,7 @@ func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
 				)
 				return err
 			}
-			elasticsearch.Spec.Monitor = es.Spec.Monitor
+			*elasticsearch.Spec.Monitor = *es.Spec.Monitor
 		}
 	}
 	return nil
@@ -297,7 +302,6 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 		return in
 	})
 	if err != nil {
-		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 		return kutil.VerbUnchanged, err
 	}
 	elasticsearch.Status = es.Status

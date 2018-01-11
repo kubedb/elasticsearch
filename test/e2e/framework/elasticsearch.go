@@ -132,8 +132,9 @@ func (f *Framework) EventuallyElasticsearchIndicesCount(client *elastic.Client) 
 	return Eventually(
 		func() int {
 			count, err := f.CountIndex(client)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(count).To(Equal(count))
+			if err != nil {
+				return -1
+			}
 			return count
 		},
 		time.Minute*5,

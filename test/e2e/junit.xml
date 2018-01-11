@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="1" failures="1" time="543.232890218">
+  <testsuite tests="2" failures="0" time="531.148521861">
       <testcase name="Elasticsearch Test General - should run successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="Elasticsearch Test General With PVC should run successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
+      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="229.764014309"></testcase>
+      <testcase name="Elasticsearch Test General With PVC should run successfully" classname="e2e Suite" time="294.133312721"></testcase>
       <testcase name="Elasticsearch Test DoNotPause should work successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
@@ -27,9 +23,8 @@
       <testcase name="Elasticsearch Test Snapshot In Swift should take Snapshot successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Elasticsearch Test Initialize should run successfully" classname="e2e Suite" time="540.189038006">
-          <failure type="Failure">/home/shahriar/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:375&#xA;Timed out after 300.000s.&#xA;Expected&#xA;    &lt;int&gt;: 1&#xA;to equal&#xA;    &lt;int&gt;: 3&#xA;/home/shahriar/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:374</failure>
-          <system-out>[BeforeEach] Elasticsearch&#xA;  /home/shahriar/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:43&#xA;[BeforeEach] Initialize&#xA;  /home/shahriar/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:317&#xA;[It] should run successfully&#xA;  /home/shahriar/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:375&#xA;�[1mSTEP�[0m: Create Elasticsearch: elasticsearch-mfujxi&#xA;�[1mSTEP�[0m: Wait for Running elasticsearch&#xA;�[1mSTEP�[0m: Create Secret&#xA;�[1mSTEP�[0m: Check for Elastic client&#xA;�[1mSTEP�[0m: Creating new indices&#xA;�[1mSTEP�[0m: Checking new indices&#xA;�[1mSTEP�[0m: Create Snapshot&#xA;�[1mSTEP�[0m: Check for Successed snapshot&#xA;�[1mSTEP�[0m: Check for snapshot data&#xA;�[1mSTEP�[0m: Create elasticsearch from snapshot&#xA;�[1mSTEP�[0m: Create Elasticsearch: elasticsearch-hfc2kh&#xA;�[1mSTEP�[0m: Wait for Running elasticsearch&#xA;�[1mSTEP�[0m: Check for Elastic client&#xA;�[1mSTEP�[0m: Checking indices&#xA;[AfterEach] Elasticsearch&#xA;  /home/shahriar/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:97&#xA;�[1mSTEP�[0m: Delete elasticsearch: elasticsearch-hfc2kh&#xA;�[1mSTEP�[0m: Wait for elasticsearch to be paused&#xA;�[1mSTEP�[0m: WipeOut elasticsearch: elasticsearch-hfc2kh&#xA;�[1mSTEP�[0m: Wait for elasticsearch to be wipedOut&#xA;�[1mSTEP�[0m: Delete elasticsearch: elasticsearch-mfujxi&#xA;�[1mSTEP�[0m: Wait for elasticsearch to be paused&#xA;�[1mSTEP�[0m: WipeOut elasticsearch: elasticsearch-mfujxi&#xA;�[1mSTEP�[0m: Wait for elasticsearch to be wipedOut&#xA;�[1mSTEP�[0m: Check for snapshot data&#xA;</system-out>
+      <testcase name="Elasticsearch Test Initialize should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
       </testcase>
       <testcase name="Elasticsearch Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
