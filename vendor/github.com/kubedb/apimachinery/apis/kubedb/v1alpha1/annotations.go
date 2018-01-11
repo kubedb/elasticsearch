@@ -18,8 +18,7 @@ const (
 	SnapshotKey         = ResourceTypeSnapshot + "." + GenericKey
 	LabelSnapshotStatus = SnapshotKey + "/status"
 
-	GenericInitSpec     = GenericKey + "/init"
-	DatabaseInitialized = GenericKey + "/initialized"
+	GenericInitSpec = GenericKey + "/init"
 
 	AgentCoreosPrometheus        = "coreos-prometheus-operator"
 	PrometheusExporterPortNumber = 56790

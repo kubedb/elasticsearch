@@ -1,5 +1,5 @@
-hash: ecaa413d637ad1e169a50d0a85e95c46fcb561b568d5455a94fff28864c85fcd
-updated: 2018-01-11T12:37:27.830734814+06:00
+hash: a8a95c14065f9837b6e8783bfc01b54b2643727f323087b46fff74b85a444312
+updated: 2018-01-11T14:09:36.140362019+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -39,6 +39,7 @@ imports:
   - core/v1
   - meta
   - tools/analytics
+  - tools/portforward
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/osm
@@ -228,7 +229,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kubedb/apimachinery
-  version: f2c727d1d5b6252d94909317c973421ed65d2462
+  version: 92564a91c9eb0f49e4954132ac34a1b9e505ea69
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1

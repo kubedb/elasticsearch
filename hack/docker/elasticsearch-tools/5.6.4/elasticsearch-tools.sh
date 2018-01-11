@@ -95,20 +95,20 @@ function exit_on_error() {
 
 # Wait for elasticsearch to start
 # ref: http://unix.stackexchange.com/a/5279
-echo $DB_HOST $DB_PORT
-while ! nc $DB_HOST $DB_PORT -w 30 > /dev/null; do echo "Waiting... database is not ready yet"; sleep 5; done
+while ! nc "$DB_HOST" "$DB_PORT" -w 30 > /dev/null; do echo "Waiting... database is not ready yet"; sleep 5; done
 
 export NODE_TLS_REJECT_UNAUTHORIZED=0
 
 case "$op" in
     backup)
-        for index in $(echo "$DB_INDICES" | sed "s/,/ /g")
+        IFS=$',';
+        for INDEX in $(echo "$DB_INDICES")
         do
-            elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$index" --output "$index.mapping.json" --type mapping || exit_on_error "failed to dump mapping for $index"
-            elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$index" --output "$index.analyzer.json" --type analyzer || exit_on_error "failed to dump analyzer for $index"
-            elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$index" --output "$index.data.json" --type data || exit_on_error "failed to dump data for $index"
+            elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.mapping.json" --type mapping || exit_on_error "failed to dump mapping for $INDEX"
+            elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.analyzer.json" --type analyzer || exit_on_error "failed to dump analyzer for $INDEX"
+            elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.data.json" --type data || exit_on_error "failed to dump data for $INDEX"
 
-            echo "$index" >> indices.txt
+            echo "$INDEX" >> indices.txt
         done
 
         osm push --osmconfig="$OSM_CONFIG_FILE" -c "$DB_BUCKET" "$DB_DATA_DIR" "$DB_FOLDER/$DB_SNAPSHOT" || exit_on_error "failed to push data"
@@ -116,12 +116,12 @@ case "$op" in
     restore)
         osm pull --osmconfig="$OSM_CONFIG_FILE" -c "$DB_BUCKET" "$DB_FOLDER/$DB_SNAPSHOT" "$DB_DATA_DIR" || exit_on_error "failed to pull data"
 
-        IFS=$'\n'
-        for index in $(cat indices.txt)
+        IFS=$'\n';
+        for INDEX in $(cat indices.txt)
         do
-            elasticdump --quiet --input "$index.analyzer.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$index" --type analyzer || exit_on_error "failed to restore analyzer for $index"
-            elasticdump --quiet --input "$index.mapping.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$index" --type mapping || exit_on_error "failed to restore mapping for $index"
-            elasticdump --quiet --input "$index.data.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$index" --type data || exit_on_error "failed to restore data for $index"
+            elasticdump --quiet --input "$INDEX.analyzer.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type analyzer || exit_on_error "failed to restore analyzer for $INDEX"
+            elasticdump --quiet --input "$INDEX.mapping.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type mapping || exit_on_error "failed to restore mapping for $INDEX"
+            elasticdump --quiet --input "$INDEX.data.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type data || exit_on_error "failed to restore data for $INDEX"
         done
         ;;
     *)  (10)

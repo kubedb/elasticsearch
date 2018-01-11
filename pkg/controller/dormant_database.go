@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -193,17 +192,6 @@ func (c *Controller) createDormantDatabase(elasticsearch *api.Elasticsearch) (*a
 			},
 		},
 	}
-
-	if elasticsearch.Spec.Init != nil {
-		initSpec, err := json.Marshal(elasticsearch.Spec.Init)
-		if err == nil {
-			dormantDb.Annotations = map[string]string{
-				api.GenericInitSpec: string(initSpec),
-			}
-		}
-	}
-
-	dormantDb.Spec.Origin.Spec.Elasticsearch.Init = nil
 
 	return c.ExtClient.DormantDatabases(dormantDb.Namespace).Create(dormantDb)
 }

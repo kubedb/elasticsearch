@@ -103,8 +103,9 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		)
 	}
 
-	initialized := elasticsearch.Annotations[api.DatabaseInitialized]
-	if initialized == "" && vt2 == kutil.VerbCreated && elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
+	initSpec := elasticsearch.Annotations[api.GenericInitSpec]
+
+	if initSpec == "" && elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
 		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Status.Phase = api.DatabasePhaseInitializing
 			return in
@@ -126,10 +127,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		}
 
 		es, _, err = kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-			if in.Annotations == nil {
-				in.Annotations = make(map[string]string)
-			}
-			in.Annotations[api.DatabaseInitialized] = "true"
 			in.Status.Phase = api.DatabasePhaseRunning
 			return in
 		})
@@ -138,6 +135,27 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			return err
 		}
 		elasticsearch.Status = es.Status
+	}
+
+	if elasticsearch.Spec.Init != nil {
+		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+			if in.Annotations == nil {
+				in.Annotations = make(map[string]string)
+			}
+
+			initSpec, err := json.Marshal(elasticsearch.Spec.Init)
+			if err == nil {
+				in.Annotations[api.GenericInitSpec] = string(initSpec)
+			}
+			in.Spec.Init = nil
+			return in
+		})
+		if err != nil {
+			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			return err
+		}
+		elasticsearch.Annotations = es.Annotations
+		*elasticsearch.Spec.Init = *es.Spec.Init
 	}
 
 	// Ensure Schedule backup
