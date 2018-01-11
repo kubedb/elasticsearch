@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -53,7 +52,7 @@ func (c *Controller) GetElasticClient(elasticsearch *api.Elasticsearch, url stri
 func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, error) {
 	var url string
 	if meta.PossiblyInCluster() {
-		url = fmt.Sprintf("https://%s.%s:9200", elasticsearch.OffshootName(), elasticsearch.Namespace)
+		url = fmt.Sprintf("https://%s.%s:%d", elasticsearch.OffshootName(), elasticsearch.Namespace, ElasticsearchRestPort)
 	} else {
 		clientName := elasticsearch.OffshootName()
 		if elasticsearch.Spec.Topology != nil {
@@ -67,7 +66,7 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 			c.config,
 			elasticsearch.Namespace,
 			clientPodName,
-			9200,
+			ElasticsearchRestPort,
 		)
 		if err := tunnel.ForwardPort(); err != nil {
 			return "", err
@@ -79,14 +78,9 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 	if err != nil {
 		return "", err
 	}
-	resp, err := client.Aliases().Do(context.Background())
+	indices, err := client.IndexNames()
 	if err != nil {
 		return "", err
-	}
-	indices := make([]string, 0)
-
-	for k := range resp.Indices {
-		indices = append(indices, k)
 	}
 
 	return strings.Join(indices, ","), nil

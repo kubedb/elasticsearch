@@ -343,14 +343,14 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 		portList := []core.ContainerPort{
 			{
 				Name:          "transport",
-				ContainerPort: 9300,
+				ContainerPort: ElasticsearchNodePort,
 				Protocol:      core.ProtocolTCP,
 			},
 		}
 		if isClient {
 			portList = append(portList, core.ContainerPort{
 				Name:          "http",
-				ContainerPort: 9200,
+				ContainerPort: ElasticsearchRestPort,
 				Protocol:      core.ProtocolTCP,
 			})
 		}

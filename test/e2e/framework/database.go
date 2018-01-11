@@ -29,7 +29,7 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (*elastic.Client, e
 		f.restConfig,
 		es.Namespace,
 		clientPodName,
-		9200,
+		controller.ElasticsearchRestPort,
 	)
 	if err := tunnel.ForwardPort(); err != nil {
 		return nil, err
@@ -50,9 +50,9 @@ func (f *Framework) CreateIndex(client *elastic.Client, count int) error {
 }
 
 func (f *Framework) CountIndex(client *elastic.Client) (int, error) {
-	resp, err := client.ClusterStats().Do(context.Background())
+	indices, err := client.IndexNames()
 	if err != nil {
 		return 0, err
 	}
-	return resp.Indices.Count, nil
+	return len(indices), nil
 }

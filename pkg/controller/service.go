@@ -19,6 +19,11 @@ var (
 	NodeRoleData   = "node.role.data"
 )
 
+const (
+	ElasticsearchRestPort = 9200
+	ElasticsearchNodePort = 9300
+)
+
 func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	// Check if service name exists
 	err := c.checkService(elasticsearch, elasticsearch.OffshootName())
@@ -118,7 +123,7 @@ func upsertServicePort(service *core.Service, elasticsearch *api.Elasticsearch) 
 	desiredPorts := []core.ServicePort{
 		{
 			Name:       "http",
-			Port:       9200,
+			Port:       ElasticsearchRestPort,
 			TargetPort: intstr.FromString("http"),
 		},
 	}
@@ -155,7 +160,7 @@ func upsertMasterServicePort(service *core.Service) []core.ServicePort {
 	desiredPorts := []core.ServicePort{
 		{
 			Name:       "transport",
-			Port:       9300,
+			Port:       ElasticsearchNodePort,
 			TargetPort: intstr.FromString("transport"),
 		},
 	}
