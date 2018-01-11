@@ -24,7 +24,7 @@ func (c *Controller) GetElasticClient(elasticsearch *api.Elasticsearch, url stri
 	}
 
 	var client *elastic.Client
-	err = wait.PollImmediate(time.Second*30, time.Minute*15, func() (bool, error) {
+	err = wait.PollImmediate(time.Second*30, time.Minute*5, func() (bool, error) {
 		client, err = elastic.NewClient(
 			elastic.SetHttpClient(&http.Client{
 				Timeout: time.Second * 5,
@@ -53,7 +53,7 @@ func (c *Controller) GetElasticClient(elasticsearch *api.Elasticsearch, url stri
 func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, error) {
 	var url string
 	if meta.PossiblyInCluster() {
-		url = fmt.Sprintf("https://%s:9200", elasticsearch.OffshootName())
+		url = fmt.Sprintf("https://%s.%s:9200", elasticsearch.OffshootName(), elasticsearch.Namespace)
 	} else {
 		clientName := elasticsearch.OffshootName()
 		if elasticsearch.Spec.Topology != nil {

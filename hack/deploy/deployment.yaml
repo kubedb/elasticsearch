@@ -19,6 +19,7 @@ spec:
       containers:
       - name: kubedb-es
         image: aerokite/es-operator:0.8.0
+        imagePullPolicy: Always
         args:
         - run
         - --v=4
