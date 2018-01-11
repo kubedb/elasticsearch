@@ -104,7 +104,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 
 	initSpec := elasticsearch.Annotations[api.GenericInitSpec]
-
 	if initSpec == "" && elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
 		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Status.Phase = api.DatabasePhaseInitializing
