@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"time"
+
 	"github.com/appscode/go/hold"
 	"github.com/appscode/go/log"
 	apiext_util "github.com/appscode/kutil/apiextensions/v1beta1"
@@ -25,7 +27,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	"time"
 )
 
 type Options struct {

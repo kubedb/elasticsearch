@@ -72,7 +72,7 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 	}
 	indices := make([]string, 0)
 
-	for k, _ := range resp.Indices {
+	for k := range resp.Indices {
 		indices = append(indices, k)
 	}
 
