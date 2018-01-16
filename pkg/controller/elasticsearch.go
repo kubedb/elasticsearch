@@ -411,31 +411,6 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 
 	c.recorder.Event(elasticsearch.ObjectReference(), core.EventTypeNormal, eventer.EventReasonPausing, "Pausing Elasticsearch")
 
-	/*
-		if elasticsearch.Spec.DoNotPause {
-			c.recorder.Eventf(
-				elasticsearch.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToPause,
-				`Elasticsearch "%v" is locked.`,
-				elasticsearch.Name,
-			)
-
-			if err := c.reCreateElastic(elasticsearch); err != nil {
-				c.recorder.Eventf(
-					elasticsearch.ObjectReference(),
-					core.EventTypeWarning,
-					eventer.EventReasonFailedToCreate,
-					`Failed to recreate Elasticsearch: "%v". Reason: %v`,
-					elasticsearch.Name,
-					err,
-				)
-				return err
-			}
-			return nil
-		}
-	*/
-
 	if _, err := c.createDormantDatabase(elasticsearch); err != nil {
 		c.recorder.Eventf(
 			elasticsearch.ObjectReference(),
@@ -472,24 +447,3 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 	}
 	return nil
 }
-
-/*
-func (c *Controller) reCreateElastic(elasticsearch *api.Elasticsearch) error {
-	es := &api.Elasticsearch{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        elasticsearch.Name,
-			Namespace:   elasticsearch.Namespace,
-			Labels:      elasticsearch.Labels,
-			Annotations: elasticsearch.Annotations,
-		},
-		Spec:   elasticsearch.Spec,
-		Status: elasticsearch.Status,
-	}
-
-	if _, err := c.ExtClient.Elasticsearchs(es.Namespace).Create(es); err != nil {
-		return err
-	}
-
-	return nil
-}
-*/

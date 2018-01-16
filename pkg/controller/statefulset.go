@@ -342,14 +342,14 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 	getPorts := func() []core.ContainerPort {
 		portList := []core.ContainerPort{
 			{
-				Name:          "transport",
+				Name:          ElasticsearchNodePortName,
 				ContainerPort: ElasticsearchNodePort,
 				Protocol:      core.ProtocolTCP,
 			},
 		}
 		if isClient {
 			portList = append(portList, core.ContainerPort{
-				Name:          "http",
+				Name:          ElasticsearchRestPortName,
 				ContainerPort: ElasticsearchRestPort,
 				Protocol:      core.ProtocolTCP,
 			})
@@ -388,10 +388,28 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 					ContainerPort: int32(api.PrometheusExporterPortNumber),
 				},
 			},
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      "secret",
+					MountPath: ExporterSecretPath,
+				},
+			},
 		}
 		containers := statefulSet.Spec.Template.Spec.Containers
 		containers = core_util.UpsertContainer(containers, container)
 		statefulSet.Spec.Template.Spec.Containers = containers
+
+		volume := core.Volume{
+			Name: "secret",
+			VolumeSource: core.VolumeSource{
+				Secret: &core.SecretVolumeSource{
+					SecretName: elasticsearch.Spec.DatabaseSecret.SecretName,
+				},
+			},
+		}
+		volumes := statefulSet.Spec.Template.Spec.Volumes
+		volumes = core_util.UpsertVolume(volumes, volume)
+		statefulSet.Spec.Template.Spec.Volumes = volumes
 	}
 	return statefulSet
 }

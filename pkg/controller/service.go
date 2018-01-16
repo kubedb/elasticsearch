@@ -20,8 +20,10 @@ var (
 )
 
 const (
-	ElasticsearchRestPort = 9200
-	ElasticsearchNodePort = 9300
+	ElasticsearchRestPort     = 9200
+	ElasticsearchRestPortName = "http"
+	ElasticsearchNodePort     = 9300
+	ElasticsearchNodePortName = "transport"
 )
 
 func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -122,9 +124,9 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 func upsertServicePort(service *core.Service, elasticsearch *api.Elasticsearch) []core.ServicePort {
 	desiredPorts := []core.ServicePort{
 		{
-			Name:       "http",
+			Name:       ElasticsearchRestPortName,
 			Port:       ElasticsearchRestPort,
-			TargetPort: intstr.FromString("http"),
+			TargetPort: intstr.FromString(ElasticsearchRestPortName),
 		},
 	}
 	if elasticsearch.Spec.Monitor != nil &&
@@ -159,9 +161,9 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 func upsertMasterServicePort(service *core.Service) []core.ServicePort {
 	desiredPorts := []core.ServicePort{
 		{
-			Name:       "transport",
+			Name:       ElasticsearchNodePortName,
 			Port:       ElasticsearchNodePort,
-			TargetPort: intstr.FromString("transport"),
+			TargetPort: intstr.FromString(ElasticsearchNodePortName),
 		},
 	}
 	return core_util.MergeServicePorts(service.Spec.Ports, desiredPorts)

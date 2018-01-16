@@ -18,10 +18,9 @@ const (
 )
 
 func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot *api.Snapshot) (*batch.Job, error) {
-	databaseName := elasticsearch.Name
 	jobName := rand.WithUniqSuffix(snapshot.OffshootName())
 	jobLabel := map[string]string{
-		api.LabelDatabaseName: databaseName,
+		api.LabelDatabaseName: elasticsearch.OffshootName(),
 		api.LabelJobType:      snapshotProcessRestore,
 	}
 	backupSpec := snapshot.Spec.SnapshotStorageSpec
@@ -57,7 +56,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							ImagePullPolicy: core.PullIfNotPresent,
 							Args: []string{
 								snapshotProcessRestore,
-								fmt.Sprintf(`--host=%s`, databaseName),
+								fmt.Sprintf(`--host=%s`, elasticsearch.OffshootName()),
 								fmt.Sprintf(`--bucket=%s`, bucket),
 								fmt.Sprintf(`--folder=%s`, folderName),
 								fmt.Sprintf(`--snapshot=%s`, snapshot.Name),
@@ -65,7 +64,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							Env: []core.EnvVar{
 								{
 									Name:  "DB_USER",
-									Value: "admin",
+									Value: AdminUser,
 								},
 								{
 									Name: "DB_PASSWORD",
@@ -74,7 +73,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 											LocalObjectReference: core.LocalObjectReference{
 												Name: elasticsearch.Spec.DatabaseSecret.SecretName,
 											},
-											Key: "ADMIN_PASSWORD",
+											Key: KeyAdminPassword,
 										},
 									},
 								},
@@ -190,7 +189,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							Env: []core.EnvVar{
 								{
 									Name:  "DB_USER",
-									Value: "readall",
+									Value: ReadAllUser,
 								},
 								{
 									Name: "DB_PASSWORD",
@@ -199,7 +198,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 											LocalObjectReference: core.LocalObjectReference{
 												Name: elasticsearch.Spec.DatabaseSecret.SecretName,
 											},
-											Key: "READALL_PASSWORD",
+											Key: KeyReadAllPassword,
 										},
 									},
 								},

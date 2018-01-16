@@ -33,7 +33,7 @@ func (c *Controller) GetElasticClient(elasticsearch *api.Elasticsearch, url stri
 					},
 				},
 			}),
-			elastic.SetBasicAuth("admin", string(secret.Data["ADMIN_PASSWORD"])),
+			elastic.SetBasicAuth(AdminUser, string(secret.Data[KeyAdminPassword])),
 			elastic.SetURL(url),
 			elastic.SetHealthcheck(true),
 			elastic.SetSniff(false),
