@@ -99,10 +99,10 @@ func NewCmdRun(version string) *cobra.Command {
 	cmd.Flags().StringVar(&opt.Docker.ExporterTag, "exporter-tag", opt.Docker.ExporterTag, "Tag of kubedb/operator used as exporter")
 	cmd.Flags().StringVar(&opt.Address, "address", opt.Address, "Address to listen on for web interface and telemetry.")
 
-	flagset := flag.CommandLine
-	flagset.StringVar(&prometheusCrdGroup, "prometheus-crd-apigroup", prometheusCrdGroup, "prometheus CRD  API group name")
-	flagset.Var(&prometheusCrdKinds, "prometheus-crd-kinds", " - EXPERIMENTAL (could be removed in future releases) - customize CRD kind names")
-	cmd.Flags().AddGoFlagSet(flagset)
+	fs := flag.NewFlagSet("prometheus", flag.ExitOnError)
+	fs.StringVar(&prometheusCrdGroup, "prometheus-crd-apigroup", prometheusCrdGroup, "prometheus CRD  API group name")
+	fs.Var(&prometheusCrdKinds, "prometheus-crd-kinds", " - EXPERIMENTAL (could be removed in future releases) - customize CRD kind names")
+	cmd.Flags().AddGoFlagSet(fs)
 
 	return cmd
 }
