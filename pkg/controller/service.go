@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 
+	mon_api "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
@@ -129,8 +130,7 @@ func upsertServicePort(service *core.Service, elasticsearch *api.Elasticsearch) 
 			TargetPort: intstr.FromString(ElasticsearchRestPortName),
 		},
 	}
-	if elasticsearch.Spec.Monitor != nil &&
-		elasticsearch.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
+	if elasticsearch.GetMonitoringVendor() == mon_api.VendorPrometheus &&
 		elasticsearch.Spec.Monitor.Prometheus != nil {
 		desiredPorts = append(desiredPorts, core.ServicePort{
 			Name:       api.PrometheusExporterPortName,

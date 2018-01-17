@@ -71,11 +71,10 @@ func (c *Controller) setNewAgent(elasticsearch *api.Elasticsearch) error {
 func (c *Controller) manageMonitor(elasticsearch *api.Elasticsearch) error {
 	oldAgent := c.getOldAgent(elasticsearch)
 	if elasticsearch.Spec.Monitor != nil {
-		if oldAgent != nil {
-			if oldAgent.GetType() != elasticsearch.Spec.Monitor.Agent {
-				if _, err := oldAgent.Delete(elasticsearch.StatsAccessor()); err != nil {
-					log.Debugf("error in deleting Prometheus agent:", err)
-				}
+		if oldAgent != nil &&
+			oldAgent.GetType() != elasticsearch.Spec.Monitor.Agent {
+			if _, err := oldAgent.Delete(elasticsearch.StatsAccessor()); err != nil {
+				log.Debugf("error in deleting Prometheus agent:", err)
 			}
 		}
 		if _, err := c.addOrUpdateMonitor(elasticsearch); err != nil {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
+	mon_api "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil"
 	app_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
@@ -369,8 +370,7 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 }
 
 func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
-	if elasticsearch.Spec.Monitor != nil &&
-		elasticsearch.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
+	if elasticsearch.GetMonitoringVendor() == mon_api.VendorPrometheus &&
 		elasticsearch.Spec.Monitor.Prometheus != nil {
 		container := core.Container{
 			Name: "exporter",

@@ -1,5 +1,5 @@
-hash: 11159321f0e41bd6acb264cf40d2aa5ebf44e4bba48992ccacb31a842bb44423
-updated: 2018-01-16T16:33:12.29354421+06:00
+hash: bcd0f72feeb1a7937cada9d381d3163c7baded141ccff4ce7af7bf63a0943999
+updated: 2018-01-17T10:36:45.244830903+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -227,7 +227,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kubedb/apimachinery
-  version: d8312d3dac5933b603138bdfb9e7418655960f2b
+  version: dd6752738b2b2db05e6d7b5810d5b1e88dc3872f
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -243,11 +243,11 @@ imports:
   - pkg/storage
   - pkg/validator
 - name: github.com/kubernetes/apimachinery
-  version: d0c8c1c78cacdef77dfcc0ff70d9b7b01faeaf08
+  version: bc918d4f73e11cb3110730ec8e8ee02c58d6267c
   subpackages:
   - pkg/conversion
 - name: github.com/mailru/easyjson
-  version: d5b7844b561a7bc640052f1b935f7b800330d7e0
+  version: 32fa128f234d041f196a9f3e0fea5ac9772c08e1
   subpackages:
   - buffer
   - jlexer
@@ -383,7 +383,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: de3aa2cfa7f1c18dcb7f91738099bad280117b8e
+  version: 373a4c220f5c90e5b7ff7101779c5be385d171be
   subpackages:
   - gensupport
   - googleapi

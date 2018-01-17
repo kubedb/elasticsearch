@@ -11,7 +11,7 @@ import:
   vcs: git
   version: master
 - package: github.com/kubedb/apimachinery
-  version: master
+  version: mon-vendor
 - package: github.com/prometheus/common
   version: 3233b24a36715a2fe36d162260457857a56d672d
 - package: github.com/sirupsen/logrus
@@ -37,6 +37,9 @@ import:
   vcs: git
   version: v1.8.3
 - package: gopkg.in/olivere/elastic.v5
+  version: v5.0.61
+- package: github.com/mailru/easyjson
+  version: 32fa128f234d041f196a9f3e0fea5ac9772c08e1
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4
