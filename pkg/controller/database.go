@@ -22,29 +22,22 @@ func (c *Controller) GetElasticClient(elasticsearch *api.Elasticsearch, url stri
 		return nil, err
 	}
 
-	var client *elastic.Client
-	err = wait.PollImmediate(time.Second*30, time.Minute*5, func() (bool, error) {
-		client, err = elastic.NewClient(
-			elastic.SetHttpClient(&http.Client{
-				Timeout: time.Second * 5,
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: true,
-					},
+	client, err := elastic.NewClient(
+		elastic.SetHttpClient(&http.Client{
+			Timeout: time.Second * 5,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
 				},
-			}),
-			elastic.SetBasicAuth(AdminUser, string(secret.Data[KeyAdminPassword])),
-			elastic.SetURL(url),
-			elastic.SetHealthcheck(true),
-			elastic.SetSniff(false),
-		)
-		if err != nil {
-			return false, nil
-		}
-		return true, nil
-	})
+			},
+		}),
+		elastic.SetBasicAuth(AdminUser, string(secret.Data[KeyAdminPassword])),
+		elastic.SetURL(url),
+		elastic.SetHealthcheck(true),
+		elastic.SetSniff(false),
+	)
 	if err != nil {
-		return nil, errors.New("failed to connect Elasticsearch")
+		return nil, err
 	}
 	return client, nil
 }
@@ -74,14 +67,20 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 		url = fmt.Sprintf("https://127.0.0.1:%d", tunnel.Local)
 	}
 
-	client, err := c.GetElasticClient(elasticsearch, url)
+	var indices []string
+	err := wait.PollImmediate(time.Second*30, time.Minute*5, func() (bool, error) {
+		client, err := c.GetElasticClient(elasticsearch, url)
+		if err != nil {
+			return false, nil
+		}
+		indices, err = client.IndexNames()
+		if err != nil {
+			return false, nil
+		}
+		return true, nil
+	})
 	if err != nil {
-		return "", err
+		return "", errors.New("failed to get Elasticsearch indices")
 	}
-	indices, err := client.IndexNames()
-	if err != nil {
-		return "", err
-	}
-
 	return strings.Join(indices, ","), nil
 }

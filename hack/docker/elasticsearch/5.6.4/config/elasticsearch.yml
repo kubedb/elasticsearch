@@ -38,5 +38,4 @@ searchguard.ssl.http.truststore_filepath: certs/truststore.jks
 
 searchguard.authcz.admin_dn:
   - CN=sgadmin, O=Elasticsearch Operator
-
 ######## End Search Guard Configuration ########

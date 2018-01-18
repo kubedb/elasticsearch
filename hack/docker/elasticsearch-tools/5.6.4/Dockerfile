@@ -1,8 +1,6 @@
-FROM alpine:3.6
+FROM node:8.9-alpine
 
-RUN apk add --update nodejs nodejs-npm bash \
-    && rm -rf /var/cache/apk/* \
-    && npm install -g elasticdump@3.3.1
+RUN npm install elasticdump@3.3.1 -g
 
 COPY osm /usr/local/bin/osm
 COPY elasticsearch-tools.sh /usr/local/bin/elasticsearch-tools.sh
