@@ -9,7 +9,6 @@ import (
 
 	"github.com/appscode/go/homedir"
 	logs "github.com/appscode/go/log/golog"
-	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
 	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
@@ -68,7 +67,6 @@ var _ = BeforeSuite(func() {
 	//restClient := kubeClient.RESTClient()
 	apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
 	extClient := cs.NewForConfigOrDie(config)
-	promClient, err := pcm.NewForConfig(config)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -97,7 +95,7 @@ var _ = BeforeSuite(func() {
 		}
 
 		// Controller
-		ctrl = controller.New(config, kubeClient, apiExtKubeClient, extClient, promClient, cronController, opt)
+		ctrl = controller.New(config, kubeClient, apiExtKubeClient, extClient, nil, cronController, opt)
 		err = ctrl.Setup()
 		if err != nil {
 			log.Fatalln(err)
