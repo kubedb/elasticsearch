@@ -60,6 +60,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 								fmt.Sprintf(`--bucket=%s`, bucket),
 								fmt.Sprintf(`--folder=%s`, folderName),
 								fmt.Sprintf(`--snapshot=%s`, snapshot.Name),
+								fmt.Sprintf("--analytics=%v", c.opt.EnableAnalytics),
 							},
 							Env: []core.EnvVar{
 								{
@@ -185,6 +186,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 								fmt.Sprintf(`--bucket=%s`, bucket),
 								fmt.Sprintf(`--folder=%s`, folderName),
 								fmt.Sprintf(`--snapshot=%s`, snapshot.Name),
+								fmt.Sprintf("--analytics=%v", c.opt.EnableAnalytics),
 							},
 							Env: []core.EnvVar{
 								{

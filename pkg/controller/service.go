@@ -130,8 +130,7 @@ func upsertServicePort(service *core.Service, elasticsearch *api.Elasticsearch) 
 			TargetPort: intstr.FromString(ElasticsearchRestPortName),
 		},
 	}
-	if elasticsearch.GetMonitoringVendor() == mon_api.VendorPrometheus &&
-		elasticsearch.Spec.Monitor.Prometheus != nil {
+	if elasticsearch.GetMonitoringVendor() == mon_api.VendorPrometheus {
 		desiredPorts = append(desiredPorts, core.ServicePort{
 			Name:       api.PrometheusExporterPortName,
 			Protocol:   core.ProtocolTCP,

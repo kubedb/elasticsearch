@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	mon_api "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
@@ -174,11 +175,16 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	return nil
 }
 
+// Assign Default Monitoring Port if MonitoringSpec Exists
+// and the AgentVendor is Prometheus.
 func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
 	if elasticsearch.Spec.Monitor != nil &&
-		elasticsearch.Spec.Monitor.Prometheus != nil {
+		elasticsearch.GetMonitoringVendor() == mon_api.VendorPrometheus {
+		if elasticsearch.Spec.Monitor.Prometheus == nil {
+			elasticsearch.Spec.Monitor.Prometheus = &mon_api.PrometheusSpec{}
+		}
 		if elasticsearch.Spec.Monitor.Prometheus.Port == 0 {
-			es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+			ms, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 				in.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
 				return in
 			})
@@ -192,7 +198,7 @@ func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
 				)
 				return err
 			}
-			*elasticsearch.Spec.Monitor = *es.Spec.Monitor
+			elasticsearch.Spec = ms.Spec
 		}
 	}
 	return nil

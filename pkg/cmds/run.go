@@ -10,6 +10,7 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/runtime"
 	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/tools/analytics"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
@@ -24,6 +25,17 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var opt = controller.Options{
+	Docker: docker.Docker{
+		Registry: "kubedb",
+	},
+	OperatorNamespace: namespace(),
+	GoverningService:  "kubedb",
+	Address:           ":8080",
+	EnableAnalytics:   true,
+	AnalyticsClientID: analytics.ClientID(),
+}
+
 func NewCmdRun(version string) *cobra.Command {
 	var (
 		masterURL          string
@@ -32,16 +44,7 @@ func NewCmdRun(version string) *cobra.Command {
 		prometheusCrdKinds = pcm.DefaultCrdKinds
 	)
 
-	opt := controller.Options{
-		Docker: docker.Docker{
-			Registry:    "kubedb",
-			ExporterTag: stringz.Val(version, "canary"),
-		},
-		OperatorNamespace: namespace(),
-		GoverningService:  "kubedb",
-		Address:           ":8080",
-		AnalyticsClientID: analyticsClientID,
-	}
+	opt.Docker.ExporterTag = stringz.Val(version, "canary")
 
 	cmd := &cobra.Command{
 		Use:               "run",

@@ -1,5 +1,5 @@
-hash: bcd0f72feeb1a7937cada9d381d3163c7baded141ccff4ce7af7bf63a0943999
-updated: 2018-01-17T10:36:45.244830903+06:00
+hash: d0e1eff327a1d1dcc54f1eb0c4ec573de9c36f06316d02b87f55c8d58a2b19aa
+updated: 2018-01-18T11:02:35.741854755+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -7,7 +7,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 34bdbcf2efa80c0948ac6ab9fc3b5b977e98a34d
+  version: 96e813dab3066fff4fb8cc3ced871a794dbedf3f
   subpackages:
   - analytics
   - context
@@ -32,7 +32,7 @@ imports:
   - agents/prometheusbuiltin
   - api
 - name: github.com/appscode/kutil
-  version: 1246ec828f2f5024b54a1fe84ad4afaf3de0ed37
+  version: de69f2e242cc9e4df5dcf41d0d314e5fce818154
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -227,7 +227,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kubedb/apimachinery
-  version: dd6752738b2b2db05e6d7b5810d5b1e88dc3872f
+  version: 2d0777c52da98b5efaa6fbfcfd45dcbdabb2fa84
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -383,7 +383,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: 373a4c220f5c90e5b7ff7101779c5be385d171be
+  version: fa74edab4387514996aa08b9bc287882c18cb79a
   subpackages:
   - gensupport
   - googleapi

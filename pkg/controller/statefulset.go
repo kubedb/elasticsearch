@@ -370,15 +370,14 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 }
 
 func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
-	if elasticsearch.GetMonitoringVendor() == mon_api.VendorPrometheus &&
-		elasticsearch.Spec.Monitor.Prometheus != nil {
+	if elasticsearch.GetMonitoringVendor() == mon_api.VendorPrometheus {
 		container := core.Container{
 			Name: "exporter",
-			Args: []string{
+			Args: append([]string{
 				"export",
 				fmt.Sprintf("--address=:%d", api.PrometheusExporterPortNumber),
-				"--v=3",
-			},
+				fmt.Sprintf("--analytics=%v", c.opt.EnableAnalytics),
+			}, c.opt.LoggerOptions.ToFlags()...),
 			Image:           c.opt.Docker.GetOperatorImageWithTag(elasticsearch),
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{

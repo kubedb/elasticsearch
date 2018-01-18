@@ -184,7 +184,6 @@ func (c *Controller) runElasticsearch(key string) error {
 			})
 			util.AssignTypeKind(elasticsearch)
 			if err := c.create(elasticsearch); err != nil {
-				log.Errorln(err)
 				c.pushFailureEvent(elasticsearch, err.Error())
 				return err
 			}
