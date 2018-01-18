@@ -184,7 +184,7 @@ func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
 			elasticsearch.Spec.Monitor.Prometheus = &mon_api.PrometheusSpec{}
 		}
 		if elasticsearch.Spec.Monitor.Prometheus.Port == 0 {
-			ms, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+			es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 				in.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
 				return in
 			})
@@ -198,7 +198,7 @@ func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
 				)
 				return err
 			}
-			elasticsearch.Spec = ms.Spec
+			elasticsearch.Spec = es.Spec
 		}
 	}
 	return nil
