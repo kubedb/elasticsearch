@@ -232,7 +232,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.CreateSnapshot(snapshot)
 
 				By("Check for Successed snapshot")
-				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSuccessed))
+				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
 
 				if !skipSnapshotDataChecking {
 					By("Check for snapshot data")
@@ -342,7 +342,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.CreateSnapshot(snapshot)
 
 				By("Check for Successed snapshot")
-				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSuccessed))
+				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
 
 				By("Check for snapshot data")
 				f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
@@ -376,9 +376,9 @@ var _ = Describe("Elasticsearch", func() {
 		})
 
 		Context("Resume", func() {
-			var usedInitSpec bool
+			var usedInitialized bool
 			BeforeEach(func() {
-				usedInitSpec = false
+				usedInitialized = false
 			})
 
 			var shouldResumeSuccessfully = func() {
@@ -403,12 +403,13 @@ var _ = Describe("Elasticsearch", func() {
 				By("Wait for Running elasticsearch")
 				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
-				elasticsearch, err = f.GetElasticsearch(elasticsearch.ObjectMeta)
+				es, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				if usedInitSpec {
-					Expect(elasticsearch.Spec.Init).Should(BeNil())
-					Expect(elasticsearch.Annotations[api.GenericInitSpec]).ShouldNot(BeEmpty())
+				*elasticsearch = *es
+				if usedInitialized {
+					_, ok := elasticsearch.Annotations[api.AnnotationInitialized]
+					Expect(ok).Should(BeTrue())
 				}
 			}
 

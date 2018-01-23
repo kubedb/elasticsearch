@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
 
+	core_util "github.com/appscode/kutil/core/v1"
+	meta_util "github.com/appscode/kutil/meta"
 	"github.com/appscode/go/log"
 	mon_api "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil"
@@ -104,14 +105,15 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		)
 	}
 
-	initSpec := elasticsearch.Annotations[api.GenericInitSpec]
-	if initSpec == "" && elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.SnapshotSource != nil {
+	if _, err := meta_util.GetString(elasticsearch.Annotations, api.AnnotationInitialized); err == kutil.ErrNotFound &&
+		elasticsearch.Spec.Init != nil &&
+		elasticsearch.Spec.Init.SnapshotSource != nil {
 		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.Status.Phase = api.DatabasePhaseInitializing
 			return in
 		})
 		if err != nil {
-			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			c.recorder.Eventf(elasticsearch, core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
 		elasticsearch.Status = es.Status
@@ -131,31 +133,14 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			return in
 		})
 		if err != nil {
-			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			c.recorder.Eventf(elasticsearch, core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 			return err
 		}
 		elasticsearch.Status = es.Status
 	}
 
-	if elasticsearch.Spec.Init != nil {
-		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-			if in.Annotations == nil {
-				in.Annotations = make(map[string]string)
-			}
-
-			initSpec, err := json.Marshal(elasticsearch.Spec.Init)
-			if err == nil {
-				in.Annotations[api.GenericInitSpec] = string(initSpec)
-			}
-			in.Spec.Init = nil
-			return in
-		})
-		if err != nil {
-			c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-			return err
-		}
-		elasticsearch.Annotations = es.Annotations
-		elasticsearch.Spec.Init = es.Spec.Init
+	if err := c.setInitializedAnnotation(elasticsearch); err != nil {
+		return err
 	}
 
 	// Ensure Schedule backup
@@ -171,6 +156,23 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		)
 		log.Errorln(err)
 		return nil
+	}
+	return nil
+}
+
+func (c *Controller) setInitializedAnnotation(elasticsearch *api.Elasticsearch) error {
+	if _, err := meta_util.GetString(elasticsearch.Annotations, api.AnnotationInitialized); err == kutil.ErrNotFound &&
+		elasticsearch.Spec.Init != nil {
+		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+			in.Annotations = core_util.UpsertMap(in.Annotations, map[string]string{
+				api.AnnotationInitialized: "",
+			})
+			return in
+		})
+		if err != nil {
+			return err
+		}
+		elasticsearch.Annotations = es.Annotations
 	}
 	return nil
 }
@@ -198,7 +200,7 @@ func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
 				)
 				return err
 			}
-			elasticsearch.Spec = es.Spec
+			elasticsearch.Spec.Monitor = es.Spec.Monitor
 		}
 	}
 	return nil
@@ -239,21 +241,6 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) erro
 			elasticsearch.Name, dormantDb.Name))
 	}
 
-	// Check InitSpec
-	initSpecAnnotationStr := dormantDb.Annotations[api.GenericInitSpec]
-	if initSpecAnnotationStr != "" {
-		var initSpecAnnotation *api.InitSpec
-		if err := json.Unmarshal([]byte(initSpecAnnotationStr), &initSpecAnnotation); err != nil {
-			return sendEvent(err.Error())
-		}
-
-		if elasticsearch.Spec.Init != nil {
-			if !reflect.DeepEqual(initSpecAnnotation, elasticsearch.Spec.Init) {
-				return sendEvent("InitSpec mismatches with DormantDatabase annotation")
-			}
-		}
-	}
-
 	// Check Origin Spec
 	drmnOriginSpec := dormantDb.Spec.Origin.Spec.Elasticsearch
 	originalSpec := elasticsearch.Spec
@@ -273,6 +260,11 @@ func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) erro
 
 	if !reflect.DeepEqual(drmnOriginSpec, &originalSpec) {
 		return sendEvent("Elasticsearch spec mismatches with OriginSpec in DormantDatabases")
+	}
+
+	if err := c.setInitializedAnnotation(elasticsearch); err != nil {
+		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+		return err
 	}
 
 	return kutildb.DeleteDormantDatabase(c.ExtClient, dormantDb.ObjectMeta)
@@ -352,10 +344,6 @@ func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) {
 	}
 }
 
-const (
-	durationCheckRestoreJob = time.Minute * 30
-)
-
 func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 	snapshotSource := elasticsearch.Spec.Init.SnapshotSource
 	// Event for notification that kubernetes objects are creating
@@ -384,8 +372,8 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Client.CoreV1().Secrets(secret.Namespace).Create(secret)
-	if err != nil && !kerr.IsAlreadyExists(err) {
+	secret, err = c.Client.CoreV1().Secrets(secret.Namespace).Create(secret)
+	if err != nil {
 		return err
 	}
 
@@ -394,8 +382,16 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 		return err
 	}
 
-	jobSuccess := c.CheckDatabaseRestoreJob(snapshot, job, elasticsearch, c.recorder, durationCheckRestoreJob)
-	if jobSuccess {
+	if err := c.SetJobOwnerReference(snapshot, job); err != nil {
+		return err
+	}
+
+	snap, err := kutildb.WaitUntilSnapshotCompletion(c.ExtClient, snapshot.ObjectMeta)
+	if err != nil {
+		return err
+	}
+
+	if snap.Status.Phase == api.SnapshotPhaseSucceeded {
 		c.recorder.Event(
 			elasticsearch.ObjectReference(),
 			core.EventTypeNormal,

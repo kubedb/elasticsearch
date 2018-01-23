@@ -1,5 +1,8 @@
 FROM node:8.9-alpine
 
+RUN set -x \
+  && apk add --update --no-cache bash ca-certificates
+
 RUN npm install elasticdump@3.3.1 -g
 
 COPY osm /usr/local/bin/osm
