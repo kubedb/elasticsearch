@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="1" failures="0" time="84.233115046">
-      <testcase name="Elasticsearch Test General - should run successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="Elasticsearch Test General With PVC should run successfully" classname="e2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
+  <testsuite tests="10" failures="0" time="2226.526593734">
+      <testcase name="Elasticsearch Test General - should run successfully" classname="e2e Suite" time="113.808959497"></testcase>
+      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="226.739620547"></testcase>
+      <testcase name="Elasticsearch Test General With PVC should run successfully" classname="e2e Suite" time="251.599103967"></testcase>
       <testcase name="Elasticsearch Test DoNotPause should work successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Elasticsearch Test Snapshot In Local should take Snapshot successfully" classname="e2e Suite" time="0">
+      <testcase name="Elasticsearch Test Snapshot In Local should take Snapshot successfully" classname="e2e Suite" time="131.608837614"></testcase>
+      <testcase name="Elasticsearch Test Snapshot In S3 should take Snapshot successfully" classname="e2e Suite" time="117.47784114"></testcase>
+      <testcase name="Elasticsearch Test Snapshot In GCS should take Snapshot successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
+      <testcase name="Elasticsearch Test Snapshot In Azure should take Snapshot successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Snapshot In Swift should take Snapshot successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test Initialize should run successfully" classname="e2e Suite" time="369.077203561"></testcase>
+      <testcase name="Elasticsearch Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="231.210840166"></testcase>
+      <testcase name="Elasticsearch Test Resume With original Elasticsearch should resume DormantDatabase successfully" classname="e2e Suite" time="242.286040244"></testcase>
+      <testcase name="Elasticsearch Test SnapshotScheduler With Startup should run schedular successfully" classname="e2e Suite" time="237.610279489"></testcase>
+      <testcase name="Elasticsearch Test SnapshotScheduler With Update should run schedular successfully" classname="e2e Suite" time="298.684090537"></testcase>
   </testsuite>

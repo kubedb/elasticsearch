@@ -23,7 +23,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 		api.LabelDatabaseKind: api.ResourceKindElasticsearch,
 	}
 	jobAnnotation := map[string]string{
-		api.AnnotationJobType: snapshotProcessRestore,
+		api.AnnotationJobType: api.JobTypeRestore,
 	}
 
 	backupSpec := snapshot.Spec.SnapshotStorageSpec
@@ -49,9 +49,9 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: api.SchemeGroupVersion.String(),
-					Kind:       api.ResourceKindSnapshot,
-					Name:       snapshot.Name,
-					UID:        snapshot.UID,
+					Kind:       api.ResourceKindElasticsearch,
+					Name:       elasticsearch.Name,
+					UID:        elasticsearch.UID,
 				},
 			},
 		},
@@ -154,7 +154,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 		api.LabelDatabaseKind: api.ResourceKindElasticsearch,
 	}
 	jobAnnotation := map[string]string{
-		api.AnnotationJobType: snapshotProcessBackup,
+		api.AnnotationJobType: api.JobTypeBackup,
 	}
 	backupSpec := snapshot.Spec.SnapshotStorageSpec
 	bucket, err := backupSpec.Container()

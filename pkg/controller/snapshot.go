@@ -7,7 +7,6 @@ import (
 	"github.com/kubedb/apimachinery/pkg/docker"
 	amv "github.com/kubedb/apimachinery/pkg/validator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func (c *Controller) ValidateSnapshot(snapshot *api.Snapshot) error {
@@ -27,14 +26,6 @@ func (c *Controller) ValidateSnapshot(snapshot *api.Snapshot) error {
 	}
 
 	return amv.ValidateSnapshotSpec(c.Client, snapshot.Spec.SnapshotStorageSpec, snapshot.Namespace)
-}
-
-func (c *Controller) GetDatabase(snapshot *api.Snapshot) (runtime.Object, error) {
-	elasticsearch, err := c.ExtClient.Elasticsearchs(snapshot.Namespace).Get(snapshot.Spec.DatabaseName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return elasticsearch, nil
 }
 
 func (c *Controller) WipeOutSnapshot(snapshot *api.Snapshot) error {
