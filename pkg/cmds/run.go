@@ -12,10 +12,8 @@ import (
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/kutil/tools/analytics"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
 	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
-	"github.com/kubedb/apimachinery/pkg/migrator"
 	"github.com/kubedb/elasticsearch/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/docker"
 	"github.com/spf13/cobra"
@@ -70,16 +68,6 @@ func NewCmdRun(version string) *cobra.Command {
 			cronController.StartCron()
 			// Stop Cron
 			defer cronController.StopCron()
-
-			tprMigrator := migrator.NewMigrator(client, apiExtKubeClient, extClient)
-			err = tprMigrator.RunMigration(
-				&api.Elasticsearch{},
-				&api.Snapshot{},
-				&api.DormantDatabase{},
-			)
-			if err != nil {
-				log.Fatalln(err)
-			}
 
 			w := controller.New(config, client, apiExtKubeClient, extClient, promClient, cronController, opt)
 			defer runtime.HandleCrash()
