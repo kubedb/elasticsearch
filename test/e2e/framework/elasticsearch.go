@@ -62,16 +62,16 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 }
 
 func (f *Framework) CreateElasticsearch(obj *api.Elasticsearch) error {
-	_, err := f.extClient.Elasticsearchs(obj.Namespace).Create(obj)
+	_, err := f.extClient.Elasticsearches(obj.Namespace).Create(obj)
 	return err
 }
 
 func (f *Framework) GetElasticsearch(meta metav1.ObjectMeta) (*api.Elasticsearch, error) {
-	return f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	return f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 }
 
 func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func(*api.Elasticsearch) *api.Elasticsearch) (*api.Elasticsearch, error) {
-	elasticsearch, err := f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -80,13 +80,13 @@ func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
-	return f.extClient.Elasticsearchs(meta.Namespace).Delete(meta.Name, nil)
+	return f.extClient.Elasticsearches(meta.Namespace).Delete(meta.Name, nil)
 }
 
 func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			_, err := f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			if err != nil {
 				if kerr.IsNotFound(err) {
 					return false
@@ -104,7 +104,7 @@ func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncA
 func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			elasticsearch, err := f.extClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			elasticsearch, err := f.extClient.Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return elasticsearch.Status.Phase == api.DatabasePhaseRunning
 		},
@@ -143,7 +143,7 @@ func (f *Framework) EventuallyElasticsearchIndicesCount(client *elastic.Client) 
 }
 
 func (f *Framework) CleanElasticsearch() {
-	elasticsearchList, err := f.extClient.Elasticsearchs(f.namespace).List(metav1.ListOptions{})
+	elasticsearchList, err := f.extClient.Elasticsearches(f.namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return
 	}

@@ -421,7 +421,7 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 }
 
 func (c *Controller) GetDatabase(meta metav1.ObjectMeta) (runtime.Object, error) {
-	elasticsearch, err := c.ExtClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := c.ExtClient.Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,7 @@ func (c *Controller) GetDatabase(meta metav1.ObjectMeta) (runtime.Object, error)
 }
 
 func (c *Controller) SetDatabaseStatus(meta metav1.ObjectMeta, phase api.DatabasePhase, reason string) error {
-	elasticsearch, err := c.ExtClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := c.ExtClient.Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -443,7 +443,7 @@ func (c *Controller) SetDatabaseStatus(meta metav1.ObjectMeta, phase api.Databas
 }
 
 func (c *Controller) UpsertDatabaseAnnotation(meta metav1.ObjectMeta, annotation map[string]string) error {
-	elasticsearch, err := c.ExtClient.Elasticsearchs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := c.ExtClient.Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
