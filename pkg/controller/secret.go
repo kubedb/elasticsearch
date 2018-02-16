@@ -111,11 +111,6 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 	if err != nil {
 		return nil, err
 	}
-	clientKey, clientCert, err := createClientCertificate(certPath, caKey, caCert, pass)
-	if err != nil {
-		return nil, err
-	}
-
 	root, err := ioutil.ReadFile(fmt.Sprintf("%s/root.jks", certPath))
 	if err != nil {
 		return nil, err
@@ -129,9 +124,27 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 		return nil, err
 	}
 
-	client, err := ioutil.ReadFile(fmt.Sprintf("%s/client.jks", certPath))
-	if err != nil {
-		return nil, err
+	data := map[string][]byte{
+		"root.jks":    root,
+		"node.jks":    node,
+		"sgadmin.jks": sgadmin,
+	}
+
+	if elasticsearch.Spec.EnableSSL {
+		clientKey, clientCert, err := createClientCertificate(certPath, caKey, caCert, pass)
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := ioutil.ReadFile(fmt.Sprintf("%s/client.jks", certPath))
+		if err != nil {
+			return nil, err
+		}
+
+		data["ca.pem"] = cert.EncodeCertPEM(caCert)
+		data["client.jks"] = client
+		data["client.pem"] = cert.EncodeCertPEM(clientCert)
+		data["client-key.pem"] = cert.EncodePrivateKeyPEM(clientKey)
 	}
 
 	name := fmt.Sprintf("%v-cert", elasticsearch.OffshootName())
@@ -144,15 +157,7 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 			},
 		},
 		Type: core.SecretTypeOpaque,
-		Data: map[string][]byte{
-			"ca.pem":         cert.EncodeCertPEM(caCert),
-			"root.jks":       root,
-			"node.jks":       node,
-			"sgadmin.jks":    sgadmin,
-			"client.jks":     client,
-			"client.pem":     cert.EncodeCertPEM(clientCert),
-			"client-key.pem": cert.EncodePrivateKeyPEM(clientKey),
-		},
+		Data: data,
 		StringData: map[string]string{
 			"key_pass": pass,
 		},

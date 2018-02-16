@@ -11,11 +11,8 @@ if [ "$SSL_ENABLE" == true ]; then
     SERVER='https://localhost:9200'
 fi
 
-curl "$SERVER"
-
 until curl -s "$SERVER" --insecure
 do
-    echo "waiting for server"
     sleep 0.1
 done
 
