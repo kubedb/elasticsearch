@@ -66,7 +66,7 @@ func (c *Controller) ensureStatefulSet(
 			in = upsertDatabaseSecret(in, elasticsearch.Spec.DatabaseSecret.SecretName)
 		}
 
-		in = upsertCertificate(in, elasticsearch.Spec.CertificateSecret.SecretName, isClient)
+		in = upsertCertificate(in, elasticsearch.Spec.CertificateSecret.SecretName, isClient, elasticsearch.Spec.EnableSSL)
 		in = upsertDataVolume(in, elasticsearch)
 		in.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
 
@@ -425,7 +425,7 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 	return statefulSet
 }
 
-func upsertCertificate(statefulSet *apps.StatefulSet, secretName string, isClientNode bool) *apps.StatefulSet {
+func upsertCertificate(statefulSet *apps.StatefulSet, secretName string, isClientNode, isEnalbeSSL bool) *apps.StatefulSet {
 	addCertVolume := func() *core.SecretVolumeSource {
 		svs := &core.SecretVolumeSource{
 			SecretName: secretName,
@@ -437,11 +437,15 @@ func upsertCertificate(statefulSet *apps.StatefulSet, secretName string, isClien
 				{
 					Key:  "node.jks",
 					Path: "node.jks",
-				}, {
-					Key:  "client.jks",
-					Path: "-client.jks",
 				},
 			},
+		}
+
+		if isEnalbeSSL {
+			svs.Items = append(svs.Items, core.KeyToPath{
+				Key:  "client.jks",
+				Path: "client.jks",
+			})
 		}
 
 		if isClientNode {
