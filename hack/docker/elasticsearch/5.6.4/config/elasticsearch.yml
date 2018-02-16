@@ -42,5 +42,4 @@ searchguard.ssl.http.truststore_password: ${KEY_PASS}
 
 searchguard.authcz.admin_dn:
   - 'CN=sgadmin,O=Elasticsearch Operator'
-
 ######## End Search Guard Configuration ########
