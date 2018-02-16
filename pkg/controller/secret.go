@@ -2,19 +2,19 @@ package controller
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/go/ioutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"golang.org/x/crypto/bcrypt"
+	"io/ioutil"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/cert"
+	"os"
 )
 
 const (
@@ -99,28 +99,28 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 	certPath := fmt.Sprintf("%v/%v", certsDir, rand.Characters(3))
 	os.Mkdir(certPath, os.ModePerm)
 
-	caKey, caCert, err := createCaCertificate(certPath)
+	caKey, caCert, pass, err := createCaCertificate(certPath)
 	if err != nil {
 		return nil, err
 	}
-	err = createNodeCertificate(certPath, elasticsearch, caKey, caCert)
+	err = createNodeCertificate(certPath, elasticsearch, caKey, caCert, pass)
 	if err != nil {
 		return nil, err
 	}
-	err = createAdminCertificate(certPath, caKey, caCert)
+	err = createAdminCertificate(certPath, caKey, caCert, pass)
 	if err != nil {
 		return nil, err
 	}
-	err = createClientCertificate(certPath, caKey, caCert)
+	clientKey, clientCert, err := createClientCertificate(certPath, caKey, caCert, pass)
 	if err != nil {
 		return nil, err
 	}
 
-	truststore, err := ioutil.ReadFile(fmt.Sprintf("%s/truststore.jks", certPath))
+	root, err := ioutil.ReadFile(fmt.Sprintf("%s/root.jks", certPath))
 	if err != nil {
 		return nil, err
 	}
-	keyStore, err := ioutil.ReadFile(fmt.Sprintf("%s/keystore.jks", certPath))
+	node, err := ioutil.ReadFile(fmt.Sprintf("%s/node.jks", certPath))
 	if err != nil {
 		return nil, err
 	}
@@ -129,22 +129,9 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 		return nil, err
 	}
 
-	clientKey, err := ioutil.ReadFile(fmt.Sprintf("%s/client-key.pem", certPath))
+	client, err := ioutil.ReadFile(fmt.Sprintf("%s/client.jks", certPath))
 	if err != nil {
 		return nil, err
-	}
-	clientCert, err := ioutil.ReadFile(fmt.Sprintf("%s/client.pem", certPath))
-	if err != nil {
-		return nil, err
-	}
-
-	data := map[string][]byte{
-		"ca.pem":         cert.EncodeCertPEM(caCert),
-		"truststore.jks": []byte(truststore),
-		"keystore.jks":   []byte(keyStore),
-		"sgadmin.jks":    []byte(sgadmin),
-		"client-key.pem": []byte(clientKey),
-		"client.pem":     []byte(clientCert),
 	}
 
 	name := fmt.Sprintf("%v-cert", elasticsearch.OffshootName())
@@ -157,7 +144,18 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 			},
 		},
 		Type: core.SecretTypeOpaque,
-		Data: data,
+		Data: map[string][]byte{
+			"ca.pem":         cert.EncodeCertPEM(caCert),
+			"root.jks":       root,
+			"node.jks":       node,
+			"sgadmin.jks":    sgadmin,
+			"client.jks":     client,
+			"client.pem":     cert.EncodeCertPEM(clientCert),
+			"client-key.pem": cert.EncodePrivateKeyPEM(clientKey),
+		},
+		StringData: map[string]string{
+			"key_pass": pass,
+		},
 	}
 	if _, err := c.Client.CoreV1().Secrets(elasticsearch.Namespace).Create(secret); err != nil {
 		return nil, err

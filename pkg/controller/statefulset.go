@@ -281,8 +281,9 @@ func upsertInitContainer(statefulSet *apps.StatefulSet) *apps.StatefulSet {
 
 func (c *Controller) upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
 	container := core.Container{
-		Name:  api.ResourceNameElasticsearch,
-		Image: c.opt.Docker.GetImageWithTag(elasticsearch),
+		Name:            api.ResourceNameElasticsearch,
+		Image:           c.opt.Docker.GetImageWithTag(elasticsearch),
+		ImagePullPolicy: core.PullAlways,
 		SecurityContext: &core.SecurityContext{
 			Privileged: types.BoolP(false),
 			Capabilities: &core.Capabilities{
@@ -322,6 +323,17 @@ func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, 
 		{
 			Name:  "SSL_ENABLE",
 			Value: fmt.Sprintf("%v", elasticsearch.Spec.EnableSSL),
+		},
+		{
+			Name: "KEY_PASS",
+			ValueFrom: &core.EnvVarSource{
+				SecretKeyRef: &core.SecretKeySelector{
+					LocalObjectReference: core.LocalObjectReference{
+						Name: elasticsearch.Spec.CertificateSecret.SecretName,
+					},
+					Key: "key_pass",
+				},
+			},
 		},
 	}
 
@@ -419,12 +431,15 @@ func upsertCertificate(statefulSet *apps.StatefulSet, secretName string, isClien
 			SecretName: secretName,
 			Items: []core.KeyToPath{
 				{
-					Key:  "truststore.jks",
-					Path: "truststore.jks",
+					Key:  "root.jks",
+					Path: "root.jks",
 				},
 				{
-					Key:  "keystore.jks",
-					Path: "keystore.jks",
+					Key:  "node.jks",
+					Path: "node.jks",
+				}, {
+					Key:  "client.jks",
+					Path: "-client.jks",
 				},
 			},
 		}

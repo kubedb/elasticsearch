@@ -5,12 +5,23 @@ certs="/elasticsearch/config/certs"
 
 sync
 
-until curl -s 'https://localhost:9200' --insecure > /dev/null
+SERVER='http://localhost:9200'
+
+if [ "$SSL_ENABLE" == true ]; then
+    SERVER='https://localhost:9200'
+fi
+
+curl "$SERVER"
+
+until curl -s "$SERVER" --insecure
 do
+    echo "waiting for server"
     sleep 0.1
 done
 
 "$searchguard"/tools/sgadmin.sh \
     -ks "$certs"/sgadmin.jks \
-    -ts "$certs"/truststore.jks \
+    -kspass "$KEY_PASS" \
+    -ts "$certs"/root.jks \
+    -tspass "$KEY_PASS" \
     -cd "$searchguard"/sgconfig -icl -nhnv

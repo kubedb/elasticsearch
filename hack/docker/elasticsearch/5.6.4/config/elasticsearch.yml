@@ -29,13 +29,18 @@ discovery:
     minimum_master_nodes: ${NUMBER_OF_MASTERS}
 
 ######## Start Search Guard Configuration ########
-searchguard.ssl.transport.keystore_filepath: certs/keystore.jks
-searchguard.ssl.transport.truststore_filepath: certs/truststore.jks
+searchguard.ssl.transport.keystore_filepath: certs/node.jks
+searchguard.ssl.transport.keystore_password: ${KEY_PASS}
+searchguard.ssl.transport.truststore_filepath: certs/root.jks
+searchguard.ssl.transport.truststore_password: ${KEY_PASS}
 searchguard.ssl.transport.enforce_hostname_verification: false
-searchguard.ssl.http.enabled: true
-searchguard.ssl.http.keystore_filepath: certs/keystore.jks
-searchguard.ssl.http.truststore_filepath: certs/truststore.jks
+searchguard.ssl.http.enabled: ${SSL_ENABLE}
+searchguard.ssl.http.keystore_filepath: certs/client.jks
+searchguard.ssl.http.keystore_password: ${KEY_PASS}
+searchguard.ssl.http.truststore_filepath: certs/root.jks
+searchguard.ssl.http.truststore_password: ${KEY_PASS}
 
 searchguard.authcz.admin_dn:
-  - CN=sgadmin, O=Elasticsearch Operator
+  - 'CN=sgadmin,O=Elasticsearch Operator'
+
 ######## End Search Guard Configuration ########
