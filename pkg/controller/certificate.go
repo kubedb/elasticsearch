@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -17,6 +16,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/ioutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/pkg/errors"
 	"k8s.io/client-go/util/cert"
 )
 
