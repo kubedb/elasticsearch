@@ -283,7 +283,6 @@ func (c *Controller) upsertContainer(statefulSet *apps.StatefulSet, elasticsearc
 	container := core.Container{
 		Name:            api.ResourceNameElasticsearch,
 		Image:           c.opt.Docker.GetImageWithTag(elasticsearch),
-		ImagePullPolicy: core.PullAlways,
 		SecurityContext: &core.SecurityContext{
 			Privileged: types.BoolP(false),
 			Capabilities: &core.Capabilities{
