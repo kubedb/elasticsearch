@@ -23,7 +23,7 @@ func ExportReport(
 ) {
 	startTime := metav1.Now()
 
-	elastic, err := dbClient.Elasticsearchs(namespace).Get(kubedbName, metav1.GetOptions{})
+	elastic, err := dbClient.Elasticsearches(namespace).Get(kubedbName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			http.Error(w, fmt.Sprintf(`Elasticsearch "%v" not found`, kubedbName), http.StatusNotFound)

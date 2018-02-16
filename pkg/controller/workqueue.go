@@ -21,10 +21,10 @@ import (
 func (c *Controller) initWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (rt.Object, error) {
-			return c.ExtClient.Elasticsearchs(metav1.NamespaceAll).List(metav1.ListOptions{})
+			return c.ExtClient.Elasticsearches(metav1.NamespaceAll).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.ExtClient.Elasticsearchs(metav1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.ExtClient.Elasticsearches(metav1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 
@@ -116,7 +116,7 @@ func (c *Controller) processNextItem() bool {
 		return false
 	}
 	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
-	// This allows safe parallel processing because two Elasticsearchs with the same key are never processed in
+	// This allows safe parallel processing because two Elasticsearches with the same key are never processed in
 	// parallel.
 	defer c.queue.Done(key)
 

@@ -327,7 +327,7 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 
 func (c *Controller) deleteSecret(dormantDb *api.DormantDatabase, secretVolume *core.SecretVolumeSource) error {
 	secretFound := false
-	elasticsearchList, err := c.ExtClient.Elasticsearchs(dormantDb.Namespace).List(metav1.ListOptions{})
+	elasticsearchList, err := c.ExtClient.Elasticsearches(dormantDb.Namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
