@@ -47,7 +47,7 @@ func createCaCertificate(certPath string) (*rsa.PrivateKey, *x509.Certificate, s
 		return nil, nil, "", errors.New("failed to write CA certificate")
 	}
 
-	pass := rand.GeneratePassword()
+	pass := rand.Characters(6)
 
 	_, err = exec.Command(
 		"keytool",
