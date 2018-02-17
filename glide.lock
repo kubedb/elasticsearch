@@ -1,5 +1,5 @@
 hash: 744b8aa6bb62c77db1ade1299ff3d32ed708555850ca55e3cdaed62f75dbe68b
-updated: 2018-02-16T09:28:41.857359116-08:00
+updated: 2018-02-17T11:48:24.642495852-08:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -135,7 +135,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/go-ini/ini
-  version: 300e940a926eb277d3901b20bdfcc54928ad3642
+  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -150,7 +150,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -223,13 +223,13 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kubedb/apimachinery
-  version: 1549a565eac2c3f98b1ae68621b36eca7f8e20fc
+  version: 89214d2501bcf65be0ccfa067086d9dc5f0c511d
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
-  - client/scheme
-  - client/typed/kubedb/v1alpha1
-  - client/typed/kubedb/v1alpha1/util
+  - client/clientset/versioned/scheme
+  - client/clientset/versioned/typed/kubedb/v1alpha1
+  - client/clientset/versioned/typed/kubedb/v1alpha1/util
   - pkg/controller
   - pkg/controller/dormant_database
   - pkg/controller/job
@@ -385,7 +385,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: 3acc4f94acb5b02441cce6db56fc82a1016eadb4
+  version: c7a403bb5fe12fe4644bb956edd5cd677626120a
   subpackages:
   - gensupport
   - googleapi

@@ -4,7 +4,7 @@ import (
 	"log"
 
 	logs "github.com/appscode/go/log/golog"
-	_ "github.com/kubedb/apimachinery/client/scheme"
+	_ "github.com/kubedb/apimachinery/client/clientset/versioned/scheme"
 	"github.com/kubedb/elasticsearch/pkg/cmds"
 )
 

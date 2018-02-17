@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	kutildb "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
+	kutildb "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"golang.org/x/crypto/bcrypt"
 	core "k8s.io/api/core/v1"
