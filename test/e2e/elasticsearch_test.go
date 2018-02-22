@@ -417,7 +417,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
 			})
 
-			FContext("With original Elasticsearch", func() {
+			Context("With original Elasticsearch", func() {
 				It("should resume DormantDatabase successfully", func() {
 					// Create and wait for running Elasticsearch
 					createAndWaitForRunning()
