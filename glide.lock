@@ -1,5 +1,5 @@
 hash: 744b8aa6bb62c77db1ade1299ff3d32ed708555850ca55e3cdaed62f75dbe68b
-updated: 2018-02-24T12:05:32.801870526-08:00
+updated: 2018-02-26T16:58:31.213262237+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -7,7 +7,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 83e7fc1967ed737eedfc87da60c42e9fc4dc684c
+  version: 2156eaa22a69cb218aa1dbc0ba2fd7a91e168a66
   subpackages:
   - analytics
   - context
@@ -35,7 +35,7 @@ imports:
   version: 20ffc2be6a1d88387bc6f6babe7bfe312c58b509
   subpackages:
   - apiextensions/v1beta1
-  - apps/v1beta1
+  - apps/v1
   - core/v1
   - meta
   - tools/analytics
@@ -203,7 +203,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kubedb/apimachinery
-  version: d38f4e5f512eddc966e65243a26026acf5ae4575
+  version: 37caef566d41ed47313b44975186c335dde08123
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -369,7 +369,7 @@ imports:
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
   subpackages:
   - internal
   - internal/app_identity
@@ -397,7 +397,7 @@ imports:
   repo: https://github.com/appscode/cron.git
   vcs: git
 - name: gopkg.in/yaml.v2
-  version: 7f97868eec74b32b0982dd158a51a446d1da7eb5
+  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
   version: af4bc157c3a209798fc897f6d4aaaaeb6c2e0d6a
   subpackages:
@@ -442,6 +442,9 @@ imports:
   - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
+  - pkg/apimachinery
+  - pkg/apimachinery/announced
+  - pkg/apimachinery/registered
   - pkg/apis/meta/internalversion
   - pkg/apis/meta/v1
   - pkg/apis/meta/v1/unstructured
