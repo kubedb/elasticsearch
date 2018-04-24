@@ -13,7 +13,7 @@ import:
   vcs: git
   version: master
 - package: github.com/kubedb/apimachinery
-  version: master
+  version: 0.8.0-beta.2
 - package: github.com/pkg/errors
   version: v0.8.0
 - package: github.com/prometheus/common
@@ -36,6 +36,8 @@ import:
   version: kubernetes-1.9.0
 - package: k8s.io/kubernetes
   version: v1.9.0
+- package: github.com/appscode/kubernetes-webhook-util
+  version: release-6.0
 - package: gopkg.in/olivere/elastic.v5
   version: v5.0.61
 - package: github.com/mailru/easyjson
