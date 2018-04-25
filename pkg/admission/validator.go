@@ -103,6 +103,11 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 				oldElasticsearch.Spec.DatabaseSecret = elasticsearch.Spec.DatabaseSecret
 			}
 
+			// Allow changing CertificateSecret only if there was no secret have set up yet.
+			if oldElasticsearch.Spec.CertificateSecret == nil {
+				oldElasticsearch.Spec.CertificateSecret = elasticsearch.Spec.CertificateSecret
+			}
+
 			if err := validateUpdate(elasticsearch, oldElasticsearch, req.Kind.Kind); err != nil {
 				return hookapi.StatusBadRequest(fmt.Errorf("%v", err))
 			}

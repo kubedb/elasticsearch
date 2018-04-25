@@ -56,7 +56,7 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 		clientPodName := fmt.Sprintf("%v-0", clientName)
 		tunnel := portforward.NewTunnel(
 			c.Client.CoreV1().RESTClient(),
-			c.config,
+			c.restConfig,
 			elasticsearch.Namespace,
 			clientPodName,
 			ElasticsearchRestPort,

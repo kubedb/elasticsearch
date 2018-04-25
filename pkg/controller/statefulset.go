@@ -37,7 +37,13 @@ func (c *Controller) ensureStatefulSet(
 		Namespace: elasticsearch.Namespace,
 	}
 
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+	if rerr != nil {
+		return kutil.VerbUnchanged, rerr
+	}
+
 	statefulSet, vt, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulSetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
 		in = upsertObjectMeta(in, labels, elasticsearch.StatefulSetAnnotations())
 
 		in.Spec.Replicas = types.Int32P(replicas)
@@ -46,7 +52,7 @@ func (c *Controller) ensureStatefulSet(
 			MatchLabels: in.Labels,
 		}
 
-		in.Spec.ServiceName = c.opt.GoverningService
+		in.Spec.ServiceName = c.GoverningService
 		in.Spec.Template.Labels = in.Labels
 
 		in = upsertInitContainer(in)
@@ -298,8 +304,8 @@ func upsertInitContainer(statefulSet *apps.StatefulSet) *apps.StatefulSet {
 
 func (c *Controller) upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
 	container := core.Container{
-		Name:  api.ResourceNameElasticsearch,
-		Image: c.opt.Docker.GetImageWithTag(elasticsearch),
+		Name:  api.ResourceSingularElasticsearch,
+		Image: c.docker.GetImageWithTag(elasticsearch),
 		SecurityContext: &core.SecurityContext{
 			Privileged: types.BoolP(false),
 			Capabilities: &core.Capabilities{
@@ -357,7 +363,7 @@ func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, 
 
 	// To do this, Upsert Container first
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
-		if container.Name == api.ResourceNameElasticsearch {
+		if container.Name == api.ResourceSingularElasticsearch {
 			statefulSet.Spec.Template.Spec.Containers[i].Env = core_util.UpsertEnvVars(container.Env, envList...)
 			return statefulSet
 		}
@@ -388,7 +394,7 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 	}
 
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
-		if container.Name == api.ResourceNameElasticsearch {
+		if container.Name == api.ResourceSingularElasticsearch {
 			statefulSet.Spec.Template.Spec.Containers[i].Ports = getPorts()
 			return statefulSet
 		}
@@ -404,9 +410,9 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 			Args: append([]string{
 				"export",
 				fmt.Sprintf("--address=:%d", api.PrometheusExporterPortNumber),
-				fmt.Sprintf("--analytics=%v", c.opt.EnableAnalytics),
-			}, c.opt.LoggerOptions.ToFlags()...),
-			Image:           c.opt.Docker.GetOperatorImageWithTag(elasticsearch),
+				fmt.Sprintf("--enable-analytics=%v", c.EnableAnalytics),
+			}, c.LoggerOptions.ToFlags()...),
+			Image:           c.docker.GetOperatorImageWithTag(elasticsearch),
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{
 				{
@@ -474,10 +480,10 @@ func upsertCertificate(statefulSet *apps.StatefulSet, secretName string, isClien
 	}
 
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
-		if container.Name == api.ResourceNameElasticsearch {
+		if container.Name == api.ResourceSingularElasticsearch {
 			volumeMount := core.VolumeMount{
 				Name:      "certs",
-				MountPath: "/elasticsearch/config/certs",
+				MountPath: "/elasticsearch/restConfig/certs",
 			}
 			volumeMounts := container.VolumeMounts
 			volumeMounts = core_util.UpsertVolumeMount(volumeMounts, volumeMount)
@@ -500,7 +506,7 @@ func upsertCertificate(statefulSet *apps.StatefulSet, secretName string, isClien
 
 func upsertDatabaseSecret(statefulSet *apps.StatefulSet, secretName string) *apps.StatefulSet {
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
-		if container.Name == api.ResourceNameElasticsearch {
+		if container.Name == api.ResourceSingularElasticsearch {
 			volumeMount := core.VolumeMount{
 				Name:      "sgconfig",
 				MountPath: "/elasticsearch/plugins/search-guard-5/sgconfig",
@@ -528,7 +534,7 @@ func upsertDatabaseSecret(statefulSet *apps.StatefulSet, secretName string) *app
 
 func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
-		if container.Name == api.ResourceNameElasticsearch {
+		if container.Name == api.ResourceSingularElasticsearch {
 			volumeMount := core.VolumeMount{
 				Name:      "data",
 				MountPath: "/data",

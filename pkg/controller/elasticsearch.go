@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	mon_api "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	meta_util "github.com/appscode/kutil/meta"
@@ -13,7 +12,7 @@ import (
 	kutildb "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"github.com/kubedb/apimachinery/pkg/storage"
-	"github.com/kubedb/elasticsearch/pkg/validator"
+	validator "github.com/kubedb/elasticsearch/pkg/admission"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +33,21 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		}
 		log.Errorln(err)
 		return nil // user error so just record error and don't retry.
+	}
+
+	// Delete Matching DormantDatabase if exists any
+	if err := c.deleteMatchingDormantDatabase(elasticsearch); err != nil {
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				`Failed to delete dormant Database : "%v". Reason: %v`,
+				elasticsearch.Name,
+				err,
+			)
+		}
+		return err
 	}
 
 	if elasticsearch.Status.CreationTime == nil {
@@ -57,20 +71,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		elasticsearch.Status = es.Status
 	}
 
-	// Dynamic Defaulting
-	// Assign Default Monitoring Port
-	if err := c.setMonitoringPort(elasticsearch); err != nil {
-		return err
-	}
-
-	// Check DormantDatabase
-	// It can be used as resumed
-	if err := c.matchDormantDatabase(elasticsearch); err != nil {
-		return err
-	}
-
 	// create Governing Service
-	governingService := c.opt.GoverningService
+	governingService := c.GoverningService
 	if err := c.CreateGoverningService(governingService, elasticsearch.Namespace); err != nil {
 		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
 			c.recorder.Eventf(
@@ -176,75 +178,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		return nil
 	}
 	return nil
-}
-
-// Assign Default Monitoring Port if MonitoringSpec Exists
-// and the AgentVendor is Prometheus.
-func (c *Controller) setMonitoringPort(elasticsearch *api.Elasticsearch) error {
-	if elasticsearch.Spec.Monitor != nil &&
-		elasticsearch.GetMonitoringVendor() == mon_api.VendorPrometheus {
-		if elasticsearch.Spec.Monitor.Prometheus == nil {
-			elasticsearch.Spec.Monitor.Prometheus = &mon_api.PrometheusSpec{}
-		}
-		if elasticsearch.Spec.Monitor.Prometheus.Port == 0 {
-			es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-				in.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
-				return in
-			})
-
-			if err != nil {
-				if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
-					c.recorder.Eventf(
-						ref,
-						core.EventTypeWarning,
-						eventer.EventReasonFailedToUpdate,
-						err.Error(),
-					)
-				}
-				return err
-			}
-			elasticsearch.Spec.Monitor = es.Spec.Monitor
-		}
-	}
-	return nil
-}
-
-func (c *Controller) matchDormantDatabase(elasticsearch *api.Elasticsearch) error {
-	// Check if DormantDatabase exists or not
-	dormantDb, err := c.ExtClient.DormantDatabases(elasticsearch.Namespace).Get(elasticsearch.Name, metav1.GetOptions{})
-	if err != nil {
-		if !kerr.IsNotFound(err) {
-			if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
-				c.recorder.Eventf(
-					ref,
-					core.EventTypeWarning,
-					eventer.EventReasonFailedToGet,
-					`Fail to get DormantDatabase: "%v". Reason: %v`,
-					elasticsearch.Name,
-					err,
-				)
-			}
-			return err
-		}
-		return nil
-	}
-
-	if _, err := meta_util.GetString(elasticsearch.Annotations, api.AnnotationInitialized); err == kutil.ErrNotFound &&
-		elasticsearch.Spec.Init != nil &&
-		elasticsearch.Spec.Init.SnapshotSource != nil {
-		es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-			in.Annotations = core_util.UpsertMap(in.Annotations, map[string]string{
-				api.AnnotationInitialized: "",
-			})
-			return in
-		})
-		if err != nil {
-			return err
-		}
-		elasticsearch.Annotations = es.Annotations
-	}
-
-	return kutildb.DeleteDormantDatabase(c.ExtClient, dormantDb.ObjectMeta)
 }
 
 func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -375,51 +308,28 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 
 func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 
-	if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
-		c.recorder.Event(
-			ref,
-			core.EventTypeNormal,
-			eventer.EventReasonPausing,
-			"Pausing Elasticsearch",
-		)
-	}
-
 	if _, err := c.createDormantDatabase(elasticsearch); err != nil {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
-			c.recorder.Eventf(
-				ref,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				`Failed to create DormantDatabase: "%v". Reason: %v`,
-				elasticsearch.Name,
-				err,
-			)
+		if kerr.IsAlreadyExists(err) {
+			// if already exists, check if it is database of another Kind and return error in that case.
+			// If the Kind is same, we can safely assume that the DormantDB was not deleted in before,
+			// Probably because, User is more faster (create-delete-create-again-delete...) than operator!
+			// So reuse that DormantDB!
+			ddb, err := c.ExtClient.DormantDatabases(elasticsearch.Namespace).Get(elasticsearch.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if val, _ := meta_util.GetStringValue(ddb.Labels, api.LabelDatabaseKind); val != api.ResourceKindElasticsearch {
+				return fmt.Errorf(`DormantDatabase "%v" of kind %v already exists`, elasticsearch.Name, val)
+			}
+		} else {
+			return fmt.Errorf(`failed to create DormantDatabase: "%v". Reason: %v`, elasticsearch.Name, err)
 		}
-		return err
-	}
-	if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
-		c.recorder.Eventf(
-			ref,
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			`Successfully created DormantDatabase: "%v"`,
-			elasticsearch.Name,
-		)
 	}
 
 	c.cronController.StopBackupScheduling(elasticsearch.ObjectMeta)
 
 	if elasticsearch.Spec.Monitor != nil {
 		if _, err := c.deleteMonitor(elasticsearch); err != nil {
-			if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
-				c.recorder.Eventf(
-					ref,
-					core.EventTypeWarning,
-					eventer.EventReasonFailedToDelete,
-					"Failed to delete monitoring system. Reason: %v",
-					err,
-				)
-			}
 			log.Errorln(err)
 			return nil
 		}

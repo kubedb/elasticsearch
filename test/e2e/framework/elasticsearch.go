@@ -1,12 +1,12 @@
 package framework
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	jtypes "github.com/appscode/go/encoding/json/types"
 	"github.com/appscode/go/types"
-	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	. "github.com/onsi/gomega"
@@ -109,8 +109,8 @@ func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) Gomeg
 			Expect(err).NotTo(HaveOccurred())
 			return elasticsearch.Status.Phase == api.DatabasePhaseRunning
 		},
-		time.Minute*5,
-		time.Second*5,
+		time.Minute*15,
+		time.Second*10,
 	)
 }
 
@@ -149,9 +149,14 @@ func (f *Framework) CleanElasticsearch() {
 		return
 	}
 	for _, e := range elasticsearchList.Items {
-		kutildb.PatchElasticsearch(f.extClient, &e, func(in *api.Elasticsearch) *api.Elasticsearch {
-			in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")
+		if _, _, err := kutildb.PatchElasticsearch(f.extClient, &e, func(in *api.Elasticsearch) *api.Elasticsearch {
+			in.ObjectMeta.Finalizers = nil
 			return in
-		})
+		}); err != nil {
+			fmt.Printf("error Patching Elasticsearch. error: %v", err)
+		}
+	}
+	if err := f.extClient.Elasticsearches(f.namespace).DeleteCollection(deleteInBackground(), metav1.ListOptions{}); err != nil {
+		fmt.Printf("error in deletion of Elasticsearch. Error: %v", err)
 	}
 }
