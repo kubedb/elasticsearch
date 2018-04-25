@@ -12,6 +12,8 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/reference"
 )
 
 var (
@@ -36,22 +38,26 @@ func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) (kutil.Verb
 	// create database Service
 	vt1, err := c.createService(elasticsearch)
 	if err != nil {
-		c.recorder.Eventf(
-			elasticsearch.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			"Failed to createOrPatch Service. Reason: %v",
-			err,
-		)
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				"Failed to createOrPatch Service. Reason: %v",
+				err,
+			)
+		}
 		return kutil.VerbUnchanged, err
 	} else if vt1 != kutil.VerbUnchanged {
-		c.recorder.Eventf(
-			elasticsearch.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessful,
-			"Successfully %s Service",
-			vt1,
-		)
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeNormal,
+				eventer.EventReasonSuccessful,
+				"Successfully %s Service",
+				vt1,
+			)
+		}
 	}
 
 	// Check if service name exists
@@ -62,22 +68,26 @@ func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) (kutil.Verb
 	// create database Service
 	vt2, err := c.createMasterService(elasticsearch)
 	if err != nil {
-		c.recorder.Eventf(
-			elasticsearch.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			"Failed to createOrPatch Service. Reason: %v",
-			err,
-		)
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				"Failed to createOrPatch Service. Reason: %v",
+				err,
+			)
+		}
 		return kutil.VerbUnchanged, err
 	} else if vt2 != kutil.VerbUnchanged {
-		c.recorder.Eventf(
-			elasticsearch.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessful,
-			"Successfully %s Service",
-			vt2,
-		)
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeNormal,
+				eventer.EventReasonSuccessful,
+				"Successfully %s Service",
+				vt2,
+			)
+		}
 	}
 
 	if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated {

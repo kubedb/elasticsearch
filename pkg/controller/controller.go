@@ -24,9 +24,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/reference"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -170,14 +172,16 @@ func (c *Controller) watchDormantDatabase() {
 }
 
 func (c *Controller) pushFailureEvent(elasticsearch *api.Elasticsearch, reason string) {
-	c.recorder.Eventf(
-		elasticsearch.ObjectReference(),
-		core.EventTypeWarning,
-		eventer.EventReasonFailedToStart,
-		`Fail to be ready Elasticsearch: "%v". Reason: %v`,
-		elasticsearch.Name,
-		reason,
-	)
+	if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+		c.recorder.Eventf(
+			ref,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToStart,
+			`Fail to be ready Elasticsearch: "%v". Reason: %v`,
+			elasticsearch.Name,
+			reason,
+		)
+	}
 
 	es, _, err := kutildb.PatchElasticsearch(c.ExtClient, elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Status.Phase = api.DatabasePhaseFailed
@@ -185,7 +189,14 @@ func (c *Controller) pushFailureEvent(elasticsearch *api.Elasticsearch, reason s
 		return in
 	})
 	if err != nil {
-		c.recorder.Eventf(elasticsearch.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				err.Error(),
+			)
+		}
 	}
 	elasticsearch.Status = es.Status
 }

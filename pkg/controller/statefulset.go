@@ -15,6 +15,8 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/reference"
 )
 
 func (c *Controller) ensureStatefulSet(
@@ -81,24 +83,28 @@ func (c *Controller) ensureStatefulSet(
 	if vt == kutil.VerbCreated || vt == kutil.VerbPatched {
 		// Check StatefulSet Pod status
 		if err := c.CheckStatefulSetPodStatus(statefulSet); err != nil {
-			c.recorder.Eventf(
-				elasticsearch.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToStart,
-				`Failed to be running after StatefulSet %v. Reason: %v`,
-				vt,
-				err,
-			)
+			if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+				c.recorder.Eventf(
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToStart,
+					`Failed to be running after StatefulSet %v. Reason: %v`,
+					vt,
+					err,
+				)
+			}
 			return kutil.VerbUnchanged, err
 		}
 
-		c.recorder.Eventf(
-			elasticsearch.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessful,
-			"Successfully %v StatefulSet",
-			vt,
-		)
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeNormal,
+				eventer.EventReasonSuccessful,
+				"Successfully %v StatefulSet",
+				vt,
+			)
+		}
 	}
 	return vt, nil
 }
