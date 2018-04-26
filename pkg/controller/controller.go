@@ -53,7 +53,7 @@ var _ amc.Snapshotter = &Controller{}
 var _ amc.Deleter = &Controller{}
 
 func New(
-	config *restclient.Config,
+	restConfig *restclient.Config,
 	client kubernetes.Interface,
 	apiExtKubeClient crd_cs.ApiextensionsV1beta1Interface,
 	extClient cs.KubedbV1alpha1Interface,
@@ -68,7 +68,7 @@ func New(
 			ExtClient:        extClient,
 			ApiExtKubeClient: apiExtKubeClient,
 		},
-		restConfig:     config,
+		restConfig:     restConfig,
 		Config:         opt,
 		docker:         docker,
 		promClient:     promClient,
