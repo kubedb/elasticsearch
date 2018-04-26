@@ -483,7 +483,7 @@ func upsertCertificate(statefulSet *apps.StatefulSet, secretName string, isClien
 		if container.Name == api.ResourceSingularElasticsearch {
 			volumeMount := core.VolumeMount{
 				Name:      "certs",
-				MountPath: "/elasticsearch/restConfig/certs",
+				MountPath: "/elasticsearch/config/certs",
 			}
 			volumeMounts := container.VolumeMounts
 			volumeMounts = core_util.UpsertVolumeMount(volumeMounts, volumeMount)

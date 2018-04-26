@@ -159,7 +159,7 @@ func setDefaultsFromDormantDB(extClient cs.Interface, elasticsearch *api.Elastic
 	// If CertificateSecret of new object is not given,
 	// Take dormantDatabase CertificateSecret
 	if elasticsearch.Spec.CertificateSecret == nil {
-		elasticsearch.Spec.CertificateSecret = ddbOriginSpec.DatabaseSecret
+		elasticsearch.Spec.CertificateSecret = ddbOriginSpec.CertificateSecret
 	}
 
 	// If Monitoring Spec of new object is not given,

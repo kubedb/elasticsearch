@@ -124,7 +124,7 @@ func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) G
 			client.Stop()
 			return true
 		},
-		time.Minute*5,
+		time.Minute*15,
 		time.Second*5,
 	)
 }
@@ -138,7 +138,7 @@ func (f *Framework) EventuallyElasticsearchIndicesCount(client *elastic.Client) 
 			}
 			return count
 		},
-		time.Minute*5,
+		time.Minute*10,
 		time.Second*5,
 	)
 }
