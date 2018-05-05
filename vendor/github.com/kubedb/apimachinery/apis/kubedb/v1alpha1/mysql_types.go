@@ -8,14 +8,13 @@ import (
 )
 
 const (
-	ResourceCodeMySQL = "my"
-	ResourceKindMySQL = "MySQL"
-	ResourceNameMySQL = "mysql"
-	ResourceTypeMySQL = "mysqls"
+	ResourceCodeMySQL     = "my"
+	ResourceKindMySQL     = "MySQL"
+	ResourceSingularMySQL = "mysql"
+	ResourcePluralMySQL   = "mysqls"
 )
 
 // +genclient
-// +genclient:skipVerbs=updateStatus
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -29,7 +28,7 @@ type MySQL struct {
 
 type MySQLSpec struct {
 	// Version of MySQL to be deployed.
-	Version types.StrYo `json:"version,omitempty"`
+	Version types.StrYo `json:"version"`
 	// Number of instances to deploy for a MySQL database.
 	Replicas *int32 `json:"replicas,omitempty"`
 	// Storage spec to specify how storage shall be used.

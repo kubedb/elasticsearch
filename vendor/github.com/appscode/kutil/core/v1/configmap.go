@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
-
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -34,12 +32,16 @@ func CreateOrPatchConfigMap(c kubernetes.Interface, meta metav1.ObjectMeta, tran
 }
 
 func PatchConfigMap(c kubernetes.Interface, cur *core.ConfigMap, transform func(*core.ConfigMap) *core.ConfigMap) (*core.ConfigMap, kutil.VerbType, error) {
+	return PatchConfigMapObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchConfigMapObject(c kubernetes.Interface, cur, mod *core.ConfigMap) (*core.ConfigMap, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

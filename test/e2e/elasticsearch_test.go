@@ -62,18 +62,19 @@ var _ = Describe("Elasticsearch", func() {
 		By("Wait for elasticsearch to be paused")
 		f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-		By("WipeOut elasticsearch: " + elasticsearch.Name)
+		By("Set DormantDatabase Spec.WipeOut to true")
 		_, err := f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
 			in.Spec.WipeOut = true
 			return in
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		By("Wait for elasticsearch to be wipedOut")
-		f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HaveWipedOut())
-
+		By("Delete Dormant Database")
 		err = f.DeleteDormantDatabase(elasticsearch.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
+
+		By("Wait for elasticsearch resources to be wipedOut")
+		f.EventuallyWipedOut(elasticsearch.ObjectMeta).Should(Succeed())
 	}
 
 	AfterEach(func() {
@@ -157,17 +158,16 @@ var _ = Describe("Elasticsearch", func() {
 
 					elasticClient.Stop()
 
-					By("Delete postgres")
+					By("Delete elasticsearch")
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for elasticsearch to be paused")
 					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-					_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
-						in.Spec.Resume = true
-						return in
-					})
+					// Create Elasticsearch object again to resume it
+					By("Create Elasticsearch: " + elasticsearch.Name)
+					err = f.CreateElasticsearch(elasticsearch)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for DormantDatabase to be deleted")
@@ -188,7 +188,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		XContext("DoNotPause", func() {
+		Context("DoNotPause", func() {
 			BeforeEach(func() {
 				elasticsearch.Spec.DoNotPause = true
 			})
@@ -199,7 +199,7 @@ var _ = Describe("Elasticsearch", func() {
 
 				By("Delete elasticsearch")
 				err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).Should(HaveOccurred())
 
 				By("Elasticsearch is not paused. Check for elasticsearch")
 				f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -391,10 +391,9 @@ var _ = Describe("Elasticsearch", func() {
 				By("Wait for elasticsearch to be paused")
 				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-				_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
-					in.Spec.Resume = true
-					return in
-				})
+				// Create Elasticsearch object again to resume it
+				By("Create Elasticsearch: " + elasticsearch.Name)
+				err = f.CreateElasticsearch(elasticsearch)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Wait for DormantDatabase to be deleted")
@@ -415,30 +414,6 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("-", func() {
 				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
-			})
-
-			Context("With original Elasticsearch", func() {
-				It("should resume DormantDatabase successfully", func() {
-					// Create and wait for running Elasticsearch
-					createAndWaitForRunning()
-
-					By("Delete elasticsearch")
-					f.DeleteElasticsearch(elasticsearch.ObjectMeta)
-
-					By("Wait for elasticsearch to be paused")
-					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
-
-					// Create Elasticsearch object again to resume it
-					By("Create Elasticsearch: " + elasticsearch.Name)
-					err = f.CreateElasticsearch(elasticsearch)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Wait for DormantDatabase to be deleted")
-					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
-
-					By("Wait for Running elasticsearch")
-					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
-				})
 			})
 		})
 

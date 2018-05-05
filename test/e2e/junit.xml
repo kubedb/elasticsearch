@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="6" failures="0" time="1286.360397289">
-      <testcase name="Elasticsearch Test General - should run successfully" classname="e2e Suite" time="135.988610716"></testcase>
-      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="213.065991723"></testcase>
-      <testcase name="Elasticsearch Test General With PVC should run successfully" classname="e2e Suite" time="267.743590946"></testcase>
+  <testsuite tests="1" failures="1" time="552.876808073">
+      <testcase name="Elasticsearch Test General - should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test General Dedicated elasticsearch should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Elasticsearch Test General With PVC should run successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
       <testcase name="Elasticsearch Test DoNotPause should work successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Elasticsearch Test Snapshot In Local should take Snapshot successfully" classname="e2e Suite" time="0">
+      <testcase name="Elasticsearch Test Snapshot In Local should take Snapshot successfully" classname="e2e Suite" time="287.707303107">
+          <failure type="Failure">/home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:256&#xA;Expected error:&#xA;    &lt;*errors.StatusError | 0xc420f84750&gt;: {&#xA;        ErrStatus: {&#xA;            TypeMeta: {Kind: &#34;&#34;, APIVersion: &#34;&#34;},&#xA;            ListMeta: {SelfLink: &#34;&#34;, ResourceVersion: &#34;&#34;, Continue: &#34;&#34;},&#xA;            Status: &#34;Failure&#34;,&#xA;            Message: &#34;the server was unable to return a response in the time allotted, but may still be processing the request (get snapshots.kubedb.com snapshot-jjq5ov)&#34;,&#xA;            Reason: &#34;Timeout&#34;,&#xA;            Details: {&#xA;                Name: &#34;snapshot-jjq5ov&#34;,&#xA;                Group: &#34;kubedb.com&#34;,&#xA;                Kind: &#34;snapshots&#34;,&#xA;                UID: &#34;&#34;,&#xA;                Causes: [&#xA;                    {&#xA;                        Type: &#34;UnexpectedServerResponse&#34;,&#xA;                        Message: &#34;{\&#34;metadata\&#34;:{},\&#34;status\&#34;:\&#34;Failure\&#34;,\&#34;message\&#34;:\&#34;Timeout: request did not complete within 1m0s\&#34;,\&#34;reason\&#34;:\&#34;Timeout\&#34;,\&#34;details\&#34;:{},\&#34;code\&#34;:504}&#34;,&#xA;                        Field: &#34;&#34;,&#xA;                    },&#xA;                ],&#xA;                RetryAfterSeconds: 0,&#xA;            },&#xA;            Code: 504,&#xA;        },&#xA;    }&#xA;    the server was unable to return a response in the time allotted, but may still be processing the request (get snapshots.kubedb.com snapshot-jjq5ov)&#xA;not to have occurred&#xA;/home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/framework/snapshot.go:47</failure>
+          <system-out>[BeforeEach] Elasticsearch&#xA;  /home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:35&#xA;[BeforeEach] Snapshot&#xA;  /home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:219&#xA;[BeforeEach] In Local&#xA;  /home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:244&#xA;[It] should take Snapshot successfully&#xA;  /home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:256&#xA;�[1mSTEP�[0m: Create Elasticsearch: elasticsearch-3txlzq&#xA;�[1mSTEP�[0m: Wait for Running elasticsearch&#xA;�[1mSTEP�[0m: Create Secret&#xA;�[1mSTEP�[0m: Create Snapshot&#xA;�[1mSTEP�[0m: Check for Successed snapshot&#xA;[AfterEach] Elasticsearch&#xA;  /home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/elasticsearch_test.go:80&#xA;�[1mSTEP�[0m: Delete elasticsearch: elasticsearch-3txlzq&#xA;</system-out>
+      </testcase>
+      <testcase name="Elasticsearch Test Snapshot In S3 should take Snapshot successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Elasticsearch Test Snapshot In S3 should take Snapshot successfully" classname="e2e Suite" time="122.267921859"></testcase>
       <testcase name="Elasticsearch Test Snapshot In GCS should take Snapshot successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
@@ -25,9 +34,13 @@
       <testcase name="Elasticsearch Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Elasticsearch Test Resume With original Elasticsearch should resume DormantDatabase successfully" classname="e2e Suite" time="0">
+      <testcase name="Elasticsearch Test SnapshotScheduler With Startup should run schedular successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Elasticsearch Test SnapshotScheduler With Startup should run schedular successfully" classname="e2e Suite" time="239.627050778"></testcase>
-      <testcase name="Elasticsearch Test SnapshotScheduler With Update should run schedular successfully" classname="e2e Suite" time="300.967734346"></testcase>
+      <testcase name="Elasticsearch Test SnapshotScheduler With Update should run schedular successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="AfterSuite" classname="e2e Suite" time="250.882389353">
+          <failure type="Failure">/home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/e2e_suite_test.go:95&#xA;Expected error:&#xA;    &lt;*url.Error | 0xc4204ed3e0&gt;: {&#xA;        Op: &#34;Delete&#34;,&#xA;        URL: &#34;https://192.168.99.100:8443/api/v1/namespaces/elasticsearch-yvw3sx&#34;,&#xA;        Err: {&#xA;            Op: &#34;dial&#34;,&#xA;            Net: &#34;tcp&#34;,&#xA;            Source: nil,&#xA;            Addr: {&#xA;                IP: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 192, 168, 99, 100],&#xA;                Port: 8443,&#xA;                Zone: &#34;&#34;,&#xA;            },&#xA;            Err: {Syscall: &#34;connect&#34;, Err: 0x6f},&#xA;        },&#xA;    }&#xA;    Delete https://192.168.99.100:8443/api/v1/namespaces/elasticsearch-yvw3sx: dial tcp 192.168.99.100:8443: connect: connection refused&#xA;not to have occurred&#xA;/home/maruf/go/src/github.com/kubedb/elasticsearch/test/e2e/e2e_suite_test.go:106</failure>
+      </testcase>
   </testsuite>

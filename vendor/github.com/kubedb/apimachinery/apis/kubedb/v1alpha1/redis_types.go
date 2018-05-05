@@ -8,14 +8,13 @@ import (
 )
 
 const (
-	ResourceCodeRedis = "rd"
-	ResourceKindRedis = "Redis"
-	ResourceNameRedis = "redis"
-	ResourceTypeRedis = "redises"
+	ResourceCodeRedis     = "rd"
+	ResourceKindRedis     = "Redis"
+	ResourceSingularRedis = "redis"
+	ResourcePluralRedis   = "redises"
 )
 
 // +genclient
-// +genclient:skipVerbs=updateStatus
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -29,7 +28,7 @@ type Redis struct {
 
 type RedisSpec struct {
 	// Version of Redis to be deployed.
-	Version types.StrYo `json:"version,omitempty"`
+	Version types.StrYo `json:"version"`
 	// Number of instances to deploy for a Redis database.
 	Replicas *int32 `json:"replicas,omitempty"`
 	// Storage spec to specify how storage shall be used.

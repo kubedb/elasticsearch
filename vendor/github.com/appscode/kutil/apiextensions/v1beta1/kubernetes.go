@@ -16,7 +16,7 @@ import (
 
 func RegisterCRDs(client crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.CustomResourceDefinition) error {
 	for _, crd := range crds {
-		_, err := client.CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
+		existing, err := client.CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
 			_, err = client.CustomResourceDefinitions().Create(crd)
 			if err != nil {
@@ -24,6 +24,21 @@ func RegisterCRDs(client crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.C
 			}
 		} else if err != nil {
 			return err
+		} else {
+			existing.Spec.Validation = crd.Spec.Validation
+			if crd.Spec.Subresources != nil && existing.Spec.Subresources == nil {
+				existing.Spec.Subresources = &crd_api.CustomResourceSubresources{}
+				if crd.Spec.Subresources.Status != nil && existing.Spec.Subresources.Status == nil {
+					existing.Spec.Subresources.Status = crd.Spec.Subresources.Status
+				}
+				if crd.Spec.Subresources.Scale != nil && existing.Spec.Subresources.Scale == nil {
+					existing.Spec.Subresources.Scale = crd.Spec.Subresources.Scale
+				}
+			}
+			_, err = client.CustomResourceDefinitions().Update(existing)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return WaitForCRDReady(client.RESTClient(), crds)

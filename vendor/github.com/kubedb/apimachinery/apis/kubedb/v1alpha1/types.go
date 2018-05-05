@@ -16,8 +16,8 @@ type ScriptSourceSpec struct {
 }
 
 type SnapshotSourceSpec struct {
-	Namespace string `json:"namespace,omitempty"`
-	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace"`
+	Name      string `json:"name"`
 }
 
 type BackupScheduleSpec struct {
@@ -30,6 +30,7 @@ type BackupScheduleSpec struct {
 const (
 	AWS_ACCESS_KEY_ID     = "AWS_ACCESS_KEY_ID"
 	AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
+	CA_CERT_DATA          = "CA_CERT_DATA"
 
 	GOOGLE_PROJECT_ID               = "GOOGLE_PROJECT_ID"
 	GOOGLE_SERVICE_ACCOUNT_JSON_KEY = "GOOGLE_SERVICE_ACCOUNT_JSON_KEY"

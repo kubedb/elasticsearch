@@ -6,14 +6,13 @@ import (
 )
 
 const (
-	ResourceCodeSnapshot = "snap"
-	ResourceKindSnapshot = "Snapshot"
-	ResourceNameSnapshot = "snapshot"
-	ResourceTypeSnapshot = "snapshots"
+	ResourceCodeSnapshot     = "snap"
+	ResourceKindSnapshot     = "Snapshot"
+	ResourceSingularSnapshot = "snapshot"
+	ResourcePluralSnapshot   = "snapshots"
 )
 
 // +genclient
-// +genclient:skipVerbs=updateStatus
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -26,7 +25,7 @@ type Snapshot struct {
 
 type SnapshotSpec struct {
 	// Database name
-	DatabaseName string `json:"databaseName,omitempty"`
+	DatabaseName string `json:"databaseName"`
 	// Snapshot Spec
 	SnapshotStorageSpec `json:",inline"`
 	// Compute Resources required by the sidecar container.

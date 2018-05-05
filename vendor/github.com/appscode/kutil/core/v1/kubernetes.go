@@ -4,12 +4,15 @@ import (
 	"github.com/appscode/go/types"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/mergo"
+	"github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+var json = jsoniter.ConfigFastest
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
 	return core.SchemeGroupVersion.WithKind(meta.GetKind(v))
@@ -79,7 +82,7 @@ func AssignTypeKind(v interface{}) error {
 		u.Kind = meta.GetKind(v)
 		return nil
 	}
-	return errors.New("unknown api object type")
+	return errors.New("unknown v1beta1 object type")
 }
 
 func RemoveNextInitializer(m metav1.ObjectMeta) metav1.ObjectMeta {
@@ -250,6 +253,14 @@ func MergeLocalObjectReferences(old, new []core.LocalObjectReference) []core.Loc
 }
 
 func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+	if owner == nil ||
+		owner.APIVersion == "" ||
+		owner.Kind == "" ||
+		owner.Name == "" ||
+		owner.UID == "" {
+		return meta
+	}
+
 	fi := -1
 	for i, ref := range meta.OwnerReferences {
 		if ref.Kind == owner.Kind && ref.Name == owner.Name {
@@ -267,6 +278,16 @@ func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) m
 	meta.OwnerReferences[fi].UID = owner.UID
 	if meta.OwnerReferences[fi].BlockOwnerDeletion == nil {
 		meta.OwnerReferences[fi].BlockOwnerDeletion = types.FalseP()
+	}
+	return meta
+}
+
+func RemoveOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+	for i, ref := range meta.OwnerReferences {
+		if ref.Kind == owner.Kind && ref.Name == owner.Name {
+			meta.OwnerReferences = append(meta.OwnerReferences[:i], meta.OwnerReferences[i+1:]...)
+			break
+		}
 	}
 	return meta
 }

@@ -1,6 +1,10 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubedb/elasticsearch)](https://goreportcard.com/report/github.com/kubedb/elasticsearch)
+[![Build Status](https://travis-ci.org/kubedb/elasticsearch.svg?branch=master)](https://travis-ci.org/kubedb/elasticsearch)
+[![codecov](https://codecov.io/gh/kubedb/elasticsearch/branch/master/graph/badge.svg)](https://codecov.io/gh/kubedb/elasticsearch)
+[![Slack](http://slack.kubernetes.io/badge.svg)](http://slack.kubernetes.io/#kubedb)
+[![mailing list](https://img.shields.io/badge/mailing_list-join-blue.svg)](https://groups.google.com/forum/#!forum/kubedb)
+[![Twitter](https://img.shields.io/twitter/follow/kubedb.svg?style=social&logo=twitter&label=Follow)](https://twitter.com/intent/follow?screen_name=kubedb)
 
-[Website](https://kubedb.com) • [Slack](http://slack.kubernetes.io) • [Twitter](https://twitter.com/KubeDB)
 
 # elasticsearch
 Run Elasticsearch in Kubernetes

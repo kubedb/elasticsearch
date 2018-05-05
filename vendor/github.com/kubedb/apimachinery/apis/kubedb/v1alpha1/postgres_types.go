@@ -8,14 +8,13 @@ import (
 )
 
 const (
-	ResourceCodePostgres = "pg"
-	ResourceKindPostgres = "Postgres"
-	ResourceNamePostgres = "postgres"
-	ResourceTypePostgres = "postgreses"
+	ResourceCodePostgres     = "pg"
+	ResourceKindPostgres     = "Postgres"
+	ResourceSingularPostgres = "postgres"
+	ResourcePluralPostgres   = "postgreses"
 )
 
 // +genclient
-// +genclient:skipVerbs=updateStatus
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -29,7 +28,7 @@ type Postgres struct {
 
 type PostgresSpec struct {
 	// Version of Postgres to be deployed.
-	Version types.StrYo `json:"version,omitempty"`
+	Version types.StrYo `json:"version"`
 	// Number of instances to deploy for a Postgres database.
 	Replicas *int32 `json:"replicas,omitempty"`
 	// Standby mode

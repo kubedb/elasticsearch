@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
-
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -34,12 +32,16 @@ func CreateOrPatchServiceAccount(c kubernetes.Interface, meta metav1.ObjectMeta,
 }
 
 func PatchServiceAccount(c kubernetes.Interface, cur *core.ServiceAccount, transform func(*core.ServiceAccount) *core.ServiceAccount) (*core.ServiceAccount, kutil.VerbType, error) {
+	return PatchServiceAccountObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchServiceAccountObject(c kubernetes.Interface, cur, mod *core.ServiceAccount) (*core.ServiceAccount, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
@@ -75,4 +77,14 @@ func TryUpdateServiceAccount(c kubernetes.Interface, meta metav1.ObjectMeta, tra
 		err = errors.Errorf("failed to update ServiceAccount %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
+}
+
+func WaitUntillServiceAccountDeleted(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
+	return wait.PollImmediate(kutil.RetryInterval, kutil.GCTimeout, func() (bool, error) {
+		_, err := kubeClient.CoreV1().ServiceAccounts(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		if err != nil && kerr.IsNotFound(err) {
+			return true, nil
+		}
+		return false, nil
+	})
 }
