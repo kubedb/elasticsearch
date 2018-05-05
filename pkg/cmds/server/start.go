@@ -32,6 +32,7 @@ func NewElasticsearchServerOptions(out, errOut io.Writer) *ElasticsearchServerOp
 		StdErr:             errOut,
 	}
 	o.RecommendedOptions.Etcd = nil
+	o.RecommendedOptions.Admission = nil
 
 	return o
 }
