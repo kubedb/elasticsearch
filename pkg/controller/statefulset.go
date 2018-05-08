@@ -21,6 +21,8 @@ import (
 
 func (c *Controller) ensureStatefulSet(
 	elasticsearch *api.Elasticsearch,
+	pvcSpec *core.PersistentVolumeClaimSpec,
+	resources *core.ResourceRequirements,
 	statefulSetName string,
 	labels map[string]string,
 	replicas int32,
@@ -56,7 +58,7 @@ func (c *Controller) ensureStatefulSet(
 		in.Spec.Template.Labels = in.Labels
 
 		in = upsertInitContainer(in)
-		in = c.upsertContainer(in, elasticsearch)
+		in = c.upsertContainer(in, elasticsearch, resources)
 		in = upsertEnv(in, elasticsearch, envList)
 		in = upsertPort(in, isClient)
 
@@ -76,7 +78,7 @@ func (c *Controller) ensureStatefulSet(
 		}
 
 		in = upsertCertificate(in, elasticsearch.Spec.CertificateSecret.SecretName, isClient, elasticsearch.Spec.EnableSSL)
-		in = upsertDataVolume(in, elasticsearch)
+		in = upsertDataVolume(in, pvcSpec)
 		in.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
 
 		return in
@@ -159,7 +161,17 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 		replicas = types.Int32(clientNode.Replicas)
 	}
 
-	return c.ensureStatefulSet(elasticsearch, statefulSetName, labels, replicas, envList, true)
+	pvcSpec := clientNode.Storage
+	if pvcSpec == nil {
+		pvcSpec = elasticsearch.Spec.Storage
+	}
+
+	resources := clientNode.Resources
+	if resources == nil {
+		resources = elasticsearch.Spec.Resources
+	}
+
+	return c.ensureStatefulSet(elasticsearch, pvcSpec, resources, statefulSetName, labels, replicas, envList, true)
 }
 
 func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -197,7 +209,17 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		},
 	}
 
-	return c.ensureStatefulSet(elasticsearch, statefulSetName, labels, replicas, envList, false)
+	pvcSpec := masterNode.Storage
+	if pvcSpec == nil {
+		pvcSpec = elasticsearch.Spec.Storage
+	}
+
+	resources := masterNode.Resources
+	if resources == nil {
+		resources = elasticsearch.Spec.Resources
+	}
+
+	return c.ensureStatefulSet(elasticsearch, pvcSpec, resources, statefulSetName, labels, replicas, envList, false)
 }
 
 func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -231,7 +253,17 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		replicas = types.Int32(dataNode.Replicas)
 	}
 
-	return c.ensureStatefulSet(elasticsearch, statefulSetName, labels, replicas, envList, false)
+	pvcSpec := dataNode.Storage
+	if pvcSpec == nil {
+		pvcSpec = elasticsearch.Spec.Storage
+	}
+
+	resources := dataNode.Resources
+	if resources == nil {
+		resources = elasticsearch.Spec.Resources
+	}
+
+	return c.ensureStatefulSet(elasticsearch, pvcSpec, resources, statefulSetName, labels, replicas, envList, false)
 }
 
 func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -257,7 +289,10 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 		},
 	}
 
-	return c.ensureStatefulSet(elasticsearch, statefulSetName, labels, replicas, envList, true)
+	pvcSpec := elasticsearch.Spec.Storage
+	resources := elasticsearch.Spec.Resources
+
+	return c.ensureStatefulSet(elasticsearch, pvcSpec, resources, statefulSetName, labels, replicas, envList, true)
 }
 
 func (c *Controller) checkStatefulSet(elasticsearch *api.Elasticsearch, name string) error {
@@ -302,7 +337,7 @@ func upsertInitContainer(statefulSet *apps.StatefulSet) *apps.StatefulSet {
 	return statefulSet
 }
 
-func (c *Controller) upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
+func (c *Controller) upsertContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, resources *core.ResourceRequirements) *apps.StatefulSet {
 	container := core.Container{
 		Name:  api.ResourceSingularElasticsearch,
 		Image: c.docker.GetImageWithTag(elasticsearch),
@@ -313,6 +348,10 @@ func (c *Controller) upsertContainer(statefulSet *apps.StatefulSet, elasticsearc
 			},
 		},
 	}
+	if resources != nil {
+		container.Resources = *resources
+	}
+
 	containers := statefulSet.Spec.Template.Spec.Containers
 	containers = core_util.UpsertContainer(containers, container)
 	statefulSet.Spec.Template.Spec.Containers = containers
@@ -532,7 +571,7 @@ func upsertDatabaseSecret(statefulSet *apps.StatefulSet, secretName string) *app
 	return statefulSet
 }
 
-func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
+func upsertDataVolume(statefulSet *apps.StatefulSet, pvcSpec *core.PersistentVolumeClaimSpec) *apps.StatefulSet {
 	for i, container := range statefulSet.Spec.Template.Spec.Containers {
 		if container.Name == api.ResourceSingularElasticsearch {
 			volumeMount := core.VolumeMount{
@@ -543,7 +582,6 @@ func upsertDataVolume(statefulSet *apps.StatefulSet, elasticsearch *api.Elastics
 			volumeMounts = core_util.UpsertVolumeMount(volumeMounts, volumeMount)
 			statefulSet.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
 
-			pvcSpec := elasticsearch.Spec.Storage
 			if pvcSpec != nil {
 				if len(pvcSpec.AccessModes) == 0 {
 					pvcSpec.AccessModes = []core.PersistentVolumeAccessMode{

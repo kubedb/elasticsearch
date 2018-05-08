@@ -279,7 +279,15 @@ func (in *ElasticsearchNode) DeepCopyInto(out *ElasticsearchNode) {
 			(*in).DeepCopyInto(*out)
 		}
 	}
-	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(v1.ResourceRequirements)
+			(*in).DeepCopyInto(*out)
+		}
+	}
 	return
 }
 
@@ -375,7 +383,15 @@ func (in *ElasticsearchSpec) DeepCopyInto(out *ElasticsearchSpec) {
 			(*in).DeepCopyInto(*out)
 		}
 	}
-	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(v1.ResourceRequirements)
+			(*in).DeepCopyInto(*out)
+		}
+	}
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
 		if *in == nil {

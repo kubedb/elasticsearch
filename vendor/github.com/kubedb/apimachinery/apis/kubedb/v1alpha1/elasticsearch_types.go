@@ -58,7 +58,7 @@ type ElasticsearchSpec struct {
 	// +optional
 	Monitor *api.AgentSpec `json:"monitor,omitempty"`
 	// Compute Resources required by the sidecar container.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	Resources *core.ResourceRequirements `json:"resources,omitempty"`
 	// If specified, the pod's scheduling constraints
 	// +optional
 	Affinity *core.Affinity `json:"affinity,omitempty" protobuf:"bytes,18,opt,name=affinity"`
@@ -88,7 +88,7 @@ type ElasticsearchNode struct {
 	// Storage to specify how storage shall be used.
 	Storage *core.PersistentVolumeClaimSpec `json:"storage,omitempty"`
 	// Compute Resources required by the sidecar container.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	Resources *core.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ElasticsearchStatus struct {
