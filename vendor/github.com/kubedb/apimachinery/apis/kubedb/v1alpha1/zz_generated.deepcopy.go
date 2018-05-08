@@ -270,6 +270,16 @@ func (in *ElasticsearchNode) DeepCopyInto(out *ElasticsearchNode) {
 			**out = **in
 		}
 	}
+	if in.Storage != nil {
+		in, out := &in.Storage, &out.Storage
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(v1.PersistentVolumeClaimSpec)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	return
 }
 

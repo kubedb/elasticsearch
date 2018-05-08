@@ -1,5 +1,5 @@
-hash: e77d4088e3919dface0736a7429c16ef7b538d356b3180180d545234eb467c64
-updated: 2018-05-05T13:47:55.900934288-07:00
+hash: 4e256a94110eb943caa953f8e1af579a2aa3e83c6323b8c229b568c2784ae71f
+updated: 2018-05-08T11:01:19.499900177+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -26,7 +26,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: 58a38a46ddb591a543c6b1003213353e29331c5a
+  version: 0e31a6adcfad9818e0208d4e3f0540d2fb414b52
 - name: github.com/appscode/kube-mon
   version: dc81c09a885b0862f1bbbae3e440a68fbf2b36a6
   subpackages:
@@ -40,7 +40,7 @@ imports:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: ed8d181d523ddd37e5cb7a23fa457b4c370a5140
+  version: 7c06d378914d77d52a1e2eda9c61560a38950794
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -190,7 +190,7 @@ imports:
   - daemon
   - journal
 - name: github.com/coreos/prometheus-operator
-  version: b21c4949708337d04b9a4d7de0b806dd799a0955
+  version: 0b9724a4e0a8c6ceb153694d958fe515bb7058c3
   repo: https://github.com/tamalsaha/prometheus-operator.git
   subpackages:
   - pkg/client/monitoring/v1
@@ -229,7 +229,7 @@ imports:
 - name: github.com/go-openapi/jsonreference
   version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
 - name: github.com/go-openapi/spec
-  version: 1de3e0542de65ad8d75452a595886fdd0befb363
+  version: 7abd5745472fff5eb3685386d5fb8bf38683154d
 - name: github.com/go-openapi/swag
   version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
@@ -262,7 +262,7 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
-  version: 8c31c18f31ede9fc8eae72290a7e7a8064e9b3e3
+  version: dec09d789f3dba190787f8b4454c7d3c936fed9e
 - name: github.com/googleapis/gnostic
   version: 0c5108395e2debce0d731cf0287ddf7242066aba
   subpackages:
@@ -290,13 +290,13 @@ imports:
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jmespath/go-jmespath
-  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
+  version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/jpillora/go-ogle-analytics
   version: 14b04e0594ef6a9fd943363b135656f0ec8c9d0e
 - name: github.com/json-iterator/go
-  version: 13f86432b882000a51c6e610c620974462691a97
+  version: 36b14963da70d11297d313183d7e6388c8510e1e
 - name: github.com/kubedb/apimachinery
-  version: 7722f91fb07234ee69f3889e5c6ed5c181b0a0a7
+  version: cda0fedf9cae63b27ef9d791a29005530785604e
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -406,9 +406,10 @@ imports:
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
 - name: github.com/satori/uuid
-  version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
+  version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
 - name: github.com/sergi/go-diff
-  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
+  version: 24e2351369ec4949b2ed0dc5c477afdd4c4034e8
+  repo: https://github.com/sergi/go-diff
   subpackages:
   - diffmatchpatch
 - name: github.com/shurcooL/sanitized_anchor_name
@@ -426,11 +427,12 @@ imports:
   subpackages:
   - codec
 - name: github.com/yudai/gojsondiff
-  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
+  version: 0525c875b75ca60b9e67ddc44496aa16f21066b0
   subpackages:
   - formatter
 - name: github.com/yudai/golcs
   version: d1c525dea8ce39ea9a783d33cf08932305373f2c
+  repo: https://github.com/yudai/golcs
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -494,14 +496,14 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: bb395b674c9930450ea7243b3e3c8f43150f4c11
+  version: 20530fd5d65ad2caee87891f9896d7547cb400c9
   subpackages:
   - gensupport
   - googleapi
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
+  version: 962cbd1200af94a5a35ba8d512e9f91271b4d01a
   subpackages:
   - internal
   - internal/app_identity
@@ -551,7 +553,7 @@ imports:
   repo: https://github.com/appscode/cron.git
   vcs: git
 - name: gopkg.in/yaml.v2
-  version: 670d4cfef0544295bc27a114dbac37980d83185a
+  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
   version: 73d903622b7391f3312dcbac6483fed484e185f8
   subpackages:
@@ -635,6 +637,7 @@ imports:
   - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/rand
+  - pkg/util/remotecommand
   - pkg/util/runtime
   - pkg/util/sets
   - pkg/util/strategicpatch
@@ -886,10 +889,12 @@ imports:
   - tools/portforward
   - tools/record
   - tools/reference
+  - tools/remotecommand
   - transport
   - transport/spdy
   - util/buffer
   - util/cert
+  - util/exec
   - util/flowcontrol
   - util/homedir
   - util/integer
