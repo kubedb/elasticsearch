@@ -22,6 +22,8 @@ http:
   cors:
     enabled: ${HTTP_CORS_ENABLE}
     allow-origin: ${HTTP_CORS_ALLOW_ORIGIN}
+    allow-credentials: true
+    allow-headers: "X-Requested-With, Content-Type, Content-Length, Authorization"
 
 discovery:
   zen:
