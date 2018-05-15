@@ -151,6 +151,7 @@ func (f *Framework) CleanElasticsearch() {
 	for _, e := range elasticsearchList.Items {
 		if _, _, err := kutildb.PatchElasticsearch(f.extClient, &e, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.ObjectMeta.Finalizers = nil
+			in.Spec.DoNotPause = false
 			return in
 		}); err != nil {
 			fmt.Printf("error Patching Elasticsearch. error: %v", err)
