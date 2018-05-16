@@ -233,7 +233,7 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		replicas = types.Int32(dataNode.Replicas)
 	}
 
-	return c.ensureStatefulSet(elasticsearch, dataNode.Storage,  dataNode.Resources, statefulSetName, labels, replicas, envList, false)
+	return c.ensureStatefulSet(elasticsearch, dataNode.Storage, dataNode.Resources, statefulSetName, labels, replicas, envList, false)
 }
 
 func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -267,7 +267,6 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	if elasticsearch.Spec.Resources != nil {
 		resources = *elasticsearch.Spec.Resources
 	}
-	
 	return c.ensureStatefulSet(elasticsearch, pvcSpec, resources, statefulSetName, labels, replicas, envList, true)
 }
 
