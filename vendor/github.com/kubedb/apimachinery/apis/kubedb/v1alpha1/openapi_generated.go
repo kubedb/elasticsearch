@@ -373,6 +373,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
+					Required: []string{"master", "data", "client"},
 				},
 			},
 			Dependencies: []string{
@@ -450,6 +451,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
+					Required: []string{"storage", "resources"},
 				},
 			},
 			Dependencies: []string{

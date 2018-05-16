@@ -161,17 +161,7 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 		replicas = types.Int32(clientNode.Replicas)
 	}
 
-	pvcSpec := clientNode.Storage
-	if pvcSpec == nil {
-		pvcSpec = elasticsearch.Spec.Storage
-	}
-
-	resources := clientNode.Resources
-	if resources == nil {
-		resources = elasticsearch.Spec.Resources
-	}
-
-	return c.ensureStatefulSet(elasticsearch, pvcSpec, resources, statefulSetName, labels, replicas, envList, true)
+	return c.ensureStatefulSet(elasticsearch, clientNode.Storage, clientNode.Resources, statefulSetName, labels, replicas, envList, true)
 }
 
 func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
