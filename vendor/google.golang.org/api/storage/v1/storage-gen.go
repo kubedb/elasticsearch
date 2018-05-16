@@ -222,7 +222,8 @@ type Bucket struct {
 	// when no ACL is provided.
 	DefaultObjectAcl []*ObjectAccessControl `json:"defaultObjectAcl,omitempty"`
 
-	// Encryption: Encryption configuration for a bucket.
+	// Encryption: Encryption configuration used by default for newly
+	// inserted objects, when no encryption config is specified.
 	Encryption *BucketEncryption `json:"encryption,omitempty"`
 
 	// Etag: HTTP 1.1 Entity tag for the bucket.
@@ -404,11 +405,12 @@ func (s *BucketCors) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// BucketEncryption: Encryption configuration for a bucket.
+// BucketEncryption: Encryption configuration used by default for newly
+// inserted objects, when no encryption config is specified.
 type BucketEncryption struct {
 	// DefaultKmsKeyName: A Cloud KMS key that will be used to encrypt
 	// objects inserted into this bucket, if no encryption method is
-	// specified.
+	// specified. Limited availability; usable only by enabled projects.
 	DefaultKmsKeyName string `json:"defaultKmsKeyName,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "DefaultKmsKeyName")

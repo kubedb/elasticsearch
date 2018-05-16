@@ -16,7 +16,7 @@ import:
   version: master
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/kubedb/apimachinery
-  version: separate-resource
+  version: master
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/pkg/errors
@@ -66,6 +66,8 @@ import:
   version: v1.4.0
 - package: k8s.io/kube-aggregator
   version: kubernetes-1.10.0
+- package: github.com/codeskyblue/go-sh
+  version: master
 testImport:
 - package: github.com/stretchr/testify
   version: v1.1.4
