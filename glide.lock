@@ -1,5 +1,5 @@
-hash: 4e256a94110eb943caa953f8e1af579a2aa3e83c6323b8c229b568c2784ae71f
-updated: 2018-05-16T12:56:04.532622964+06:00
+hash: c54956839734ac3051614ced485f8719ea22db154243534802df0aa0d5154bb0
+updated: 2018-05-16T15:34:02.651210626+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -104,6 +104,10 @@ imports:
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
+- name: github.com/codegangsta/inject
+  version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
+- name: github.com/codeskyblue/go-sh
+  version: cf804ac79dffabb6b16342e24362cc744afc144f
 - name: github.com/coreos/etcd
   version: 95a726a27e09030f9ccbd9982a1508f5a6d25ada
   subpackages:

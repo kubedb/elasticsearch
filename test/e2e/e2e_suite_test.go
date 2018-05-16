@@ -33,7 +33,7 @@ func init() {
 	flag.StringVar(&storageClass, "storageclass", "", "Kubernetes StorageClass name")
 	flag.StringVar(&framework.DockerRegistry, "docker-registry", "kubedb", "User provided docker repository")
 	flag.StringVar(&framework.ExporterTag, "exporter-tag", "canary", "Tag of kubedb/operator used as exporter")
-	flag.BoolVar(&framework.ProvidedController, "provided-controller", false, "Enable this for provided controller")
+	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", false, "Enable this for provided controller")
 }
 
 const (
@@ -83,7 +83,7 @@ var _ = BeforeSuite(func() {
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 
-	if !framework.ProvidedController {
+	if !framework.SelfHostedOperator {
 		stopCh := genericapiserver.SetupSignalHandler()
 		go root.RunOperatorAndServer(kubeconfigPath, stopCh)
 	}
@@ -93,8 +93,10 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	By("Delete Admission Controller Configs")
-	root.CleanAdmissionConfigs()
+	if !framework.SelfHostedOperator {
+		By("Delete Admission Controller Configs")
+		root.CleanAdmissionConfigs()
+	}
 	By("Delete left over Elasticsearch objects")
 	root.CleanElasticsearch()
 	By("Delete left over Dormant Database objects")
