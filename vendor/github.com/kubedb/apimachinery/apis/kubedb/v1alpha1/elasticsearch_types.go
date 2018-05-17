@@ -88,7 +88,7 @@ type ElasticsearchNode struct {
 	// Storage to specify how storage shall be used.
 	Storage core.PersistentVolumeClaimSpec `json:"storage"`
 	// Compute Resources required by the sidecar container.
-	Resources core.ResourceRequirements `json:"resources"`
+	Resources core.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ElasticsearchStatus struct {
