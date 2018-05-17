@@ -114,7 +114,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should run successfully", shouldRunSuccessfully)
 			})
 
-			XContext("Dedicated elasticsearch", func() {
+			Context("Dedicated elasticsearch", func() {
 				BeforeEach(func() {
 					elasticsearch = f.DedicatedElasticsearch()
 				})
