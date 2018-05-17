@@ -65,7 +65,7 @@ EOF
 #note: make sure the zone supports volumes, not all regions support that
 #"We're sorry! Volumes are not available for Droplets on legacy hardware in the NYC3 region"
 pharmer create credential --from-file=cred.json --provider=DigitalOcean cred
-pharmer create cluster $NAME --provider=digitalocean --zone=nyc1 --nodes=2gb=1 --credential-uid=cred --kubernetes-version=v1.10.0
+pharmer create cluster $NAME --provider=digitalocean --zone=nyc1 --nodes=4gb=1 --credential-uid=cred --kubernetes-version=v1.10.0
 pharmer apply $NAME
 pharmer use cluster $NAME
 #wait for cluster to be ready
