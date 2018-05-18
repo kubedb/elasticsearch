@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/homedir"
-	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/scheme"
 	cs "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1"
@@ -19,6 +18,7 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/kubernetes"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
@@ -60,6 +60,7 @@ var _ = BeforeSuite(func() {
 
 	// Kubernetes config
 	kubeconfigPath := filepath.Join(userHome, ".kube/config")
+
 	By("Using kubeconfig from " + kubeconfigPath)
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	Expect(err).NotTo(HaveOccurred())
@@ -71,9 +72,7 @@ var _ = BeforeSuite(func() {
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	extClient := cs.NewForConfigOrDie(config)
 	kaClient := ka.NewForConfigOrDie(config)
-	if err != nil {
-		log.Fatalln(err)
-	}
+
 	// Framework
 	root = framework.New(config, kubeClient, extClient, kaClient, storageClass)
 

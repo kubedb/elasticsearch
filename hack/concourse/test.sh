@@ -22,7 +22,11 @@ curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/
   && mv onessl /usr/local/bin/
 
 # install pharmer
-go get -u github.com/pharmer/pharmer
+pushd /tmp
+curl -LO https://cdn.appscode.com/binaries/pharmer/0.1.0-rc.3/pharmer-linux-amd64
+chmod +x pharmer-linux-amd64
+mv pharmer-linux-amd64 /bin/pharmer
+popd
 
 function cleanup {
     # delete cluster on exit
@@ -60,7 +64,7 @@ popd
 
 #create cluster using pharmer
 pharmer create credential --from-file=creds/gcs/gke.json --provider=GoogleCloud cred
-pharmer create cluster $NAME --provider=gke gk10 --zone=us-central1-f --nodes=n1-standard-1=1 --credential-uid=cred --kubernetes-version=1.9.7-gke.0
+pharmer create cluster $NAME --provider=gke --zone=us-central1-f --nodes=n1-standard-1=1 --credential-uid=cred --kubernetes-version=1.9.7-gke.0
 pharmer apply $NAME
 pharmer use cluster $NAME
 #wait for cluster to be ready
