@@ -164,13 +164,22 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 		if topology.Client.Replicas == nil || *topology.Client.Replicas < 1 {
 			return fmt.Errorf(`topology.client.replicas "%v" invalid. Must be greater than zero`, topology.Client.Replicas)
 		}
+		if err := amv.ValidateStorage(client, topology.Client.Storage); err != nil {
+			return err
+		}
 
 		if topology.Master.Replicas == nil || *topology.Master.Replicas < 1 {
 			return fmt.Errorf(`topology.master.replicas "%v" invalid. Must be greater than zero`, topology.Master.Replicas)
 		}
+		if err := amv.ValidateStorage(client, topology.Master.Storage); err != nil {
+			return err
+		}
 
 		if topology.Data.Replicas == nil || *topology.Data.Replicas < 1 {
 			return fmt.Errorf(`topology.data.replicas "%v" invalid. Must be greater than zero`, topology.Data.Replicas)
+		}
+		if err := amv.ValidateStorage(client, topology.Data.Storage); err != nil {
+			return err
 		}
 	} else {
 		if elasticsearch.Spec.Replicas == nil || *elasticsearch.Spec.Replicas < 1 {
@@ -180,11 +189,8 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 		if elasticsearch.Spec.Storage == nil {
 			return fmt.Errorf(`invalid Elasticsearch: "%v". spec.storage can't be nil`, elasticsearch.Name)
 		}
-	}
 
-	if elasticsearch.Spec.Storage != nil {
-		var err error
-		if err = amv.ValidateStorage(client, elasticsearch.Spec.Storage); err != nil {
+		if err := amv.ValidateStorage(client, *elasticsearch.Spec.Storage); err != nil {
 			return err
 		}
 	}
