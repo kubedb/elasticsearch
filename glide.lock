@@ -1,5 +1,5 @@
 hash: e5330c1d7be7e81d54eac1ee76dd55e5ba82489b24af4681ff7e4f162f893abe
-updated: 2018-05-17T16:18:32.047544746+06:00
+updated: 2018-05-18T10:18:40.526409805+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -40,7 +40,7 @@ imports:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: c397449684de5caf2de0309e6453eab905901cf8
+  version: 58e34c2195a0b9eee67eea40701f7f7759f3f79f
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -300,7 +300,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 2ddf6d758266fcb080a4f9e054b9f292c85e6798
 - name: github.com/kubedb/apimachinery
-  version: 2bf5958241b6d7bb42469d066746f3d165282197
+  version: a8071385b2fc35db545bc8a3b516e711217d3cce
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -643,7 +643,6 @@ imports:
   - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/rand
-  - pkg/util/remotecommand
   - pkg/util/runtime
   - pkg/util/sets
   - pkg/util/strategicpatch
@@ -895,12 +894,10 @@ imports:
   - tools/portforward
   - tools/record
   - tools/reference
-  - tools/remotecommand
   - transport
   - transport/spdy
   - util/buffer
   - util/cert
-  - util/exec
   - util/flowcontrol
   - util/homedir
   - util/integer
