@@ -38,7 +38,7 @@ function cleanup {
         kubectl describe replicasets -n kube-system -l app=kubedb || true
         echo ""
         echo ""
-        kubectl describe pods -n kube-system -l app=kubedb || true
+        kubectl describe pods --all-namespaces
     fi
 
     # delete cluster on exit
@@ -73,6 +73,12 @@ export DOCKER_REGISTRY=kubedbci
 ./hack/docker/es-operator/make.sh build
 ./hack/docker/es-operator/make.sh push
 popd
+
+cat > cred.json <<EOF
+{
+        "token" : "$TOKEN"
+}
+EOF
 
 #create cluster using pharmer
 pharmer create credential --from-file=cred.json --provider=DigitalOcean cred
