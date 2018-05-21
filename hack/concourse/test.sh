@@ -29,6 +29,18 @@ mv pharmer-linux-amd64 /bin/pharmer
 popd
 
 function cleanup {
+    # Workload Descriptions if the test fails
+    if [ $? -ne 0 ]; then
+        echo ""
+        kubectl describe deploy -n kube-system -l app=kubedb || true
+        echo ""
+        echo ""
+        kubectl describe replicasets -n kube-system -l app=kubedb || true
+        echo ""
+        echo ""
+        kubectl describe pods -n kube-system -l app=kubedb || true
+    fi
+
     # delete cluster on exit
     pharmer get cluster || true
     pharmer delete cluster $NAME || true
@@ -63,8 +75,8 @@ export DOCKER_REGISTRY=kubedbci
 popd
 
 #create cluster using pharmer
-pharmer create credential --from-file=creds/gcs/gke.json --provider=GoogleCloud cred
-pharmer create cluster $NAME --provider=gke --zone=us-central1-f --nodes=n1-standard-1=1 --credential-uid=cred --kubernetes-version=1.9.7-gke.0
+pharmer create credential --from-file=cred.json --provider=DigitalOcean cred
+pharmer create cluster $NAME --provider=digitalocean --zone=nyc1 --nodes=2gb=1 --credential-uid=cred --kubernetes-version=v1.10.0
 pharmer apply $NAME
 pharmer use cluster $NAME
 #wait for cluster to be ready
@@ -124,3 +136,6 @@ export DOCKER_REGISTRY=kubedbci
 ./hack/docker/es-operator/make.sh push
 source ./hack/deploy/setup.sh --docker-registry=kubedbci
 ./hack/make.py test e2e --v=1 --storageclass=standard --selfhosted-operator=true
+
+kubectl describe pods -n kube-system -l app=kubedb || true
+
