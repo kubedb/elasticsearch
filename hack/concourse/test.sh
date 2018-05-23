@@ -74,17 +74,22 @@ export DOCKER_REGISTRY=kubedbci
 ./hack/docker/es-operator/make.sh push
 popd
 
-cat > cred.json <<EOF
-{
-        "token" : "$TOKEN"
-}
-EOF
-
 #create cluster using pharmer
-pharmer create credential --from-file=cred.json --provider=DigitalOcean cred
-pharmer create cluster $NAME --provider=digitalocean --zone=nyc1 --nodes=2gb=1 --credential-uid=cred --kubernetes-version=v1.10.0
+pharmer create credential --from-file=creds/gcs/gke.json --provider=GoogleCloud cred
+pharmer create cluster $NAME --provider=gke --zone=nyc1 --nodes=2gb=1 --credential-uid=cred --kubernetes-version=v1.10.0
+pharmer create cluster $NAME --provider=gke --zone=us-central1-f --nodes=n1-standard-1=1 --credential-uid=cred --v=10 --kubernetes-version=1.9.7-gke.0
 pharmer apply $NAME
-pharmer use cluster $NAME
+
+# gcloud-sdk
+pushd /tmp
+curl -LO https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-202.0.0-linux-x86_64.tar.gz
+tar --extract --file google-cloud-sdk-201.0.0-linux-x86_64.tar.gz
+CLOUDSDK_CORE_DISABLE_PROMPTS=1 ./google-cloud-sdk/install.sh
+source /tmp/google-cloud-sdk/path.bash.inc
+popd
+gcloud auth activate-service-account --key-file creds/gcs/gke.json
+gcloud container clusters get-credentials $NAME --zone us-central1-f --project k8s-qa
+
 #wait for cluster to be ready
 sleep 300
 kubectl get nodes
