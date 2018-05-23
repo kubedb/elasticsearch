@@ -93,22 +93,6 @@ gcloud container clusters get-credentials $NAME --zone us-central1-f --project k
 sleep 300
 kubectl get nodes
 
-#create storageclass
-cat > sc.yaml <<EOF
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: standard
-parameters:
-  zone: nyc1
-provisioner: external/pharmer
-EOF
-
-#create storage-class
-kubectl create -f sc.yaml
-sleep 120
-kubectl get storageclass
-
 export CRED_DIR=$(pwd)/creds/gcs/gcs.json
 
 pushd $GOPATH/src/github.com/kubedb/elasticsearch
