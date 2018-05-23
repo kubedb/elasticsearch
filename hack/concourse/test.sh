@@ -88,6 +88,7 @@ source /tmp/google-cloud-sdk/path.bash.inc
 popd
 gcloud auth activate-service-account --key-file creds/gcs/gke.json
 gcloud container clusters get-credentials $NAME --zone us-central1-f --project k8s-qa
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=k8s-qa@k8s-qa.iam.gserviceaccount.com
 
 #wait for cluster to be ready
 sleep 300
