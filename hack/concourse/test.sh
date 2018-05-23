@@ -76,7 +76,7 @@ popd
 
 #create cluster using pharmer
 pharmer create credential --from-file=creds/gcs/gke.json --provider=GoogleCloud cred
-pharmer create cluster $NAME --provider=gke --zone=us-central1-f --nodes=n1-standard-1=1 --credential-uid=cred --v=10 --kubernetes-version=1.9.7-gke.0
+pharmer create cluster $NAME --provider=gke --zone=us-central1-f --nodes=n1-standard-2=1 --credential-uid=cred --v=10 --kubernetes-version=1.9.7-gke.0
 pharmer apply $NAME
 
 # gcloud-sdk
