@@ -23,7 +23,7 @@ curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/
 
 # install pharmer
 pushd /tmp
-curl -LO https://cdn.appscode.com/binaries/pharmer/0.1.0-rc.3/pharmer-linux-amd64
+curl -LO https://cdn.appscode.com/binaries/pharmer/0.1.0-rc.4/pharmer-linux-amd64
 chmod +x pharmer-linux-amd64
 mv pharmer-linux-amd64 /bin/pharmer
 popd
@@ -38,7 +38,7 @@ function cleanup {
         kubectl describe replicasets -n kube-system -l app=kubedb || true
         echo ""
         echo ""
-        kubectl describe pods --all-namespaces
+        kubectl describe pods --all-namespaces || true
     fi
 
     # delete cluster on exit
@@ -52,7 +52,7 @@ function cleanup {
     # delete docker image on exit
     curl -LO https://raw.githubusercontent.com/appscodelabs/libbuild/master/docker.py || true
     chmod +x docker.py || true
-    ./docker.py del_tag kubedbci es-operator $CUSTOM_OPERATOR_TAG
+    ./docker.py del_tag kubedbci es-operator $CUSTOM_OPERATOR_TAG || true
 }
 trap cleanup EXIT
 
@@ -76,14 +76,13 @@ popd
 
 #create cluster using pharmer
 pharmer create credential --from-file=creds/gcs/gke.json --provider=GoogleCloud cred
-pharmer create cluster $NAME --provider=gke --zone=nyc1 --nodes=2gb=1 --credential-uid=cred --kubernetes-version=v1.10.0
 pharmer create cluster $NAME --provider=gke --zone=us-central1-f --nodes=n1-standard-1=1 --credential-uid=cred --v=10 --kubernetes-version=1.9.7-gke.0
 pharmer apply $NAME
 
 # gcloud-sdk
 pushd /tmp
 curl -LO https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-202.0.0-linux-x86_64.tar.gz
-tar --extract --file google-cloud-sdk-201.0.0-linux-x86_64.tar.gz
+tar --extract --file google-cloud-sdk-202.0.0-linux-x86_64.tar.gz
 CLOUDSDK_CORE_DISABLE_PROMPTS=1 ./google-cloud-sdk/install.sh
 source /tmp/google-cloud-sdk/path.bash.inc
 popd
