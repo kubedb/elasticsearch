@@ -11,6 +11,7 @@ import (
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/pkg/eventer"
+	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -130,6 +131,11 @@ func (c *Controller) CheckStatefulSetPodStatus(statefulSet *apps.StatefulSet) er
 	return nil
 }
 
+func getHeapSizeForNode(val int64) int64 {
+	ret := val / 100
+	return ret * 80
+}
+
 func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	statefulSetName := elasticsearch.OffshootName()
 	clientNode := elasticsearch.Spec.Topology.Client
@@ -140,6 +146,12 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleClient] = "set"
+
+	request, exists := clientNode.Resources.Requests[core.ResourceMemory]
+	if !exists {
+		errors.New("resource.request[memory] is required for Spec.Topology.Client")
+	}
+	heapSize := getHeapSizeForNode(request.Value())
 
 	envList := []core.EnvVar{
 		{
@@ -153,6 +165,10 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 		{
 			Name:  "MODE",
 			Value: "client",
+		},
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
 	}
 
@@ -174,6 +190,11 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleMaster] = "set"
+	request, exists := masterNode.Resources.Requests[core.ResourceMemory]
+	if !exists {
+		errors.New("resource.request[memory] is required for Spec.Topology.Client")
+	}
+	heapSize := getHeapSizeForNode(request.Value())
 
 	replicas := int32(1)
 	if masterNode.Replicas != nil {
@@ -197,6 +218,10 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 			Name:  "NUMBER_OF_MASTERS",
 			Value: fmt.Sprintf("%v", (replicas/2)+1),
 		},
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
+		},
 	}
 
 	return c.ensureStatefulSet(elasticsearch, masterNode.Storage, masterNode.Resources, statefulSetName, labels, replicas, envList, false)
@@ -212,6 +237,11 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleData] = "set"
+	request, exists := dataNode.Resources.Requests[core.ResourceMemory]
+	if !exists {
+		errors.New("resource.request[memory] is required for Spec.Topology.Client")
+	}
+	heapSize := getHeapSizeForNode(request.Value())
 
 	envList := []core.EnvVar{
 		{
@@ -225,6 +255,10 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		{
 			Name:  "HTTP_ENABLE",
 			Value: fmt.Sprintf("%v", false),
+		},
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
 	}
 
@@ -247,6 +281,11 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	if elasticsearch.Spec.Replicas != nil {
 		replicas = types.Int32(elasticsearch.Spec.Replicas)
 	}
+	request, exists := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]
+	if !exists {
+		errors.New("resource.request[memory] is required for Spec.Topology.Client")
+	}
+	heapSize := getHeapSizeForNode(request.Value())
 
 	envList := []core.EnvVar{
 		{
@@ -256,6 +295,10 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 		{
 			Name:  "MODE",
 			Value: "client",
+		},
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
 	}
 
@@ -345,10 +388,6 @@ func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, 
 					FieldPath: "metadata.name",
 				},
 			},
-		},
-		{
-			Name:  "ES_JAVA_OPTS",
-			Value: "-Xms512m -Xmx512m",
 		},
 		{
 			Name:  "DISCOVERY_SERVICE",

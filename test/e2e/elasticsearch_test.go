@@ -3,14 +3,12 @@ package e2e_test
 import (
 	"os"
 
-	"github.com/appscode/go/types"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/elasticsearch/test/e2e/framework"
 	"github.com/kubedb/elasticsearch/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
@@ -111,31 +109,7 @@ var _ = Describe("Elasticsearch", func() {
 		Context("General", func() {
 
 			Context("-", func() {
-				It("should run successfully", shouldRunSuccessfully)
-			})
 
-			Context("Dedicated elasticsearch", func() {
-				BeforeEach(func() {
-					elasticsearch = f.DedicatedElasticsearch()
-				})
-				It("should run successfully", shouldRunSuccessfully)
-			})
-
-			Context("With PVC", func() {
-				BeforeEach(func() {
-					if f.StorageClass == "" {
-						skipMessage = "Missing StorageClassName. Provide as flag to test this."
-					}
-					elasticsearch.Spec.Storage = &core.PersistentVolumeClaimSpec{
-						Resources: core.ResourceRequirements{
-							Requests: core.ResourceList{
-								core.ResourceStorage: resource.MustParse("1Gi"),
-							},
-						},
-						StorageClassName: types.StringP(f.StorageClass),
-					}
-
-				})
 				It("should run successfully", func() {
 					if skipMessage != "" {
 						Skip(skipMessage)
@@ -186,6 +160,14 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 				})
 			})
+
+			Context("Dedicated elasticsearch", func() {
+				BeforeEach(func() {
+					elasticsearch = f.DedicatedElasticsearch()
+				})
+				It("should run successfully", shouldRunSuccessfully)
+			})
+
 		})
 
 		Context("DoNotPause", func() {

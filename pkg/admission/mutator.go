@@ -15,7 +15,9 @@ import (
 	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
 	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -107,16 +109,65 @@ func setDefaultValues(client kubernetes.Interface, extClient cs.Interface, elast
 			topology.Client.Replicas = types.Int32P(1)
 		}
 
+		// If resource.request of topology.client is not given, take resource.limit.
+		// If, resource.limit is not given either, set default resource.requests to 1Gi.
+		// default heapsize is 1G. ref: https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html
+		if req, _ := topology.Client.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
+			if topology.Client.Resources.Requests == nil {
+				topology.Client.Resources.Requests = make(core.ResourceList)
+			}
+			if limit, found := topology.Client.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+				topology.Client.Resources.Requests[core.ResourceMemory] = limit
+			} else {
+				topology.Client.Resources.Requests[core.ResourceMemory] = resource.MustParse("1Gi")
+			}
+		}
+
 		if topology.Master.Replicas == nil {
 			topology.Master.Replicas = types.Int32P(1)
+		}
+
+		if req, _ := topology.Master.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
+			if topology.Master.Resources.Requests == nil {
+				topology.Master.Resources.Requests = make(core.ResourceList)
+			}
+			if limit, found := topology.Master.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+				topology.Master.Resources.Requests[core.ResourceMemory] = limit
+			} else {
+				topology.Master.Resources.Requests[core.ResourceMemory] = resource.MustParse("1Gi")
+			}
 		}
 
 		if topology.Data.Replicas == nil {
 			topology.Data.Replicas = types.Int32P(1)
 		}
+
+		if req, _ := topology.Data.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
+			if topology.Data.Resources.Requests == nil {
+				topology.Data.Resources.Requests = make(core.ResourceList)
+			}
+			if limit, found := topology.Data.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+				topology.Data.Resources.Requests[core.ResourceMemory] = limit
+			} else {
+				topology.Data.Resources.Requests[core.ResourceMemory] = resource.MustParse("1Gi")
+			}
+		}
 	} else {
 		if elasticsearch.Spec.Replicas == nil {
 			elasticsearch.Spec.Replicas = types.Int32P(1)
+		}
+		// If resource.request is not given, take resource.limit.
+		// If, resource.limit is not given either, set default resource.requests to 1Gi.
+		// default heapsize is 1GB. ref: https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html
+		if req, _ := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
+			if elasticsearch.Spec.Resources.Requests == nil {
+				elasticsearch.Spec.Resources.Requests = make(core.ResourceList)
+			}
+			if limit, found := elasticsearch.Spec.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+				elasticsearch.Spec.Resources.Requests[core.ResourceMemory] = limit
+			} else {
+				elasticsearch.Spec.Resources.Requests[core.ResourceMemory] = resource.MustParse("1Gi")
+			}
 		}
 	}
 

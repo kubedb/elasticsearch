@@ -14,6 +14,7 @@ import (
 	amv "github.com/kubedb/apimachinery/pkg/validator"
 	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -167,6 +168,9 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 		if err := amv.ValidateStorage(client, topology.Client.Storage); err != nil {
 			return err
 		}
+		if req, _ := topology.Client.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
+			return errors.New(`resources.requests["memory"] of spec.topology.Client needs to be bigger than zero, when spec.topology is set.`)
+		}
 
 		if topology.Master.Replicas == nil || *topology.Master.Replicas < 1 {
 			return fmt.Errorf(`topology.master.replicas "%v" invalid. Must be greater than zero`, topology.Master.Replicas)
@@ -174,12 +178,18 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 		if err := amv.ValidateStorage(client, topology.Master.Storage); err != nil {
 			return err
 		}
+		if req, _ := topology.Master.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
+			return errors.New(`resources.requests["memory"] of spec.topology.Master needs to be bigger than zero, when spec.topology is set.`)
+		}
 
 		if topology.Data.Replicas == nil || *topology.Data.Replicas < 1 {
 			return fmt.Errorf(`topology.data.replicas "%v" invalid. Must be greater than zero`, topology.Data.Replicas)
 		}
 		if err := amv.ValidateStorage(client, topology.Data.Storage); err != nil {
 			return err
+		}
+		if req, _ := topology.Data.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
+			return errors.New(`resources.requests["memory"] of spec.topology.Data needs to be bigger than zero, when spec.topology is set.`)
 		}
 	} else {
 		if elasticsearch.Spec.Replicas == nil || *elasticsearch.Spec.Replicas < 1 {
@@ -192,6 +202,10 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 
 		if err := amv.ValidateStorage(client, *elasticsearch.Spec.Storage); err != nil {
 			return err
+		}
+
+		if req, _ := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
+			return errors.New(`Spec.Resources.Requests["memory"] needs to be bigger than zero, when spec.topology is set.`)
 		}
 	}
 
