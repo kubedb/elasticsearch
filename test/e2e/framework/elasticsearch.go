@@ -11,7 +11,9 @@ import (
 	kutildb "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	. "github.com/onsi/gomega"
 	"gopkg.in/olivere/elastic.v5"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,6 +30,19 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 			Version:   jtypes.StrYo("5.6.4"),
 			Replicas:  types.Int32P(1),
 			EnableSSL: true,
+			Storage: &core.PersistentVolumeClaimSpec{
+				Resources: core.ResourceRequirements{
+					Requests: core.ResourceList{
+						core.ResourceStorage: resource.MustParse("1Gi"),
+					},
+				},
+				StorageClassName: types.StringP(i.StorageClass),
+			},
+			Resources: &core.ResourceRequirements{
+				Requests: core.ResourceList{
+					core.ResourceMemory: resource.MustParse("256Mi"),
+				},
+			},
 		},
 	}
 }
@@ -47,14 +62,53 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 				Master: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
 					Prefix:   "master",
+					Storage: core.PersistentVolumeClaimSpec{
+						Resources: core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceStorage: resource.MustParse("1Gi"),
+							},
+						},
+						StorageClassName: types.StringP(i.StorageClass),
+					},
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
 				},
 				Data: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
 					Prefix:   "data",
+					Storage: core.PersistentVolumeClaimSpec{
+						Resources: core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceStorage: resource.MustParse("1Gi"),
+							},
+						},
+						StorageClassName: types.StringP(i.StorageClass),
+					},
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
 				},
 				Client: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
 					Prefix:   "client",
+					Storage: core.PersistentVolumeClaimSpec{
+						Resources: core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceStorage: resource.MustParse("1Gi"),
+							},
+						},
+						StorageClassName: types.StringP(i.StorageClass),
+					},
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
 				},
 			},
 			EnableSSL: true,
