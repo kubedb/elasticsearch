@@ -204,8 +204,11 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 			return err
 		}
 
+		if elasticsearch.Spec.Resources == nil {
+			return fmt.Errorf(`invalid Elasticsearch: "%v". spec.resource can't be nil`, elasticsearch.Name)
+		}
 		if req, _ := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
-			return errors.New(`Spec.Resources.Requests["memory"] needs to be bigger than zero, when spec.topology is set.`)
+			return fmt.Errorf(`Spec.Resources.Requests["memory"] needs to be bigger than zero`)
 		}
 	}
 

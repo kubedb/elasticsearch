@@ -40,7 +40,7 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 			},
 			Resources: &core.ResourceRequirements{
 				Requests: core.ResourceList{
-					core.ResourceMemory: resource.MustParse("128Mi"),
+					core.ResourceMemory: resource.MustParse("256Mi"),
 				},
 			},
 		},

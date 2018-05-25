@@ -159,6 +159,10 @@ func setDefaultValues(client kubernetes.Interface, extClient cs.Interface, elast
 		// If resource.request is not given, take resource.limit.
 		// If, resource.limit is not given either, set default resource.requests to 1Gi.
 		// default heapsize is 1GB. ref: https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html
+		if elasticsearch.Spec.Resources == nil {
+			elasticsearch.Spec.Resources = new(core.ResourceRequirements)
+		}
+
 		if req, _ := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]; req.Value() <= 0 {
 			if elasticsearch.Spec.Resources.Requests == nil {
 				elasticsearch.Spec.Resources.Requests = make(core.ResourceList)

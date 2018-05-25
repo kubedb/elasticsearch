@@ -247,6 +247,11 @@ func sampleElasticsearch() api.Elasticsearch {
 					},
 				},
 			},
+			Resources: &core.ResourceRequirements{
+				Requests: core.ResourceList{
+					core.ResourceMemory: resource.MustParse("128Mi"),
+				},
+			},
 			Init: &api.InitSpec{
 				ScriptSource: &api.ScriptSourceSpec{
 					VolumeSource: core.VolumeSource{
