@@ -38,11 +38,6 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 				},
 				StorageClassName: types.StringP(i.StorageClass),
 			},
-			Resources: &core.ResourceRequirements{
-				Requests: core.ResourceList{
-					core.ResourceMemory: resource.MustParse("256Mi"),
-				},
-			},
 		},
 	}
 }
@@ -70,11 +65,6 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 						},
 						StorageClassName: types.StringP(i.StorageClass),
 					},
-					Resources: core.ResourceRequirements{
-						Requests: core.ResourceList{
-							core.ResourceMemory: resource.MustParse("128Mi"),
-						},
-					},
 				},
 				Data: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
@@ -87,11 +77,6 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 						},
 						StorageClassName: types.StringP(i.StorageClass),
 					},
-					Resources: core.ResourceRequirements{
-						Requests: core.ResourceList{
-							core.ResourceMemory: resource.MustParse("128Mi"),
-						},
-					},
 				},
 				Client: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
@@ -103,11 +88,6 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 							},
 						},
 						StorageClassName: types.StringP(i.StorageClass),
-					},
-					Resources: core.ResourceRequirements{
-						Requests: core.ResourceList{
-							core.ResourceMemory: resource.MustParse("128Mi"),
-						},
 					},
 				},
 			},

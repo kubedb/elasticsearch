@@ -11,7 +11,6 @@ import (
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/pkg/eventer"
-	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -147,11 +146,10 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleClient] = "set"
 
-	request, found := clientNode.Resources.Requests[core.ResourceMemory]
-	if !found {
-		errors.New("resource.request[memory] is required for Spec.Topology.Client")
+	heapSize := int64(134217728) // 128mb
+	if request, found := clientNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
+		heapSize = getHeapSizeForNode(request.Value())
 	}
-	heapSize := getHeapSizeForNode(request.Value())
 
 	envList := []core.EnvVar{
 		{
@@ -190,11 +188,11 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleMaster] = "set"
-	request, found := masterNode.Resources.Requests[core.ResourceMemory]
-	if !found {
-		errors.New("resource.request[memory] is required for Spec.Topology.Client")
+
+	heapSize := int64(134217728) // 128mb
+	if request, found := masterNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
+		heapSize = getHeapSizeForNode(request.Value())
 	}
-	heapSize := getHeapSizeForNode(request.Value())
 
 	replicas := int32(1)
 	if masterNode.Replicas != nil {
@@ -237,11 +235,11 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleData] = "set"
-	request, found := dataNode.Resources.Requests[core.ResourceMemory]
-	if !found {
-		errors.New("resource.request[memory] is required for Spec.Topology.Client")
+
+	heapSize := int64(134217728) // 128mb
+	if request, found := dataNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
+		heapSize = getHeapSizeForNode(request.Value())
 	}
-	heapSize := getHeapSizeForNode(request.Value())
 
 	envList := []core.EnvVar{
 		{
@@ -281,11 +279,13 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	if elasticsearch.Spec.Replicas != nil {
 		replicas = types.Int32(elasticsearch.Spec.Replicas)
 	}
-	request, found := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]
-	if !found {
-		errors.New("resource.request[memory] is required for Spec.Topology.Client")
+
+	heapSize := int64(134217728) // 128mb
+	if elasticsearch.Spec.Resources != nil {
+		if request, found := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
+			heapSize = getHeapSizeForNode(request.Value())
+		}
 	}
-	heapSize := getHeapSizeForNode(request.Value())
 
 	envList := []core.EnvVar{
 		{
