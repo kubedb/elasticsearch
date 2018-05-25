@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
@@ -95,22 +96,13 @@ var _ = Describe("Elasticsearch", func() {
 		}
 	})
 
-	var shouldRunSuccessfully = func() {
-		if skipMessage != "" {
-			Skip(skipMessage)
-		}
-
-		// Create Elasticsearch
-		createAndWaitForRunning()
-	}
-
 	Describe("Test", func() {
 
 		Context("General", func() {
 
 			Context("-", func() {
 
-				It("should run successfully", func() {
+				var shouldRunSuccessfully = func() {
 					if skipMessage != "" {
 						Skip(skipMessage)
 					}
@@ -158,6 +150,25 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Checking new indices")
 					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+				}
+
+				Context("with Default Resource", func() {
+
+					It("should run successfully", shouldRunSuccessfully)
+
+				})
+
+				Context("Custom Resource", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.Resources = &core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceMemory: resource.MustParse("512Mi"),
+							},
+						}
+					})
+
+					It("should run successfully", shouldRunSuccessfully)
+
 				})
 			})
 
@@ -165,7 +176,44 @@ var _ = Describe("Elasticsearch", func() {
 				BeforeEach(func() {
 					elasticsearch = f.DedicatedElasticsearch()
 				})
-				It("should run successfully", shouldRunSuccessfully)
+
+				var shouldRunSuccessfully = func() {
+					if skipMessage != "" {
+						Skip(skipMessage)
+					}
+					// Create Elasticsearch
+					createAndWaitForRunning()
+				}
+
+				Context("with Default Resource", func() {
+
+					It("should run successfully", shouldRunSuccessfully)
+
+				})
+
+				Context("Custom Resource", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.Topology.Client.Resources = core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						}
+						elasticsearch.Spec.Topology.Master.Resources = core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						}
+						elasticsearch.Spec.Topology.Data.Resources = core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						}
+					})
+
+					It("should run successfully", shouldRunSuccessfully)
+
+				})
+
 			})
 
 		})
