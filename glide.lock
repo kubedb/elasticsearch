@@ -1,5 +1,5 @@
 hash: e5330c1d7be7e81d54eac1ee76dd55e5ba82489b24af4681ff7e4f162f893abe
-updated: 2018-05-17T13:16:44.959553708+06:00
+updated: 2018-05-25T15:56:43.380612198+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -40,7 +40,7 @@ imports:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: c397449684de5caf2de0309e6453eab905901cf8
+  version: e04d4d7ed42f54b68fc1e6a5926679883b0e5b56
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -300,7 +300,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/kubedb/apimachinery
-  version: 39400609cc45604ee5ad5b97b113d9f8c55f3b77
+  version: 1f462fe2a8b320d95f5f81b3a063fc83c34d28f1
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -441,8 +441,6 @@ imports:
   - bcrypt
   - blowfish
   - ssh/terminal
-- name: golang.org/x/crypto/bcrypt
-  version: 81e90905daefcd6fd217b62423c0908922eadb30
 - name: golang.org/x/net
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
@@ -500,14 +498,14 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: aedc137bffcaca05f836e35c6d182fcb7a68b1c0
+  version: 348810ff778af56686d572415ce79e6c9fad9613
   subpackages:
   - gensupport
   - googleapi
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: b9aad5d628b283f265adf8d3557faae187a8d015
+  version: b1f26356af11148e710935ed1ac8a7f5702c7612
   subpackages:
   - internal
   - internal/app_identity
@@ -641,7 +639,6 @@ imports:
   - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/rand
-  - pkg/util/remotecommand
   - pkg/util/runtime
   - pkg/util/sets
   - pkg/util/strategicpatch
@@ -895,12 +892,10 @@ imports:
   - tools/portforward
   - tools/record
   - tools/reference
-  - tools/remotecommand
   - transport
   - transport/spdy
   - util/buffer
   - util/cert
-  - util/exec
   - util/flowcontrol
   - util/homedir
   - util/integer
