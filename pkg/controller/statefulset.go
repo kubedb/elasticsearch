@@ -147,8 +147,8 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleClient] = "set"
 
-	request, exists := clientNode.Resources.Requests[core.ResourceMemory]
-	if !exists {
+	request, found := clientNode.Resources.Requests[core.ResourceMemory]
+	if !found {
 		errors.New("resource.request[memory] is required for Spec.Topology.Client")
 	}
 	heapSize := getHeapSizeForNode(request.Value())
@@ -190,8 +190,8 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleMaster] = "set"
-	request, exists := masterNode.Resources.Requests[core.ResourceMemory]
-	if !exists {
+	request, found := masterNode.Resources.Requests[core.ResourceMemory]
+	if !found {
 		errors.New("resource.request[memory] is required for Spec.Topology.Client")
 	}
 	heapSize := getHeapSizeForNode(request.Value())
@@ -237,8 +237,8 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 
 	labels := elasticsearch.StatefulSetLabels()
 	labels[NodeRoleData] = "set"
-	request, exists := dataNode.Resources.Requests[core.ResourceMemory]
-	if !exists {
+	request, found := dataNode.Resources.Requests[core.ResourceMemory]
+	if !found {
 		errors.New("resource.request[memory] is required for Spec.Topology.Client")
 	}
 	heapSize := getHeapSizeForNode(request.Value())
@@ -281,8 +281,8 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	if elasticsearch.Spec.Replicas != nil {
 		replicas = types.Int32(elasticsearch.Spec.Replicas)
 	}
-	request, exists := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]
-	if !exists {
+	request, found := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]
+	if !found {
 		errors.New("resource.request[memory] is required for Spec.Topology.Client")
 	}
 	heapSize := getHeapSizeForNode(request.Value())
