@@ -1,5 +1,5 @@
 hash: e5330c1d7be7e81d54eac1ee76dd55e5ba82489b24af4681ff7e4f162f893abe
-updated: 2018-05-22T21:47:17.441667318-07:00
+updated: 2018-05-24T12:07:55.618318128+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -26,7 +26,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: 58a38a46ddb591a543c6b1003213353e29331c5a
+  version: 1359b374de83fa14fd58ab10aa8ea4935f84d249
 - name: github.com/appscode/kube-mon
   version: dc81c09a885b0862f1bbbae3e440a68fbf2b36a6
   subpackages:
@@ -194,7 +194,7 @@ imports:
   - daemon
   - journal
 - name: github.com/coreos/prometheus-operator
-  version: b21c4949708337d04b9a4d7de0b806dd799a0955
+  version: 384704f533c2b4bb2beb45f4522548ba21947ccd
   repo: https://github.com/tamalsaha/prometheus-operator.git
   subpackages:
   - pkg/client/monitoring/v1
@@ -227,13 +227,13 @@ imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/go-ini/ini
-  version: 300e940a926eb277d3901b20bdfcc54928ad3642
+  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
   version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
 - name: github.com/go-openapi/spec
-  version: 1de3e0542de65ad8d75452a595886fdd0befb363
+  version: 7abd5745472fff5eb3685386d5fb8bf38683154d
 - name: github.com/go-openapi/swag
   version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
@@ -274,7 +274,7 @@ imports:
   - compiler
   - extensions
 - name: github.com/graymeta/stow
-  version: a2bb5ac932dfea981d79ab395a0ab4ea09365d52
+  version: 42dc7dbf948d85803a205b39e5d3790470651c73
   repo: https://github.com/appscode/stow.git
   vcs: git
   subpackages:
@@ -380,7 +380,7 @@ imports:
 - name: github.com/openshift/origin
   version: 93f12e580ece30e0055f030dcd6d239116ff5cb4
 - name: github.com/orcaman/concurrent-map
-  version: a05df785d2dcc16310fb997ee1702100d047cfe1
+  version: 2ae17bc4c860c83513ee50feb9746f3e50d7515d
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pkg/errors
@@ -498,14 +498,14 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: 4f7dd2b006a4ffd9fd683c1c734d2fe91ca0ea1c
+  version: 348810ff778af56686d572415ce79e6c9fad9613
   subpackages:
   - gensupport
   - googleapi
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
+  version: b1f26356af11148e710935ed1ac8a7f5702c7612
   subpackages:
   - internal
   - internal/app_identity
@@ -876,9 +876,11 @@ imports:
   - pkg/apis/clientauthentication/v1alpha1
   - pkg/version
   - plugin/pkg/client/auth/exec
+  - plugin/pkg/client/auth/gcp
   - rest
   - rest/watch
   - testing
+  - third_party/forked/golang/template
   - tools/auth
   - tools/cache
   - tools/clientcmd
@@ -897,6 +899,7 @@ imports:
   - util/flowcontrol
   - util/homedir
   - util/integer
+  - util/jsonpath
   - util/retry
   - util/workqueue
 - name: k8s.io/kube-aggregator

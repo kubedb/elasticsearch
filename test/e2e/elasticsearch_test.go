@@ -129,7 +129,7 @@ var _ = Describe("Elasticsearch", func() {
 					elasticsearch.Spec.Storage = &core.PersistentVolumeClaimSpec{
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
-								core.ResourceStorage: resource.MustParse("5Gi"),
+								core.ResourceStorage: resource.MustParse("1Gi"),
 							},
 						},
 						StorageClassName: types.StringP(f.StorageClass),
