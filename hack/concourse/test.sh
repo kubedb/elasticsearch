@@ -38,7 +38,7 @@ function cleanup {
         kubectl describe replicasets -n kube-system -l app=kubedb || true
         echo ""
         echo ""
-        kubectl describe pods --all-namespaces || true
+        kubectl describe pods -n kube-system -l app=kubedb || true
     fi
 
     # delete cluster on exit
@@ -127,8 +127,6 @@ EOF
 ./hack/builddeps.sh
 export APPSCODE_ENV=dev
 export DOCKER_REGISTRY=kubedbci
-./hack/docker/es-operator/make.sh build
-./hack/docker/es-operator/make.sh push
 source ./hack/deploy/setup.sh --docker-registry=kubedbci
 ./hack/make.py test e2e --v=1 --storageclass=standard --selfhosted-operator=true
 
