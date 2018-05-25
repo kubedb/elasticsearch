@@ -37,6 +37,7 @@ fi
 
 export KUBEDB_NAMESPACE=kube-system
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
+
 while test $# -gt 0; do
     case "$1" in
         -n)
