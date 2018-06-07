@@ -16,7 +16,7 @@ import:
   version: master
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/kubedb/apimachinery
-  version: 0.8.0-rc.0
+  version: master
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/pkg/errors

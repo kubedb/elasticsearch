@@ -31,6 +31,8 @@ discovery:
     minimum_master_nodes: ${NUMBER_OF_MASTERS}
 
 ######## Start Search Guard Configuration ########
+searchguard.disabled: ${SEARCHGUARD_DISABLED:false}
+
 searchguard.ssl.transport.keystore_filepath: certs/node.jks
 searchguard.ssl.transport.keystore_password: ${KEY_PASS}
 searchguard.ssl.transport.truststore_filepath: certs/root.jks
