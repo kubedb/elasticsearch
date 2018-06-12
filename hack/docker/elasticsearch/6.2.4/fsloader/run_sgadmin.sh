@@ -1,6 +1,6 @@
 #!/bin/bash
 
-searchguard="/elasticsearch/plugins/search-guard-5"
+searchguard="/elasticsearch/plugins/search-guard-6"
 certs="/elasticsearch/config/certs"
 
 sync

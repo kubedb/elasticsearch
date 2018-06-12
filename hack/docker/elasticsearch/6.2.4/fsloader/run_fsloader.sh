@@ -4,7 +4,7 @@ set -x
 set -o errexit
 set -o pipefail
 
-searchguard="/elasticsearch/plugins/search-guard-5"
+searchguard="/elasticsearch/plugins/search-guard-6"
 
 sync
 
