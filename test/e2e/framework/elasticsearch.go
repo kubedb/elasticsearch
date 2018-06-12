@@ -27,7 +27,7 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version:   jtypes.StrYo("5.6.4"),
+			Version:   jtypes.StrYo(DB_VERSION),
 			Replicas:  types.Int32P(1),
 			EnableSSL: true,
 			Storage: &core.PersistentVolumeClaimSpec{
@@ -52,7 +52,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version: jtypes.StrYo("5.6.4"),
+			Version: jtypes.StrYo(DB_VERSION),
 			Topology: &api.ElasticsearchClusterTopology{
 				Master: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),

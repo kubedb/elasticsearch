@@ -128,7 +128,23 @@ EOF
 export APPSCODE_ENV=dev
 export DOCKER_REGISTRY=kubedbci
 source ./hack/deploy/setup.sh --docker-registry=kubedbci
+
+./hack/make.py test e2e --v=1 --storageclass=standard --selfhosted-operator=true --es-version=6.2.4
+
+kubectl describe pods -n kube-system -l app=kubedb || true
+echo ""
+echo "::::::::::::::::::::::::::: Describe Nodes :::::::::::::::::::::::::::"
+echo ""
+kubectl get nodes || true
+echo ""
+kubectl describe nodes || true
+
 ./hack/make.py test e2e --v=1 --storageclass=standard --selfhosted-operator=true
 
 kubectl describe pods -n kube-system -l app=kubedb || true
-
+echo ""
+echo "::::::::::::::::::::::::::: Describe Nodes :::::::::::::::::::::::::::"
+echo ""
+kubectl get nodes || true
+echo ""
+kubectl describe nodes || true

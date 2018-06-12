@@ -106,6 +106,7 @@ var _ = Describe("Elasticsearch", func() {
 					if skipMessage != "" {
 						Skip(skipMessage)
 					}
+
 					// Create Elasticsearch
 					createAndWaitForRunning()
 
@@ -256,10 +257,12 @@ var _ = Describe("Elasticsearch", func() {
 				createAndWaitForRunning()
 
 				By("Create Secret")
-				f.CreateSecret(secret)
+				err := f.CreateSecret(secret)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Create Snapshot")
-				f.CreateSnapshot(snapshot)
+				err = f.CreateSnapshot(snapshot)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Check for Successed snapshot")
 				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
