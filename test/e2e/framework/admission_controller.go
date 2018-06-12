@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	DB_VERSION         string
+	DBVersion          string
 	DockerRegistry     string
 	ExporterTag        string
 	SelfHostedOperator bool
