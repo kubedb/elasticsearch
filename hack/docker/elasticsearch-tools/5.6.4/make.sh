@@ -10,7 +10,7 @@ source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=elasticsearch-tools
 TAG=5.6.4
-OSM_VER=${OSM_VER:-0.7.0}
+OSM_VER=${OSM_VER:-0.7.1}
 
 DIST="$REPO_ROOT/dist"
 mkdir -p "$DIST"
