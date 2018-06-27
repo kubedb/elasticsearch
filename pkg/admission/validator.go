@@ -34,6 +34,7 @@ type ElasticsearchValidator struct {
 var _ hookapi.AdmissionHook = &ElasticsearchValidator{}
 
 var forbiddenEnvVars = []string{
+	"NODE_NAME",
 	"NODE_MASTER",
 	"NODE_DATA",
 }

@@ -3,13 +3,17 @@ package e2e_test
 import (
 	"os"
 
+	exec_util "github.com/appscode/kutil/tools/exec"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/elasticsearch/test/e2e/framework"
 	"github.com/kubedb/elasticsearch/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -56,7 +60,13 @@ var _ = Describe("Elasticsearch", func() {
 		}
 		By("Delete elasticsearch: " + elasticsearch.Name)
 		err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				// Elasticsearch was not created. Hence, rest of cleanup is not necessary.
+				return
+			}
+			Expect(err).NotTo(HaveOccurred())
+		}
 
 		By("Wait for elasticsearch to be paused")
 		f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
@@ -517,6 +527,159 @@ var _ = Describe("Elasticsearch", func() {
 					By("Count multiple Snapshot")
 					f.EventuallySnapshotCount(elasticsearch.ObjectMeta).Should(matcher.MoreThan(3))
 				})
+			})
+		})
+
+		Context("Environment Variables", func() {
+
+			allowedEnvList := []core.EnvVar{
+				{
+					Name:  "CLUSTER_NAME",
+					Value: "kubedb-es-e2e-cluster",
+				},
+				{
+					Name:  "NUMBER_OF_MASTERS",
+					Value: "1",
+				},
+				{
+					Name:  "ES_JAVA_OPTS",
+					Value: "-Xms256m -Xmx256m",
+				},
+				{
+					Name:  "REPO_LOCATIONS",
+					Value: "/backup",
+				},
+				{
+					Name:  "MEMORY_LOCK",
+					Value: "true",
+				},
+				{
+					Name:  "HTTP_ENABLE",
+					Value: "true",
+				},
+			}
+
+			forbiddenEnvList := []core.EnvVar{
+				{
+					Name:  "NODE_NAME",
+					Value: "kubedb-es-e2e-node",
+				},
+				{
+					Name:  "NODE_MASTER",
+					Value: "true",
+				},
+				{
+					Name:  "NODE_DATA",
+					Value: "true",
+				},
+			}
+
+			var shouldRunSuccessfully = func() {
+				if skipMessage != "" {
+					Skip(skipMessage)
+				}
+
+				// Create Elasticsearch
+				createAndWaitForRunning()
+
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating new indices")
+				err = f.CreateIndex(elasticClient, 2)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking new indices")
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+				elasticClient.Stop()
+
+				By("Delete elasticsearch")
+				err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Wait for elasticsearch to be paused")
+				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+
+				// Create Elasticsearch object again to resume it
+				By("Create Elasticsearch: " + elasticsearch.Name)
+				err = f.CreateElasticsearch(elasticsearch)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Wait for DormantDatabase to be deleted")
+				f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
+
+				By("Wait for Running elasticsearch")
+				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking new indices")
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+			}
+
+			Context("With allowed Envs", func() {
+
+				It("should run successfully with given envs.", func() {
+					elasticsearch.Spec.Env = allowedEnvList
+					shouldRunSuccessfully()
+
+					By("Checking pod started with given envs")
+					pod, err := f.KubeClient().CoreV1().Pods(elasticsearch.Namespace).Get(elasticsearch.Name+"-0", metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					out, err := exec_util.ExecIntoPod(f.RestConfig(), pod, "env")
+					Expect(err).NotTo(HaveOccurred())
+					for _, env := range allowedEnvList {
+						Expect(out).Should(ContainSubstring(env.Name + "=" + env.Value))
+					}
+				})
+
+			})
+
+			Context("With forbidden Envs", func() {
+
+				It("should reject to create Elasticsearch CRD", func() {
+					for _, env := range forbiddenEnvList {
+						elasticsearch.Spec.Env = []core.EnvVar{
+							env,
+						}
+
+						By("Creating Elasticsearch with " + env.Name + " env var.")
+						err := f.CreateElasticsearch(elasticsearch)
+						Expect(err).To(HaveOccurred())
+					}
+				})
+
+			})
+
+			Context("Update Envs", func() {
+
+				It("should reject to update Envs", func() {
+					elasticsearch.Spec.Env = allowedEnvList
+
+					shouldRunSuccessfully()
+
+					By("Updating Envs")
+					_, _, err := util.PatchElasticsearch(f.ExtClient(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Env = []core.EnvVar{
+							{
+								Name:  "CLUSTER_NAME",
+								Value: "kubedb-es-e2e-cluster-patched",
+							},
+						}
+						return in
+					})
+					Expect(err).To(HaveOccurred())
+				})
+
 			})
 		})
 	})
