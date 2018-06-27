@@ -131,11 +131,11 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 
 		jobName := fmt.Sprintf("%s-%s", api.DatabaseNamePrefix, snapshotSource.Name)
 		if _, err := c.Client.BatchV1().Jobs(snapshotSource.Namespace).Get(jobName, metav1.GetOptions{}); err != nil {
-			if kerr.IsAlreadyExists(err) {
-				return nil
-			} else if !kerr.IsNotFound(err) {
+			if !kerr.IsNotFound(err) {
 				return err
 			}
+		} else {
+			return nil
 		}
 		err = c.initialize(elasticsearch)
 		if err != nil {
