@@ -50,6 +50,13 @@ function cleanup {
     ./hack/deploy/setup.sh --uninstall --purge
     popd
 
+    # delete docker image on exit
+    curl -LO https://raw.githubusercontent.com/appscodelabs/libbuild/master/docker.py
+    chmod +x docker.py
+    CUSTOM_OPERATOR_TAG=${CUSTOM_OPERATOR_TAG:-}
+    ./docker.py del_tag kubedbci es-operator $CUSTOM_OPERATOR_TAG
+
+    set -e
     # delete cluster on exit
     pharmer get cluster
     pharmer delete cluster $NAME
@@ -57,12 +64,6 @@ function cleanup {
     sleep 300
     pharmer apply $NAME
     pharmer get cluster
-
-    # delete docker image on exit
-    curl -LO https://raw.githubusercontent.com/appscodelabs/libbuild/master/docker.py
-    chmod +x docker.py
-    CUSTOM_OPERATOR_TAG=${CUSTOM_OPERATOR_TAG:-}
-    ./docker.py del_tag kubedbci es-operator $CUSTOM_OPERATOR_TAG
 }
 trap cleanup EXIT
 
