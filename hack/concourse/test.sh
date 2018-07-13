@@ -108,5 +108,6 @@ export DOCKER_REGISTRY=kubedbci
 source ./hack/deploy/setup.sh --docker-registry=kubedbci
 
 ./hack/make.py test e2e --v=1 --storageclass=standard --selfhosted-operator=true
+#./hack/make.py test e2e --v=1 --storageclass=standard --selfhosted-operator=true --es-version=6.2.4
 
 popd
