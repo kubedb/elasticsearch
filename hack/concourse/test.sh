@@ -23,7 +23,6 @@ export APPSCODE_ENV=dev
 export DOCKER_REGISTRY=kubedbci
 ./hack/docker/$OPERATOR_NAME/make.sh build
 ./hack/docker/$OPERATOR_NAME/make.sh push
-popd
 
 # run tests
 source ./hack/deploy/setup.sh --docker-registry=kubedbci
