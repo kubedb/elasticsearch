@@ -16,6 +16,8 @@ source $REPO_NAME/hack/concourse/common/init.sh
 cp creds/gcs.json /gcs.json
 cp creds/.env $GOPATH/src/github.com/kubedb/$REPO_NAME/hack/config/.env
 
+pushd "$GOPATH"/src/github.com/kubedb/$REPO_NAME
+
 ./hack/builddeps.sh
 export APPSCODE_ENV=dev
 export DOCKER_REGISTRY=kubedbci
