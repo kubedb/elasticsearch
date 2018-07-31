@@ -7,7 +7,7 @@ source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=elasticsearch
-TAG=6.2.4
+TAG=6.3.0
 
 pushd "$REPO_ROOT/hack/docker/elasticsearch/$TAG"
 
