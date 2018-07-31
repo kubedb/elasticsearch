@@ -1,5 +1,5 @@
-hash: 73f07418d8c498e0cc4ccdfe03aa50a372bdc8b032fed15a6930fec33213ce34
-updated: 2018-07-08T13:38:18.556947142-07:00
+hash: a4c0aaa48f882ba3a199e263278c6a59773a7618b1123276ab2975017baa071d
+updated: 2018-07-31T12:33:47.56694645-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -29,19 +29,16 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: 1359b374de83fa14fd58ab10aa8ea4935f84d249
 - name: github.com/appscode/kube-mon
-  version: 6844d3b8506f97e79663419dfe8a3b7bfe1b3264
+  version: 323ed6f2129deea0309979d9396728c613f369d4
   subpackages:
   - agents
-  - agents/coreosprometheusoperator
-  - agents/prometheusbuiltin
-  - api
 - name: github.com/appscode/kubernetes-webhook-util
   version: 73ca8be3135ee210b778c7dc19709c24bf3481eb
   subpackages:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: ade0469e223909a181ae7a020024aa7adeb3dde6
+  version: c9b929cfcab96c233c1b0ab59cd4a5ab6a4ff96a
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -306,7 +303,7 @@ imports:
 - name: github.com/json-iterator/go
   version: f2b4162afba35581b6d4a50d3b8f34e33c144682
 - name: github.com/kubedb/apimachinery
-  version: cb8c61a4c4cbec3fe08a61ead39ba252ec29bfa6
+  version: e3f101afd0112e3d266359879bc03865d28381f9
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -329,7 +326,6 @@ imports:
   - pkg/controller/job
   - pkg/controller/snapshot
   - pkg/eventer
-  - pkg/storage
   - pkg/validator
 - name: github.com/mailru/easyjson
   version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
@@ -392,7 +388,7 @@ imports:
 - name: github.com/openshift/origin
   version: fecffb2fce100260088a1b9f268c0901a778cf2b
 - name: github.com/orcaman/concurrent-map
-  version: a05df785d2dcc16310fb997ee1702100d047cfe1
+  version: b28018939af9022337862b94a463abb18abb3e0e
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
@@ -510,7 +506,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: ac730e38c5514b49097b1459b3acbe1bf905e930
+  version: 31ca0e01cd791f07750cb23fc99327721f753290
   subpackages:
   - gensupport
   - googleapi
@@ -936,11 +932,26 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: d83b052f768a50a309c692a9c271da3f3276ff88
+  version: e3762e86a74c878ffed47484592986685639c2cd
   subpackages:
   - pkg/builder
   - pkg/common
   - pkg/handler
   - pkg/util
   - pkg/util/proto
+- name: kmodules.xyz/monitoring-agent-api
+  version: 323ed6f2129deea0309979d9396728c613f369d4
+  repo: https://github.com/kmodules/monitoring-agent-api.git
+  vcs: git
+  subpackages:
+  - agents/coreosprometheusoperator
+  - agents/prometheusbuiltin
+  - api
+- name: kmodules.xyz/objectstore-api
+  version: f2d3726e2b0438b0b7264f8bf62edf928e5ca962
+  repo: https://github.com/kmodules/objectstore-api.git
+  vcs: git
+  subpackages:
+  - api
+  - osm
 testImports: []

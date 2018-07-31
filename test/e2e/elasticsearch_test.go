@@ -473,7 +473,7 @@ var _ = Describe("Elasticsearch", func() {
 				BeforeEach(func() {
 					elasticsearch.Spec.BackupSchedule = &api.BackupScheduleSpec{
 						CronExpression: "@every 1m",
-						SnapshotStorageSpec: api.SnapshotStorageSpec{
+						Backend: api.Backend{
 							StorageSecretName: secret.Name,
 							Local: &api.LocalSpec{
 								MountPath: "/repo",
@@ -509,7 +509,7 @@ var _ = Describe("Elasticsearch", func() {
 					_, err = f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
 						in.Spec.BackupSchedule = &api.BackupScheduleSpec{
 							CronExpression: "@every 1m",
-							SnapshotStorageSpec: api.SnapshotStorageSpec{
+							Backend: api.Backend{
 								StorageSecretName: secret.Name,
 								Local: &api.LocalSpec{
 									MountPath: "/repo",
