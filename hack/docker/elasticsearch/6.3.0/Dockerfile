@@ -7,10 +7,10 @@ ENV NODE_NAME="" \
     ES_TMPDIR="/tmp"
 
 # Install mapper-attachments (https://www.elastic.co/guide/en/elasticsearch/plugins/current/ingest-attachment.html)
-RUN ./bin/elasticsearch-plugin install ingest-attachment
+RUN ./bin/elasticsearch-plugin install --batch ingest-attachment
 
 # Install search-guard
-RUN ./bin/elasticsearch-plugin install -b com.floragunn:search-guard-6:6.3.0-22.3
+RUN ./bin/elasticsearch-plugin install --batch -b com.floragunn:search-guard-6:6.3.0-22.3
 
 RUN chmod +x -R plugins/search-guard-6/tools/*.sh
 

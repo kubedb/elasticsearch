@@ -158,7 +158,7 @@ func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) G
 			client.Stop()
 			return true
 		},
-		time.Minute*15,
+		time.Minute*20,
 		time.Second*5,
 	)
 }
