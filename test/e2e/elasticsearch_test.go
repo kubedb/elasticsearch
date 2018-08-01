@@ -14,6 +14,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	store "kmodules.xyz/objectstore-api/api"
 )
 
 const (
@@ -288,7 +289,7 @@ var _ = Describe("Elasticsearch", func() {
 					skipSnapshotDataChecking = true
 					secret = f.SecretForLocalBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.Local = &api.LocalSpec{
+					snapshot.Spec.Local = &store.LocalSpec{
 						MountPath: "/repo",
 						VolumeSource: core.VolumeSource{
 							EmptyDir: &core.EmptyDirVolumeSource{},
@@ -303,7 +304,7 @@ var _ = Describe("Elasticsearch", func() {
 				BeforeEach(func() {
 					secret = f.SecretForS3Backend()
 					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.S3 = &api.S3Spec{
+					snapshot.Spec.S3 = &store.S3Spec{
 						Bucket: os.Getenv(S3_BUCKET_NAME),
 					}
 				})
@@ -315,7 +316,7 @@ var _ = Describe("Elasticsearch", func() {
 				BeforeEach(func() {
 					secret = f.SecretForGCSBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.GCS = &api.GCSSpec{
+					snapshot.Spec.GCS = &store.GCSSpec{
 						Bucket: os.Getenv(GCS_BUCKET_NAME),
 					}
 				})
@@ -327,7 +328,7 @@ var _ = Describe("Elasticsearch", func() {
 				BeforeEach(func() {
 					secret = f.SecretForAzureBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.Azure = &api.AzureSpec{
+					snapshot.Spec.Azure = &store.AzureSpec{
 						Container: os.Getenv(AZURE_CONTAINER_NAME),
 					}
 				})
@@ -339,7 +340,7 @@ var _ = Describe("Elasticsearch", func() {
 				BeforeEach(func() {
 					secret = f.SecretForSwiftBackend()
 					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.Swift = &api.SwiftSpec{
+					snapshot.Spec.Swift = &store.SwiftSpec{
 						Container: os.Getenv(SWIFT_CONTAINER_NAME),
 					}
 				})
@@ -348,12 +349,12 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		Context("Initialize", func() {
+		FContext("Initialize", func() {
 			BeforeEach(func() {
 				skipSnapshotDataChecking = false
 				secret = f.SecretForS3Backend()
 				snapshot.Spec.StorageSecretName = secret.Name
-				snapshot.Spec.S3 = &api.S3Spec{
+				snapshot.Spec.S3 = &store.S3Spec{
 					Bucket: os.Getenv(S3_BUCKET_NAME),
 				}
 				snapshot.Spec.DatabaseName = elasticsearch.Name
@@ -473,9 +474,9 @@ var _ = Describe("Elasticsearch", func() {
 				BeforeEach(func() {
 					elasticsearch.Spec.BackupSchedule = &api.BackupScheduleSpec{
 						CronExpression: "@every 1m",
-						Backend: api.Backend{
+						Backend: store.Backend{
 							StorageSecretName: secret.Name,
-							Local: &api.LocalSpec{
+							Local: &store.LocalSpec{
 								MountPath: "/repo",
 								VolumeSource: core.VolumeSource{
 									EmptyDir: &core.EmptyDirVolumeSource{},
@@ -509,9 +510,9 @@ var _ = Describe("Elasticsearch", func() {
 					_, err = f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
 						in.Spec.BackupSchedule = &api.BackupScheduleSpec{
 							CronExpression: "@every 1m",
-							Backend: api.Backend{
+							Backend: store.Backend{
 								StorageSecretName: secret.Name,
-								Local: &api.LocalSpec{
+								Local: &store.LocalSpec{
 									MountPath: "/repo",
 									VolumeSource: core.VolumeSource{
 										EmptyDir: &core.EmptyDirVolumeSource{},
