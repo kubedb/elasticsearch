@@ -30,8 +30,8 @@ discovery:
     ping.unicast.hosts: ${DISCOVERY_SERVICE}
     minimum_master_nodes: ${NUMBER_OF_MASTERS}
 
-xpack.security.enabled: ${XPACK_SECURITY_ENABLED:false}
 # ref: https://github.com/floragunncom/search-guard-ssl/issues/43
+xpack.security.enabled: ${XPACK_SECURITY_ENABLED:false}
 
 ######## Start Search Guard Configuration ########
 searchguard.disabled: ${SEARCHGUARD_DISABLED:false}
