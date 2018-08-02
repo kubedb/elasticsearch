@@ -226,7 +226,6 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 }
 
 func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) {
-	kutildb.AssignTypeKind(elasticsearch)
 	// Setup Schedule backup
 	if elasticsearch.Spec.BackupSchedule != nil {
 		err := c.cronController.ScheduleBackup(elasticsearch, elasticsearch.ObjectMeta, elasticsearch.Spec.BackupSchedule)

@@ -14,7 +14,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	store "kmodules.xyz/objectstore-api/api"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 const (
@@ -629,7 +629,7 @@ var _ = Describe("Elasticsearch", func() {
 			Context("With allowed Envs", func() {
 
 				It("should run successfully with given envs.", func() {
-					elasticsearch.Spec.Env = allowedEnvList
+					elasticsearch.Spec.PodTemplate.Spec.Env = allowedEnvList
 					shouldRunSuccessfully()
 
 					By("Checking pod started with given envs")
@@ -649,7 +649,7 @@ var _ = Describe("Elasticsearch", func() {
 
 				It("should reject to create Elasticsearch CRD", func() {
 					for _, env := range forbiddenEnvList {
-						elasticsearch.Spec.Env = []core.EnvVar{
+						elasticsearch.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							env,
 						}
 
@@ -664,13 +664,13 @@ var _ = Describe("Elasticsearch", func() {
 			Context("Update Envs", func() {
 
 				It("should reject to update Envs", func() {
-					elasticsearch.Spec.Env = allowedEnvList
+					elasticsearch.Spec.PodTemplate.Spec.Env = allowedEnvList
 
 					shouldRunSuccessfully()
 
 					By("Updating Envs")
 					_, _, err := util.PatchElasticsearch(f.ExtClient(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-						in.Spec.Env = []core.EnvVar{
+						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "CLUSTER_NAME",
 								Value: "kubedb-es-e2e-cluster-patched",

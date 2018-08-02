@@ -50,7 +50,6 @@ func (c *Controller) runElasticsearch(key string) error {
 		elasticsearch := obj.(*api.Elasticsearch).DeepCopy()
 		if elasticsearch.DeletionTimestamp != nil {
 			if core_util.HasFinalizer(elasticsearch.ObjectMeta, "kubedb.com") {
-				util.AssignTypeKind(elasticsearch)
 				if err := c.pause(elasticsearch); err != nil {
 					log.Errorln(err)
 					return err
@@ -69,7 +68,6 @@ func (c *Controller) runElasticsearch(key string) error {
 			if err != nil {
 				return err
 			}
-			util.AssignTypeKind(elasticsearch)
 			if err := c.create(elasticsearch); err != nil {
 				log.Errorln(err)
 				c.pushFailureEvent(elasticsearch, err.Error())
