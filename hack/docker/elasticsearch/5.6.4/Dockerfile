@@ -1,7 +1,7 @@
 FROM quay.io/pires/docker-elasticsearch:5.6.4
 
 RUN set -x \
-  && apk add --update --no-cache runit curl
+	&& apk add --update --no-cache runit curl
 
 ENV NODE_NAME=""
 
@@ -41,6 +41,8 @@ RUN ln -s /fsloader/run_fsloader.sh /etc/service/fsloader/run
 RUN mkdir /etc/service/elasticsearch
 RUN ln -s /run.sh /etc/service/elasticsearch/run
 
+COPY yq /usr/bin/yq
+COPY config-merger.sh /usr/bin/config-merger.sh
 COPY runit.sh /runit.sh
 
 ENTRYPOINT ["/runit.sh"]

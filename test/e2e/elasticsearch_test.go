@@ -128,7 +128,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Creating new indices")
-					err = f.CreateIndex(elasticClient, 2)
+					err = elasticClient.CreateIndex(2)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Checking new indices")
@@ -374,7 +374,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating new indices")
-				err = f.CreateIndex(elasticClient, 2)
+				err = elasticClient.CreateIndex(2)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking new indices")
@@ -590,7 +590,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating new indices")
-				err = f.CreateIndex(elasticClient, 2)
+				err = elasticClient.CreateIndex(2)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking new indices")
@@ -679,6 +679,114 @@ var _ = Describe("Elasticsearch", func() {
 						return in
 					})
 					Expect(err).To(HaveOccurred())
+				})
+
+			})
+		})
+
+		Context("Custom Configuration", func() {
+
+			var userConfig *core.ConfigMap
+
+			Context("With Topology", func() {
+				BeforeEach(func() {
+					elasticsearch = f.DedicatedElasticsearch()
+					userConfig = f.GetCustomConfig()
+				})
+
+				AfterEach(func() {
+					By("Deleting configMap: " + userConfig.Name)
+					f.DeleteConfigMap(userConfig.ObjectMeta)
+				})
+
+				It("should use config provided in config files", func() {
+					userConfig.Data = map[string]string{
+						"common-config.yaml": f.GetCommonConfig(),
+						"master-config.yaml": f.GetMasterConfig(),
+						"client-config.yaml": f.GetClientConfig(),
+						"data-config.yaml":   f.GetDataConfig(),
+					}
+
+					By("Creating configMap: " + userConfig.Name)
+					err := f.CreateConfigMap(userConfig)
+					Expect(err).NotTo(HaveOccurred())
+
+					elasticsearch.Spec.ConfigSource = &core.VolumeSource{
+						ConfigMap: &core.ConfigMapVolumeSource{
+							LocalObjectReference: core.LocalObjectReference{
+								Name: userConfig.Name,
+							},
+						},
+					}
+
+					// Create Elasticsearch
+					createAndWaitForRunning()
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Reading Nodes information")
+					settings, err := elasticClient.GetAllNodesInfo()
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking nodes are using provided config")
+					Expect(f.IsUsingProvidedConfig(settings)).Should(BeTrue())
+
+					elasticClient.Stop()
+				})
+
+			})
+
+			Context("Without Topology", func() {
+				BeforeEach(func() {
+					userConfig = f.GetCustomConfig()
+				})
+
+				AfterEach(func() {
+					By("Deleting configMap: " + userConfig.Name)
+					f.DeleteConfigMap(userConfig.ObjectMeta)
+				})
+
+				It("should use config provided in config files", func() {
+					userConfig.Data = map[string]string{
+						"common-config.yaml": f.GetCommonConfig(),
+						"master-config.yaml": f.GetMasterConfig(),
+						"client-config.yaml": f.GetClientConfig(),
+						"data-config.yaml":   f.GetDataConfig(),
+					}
+
+					By("Creating configMap: " + userConfig.Name)
+					err := f.CreateConfigMap(userConfig)
+					Expect(err).NotTo(HaveOccurred())
+
+					elasticsearch.Spec.ConfigSource = &core.VolumeSource{
+						ConfigMap: &core.ConfigMapVolumeSource{
+							LocalObjectReference: core.LocalObjectReference{
+								Name: userConfig.Name,
+							},
+						},
+					}
+
+					// Create Elasticsearch
+					createAndWaitForRunning()
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Reading Nodes information")
+					settings, err := elasticClient.GetAllNodesInfo()
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking nodes are using provided config")
+					Expect(f.IsUsingProvidedConfig(settings)).Should(BeTrue())
+
+					elasticClient.Stop()
 				})
 
 			})

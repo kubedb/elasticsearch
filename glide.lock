@@ -214,7 +214,7 @@ imports:
 - name: github.com/emicklei/go-restful-swagger12
   version: dcef7f55730566d41eae5db10e7d6981829720f6
 - name: github.com/evanphx/json-patch
-  version: 94e38aa1586e8a6c8a75770bddf5ff84c48a106b
+  version: afac545df32f2287a079e2dfb7ba2745a643747e
 - name: github.com/fsnotify/fsnotify
   version: c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9
 - name: github.com/ghodss/yaml
@@ -297,7 +297,7 @@ imports:
 - name: github.com/jpillora/go-ogle-analytics
   version: 14b04e0594ef6a9fd943363b135656f0ec8c9d0e
 - name: github.com/json-iterator/go
-  version: f2b4162afba35581b6d4a50d3b8f34e33c144682
+  version: ab8a2e0c74be9d3be70b3184d9acc634935ded82
 - name: github.com/kubedb/apimachinery
   version: c97cedeaad4a864daae2d13e7cc1c94493acec9c
   subpackages:
@@ -343,6 +343,11 @@ imports:
   version: b2a7479cf26fa841ff90dd932d0221cb5c50782d
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
+- name: github.com/olivere/elastic
+  version: e03a60ce4222dda717ae82c05592244a8e16aa4a
+  subpackages:
+  - config
+  - uritemplates
 - name: github.com/onsi/ginkgo
   version: fa5fabab2a1bfbd924faf4c067d07ae414e2aedf
   subpackages:
@@ -554,6 +559,8 @@ imports:
   subpackages:
   - config
   - uritemplates
+- name: gopkg.in/olivere/elastic.v6
+  version: e1da71ef4bb6941f2051f5cc1c4d3e56b1978cf3
 - name: gopkg.in/robfig/cron.v2
   version: ca60c6d796d4b1f7bb2a8fd5271d8a59aeffb4bf
   repo: https://github.com/appscode/cron.git

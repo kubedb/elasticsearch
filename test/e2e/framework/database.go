@@ -1,19 +1,17 @@
 package framework
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/kutil/tools/portforward"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/docker"
-	"gopkg.in/olivere/elastic.v5"
+	"github.com/kubedb/elasticsearch/pkg/es-util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (*elastic.Client, error) {
+func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es_util.ESClient, error) {
 	es, err := f.GetElasticsearch(meta)
 	if err != nil {
 		return nil, err
@@ -38,23 +36,5 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (*elastic.Client, e
 	}
 	url := fmt.Sprintf("https://127.0.0.1:%d", tunnel.Local)
 	c := controller.New(nil, f.kubeClient, nil, nil, nil, nil, docker.Docker{}, amc.Config{})
-	return c.GetElasticClient(es, url)
-}
-
-func (f *Framework) CreateIndex(client *elastic.Client, count int) error {
-	for i := 0; i < count; i++ {
-		_, err := client.CreateIndex(rand.Characters(5)).Do(context.Background())
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (f *Framework) CountIndex(client *elastic.Client) (int, error) {
-	indices, err := client.IndexNames()
-	if err != nil {
-		return 0, err
-	}
-	return len(indices), nil
+	return es_util.GetElasticClient(c.Client, es, url)
 }

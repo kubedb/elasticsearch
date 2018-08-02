@@ -16,5 +16,5 @@ webhooks:
   - apiGroups: ["kubedb.com"]
     apiVersions: ["*"]
     resources: ["elasticsearches"]
-    operations: ["CREATE", "UPDATE", "DELETE"]
+    operations: ["CREATE", "UPDATE"]
   failurePolicy: Fail

@@ -19,6 +19,10 @@ import (
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 )
 
+const (
+	CONFIG_MOUNT_PATH = "/elasticsearch/custom-config"
+)
+
 func (c *Controller) ensureStatefulSet(
 	elasticsearch *api.Elasticsearch,
 	pvcSpec core.PersistentVolumeClaimSpec,
@@ -64,6 +68,7 @@ func (c *Controller) ensureStatefulSet(
 		in = upsertEnv(in, elasticsearch, envList)
 		in = upsertUserEnv(in, elasticsearch)
 		in = upsertPort(in, isClient)
+		in = upsertCustomConfig(in, elasticsearch)
 
 		in.Spec.Template.Spec.NodeSelector = elasticsearch.Spec.NodeSelector
 		in.Spec.Template.Spec.Affinity = elasticsearch.Spec.Affinity
@@ -634,6 +639,33 @@ func upsertDataVolume(statefulSet *apps.StatefulSet, pvcSpec core.PersistentVolu
 			statefulSet.Spec.VolumeClaimTemplates = volumeClaims
 
 			return statefulSet
+		}
+	}
+	return statefulSet
+}
+
+func upsertCustomConfig(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
+	if elasticsearch.Spec.ConfigSource != nil {
+		for i, container := range statefulSet.Spec.Template.Spec.Containers {
+			if container.Name == api.ResourceSingularElasticsearch {
+				configVolumeMount := core.VolumeMount{
+					Name:      "custom-config",
+					MountPath: CONFIG_MOUNT_PATH,
+				}
+				volumeMounts := container.VolumeMounts
+				volumeMounts = core_util.UpsertVolumeMount(volumeMounts, configVolumeMount)
+				statefulSet.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
+
+				configVolume := core.Volume{
+					Name:         "custom-config",
+					VolumeSource: *elasticsearch.Spec.ConfigSource,
+				}
+
+				volumes := statefulSet.Spec.Template.Spec.Volumes
+				volumes = core_util.UpsertVolume(volumes, configVolume)
+				statefulSet.Spec.Template.Spec.Volumes = volumes
+				break
+			}
 		}
 	}
 	return statefulSet
