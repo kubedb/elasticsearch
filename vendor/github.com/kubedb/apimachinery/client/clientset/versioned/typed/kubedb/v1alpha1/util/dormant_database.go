@@ -139,7 +139,7 @@ func UpdateDormantDatabaseStatus(
 				default:
 					return false, e3
 				}
-			} else if !kutil.IsRequestRetryable(e2) {
+			} else if err != nil && !kutil.IsRequestRetryable(e2) {
 				return false, e2
 			}
 			return e2 == nil, nil
