@@ -8,7 +8,7 @@ import (
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/portforward"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/kubedb/elasticsearch/pkg/es-util"
+	"github.com/kubedb/elasticsearch/pkg/util/es"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -40,7 +40,7 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 
 	var indices []string
 	err := wait.PollImmediate(time.Second*30, time.Minute*5, func() (bool, error) {
-		client, err := es_util.GetElasticClient(c.Client, elasticsearch, url)
+		client, err := es.GetElasticClient(c.Client, elasticsearch, url)
 		if err != nil {
 			return false, nil
 		}

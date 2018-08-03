@@ -9,7 +9,7 @@ import (
 	"github.com/appscode/go/types"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
-	"github.com/kubedb/elasticsearch/pkg/es-util"
+	"github.com/kubedb/elasticsearch/pkg/util/es"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -163,7 +163,7 @@ func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) G
 	)
 }
 
-func (f *Framework) EventuallyElasticsearchIndicesCount(client es_util.ESClient) GomegaAsyncAssertion {
+func (f *Framework) EventuallyElasticsearchIndicesCount(client es.ESClient) GomegaAsyncAssertion {
 	return Eventually(
 		func() int {
 			count, err := client.CountIndex()

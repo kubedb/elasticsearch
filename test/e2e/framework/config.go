@@ -5,7 +5,7 @@ import (
 
 	string_util "github.com/appscode/go/strings"
 	"github.com/ghodss/yaml"
-	"github.com/kubedb/elasticsearch/pkg/es-util"
+	"github.com/kubedb/elasticsearch/pkg/util/es"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -13,8 +13,8 @@ import (
 )
 
 func (f *Invocation) GetCommonConfig() string {
-	commonSetting := es_util.Setting{
-		Path: &es_util.PathSetting{
+	commonSetting := es.Setting{
+		Path: &es.PathSetting{
 			Logs: "/data/elasticsearch/common-logdir",
 		},
 	}
@@ -24,11 +24,11 @@ func (f *Invocation) GetCommonConfig() string {
 }
 
 func (f *Invocation) GetMasterConfig() string {
-	masterSetting := es_util.Setting{
-		Node: &es_util.NodeSetting{
+	masterSetting := es.Setting{
+		Node: &es.NodeSetting{
 			Name: "es-node-master",
 		},
-		Path: &es_util.PathSetting{
+		Path: &es.PathSetting{
 			Data: []string{"/data/elasticsearch/master-datadir"},
 		},
 	}
@@ -38,11 +38,11 @@ func (f *Invocation) GetMasterConfig() string {
 }
 
 func (f *Invocation) GetClientConfig() string {
-	clientSetting := es_util.Setting{
-		Node: &es_util.NodeSetting{
+	clientSetting := es.Setting{
+		Node: &es.NodeSetting{
 			Name: "es-node-client",
 		},
-		Path: &es_util.PathSetting{
+		Path: &es.PathSetting{
 			Data: []string{"/data/elasticsearch/client-datadir"},
 		},
 	}
@@ -52,11 +52,11 @@ func (f *Invocation) GetClientConfig() string {
 }
 
 func (f *Invocation) GetDataConfig() string {
-	dataSetting := es_util.Setting{
-		Node: &es_util.NodeSetting{
+	dataSetting := es.Setting{
+		Node: &es.NodeSetting{
 			Name: "es-node-data",
 		},
-		Path: &es_util.PathSetting{
+		Path: &es.PathSetting{
 			Data: []string{"/data/elasticsearch/data-datadir"},
 		},
 	}
@@ -75,10 +75,10 @@ func (f *Invocation) GetCustomConfig() *core.ConfigMap {
 	}
 }
 
-func (f *Invocation) IsUsingProvidedConfig(nodeInfo []es_util.NodeInfo) bool {
+func (f *Invocation) IsUsingProvidedConfig(nodeInfo []es.NodeInfo) bool {
 	for _, node := range nodeInfo {
 		if string_util.Contains(node.Roles, "master") || strings.HasSuffix(node.Name, "master") {
-			masterConfig := &es_util.Setting{}
+			masterConfig := &es.Setting{}
 			err := yaml.Unmarshal([]byte(f.GetMasterConfig()), masterConfig)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -95,7 +95,7 @@ func (f *Invocation) IsUsingProvidedConfig(nodeInfo []es_util.NodeInfo) bool {
 			!string_util.Contains(node.Roles, "master")) ||
 			strings.HasSuffix(node.Name, "client") { // master config has higher precedence
 
-			clientConfig := &es_util.Setting{}
+			clientConfig := &es.Setting{}
 			err := yaml.Unmarshal([]byte(f.GetClientConfig()), clientConfig)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -111,7 +111,7 @@ func (f *Invocation) IsUsingProvidedConfig(nodeInfo []es_util.NodeInfo) bool {
 			!(string_util.Contains(node.Roles, "master") || string_util.Contains(node.Roles, "ingest"))) ||
 			strings.HasSuffix(node.Name, "data") { //master and ingest config has higher precedence
 
-			dataConfig := &es_util.Setting{}
+			dataConfig := &es.Setting{}
 			err := yaml.Unmarshal([]byte(f.GetDataConfig()), dataConfig)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -124,7 +124,7 @@ func (f *Invocation) IsUsingProvidedConfig(nodeInfo []es_util.NodeInfo) bool {
 		}
 
 		// check for common config
-		commonConfig := &es_util.Setting{}
+		commonConfig := &es.Setting{}
 		err := yaml.Unmarshal([]byte(f.GetCommonConfig()), commonConfig)
 		Expect(err).NotTo(HaveOccurred())
 

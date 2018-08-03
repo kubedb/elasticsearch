@@ -1,4 +1,4 @@
-package es_util
+package es
 
 import (
 	"crypto/tls"
@@ -32,11 +32,13 @@ type NodeSetting struct {
 	Ingest string `json:"ingest,omitempty"`
 	Master string `json:"master,omitempty"`
 }
+
 type PathSetting struct {
 	Data []string `json:"data,omitempty"`
 	Logs string   `json:"logs,omitempty"`
 	Home string   `json:"home,omitempty"`
 }
+
 type Setting struct {
 	Node *NodeSetting `json:"node,omitempty"`
 	Path *PathSetting `json:"path,omitempty"`
@@ -48,8 +50,8 @@ type NodeInfo struct {
 	Settings *Setting `json:"settings,omitempty"`
 }
 
-func GetElasticClient(kubeClient kubernetes.Interface, elasticsearch *api.Elasticsearch, url string) (ESClient, error) {
-	secret, err := kubeClient.CoreV1().Secrets(elasticsearch.Namespace).Get(elasticsearch.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
+func GetElasticClient(kc kubernetes.Interface, elasticsearch *api.Elasticsearch, url string) (ESClient, error) {
+	secret, err := kc.CoreV1().Secrets(elasticsearch.Namespace).Get(elasticsearch.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
