@@ -72,5 +72,5 @@ func (p MySQLVersion) CustomResourceDefinition() *apiextensions.CustomResourceDe
 				JSONPath: ".metadata.creationTimestamp",
 			},
 		},
-	}, setNameSchema)
+	})
 }

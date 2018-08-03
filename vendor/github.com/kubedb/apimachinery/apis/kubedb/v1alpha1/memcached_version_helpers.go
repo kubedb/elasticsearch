@@ -67,5 +67,5 @@ func (p MemcachedVersion) CustomResourceDefinition() *apiextensions.CustomResour
 				JSONPath: ".metadata.creationTimestamp",
 			},
 		},
-	}, setNameSchema)
+	})
 }

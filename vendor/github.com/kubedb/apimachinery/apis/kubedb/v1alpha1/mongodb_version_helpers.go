@@ -72,5 +72,5 @@ func (p MongoDBVersion) CustomResourceDefinition() *apiextensions.CustomResource
 				JSONPath: ".metadata.creationTimestamp",
 			},
 		},
-	}, setNameSchema)
+	})
 }

@@ -67,5 +67,5 @@ func (p RedisVersion) CustomResourceDefinition() *apiextensions.CustomResourceDe
 				JSONPath: ".metadata.creationTimestamp",
 			},
 		},
-	}, setNameSchema)
+	})
 }

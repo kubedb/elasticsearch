@@ -67,5 +67,5 @@ func (p EtcdVersion) CustomResourceDefinition() *apiextensions.CustomResourceDef
 				JSONPath: ".metadata.creationTimestamp",
 			},
 		},
-	}, setNameSchema)
+	})
 }

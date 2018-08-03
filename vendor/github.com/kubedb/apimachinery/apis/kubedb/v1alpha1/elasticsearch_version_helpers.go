@@ -72,5 +72,5 @@ func (p ElasticsearchVersion) CustomResourceDefinition() *apiextensions.CustomRe
 				JSONPath: ".metadata.creationTimestamp",
 			},
 		},
-	}, setNameSchema)
+	})
 }
