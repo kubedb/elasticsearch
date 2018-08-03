@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"strings"
 
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	esv5 "gopkg.in/olivere/elastic.v5"
@@ -50,14 +51,14 @@ type NodeInfo struct {
 	Settings *Setting `json:"settings,omitempty"`
 }
 
-func GetElasticClient(kc kubernetes.Interface, elasticsearch *api.Elasticsearch, url string) (ESClient, error) {
-	secret, err := kc.CoreV1().Secrets(elasticsearch.Namespace).Get(elasticsearch.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
+func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, url string) (ESClient, error) {
+	secret, err := kc.CoreV1().Secrets(db.Namespace).Get(db.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	switch elasticsearch.Spec.Version {
-	case "5.6", "5.6.4":
+	switch {
+	case strings.HasPrefix(string(db.Spec.Version), "5."):
 		client, err := esv5.NewClient(
 			esv5.SetHttpClient(&http.Client{
 				Timeout: 0,
@@ -77,7 +78,7 @@ func GetElasticClient(kc kubernetes.Interface, elasticsearch *api.Elasticsearch,
 		}
 
 		return &ESClientV5{client: client}, nil
-	case "6.2", "6.2.4", "6.3", "6.3.0":
+	case strings.HasPrefix(string(db.Spec.Version), "6."):
 		client, err := esv6.NewClient(
 			esv6.SetHttpClient(&http.Client{
 				Timeout: 0,
@@ -97,5 +98,5 @@ func GetElasticClient(kc kubernetes.Interface, elasticsearch *api.Elasticsearch,
 		}
 		return &ESClientV6{client: client}, nil
 	}
-	return nil, fmt.Errorf("unknown database verserion: %s\n", elasticsearch.Spec.Version)
+	return nil, fmt.Errorf("unknown database verserion: %s\n", db.Spec.Version)
 }
