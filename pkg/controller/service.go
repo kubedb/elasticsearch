@@ -128,9 +128,9 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
-		in.Labels = elasticsearch.OffshootLabels()
+		in.Labels = elasticsearch.OffshootSelectors()
 		in.Spec.Ports = upsertServicePort(in, elasticsearch)
-		in.Spec.Selector = elasticsearch.OffshootLabels()
+		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Selector[NodeRoleClient] = "set"
 		return in
 	})
@@ -169,9 +169,9 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
-		in.Labels = elasticsearch.OffshootLabels()
+		in.Labels = elasticsearch.OffshootSelectors()
 		in.Spec.Ports = upsertMasterServicePort(in)
-		in.Spec.Selector = elasticsearch.OffshootLabels()
+		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Selector[NodeRoleMaster] = "set"
 		return in
 	})
