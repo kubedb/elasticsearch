@@ -128,10 +128,24 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
-		in.Labels = elasticsearch.OffshootSelectors()
-		in.Spec.Ports = upsertServicePort(in, elasticsearch)
+		in.Labels = elasticsearch.OffshootLabels()
+		in.Annotations = elasticsearch.Spec.ServiceTemplate.Annotations
+
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Selector[NodeRoleClient] = "set"
+		in.Spec.Ports = upsertServicePort(in, elasticsearch)
+
+		if elasticsearch.Spec.ServiceTemplate.Spec.ClusterIP != "" {
+			in.Spec.ClusterIP = elasticsearch.Spec.ServiceTemplate.Spec.ClusterIP
+		}
+		if elasticsearch.Spec.ServiceTemplate.Spec.Type != "" {
+			in.Spec.Type = elasticsearch.Spec.ServiceTemplate.Spec.Type
+		}
+		in.Spec.ExternalIPs = elasticsearch.Spec.ServiceTemplate.Spec.ExternalIPs
+		in.Spec.LoadBalancerIP = elasticsearch.Spec.ServiceTemplate.Spec.LoadBalancerIP
+		in.Spec.LoadBalancerSourceRanges = elasticsearch.Spec.ServiceTemplate.Spec.LoadBalancerSourceRanges
+		in.Spec.ExternalTrafficPolicy = elasticsearch.Spec.ServiceTemplate.Spec.ExternalTrafficPolicy
+		in.Spec.HealthCheckNodePort = elasticsearch.Spec.ServiceTemplate.Spec.HealthCheckNodePort
 		return in
 	})
 	return ok, err
@@ -169,10 +183,12 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
-		in.Labels = elasticsearch.OffshootSelectors()
-		in.Spec.Ports = upsertMasterServicePort(in)
+		in.Labels = elasticsearch.OffshootLabels()
+		in.Annotations = elasticsearch.Spec.ServiceTemplate.Annotations
+
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Selector[NodeRoleMaster] = "set"
+		in.Spec.Ports = upsertMasterServicePort(in)
 		return in
 	})
 	return ok, err

@@ -12,19 +12,14 @@ import (
 	storage "kmodules.xyz/objectstore-api/osm"
 )
 
-const (
-	snapshotProcessBackup  = "backup"
-	snapshotProcessRestore = "restore"
-)
-
 func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot *api.Snapshot) (*batch.Job, error) {
 	jobName := fmt.Sprintf("%s-%s", api.DatabaseNamePrefix, snapshot.OffshootName())
-	jobLabel := map[string]string{
-		api.LabelDatabaseKind: api.ResourceKindElasticsearch,
+	jobLabel := elasticsearch.OffshootLabels()
+	if jobLabel == nil {
+		jobLabel = map[string]string{}
 	}
-	jobAnnotation := map[string]string{
-		api.AnnotationJobType: api.JobTypeRestore,
-	}
+	jobLabel[api.LabelDatabaseKind] = api.ResourceKindElasticsearch
+	jobLabel[api.AnnotationJobType] = api.JobTypeRestore
 
 	backupSpec := snapshot.Spec.Backend
 	bucket, err := backupSpec.Container()
@@ -45,7 +40,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        jobName,
 			Labels:      jobLabel,
-			Annotations: jobAnnotation,
+			Annotations: snapshot.Spec.PodTemplate.Controller.Annotations,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: api.SchemeGroupVersion.String(),
@@ -58,16 +53,16 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 		Spec: batch.JobSpec{
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: jobLabel,
+					Annotations: snapshot.Spec.PodTemplate.Annotations,
 				},
 				Spec: core.PodSpec{
 					Containers: []core.Container{
 						{
-							Name:            snapshotProcessRestore,
+							Name:            api.JobTypeRestore,
 							Image:           c.docker.GetToolsImageWithTag(elasticsearch),
 							ImagePullPolicy: core.PullIfNotPresent,
 							Args: []string{
-								snapshotProcessRestore,
+								api.JobTypeRestore,
 								fmt.Sprintf(`--host=%s`, elasticsearch.OffshootName()),
 								fmt.Sprintf(`--bucket=%s`, bucket),
 								fmt.Sprintf(`--folder=%s`, folderName),
@@ -95,7 +90,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 									Value: c.AnalyticsClientID,
 								},
 							},
-							Resources: snapshot.Spec.Resources,
+							Resources: snapshot.Spec.PodTemplate.Spec.Resources,
 							VolumeMounts: []core.VolumeMount{
 								{
 									Name:      persistentVolume.Name,
@@ -109,7 +104,6 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							},
 						},
 					},
-					ImagePullSecrets: elasticsearch.Spec.ImagePullSecrets,
 					Volumes: []core.Volume{
 						{
 							Name:         persistentVolume.Name,
@@ -124,7 +118,15 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							},
 						},
 					},
-					RestartPolicy: core.RestartPolicyNever,
+					RestartPolicy:     core.RestartPolicyNever,
+					NodeSelector:      snapshot.Spec.PodTemplate.Spec.NodeSelector,
+					Affinity:          snapshot.Spec.PodTemplate.Spec.Affinity,
+					SchedulerName:     snapshot.Spec.PodTemplate.Spec.SchedulerName,
+					Tolerations:       snapshot.Spec.PodTemplate.Spec.Tolerations,
+					ImagePullSecrets:  snapshot.Spec.PodTemplate.Spec.ImagePullSecrets,
+					PriorityClassName: snapshot.Spec.PodTemplate.Spec.PriorityClassName,
+					Priority:          snapshot.Spec.PodTemplate.Spec.Priority,
+					SecurityContext:   snapshot.Spec.PodTemplate.Spec.SecurityContext,
 				},
 			},
 		},
@@ -150,12 +152,13 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 		return nil, err
 	}
 	jobName := fmt.Sprintf("%s-%s", api.DatabaseNamePrefix, snapshot.OffshootName())
-	jobLabel := map[string]string{
-		api.LabelDatabaseKind: api.ResourceKindElasticsearch,
+	jobLabel := elasticsearch.OffshootLabels()
+	if jobLabel == nil {
+		jobLabel = map[string]string{}
 	}
-	jobAnnotation := map[string]string{
-		api.AnnotationJobType: api.JobTypeBackup,
-	}
+	jobLabel[api.LabelDatabaseKind] = api.ResourceKindElasticsearch
+	jobLabel[api.AnnotationJobType] = api.JobTypeBackup
+
 	backupSpec := snapshot.Spec.Backend
 	bucket, err := backupSpec.Container()
 	if err != nil {
@@ -180,7 +183,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        jobName,
 			Labels:      jobLabel,
-			Annotations: jobAnnotation,
+			Annotations: snapshot.Spec.PodTemplate.Controller.Annotations,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: api.SchemeGroupVersion.String(),
@@ -193,16 +196,16 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 		Spec: batch.JobSpec{
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: jobLabel,
+					Annotations: snapshot.Spec.PodTemplate.Annotations,
 				},
 				Spec: core.PodSpec{
 					Containers: []core.Container{
 						{
-							Name:            snapshotProcessBackup,
+							Name:            api.JobTypeBackup,
 							Image:           c.docker.GetToolsImageWithTag(elasticsearch),
 							ImagePullPolicy: core.PullAlways,
 							Args: []string{
-								snapshotProcessBackup,
+								api.JobTypeBackup,
 								fmt.Sprintf(`--host=%s`, elasticsearch.OffshootName()),
 								fmt.Sprintf(`--indices=%s`, indices),
 								fmt.Sprintf(`--bucket=%s`, bucket),
@@ -231,7 +234,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 									Value: c.AnalyticsClientID,
 								},
 							},
-							Resources: snapshot.Spec.Resources,
+							Resources: snapshot.Spec.PodTemplate.Spec.Resources,
 							VolumeMounts: []core.VolumeMount{
 								{
 									Name:      persistentVolume.Name,
@@ -245,7 +248,6 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							},
 						},
 					},
-					ImagePullSecrets: elasticsearch.Spec.ImagePullSecrets,
 					Volumes: []core.Volume{
 						{
 							Name:         persistentVolume.Name,
@@ -260,7 +262,15 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							},
 						},
 					},
-					RestartPolicy: core.RestartPolicyNever,
+					RestartPolicy:     core.RestartPolicyNever,
+					NodeSelector:      snapshot.Spec.PodTemplate.Spec.NodeSelector,
+					Affinity:          snapshot.Spec.PodTemplate.Spec.Affinity,
+					SchedulerName:     snapshot.Spec.PodTemplate.Spec.SchedulerName,
+					Tolerations:       snapshot.Spec.PodTemplate.Spec.Tolerations,
+					ImagePullSecrets:  snapshot.Spec.PodTemplate.Spec.ImagePullSecrets,
+					PriorityClassName: snapshot.Spec.PodTemplate.Spec.PriorityClassName,
+					Priority:          snapshot.Spec.PodTemplate.Spec.Priority,
+					SecurityContext:   snapshot.Spec.PodTemplate.Spec.SecurityContext,
 				},
 			},
 		},
