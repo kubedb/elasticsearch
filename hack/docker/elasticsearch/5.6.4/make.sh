@@ -10,7 +10,7 @@ IMG=elasticsearch
 TAG=5.6.4
 YQ_VER=${YQ_VER:-2.1.1}
 
-buid_docker() {
+build() {
   pushd "$REPO_ROOT/hack/docker/elasticsearch/$TAG"
 
   # config merger script
@@ -28,4 +28,4 @@ buid_docker() {
   popd
 }
 
-buid_docker
+binary_repo $@

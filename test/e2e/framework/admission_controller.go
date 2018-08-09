@@ -77,9 +77,6 @@ func (f *Framework) RunOperatorAndServer(kubeconfigPath string, stopCh <-chan st
 	serverOpt.RecommendedOptions.Authorization.RemoteKubeConfigFile = kubeconfigPath
 	serverOpt.RecommendedOptions.Authentication.RemoteKubeConfigFile = kubeconfigPath
 
-	serverOpt.ExtraOptions.Docker.Registry = DockerRegistry
-	serverOpt.ExtraOptions.Docker.ExporterTag = ExporterTag
-
 	err = serverOpt.Run(stopCh)
 	Expect(err).NotTo(HaveOccurred())
 }

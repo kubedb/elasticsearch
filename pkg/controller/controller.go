@@ -13,7 +13,6 @@ import (
 	drmnc "github.com/kubedb/apimachinery/pkg/controller/dormantdatabase"
 	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
 	"github.com/kubedb/apimachinery/pkg/eventer"
-	"github.com/kubedb/elasticsearch/pkg/docker"
 	core "k8s.io/api/core/v1"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -31,7 +30,6 @@ type Controller struct {
 	amc.Config
 	*amc.Controller
 
-	docker docker.Docker
 	// Rest restConfig
 	restConfig *restclient.Config
 	// Prometheus client
@@ -59,7 +57,6 @@ func New(
 	extClient cs.KubedbV1alpha1Interface,
 	promClient pcm.MonitoringV1Interface,
 	cronController snapc.CronControllerInterface,
-	docker docker.Docker,
 	opt amc.Config,
 ) *Controller {
 	return &Controller{
@@ -70,7 +67,6 @@ func New(
 		},
 		restConfig:     restConfig,
 		Config:         opt,
-		docker:         docker,
 		promClient:     promClient,
 		cronController: cronController,
 		recorder:       eventer.NewEventRecorder(client, "Elasticsearch operator"),
@@ -85,6 +81,7 @@ func (c *Controller) EnsureCustomResourceDefinitions() error {
 	log.Infoln("Ensuring CustomResourceDefinition...")
 	crds := []*crd_api.CustomResourceDefinition{
 		api.Elasticsearch{}.CustomResourceDefinition(),
+		api.ElasticsearchVersion{}.CustomResourceDefinition(),
 		api.DormantDatabase{}.CustomResourceDefinition(),
 		api.Snapshot{}.CustomResourceDefinition(),
 	}

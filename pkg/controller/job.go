@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/tools/analytics"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	batch "k8s.io/api/batch/v1"
@@ -13,6 +14,10 @@ import (
 )
 
 func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot *api.Snapshot) (*batch.Job, error) {
+	elasticsearchVersion, err := c.ExtClient.ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	jobName := fmt.Sprintf("%s-%s", api.DatabaseNamePrefix, snapshot.OffshootName())
 	jobLabel := elasticsearch.OffshootLabels()
 	if jobLabel == nil {
@@ -59,7 +64,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 					Containers: []core.Container{
 						{
 							Name:            api.JobTypeRestore,
-							Image:           c.docker.GetToolsImageWithTag(elasticsearch),
+							Image:           elasticsearchVersion.Spec.Tools.Image,
 							ImagePullPolicy: core.PullIfNotPresent,
 							Args: []string{
 								api.JobTypeRestore,
@@ -123,10 +128,13 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 					Affinity:          snapshot.Spec.PodTemplate.Spec.Affinity,
 					SchedulerName:     snapshot.Spec.PodTemplate.Spec.SchedulerName,
 					Tolerations:       snapshot.Spec.PodTemplate.Spec.Tolerations,
-					ImagePullSecrets:  snapshot.Spec.PodTemplate.Spec.ImagePullSecrets,
 					PriorityClassName: snapshot.Spec.PodTemplate.Spec.PriorityClassName,
 					Priority:          snapshot.Spec.PodTemplate.Spec.Priority,
 					SecurityContext:   snapshot.Spec.PodTemplate.Spec.SecurityContext,
+					ImagePullSecrets: core_util.MergeLocalObjectReferences(
+						snapshot.Spec.PodTemplate.Spec.ImagePullSecrets,
+						elasticsearch.Spec.PodTemplate.Spec.ImagePullSecrets,
+					),
 				},
 			},
 		},
@@ -148,6 +156,10 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 
 func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) {
 	elasticsearch, err := c.ExtClient.Elasticsearches(snapshot.Namespace).Get(snapshot.Spec.DatabaseName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	elasticsearchVersion, err := c.ExtClient.ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -201,9 +213,8 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 				Spec: core.PodSpec{
 					Containers: []core.Container{
 						{
-							Name:            api.JobTypeBackup,
-							Image:           c.docker.GetToolsImageWithTag(elasticsearch),
-							ImagePullPolicy: core.PullAlways,
+							Name:  api.JobTypeBackup,
+							Image: elasticsearchVersion.Spec.Tools.Image,
 							Args: []string{
 								api.JobTypeBackup,
 								fmt.Sprintf(`--host=%s`, elasticsearch.OffshootName()),
@@ -267,10 +278,13 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 					Affinity:          snapshot.Spec.PodTemplate.Spec.Affinity,
 					SchedulerName:     snapshot.Spec.PodTemplate.Spec.SchedulerName,
 					Tolerations:       snapshot.Spec.PodTemplate.Spec.Tolerations,
-					ImagePullSecrets:  snapshot.Spec.PodTemplate.Spec.ImagePullSecrets,
 					PriorityClassName: snapshot.Spec.PodTemplate.Spec.PriorityClassName,
 					Priority:          snapshot.Spec.PodTemplate.Spec.Priority,
 					SecurityContext:   snapshot.Spec.PodTemplate.Spec.SecurityContext,
+					ImagePullSecrets: core_util.MergeLocalObjectReferences(
+						snapshot.Spec.PodTemplate.Spec.ImagePullSecrets,
+						elasticsearch.Spec.PodTemplate.Spec.ImagePullSecrets,
+					),
 				},
 			},
 		},

@@ -34,6 +34,11 @@ func (c *Controller) ensureStatefulSet(
 	isClient bool,
 ) (kutil.VerbType, error) {
 
+	elasticsearchVersion, err := c.ExtClient.ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
 	if err := c.checkStatefulSet(elasticsearch, statefulSetName); err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -51,7 +56,7 @@ func (c *Controller) ensureStatefulSet(
 	searchGuard := string(elasticsearch.Spec.Version[0])
 
 	statefulSet, vt, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulSetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
-		in.Labels = elasticsearch.OffshootLabels()
+		in.Labels = core_util.UpsertMap(labels, elasticsearch.OffshootLabels())
 		in.Annotations = elasticsearch.Spec.PodTemplate.Controller.Annotations
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
 
@@ -59,9 +64,9 @@ func (c *Controller) ensureStatefulSet(
 
 		in.Spec.ServiceName = c.GoverningService
 		in.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: elasticsearch.OffshootSelectors(),
+			MatchLabels: core_util.UpsertMap(labels, elasticsearch.OffshootSelectors()),
 		}
-		in.Spec.Template.Labels = elasticsearch.OffshootSelectors()
+		in.Spec.Template.Labels = core_util.UpsertMap(labels, elasticsearch.OffshootSelectors())
 		in.Spec.Template.Annotations = elasticsearch.Spec.PodTemplate.Annotations
 		in.Spec.Template.Spec.InitContainers = core_util.UpsertContainers(
 			in.Spec.Template.Spec.InitContainers,
@@ -84,7 +89,7 @@ func (c *Controller) ensureStatefulSet(
 			in.Spec.Template.Spec.Containers,
 			core.Container{
 				Name:  api.ResourceSingularElasticsearch,
-				Image: c.docker.GetImageWithTag(elasticsearch),
+				Image: elasticsearchVersion.Spec.DB.Image,
 				SecurityContext: &core.SecurityContext{
 					Privileged: types.BoolP(false),
 					Capabilities: &core.Capabilities{
@@ -110,7 +115,7 @@ func (c *Controller) ensureStatefulSet(
 		in.Spec.Template.Spec.SecurityContext = elasticsearch.Spec.PodTemplate.Spec.SecurityContext
 
 		if isClient {
-			in = c.upsertMonitoringContainer(in, elasticsearch)
+			in = c.upsertMonitoringContainer(in, elasticsearch, elasticsearchVersion)
 			in = upsertDatabaseSecret(in, elasticsearch.Spec.DatabaseSecret.SecretName, searchGuard)
 		}
 
@@ -464,7 +469,7 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 	return statefulSet
 }
 
-func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch) *apps.StatefulSet {
+func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, elasticsearchVersion *api.ElasticsearchVersion) *apps.StatefulSet {
 	if elasticsearch.GetMonitoringVendor() == mona.VendorPrometheus {
 		container := core.Container{
 			Name: "exporter",
@@ -473,7 +478,7 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 				fmt.Sprintf("--address=:%d", api.PrometheusExporterPortNumber),
 				fmt.Sprintf("--enable-analytics=%v", c.EnableAnalytics),
 			}, c.LoggerOptions.ToFlags()...),
-			Image:           c.docker.GetOperatorImageWithTag(elasticsearch),
+			Image:           elasticsearchVersion.Spec.Exporter.Image,
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{
 				{

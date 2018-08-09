@@ -2,7 +2,7 @@
 set -xeou pipefail
 
 GOPATH=$(go env GOPATH)
-REPO_ROOT=$GOPATH/src/github.com/kubedb/elasticsearch
+REPO_ROOT=${GOPATH}/src/github.com/kubedb/elasticsearch
 
 export DB_UPDATE=1
 export TOOLS_UPDATE=1
@@ -49,27 +49,30 @@ while test $# -gt 0; do
   esac
 done
 
-if [ "$DB_UPDATE" -eq 1 ]; then
-  $REPO_ROOT/hack/docker/elasticsearch/5.6.4/make.sh build
-  $REPO_ROOT/hack/docker/elasticsearch/5.6.4/make.sh push
-  $REPO_ROOT/hack/docker/elasticsearch/5.6/make.sh
+dbversions=(
+  5.6.4
+  5.6
+  6.2.4
+  6.2
+  6.3.0
+  6.3
+)
 
-  $REPO_ROOT/hack/docker/elasticsearch/6.2.4/make.sh build
-  $REPO_ROOT/hack/docker/elasticsearch/6.2.4/make.sh push
-  $REPO_ROOT/hack/docker/elasticsearch/6.2/make.sh
+if [ "$DB_UPDATE" -eq 1 ]; then
+  for db in "${dbversions[@]}"; do
+    ${REPO_ROOT}/hack/docker/elasticsearch/${db}/make.sh build
+    ${REPO_ROOT}/hack/docker/elasticsearch/${db}/make.sh push
+  done
 fi
 
 if [ "$TOOLS_UPDATE" -eq 1 ]; then
-  $REPO_ROOT/hack/docker/elasticsearch-tools/5.6.4/make.sh build
-  $REPO_ROOT/hack/docker/elasticsearch-tools/5.6.4/make.sh push
-  $REPO_ROOT/hack/docker/elasticsearch-tools/5.6/make.sh
-
-  $REPO_ROOT/hack/docker/elasticsearch-tools/6.2.4/make.sh build
-  $REPO_ROOT/hack/docker/elasticsearch-tools/6.2.4/make.sh push
-  $REPO_ROOT/hack/docker/elasticsearch-tools/6.2/make.sh
+  for db in "${dbversions[@]}"; do
+    ${REPO_ROOT}/hack/docker/elasticsearch-tools/${db}/make.sh build
+    ${REPO_ROOT}/hack/docker/elasticsearch-tools/${db}/make.sh push
+  done
 fi
 
 if [ "$OPERATOR_UPDATE" -eq 1 ]; then
-  $REPO_ROOT/hack/docker/es-operator/make.sh build
-  $REPO_ROOT/hack/docker/es-operator/make.sh push
+  ${REPO_ROOT}/hack/docker/es-operator/make.sh build
+  ${REPO_ROOT}/hack/docker/es-operator/make.sh push
 fi

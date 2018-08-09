@@ -30,6 +30,7 @@ var _ = Describe("Elasticsearch", func() {
 		f                        *framework.Invocation
 		elasticsearch            *api.Elasticsearch
 		garbageElasticsearch     *api.ElasticsearchList
+		elasticsearchVersion     *api.ElasticsearchVersion
 		snapshot                 *api.Snapshot
 		secret                   *core.Secret
 		skipMessage              string
@@ -39,6 +40,7 @@ var _ = Describe("Elasticsearch", func() {
 	BeforeEach(func() {
 		f = root.Invoke()
 		elasticsearch = f.CombinedElasticsearch()
+		elasticsearchVersion = f.ElasticsearchVersion()
 		garbageElasticsearch = new(api.ElasticsearchList)
 		snapshot = f.Snapshot()
 		secret = new(core.Secret)
@@ -47,6 +49,10 @@ var _ = Describe("Elasticsearch", func() {
 	})
 
 	var createAndWaitForRunning = func() {
+		By("Create ElasticsearchVersion: " + elasticsearchVersion.Name)
+		err = f.CreateElasticsearchVersion(elasticsearchVersion)
+		Expect(err).NotTo(HaveOccurred())
+
 		By("Create Elasticsearch: " + elasticsearch.Name)
 		err = f.CreateElasticsearch(elasticsearch)
 		Expect(err).NotTo(HaveOccurred())
@@ -104,6 +110,11 @@ var _ = Describe("Elasticsearch", func() {
 
 		if secret != nil {
 			f.DeleteSecret(secret.ObjectMeta)
+		}
+
+		err = f.DeleteElasticsearchVersion(elasticsearchVersion.ObjectMeta)
+		if err != nil && !kerr.IsNotFound(err) {
+			Expect(err).NotTo(HaveOccurred())
 		}
 	})
 

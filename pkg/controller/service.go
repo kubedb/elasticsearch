@@ -145,7 +145,9 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 		in.Spec.LoadBalancerIP = elasticsearch.Spec.ServiceTemplate.Spec.LoadBalancerIP
 		in.Spec.LoadBalancerSourceRanges = elasticsearch.Spec.ServiceTemplate.Spec.LoadBalancerSourceRanges
 		in.Spec.ExternalTrafficPolicy = elasticsearch.Spec.ServiceTemplate.Spec.ExternalTrafficPolicy
-		in.Spec.HealthCheckNodePort = elasticsearch.Spec.ServiceTemplate.Spec.HealthCheckNodePort
+		if elasticsearch.Spec.ServiceTemplate.Spec.HealthCheckNodePort > 0 {
+			in.Spec.HealthCheckNodePort = elasticsearch.Spec.ServiceTemplate.Spec.HealthCheckNodePort
+		}
 		return in
 	})
 	return ok, err

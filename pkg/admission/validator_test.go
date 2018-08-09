@@ -38,7 +38,13 @@ func TestElasticsearchValidator_Admit(t *testing.T) {
 			validator := ElasticsearchValidator{}
 
 			validator.initialized = true
-			validator.extClient = extFake.NewSimpleClientset()
+			validator.extClient = extFake.NewSimpleClientset(
+				&api.ElasticsearchVersion{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: "5.6",
+					},
+				},
+			)
 			validator.client = fake.NewSimpleClientset(
 				&core.Secret{
 					ObjectMeta: metaV1.ObjectMeta{
