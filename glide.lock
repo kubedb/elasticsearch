@@ -1,5 +1,5 @@
 hash: 09495479ca35241eb84b80966ac21abe8a43dc87afa596f03333f5588836d924
-updated: 2018-08-07T20:40:54.049893077+06:00
+updated: 2018-08-09T16:40:22.102717677+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -34,7 +34,7 @@ imports:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: 1a2537b112744aaeeba58b5fe81973eced880ff8
+  version: b50ebf9375ccfa41b08350da68618fee6bc6de4b
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -299,7 +299,7 @@ imports:
 - name: github.com/json-iterator/go
   version: ab8a2e0c74be9d3be70b3184d9acc634935ded82
 - name: github.com/kubedb/apimachinery
-  version: 29881e70f6d7a5dc2c80d4853bfd477feb96e0ec
+  version: ba444a5bbca920515756211b31fb72d61e70d695
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -340,11 +340,11 @@ imports:
 - name: github.com/modern-go/reflect2
   version: 05fbef0ca5da472bbf96c9322b84a53edc03c9fd
 - name: github.com/ncw/swift
-  version: b2a7479cf26fa841ff90dd932d0221cb5c50782d
+  version: bd8b704d15b2f5357186ac39c863bd74eb837291
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/olivere/elastic
-  version: 3a15a1301c4bf0bb5a4eb3f5a65331912ae25ef0
+  version: a268a4f191b45eb3e8f28927ea604d06b480ef42
   subpackages:
   - config
   - uritemplates
@@ -507,7 +507,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: 9bdf771af19ab16b6a5084e5d542a7e04cb97004
+  version: d089d6ac97131b2ee652f2fe736865338659a668
   subpackages:
   - gensupport
   - googleapi

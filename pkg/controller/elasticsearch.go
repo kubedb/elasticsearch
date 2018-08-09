@@ -164,6 +164,21 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	// Ensure Schedule backup
 	c.ensureBackupScheduler(elasticsearch)
 
+	// ensure StatsService for desired monitoring
+	if _, err := c.ensureStatsService(elasticsearch); err != nil {
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				"Failed to manage monitoring system. Reason: %v",
+				err,
+			)
+		}
+		log.Errorln(err)
+		return nil
+	}
+
 	if err := c.manageMonitor(elasticsearch); err != nil {
 		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
 			c.recorder.Eventf(

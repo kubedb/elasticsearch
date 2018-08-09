@@ -2,10 +2,10 @@
 set -eou pipefail
 
 crds=(
-    elasticsearches
-    elasticsearchversions
-    snapshots
-    dormantdatabases
+  elasticsearches
+  elasticsearchversions
+  snapshots
+  dormantdatabases
 )
 apiServices=(v1alpha1.validators v1alpha1.mutators)
 
@@ -72,7 +72,7 @@ if [ "$KUBEDB_UNINSTALL" -eq 1 ]; then
       pairs=($(kubectl get ${crd}.kubedb.com --all-namespaces -o jsonpath='{range .items[*]}{.metadata.name} {.metadata.namespace} {end}' || true))
       total=${#pairs[*]}
 
-      for ((i = 0; i < $total; i++ )); do
+      for ((i = 0; i < $total; i++)); do
         name=${pairs[$i]}
         namespace="default"
         if [ ${crd: -8} != "versions" ]; then

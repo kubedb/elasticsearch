@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
@@ -108,7 +109,8 @@ func (c *Controller) checkService(elasticsearch *api.Elasticsearch, name string)
 		return err
 	}
 
-	if service.Spec.Selector[api.LabelDatabaseName] != elasticsearch.OffshootName() {
+	if service.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch ||
+		service.Labels[api.LabelDatabaseName] != elasticsearch.Name {
 		return fmt.Errorf(`intended service "%v" already exists`, name)
 	}
 
@@ -133,7 +135,13 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Selector[NodeRoleClient] = "set"
-		in.Spec.Ports = upsertServicePort(in, elasticsearch)
+		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
+			{
+				Name:       ElasticsearchRestPortName,
+				Port:       ElasticsearchRestPort,
+				TargetPort: intstr.FromString(ElasticsearchRestPortName),
+			},
+		})
 
 		if elasticsearch.Spec.ServiceTemplate.Spec.ClusterIP != "" {
 			in.Spec.ClusterIP = elasticsearch.Spec.ServiceTemplate.Spec.ClusterIP
@@ -151,25 +159,6 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 		return in
 	})
 	return ok, err
-}
-
-func upsertServicePort(service *core.Service, elasticsearch *api.Elasticsearch) []core.ServicePort {
-	desiredPorts := []core.ServicePort{
-		{
-			Name:       ElasticsearchRestPortName,
-			Port:       ElasticsearchRestPort,
-			TargetPort: intstr.FromString(ElasticsearchRestPortName),
-		},
-	}
-	if elasticsearch.GetMonitoringVendor() == mona.VendorPrometheus {
-		desiredPorts = append(desiredPorts, core.ServicePort{
-			Name:       api.PrometheusExporterPortName,
-			Protocol:   core.ProtocolTCP,
-			Port:       elasticsearch.Spec.Monitor.Prometheus.Port,
-			TargetPort: intstr.FromString(api.PrometheusExporterPortName),
-		})
-	}
-	return core_util.MergeServicePorts(service.Spec.Ports, desiredPorts)
 }
 
 func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -190,19 +179,79 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Selector[NodeRoleMaster] = "set"
-		in.Spec.Ports = upsertMasterServicePort(in)
+		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
+			{
+				Name:       ElasticsearchNodePortName,
+				Port:       ElasticsearchNodePort,
+				TargetPort: intstr.FromString(ElasticsearchNodePortName),
+			},
+		})
 		return in
 	})
 	return ok, err
 }
 
-func upsertMasterServicePort(service *core.Service) []core.ServicePort {
-	desiredPorts := []core.ServicePort{
-		{
-			Name:       ElasticsearchNodePortName,
-			Port:       ElasticsearchNodePort,
-			TargetPort: intstr.FromString(ElasticsearchNodePortName),
-		},
+func (c *Controller) ensureStatsService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
+	// return if monitoring is not prometheus
+	if elasticsearch.GetMonitoringVendor() != mona.VendorPrometheus {
+		log.Warningln("elasticsearch.spec.monitor.agent is not coreos-operator or builtin.")
+		return kutil.VerbUnchanged, nil
 	}
-	return core_util.MergeServicePorts(service.Spec.Ports, desiredPorts)
+
+	// Check if statsService name exists
+	if err := c.checkService(elasticsearch, elasticsearch.StatsService().ServiceName()); err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
+	// create statsService
+	vt, err := c.createStatsService(elasticsearch)
+	if err != nil {
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				"Failed to create StatsService. Reason: %v",
+				err,
+			)
+		}
+		return kutil.VerbUnchanged, err
+	} else if vt != kutil.VerbUnchanged {
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeNormal,
+				eventer.EventReasonSuccessful,
+				"Successfully %s StatsService",
+				vt,
+			)
+		}
+	}
+	return vt, nil
+}
+
+func (c *Controller) createStatsService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
+	meta := metav1.ObjectMeta{
+		Name:      elasticsearch.StatsService().ServiceName(),
+		Namespace: elasticsearch.Namespace,
+	}
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+	if rerr != nil {
+		return kutil.VerbUnchanged, rerr
+	}
+	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+		in.Labels = elasticsearch.OffshootLabels()
+		in.Spec.Selector = elasticsearch.OffshootSelectors()
+		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
+			{
+				Name:       api.PrometheusExporterPortName,
+				Protocol:   core.ProtocolTCP,
+				Port:       elasticsearch.Spec.Monitor.Prometheus.Port,
+				TargetPort: intstr.FromString(api.PrometheusExporterPortName),
+			},
+		})
+		return in
+	})
+	return ok, err
 }

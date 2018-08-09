@@ -1,5 +1,5 @@
 #!/bin/bash
-set -xeou pipefail
+set -eou pipefail
 
 GOPATH=$(go env GOPATH)
 REPO_ROOT=${GOPATH}/src/github.com/kubedb/elasticsearch
@@ -58,7 +58,12 @@ dbversions=(
   6.3
 )
 
+echo ""
+env | sort | grep -e DOCKER_REGISTRY -e APPSCODE_ENV || true
+echo ""
+
 if [ "$DB_UPDATE" -eq 1 ]; then
+  cowsay -f tux "Processing database images" || true
   for db in "${dbversions[@]}"; do
     ${REPO_ROOT}/hack/docker/elasticsearch/${db}/make.sh build
     ${REPO_ROOT}/hack/docker/elasticsearch/${db}/make.sh push
@@ -66,6 +71,7 @@ if [ "$DB_UPDATE" -eq 1 ]; then
 fi
 
 if [ "$TOOLS_UPDATE" -eq 1 ]; then
+  cowsay -f tux "Processing database-tools images" || true
   for db in "${dbversions[@]}"; do
     ${REPO_ROOT}/hack/docker/elasticsearch-tools/${db}/make.sh build
     ${REPO_ROOT}/hack/docker/elasticsearch-tools/${db}/make.sh push
@@ -73,6 +79,7 @@ if [ "$TOOLS_UPDATE" -eq 1 ]; then
 fi
 
 if [ "$OPERATOR_UPDATE" -eq 1 ]; then
+  cowsay -f tux "Processing Operator images" || true
   ${REPO_ROOT}/hack/docker/es-operator/make.sh build
   ${REPO_ROOT}/hack/docker/es-operator/make.sh push
 fi
