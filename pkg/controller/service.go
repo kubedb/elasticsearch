@@ -194,7 +194,7 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 func (c *Controller) ensureStatsService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	// return if monitoring is not prometheus
 	if elasticsearch.GetMonitoringVendor() != mona.VendorPrometheus {
-		log.Warningln("elasticsearch.spec.monitor.agent is not coreos-operator or builtin.")
+		log.Warningln("spec.monitor.agent is not coreos-operator or builtin.")
 		return kutil.VerbUnchanged, nil
 	}
 
@@ -232,7 +232,7 @@ func (c *Controller) ensureStatsService(elasticsearch *api.Elasticsearch) (kutil
 			ref,
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToCreate,
-			"Failed to create StatsService. Reason: %v",
+			"Failed to create stats service. Reason: %v",
 			err,
 		)
 		return kutil.VerbUnchanged, err
@@ -241,7 +241,7 @@ func (c *Controller) ensureStatsService(elasticsearch *api.Elasticsearch) (kutil
 			ref,
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessful,
-			"Successfully %s StatsService",
+			"Successfully %s stats service",
 			vt,
 		)
 	}
