@@ -203,43 +203,17 @@ func (c *Controller) ensureStatsService(elasticsearch *api.Elasticsearch) (kutil
 		return kutil.VerbUnchanged, err
 	}
 
-	// create statsService
-	vt, err := c.createStatsService(elasticsearch)
-	if err != nil {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
-			c.recorder.Eventf(
-				ref,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				"Failed to create StatsService. Reason: %v",
-				err,
-			)
-		}
-		return kutil.VerbUnchanged, err
-	} else if vt != kutil.VerbUnchanged {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch); rerr == nil {
-			c.recorder.Eventf(
-				ref,
-				core.EventTypeNormal,
-				eventer.EventReasonSuccessful,
-				"Successfully %s StatsService",
-				vt,
-			)
-		}
-	}
-	return vt, nil
-}
-
-func (c *Controller) createStatsService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
-	meta := metav1.ObjectMeta{
-		Name:      elasticsearch.StatsService().ServiceName(),
-		Namespace: elasticsearch.Namespace,
-	}
 	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
 	if rerr != nil {
 		return kutil.VerbUnchanged, rerr
 	}
-	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
+
+	// create/patch statsService
+	meta := metav1.ObjectMeta{
+		Name:      elasticsearch.StatsService().ServiceName(),
+		Namespace: elasticsearch.Namespace,
+	}
+	_, vt, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
 		in.Labels = elasticsearch.OffshootLabels()
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
@@ -253,5 +227,23 @@ func (c *Controller) createStatsService(elasticsearch *api.Elasticsearch) (kutil
 		})
 		return in
 	})
-	return ok, err
+	if err != nil {
+		c.recorder.Eventf(
+			ref,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			"Failed to create StatsService. Reason: %v",
+			err,
+		)
+		return kutil.VerbUnchanged, err
+	} else if vt != kutil.VerbUnchanged {
+		c.recorder.Eventf(
+			ref,
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessful,
+			"Successfully %s StatsService",
+			vt,
+		)
+	}
+	return vt, nil
 }
