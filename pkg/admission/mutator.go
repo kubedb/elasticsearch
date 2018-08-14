@@ -78,11 +78,11 @@ func (a *ElasticsearchMutator) Admit(req *admission.AdmissionRequest) *admission
 	if err != nil {
 		return hookapi.StatusBadRequest(err)
 	}
-	elasticsearchMod, err := setDefaultValues(a.client, a.extClient, obj.(*api.Elasticsearch).DeepCopy())
+	mod, err := setDefaultValues(a.client, a.extClient, obj.(*api.Elasticsearch).DeepCopy())
 	if err != nil {
 		return hookapi.StatusForbidden(err)
-	} else if elasticsearchMod != nil {
-		patch, err := meta_util.CreateJSONPatch(obj, elasticsearchMod)
+	} else if mod != nil {
+		patch, err := meta_util.CreateJSONPatch(obj, mod)
 		if err != nil {
 			return hookapi.StatusInternalServerError(err)
 		}
