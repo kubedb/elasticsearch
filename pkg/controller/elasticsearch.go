@@ -50,10 +50,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		return err
 	}
 
-	if elasticsearch.Status.CreationTime == nil {
+	if elasticsearch.Status.Phase == "" {
 		es, err := kutildb.UpdateElasticsearchStatus(c.ExtClient, elasticsearch, func(in *api.ElasticsearchStatus) *api.ElasticsearchStatus {
-			t := metav1.Now()
-			in.CreationTime = &t
 			in.Phase = api.DatabasePhaseCreating
 			return in
 		}, api.EnableStatusSubresource)
@@ -146,6 +144,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 
 	es, err := kutildb.UpdateElasticsearchStatus(c.ExtClient, elasticsearch, func(in *api.ElasticsearchStatus) *api.ElasticsearchStatus {
 		in.Phase = api.DatabasePhaseRunning
+		in.ObservedGeneration = elasticsearch.Generation
 		return in
 	}, api.EnableStatusSubresource)
 	if err != nil {

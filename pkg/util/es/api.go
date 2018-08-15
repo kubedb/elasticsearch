@@ -98,5 +98,5 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, url string
 		}
 		return &ESClientV6{client: client}, nil
 	}
-	return nil, fmt.Errorf("unknown database verserion: %s\n", db.Spec.Version)
+	return nil, fmt.Errorf("unknown database verserion: %s", db.Spec.Version)
 }
