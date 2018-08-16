@@ -11,10 +11,11 @@ CUSTOM_CONFIG_DIR="/elasticsearch/custom-config"
 
 if [ -d "$CUSTOM_CONFIG_DIR" ]; then
 
-  configs=($(find $CUSTOM_CONFIG_DIR -maxdepth 1 -name "*.yaml"))
-  if [ ${#configs[@]} -gt 0 ]; then
-    config-merger.sh
-  fi
+	configs=($(find $CUSTOM_CONFIG_DIR -maxdepth 1 -name "*.yaml"))
+	configs+=($(find $CUSTOM_CONFIG_DIR -maxdepth 1 -name "*.yml"))
+	if [ ${#configs[@]} -gt 0 ]; then
+		config-merger.sh
+	fi
 fi
 
 echo "Starting runit..."
