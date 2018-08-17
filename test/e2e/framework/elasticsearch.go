@@ -57,7 +57,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 				Master: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
 					Prefix:   "master",
-					Storage: core.PersistentVolumeClaimSpec{
+					Storage: &core.PersistentVolumeClaimSpec{
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: resource.MustParse("1Gi"),
@@ -69,7 +69,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 				Data: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
 					Prefix:   "data",
-					Storage: core.PersistentVolumeClaimSpec{
+					Storage: &core.PersistentVolumeClaimSpec{
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: resource.MustParse("1Gi"),
@@ -81,7 +81,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 				Client: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
 					Prefix:   "client",
-					Storage: core.PersistentVolumeClaimSpec{
+					Storage: &core.PersistentVolumeClaimSpec{
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceStorage: resource.MustParse("1Gi"),

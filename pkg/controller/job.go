@@ -33,7 +33,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.Storage, jobName, elasticsearch.Namespace)
+	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage, jobName, elasticsearch.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.Storage, jobName, snapshot.Namespace)
+	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage, jobName, snapshot.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,22 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 	return job, nil
 }
 
-func (c *Controller) getVolumeForSnapshot(pvcSpec *core.PersistentVolumeClaimSpec, jobName, namespace string) (*core.Volume, error) {
+func (c *Controller) getVolumeForSnapshot(st api.StorageType, pvcSpec *core.PersistentVolumeClaimSpec, jobName, namespace string) (*core.Volume, error) {
+	if st == api.StorageTypeEphemeral {
+		ed := core.EmptyDirVolumeSource{}
+		if pvcSpec != nil {
+			if sz, found := pvcSpec.Resources.Requests[core.ResourceStorage]; found {
+				ed.SizeLimit = &sz
+			}
+		}
+		return &core.Volume{
+			Name: "tools",
+			VolumeSource: core.VolumeSource{
+				EmptyDir: &ed,
+			},
+		}, nil
+	}
+
 	volume := &core.Volume{
 		Name: "tools",
 	}
