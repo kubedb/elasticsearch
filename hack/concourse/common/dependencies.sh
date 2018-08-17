@@ -1,5 +1,4 @@
 #!/bin/bash
-set -eou pipefail
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_PASS=$DOCKER_PASS
@@ -25,7 +24,7 @@ chmod +x onessl
 mv onessl /usr/local/bin/
 
 # install pharmer
-if [[ "$ClusterProvider" != "kubespray" && "$ClusterProvider" != "aws" ]]; then
+if [[ "$ClusterProvider" != "cncf" && "$ClusterProvider" != "kubespray" && "$ClusterProvider" != "aws" ]]; then
   pushd /tmp
   curl -LO https://cdn.appscode.com/binaries/pharmer/$PHARMER_VERSION/pharmer-linux-amd64
   chmod +x pharmer-linux-amd64

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -eoux pipefail
-
 StorageClass="standard"
 
 # name of the cluster
@@ -14,17 +12,21 @@ function cleanup() {
 
   # Workload Descriptions if the test fails
   cowsay -f tux "Describe Deployment"
-  kubectl describe deploy -n kube-system -l app=kubedb
+  kubectl describe deploy -n kube-system -l app=$APP_LABEL
 
   cowsay -f tux "Describe Replica Set"
-  kubectl describe replicasets -n kube-system -l app=kubedb
+  kubectl describe replicasets -n kube-system -l app=$APP_LABEL
 
   cowsay -f tux "Describe Pods"
-  kubectl describe pods -n kube-system -l app=kubedb
+  kubectl describe pods -n kube-system -l app=$APP_LABEL
 
   cowsay -f tux "Describe Nodes"
   kubectl get nodes
   kubectl describe nodes
+
+  pushd $GOPATH/src/github.com/$ORG_NAME/$REPO_NAME
+  ./hack/deploy/setup.sh --uninstall --purge
+  popd
 
   # delete cluster on exit
   if [ "$ClusterProvider" = "aws" ]; then
@@ -34,7 +36,7 @@ function cleanup() {
   elif [ "$ClusterProvider" = "kubespray" ]; then
     packet admin delete-sshkey --key-id "$SSH_KEY_ID" --key "$PACKET_API_TOKEN"
     packet baremetal delete-device --device-id "$DEVICE_ID" --key "$PACKET_API_TOKEN"
-  else
+  elif [ "$ClusterProvider" != "cncf" ]; then
     pharmer get cluster
     pharmer delete cluster "$NAME"
     pharmer get cluster
@@ -43,10 +45,14 @@ function cleanup() {
     pharmer get cluster
   fi
 
+  pushd $GOPATH/src/github.com/$ORG_NAME/$REPO_NAME
+  ./hack/deploy/setup.sh --uninstall --purge
+  popd
+
   # delete docker image on exit
   curl -LO https://raw.githubusercontent.com/appscodelabs/libbuild/master/docker.py
   chmod +x docker.py
-  ./docker.py del_tag kubedbci $OPERATOR_NAME "$CUSTOM_OPERATOR_TAG"
+  ./docker.py del_tag $DOCKER_REGISTRY $OPERATOR_NAME "$CUSTOM_OPERATOR_TAG"
 }
 trap cleanup EXIT
 
@@ -56,7 +62,7 @@ function pharmer_common() {
   pharmer create cluster "$NAME" --provider="$ClusterProvider" --zone="$ZONE" --nodes="$NODE"=1 --credential-uid=cred --v=10 --kubernetes-version="$K8S_VERSION"
   pharmer apply "$NAME"
   pharmer use cluster "$NAME"
-  sleep 120
+  sleep 300
 }
 
 function prepare_aws() {
@@ -208,12 +214,14 @@ EOF
 
   # rook
   git clone https://github.com/rook/rook
+  git checkout -b tags/v0.8.1
   pushd rook/cluster/examples/kubernetes/ceph/
 
-  sed -i '212s/^/        - name: FLEXVOLUME_DIR_PATH\n/' operator.yaml
-  sed -i '213s/^/          value: "\/var\/lib\/kubelet\/volume-plugins"\n/' operator.yaml
+  #sed -i '212s/^/        - name: FLEXVOLUME_DIR_PATH\n/' operator.yaml
+  #sed -i '213s/^/          value: "\/var\/lib\/kubelet\/volume-plugins"\n/' operator.yaml
 
   kubectl create -f operator.yaml
+  sleep 120
   kubectl create -f cluster.yaml
   sleep 120
   kubectl create -f storageclass.yaml
@@ -222,12 +230,18 @@ EOF
   popd
 }
 
+function prepare_cncf() {
+  mkdir -p ~/.kube/
+  cp creds/kubeconfig ~/.kube/config
+  StorageClass="rook-ceph-block"
+}
+
 # prepare cluster
 if [ "${ClusterProvider}" = "gke" ]; then
   CredProvider=GoogleCloud
   ZONE=us-central1-f
   NODE=n1-standard-2
-  K8S_VERSION=1.10.4-gke.2
+  K8S_VERSION=${K8S_VERSION:-"1.10.4-gke.2"}
 
   pharmer_common
 elif [ "${ClusterProvider}" = "aws" ]; then
@@ -236,20 +250,20 @@ elif [ "${ClusterProvider}" = "aks" ]; then
   CredProvider=Azure
   ZONE=eastus
   NODE=Standard_DS2_v2
-  K8S_VERSION=1.9.6
+  K8S_VERSION=${K8S_VERSION:-1.9.6}
 
   prepare_aks
 elif [ "${ClusterProvider}" = "acs" ]; then
   ZONE=westcentralus
   NODE=Standard_DS2_v2
-  K8S_VERSION=1.10.3
+  K8S_VERSION=${K8S_VERSION:-1.10.3}
 
   prepare_acs
 elif [ "${ClusterProvider}" = "kubespray" ]; then
   prepare_kubespray
 elif [ "${ClusterProvider}" = "eks" ]; then
   CredProvider=AWS
-  K8S_VERSION=1.10
+  K8S_VERSION=${K8S_VERSION:-1.10}
   NODE=t2.medium
   ZONE=us-west-2a
 
@@ -257,7 +271,7 @@ elif [ "${ClusterProvider}" = "digitalocean" ]; then
   CredProvider=DigitalOcean
   ZONE=nyc1
   NODE=4gb
-  K8S_VERSION=v1.10.5
+  K8S_VERSION=${K8S_VERSION:-v1.10.5}
 
   pharmer_common
 
@@ -275,6 +289,8 @@ EOF
   kubectl create -f sc.yaml
   sleep 60
   kubectl get storageclass
+elif [ "${ClusterProvider}" = "cncf" ]; then
+  prepare_cncf
 else
   echo "unknown provider"
   exit 1
