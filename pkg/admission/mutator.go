@@ -101,6 +101,10 @@ func setDefaultValues(client kubernetes.Interface, extClient cs.Interface, elast
 		return nil, fmt.Errorf(`object 'Version' is missing in '%v'`, elasticsearch.Spec)
 	}
 
+	if elasticsearch.Spec.StorageType == "" {
+		elasticsearch.Spec.StorageType = api.StorageTypeDurable
+	}
+
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
 		if topology.Client.Replicas == nil {

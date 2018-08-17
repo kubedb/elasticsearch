@@ -132,11 +132,14 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 // It is not method of Interface, because it is referenced from controller package too.
 func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1.KubedbV1alpha1Interface, elasticsearch *api.Elasticsearch) error {
 	if elasticsearch.Spec.Version == "" {
-		return fmt.Errorf(`object 'Version' is missing in '%v'`, elasticsearch.Spec)
+		return errors.New(`'spec.version' is missing`)
 	}
-
 	if _, err := extClient.ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{}); err != nil {
 		return err
+	}
+
+	if elasticsearch.Spec.StorageType == "" {
+		return fmt.Errorf(`'spec.storageType' is missing`)
 	}
 
 	topology := elasticsearch.Spec.Topology
