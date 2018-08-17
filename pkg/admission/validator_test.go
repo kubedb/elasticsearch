@@ -242,9 +242,10 @@ func sampleElasticsearch() api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version:    "5.6",
-			Replicas:   types.Int32P(1),
-			DoNotPause: true,
+			Version:     "5.6",
+			Replicas:    types.Int32P(1),
+			DoNotPause:  true,
+			StorageType: api.StorageTypeDurable,
 			Storage: &core.PersistentVolumeClaimSpec{
 				StorageClassName: types.StringP("standard"),
 				Resources: core.ResourceRequirements{
