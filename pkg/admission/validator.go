@@ -309,6 +309,7 @@ var preconditionSpecFields = []string{
 	"spec.enableSSL",
 	"spec.certificateSecret",
 	"spec.databaseSecret",
+	"spec.storageType",
 	"spec.storage",
 	"spec.init",
 	"spec.podTemplate.spec.nodeSelector",
