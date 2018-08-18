@@ -313,8 +313,6 @@ var preconditionSpecFields = []string{
 	"spec.init",
 	"spec.podTemplate.spec.nodeSelector",
 	"spec.podTemplate.spec.env",
-	"spec.nodeSelector", // Deprecated
-	"spec.env",          // Deprecated
 }
 
 func preconditionFailedError(kind string) error {
