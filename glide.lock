@@ -1,5 +1,5 @@
-hash: e0fd85e28a3e511948e1dbe67f09b495bf49ceffc36320132574ca0010aa2d61
-updated: 2018-08-17T19:15:42.927514899-07:00
+hash: 0c589e5feac1781160d756fbf53d2928078642af87e42a32202ea384a3461452
+updated: 2018-08-27T14:55:13.272284545-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -34,7 +34,7 @@ imports:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: 55817b7c4b57c117d9779249b3924a866b644fbb
+  version: ab96b8d0056d39ca0c57dc6705864423b50515bc
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -188,7 +188,7 @@ imports:
   - daemon
   - journal
 - name: github.com/coreos/prometheus-operator
-  version: ccf8867cdb9e5bd099093e27cfdb5fecce15c90b
+  version: ba92b2f232ef24684b9dc6bde03b74e1630909a6
   subpackages:
   - pkg/client/monitoring/v1
 - name: github.com/cpuguy83/go-md2man
@@ -215,6 +215,8 @@ imports:
   version: dcef7f55730566d41eae5db10e7d6981829720f6
 - name: github.com/evanphx/json-patch
   version: 94e38aa1586e8a6c8a75770bddf5ff84c48a106b
+- name: github.com/fatih/structs
+  version: ebf56d35bba727c68ac77f56f2fcf90b181851aa
 - name: github.com/fsnotify/fsnotify
   version: f12c6236fe7b5cf6bcf30e5935d08cb079d78334
 - name: github.com/ghodss/yaml
@@ -226,7 +228,7 @@ imports:
 - name: github.com/go-openapi/jsonreference
   version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
 - name: github.com/go-openapi/spec
-  version: 384415f06ee238aae1df5caad877de6ceac3a5c4
+  version: 1de3e0542de65ad8d75452a595886fdd0befb363
 - name: github.com/go-openapi/swag
   version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
@@ -263,7 +265,7 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
-  version: 8c31c18f31ede9fc8eae72290a7e7a8064e9b3e3
+  version: 064e2069ce9c359c118179501254f67d7d37ba24
 - name: github.com/googleapis/gnostic
   version: 0c5108395e2debce0d731cf0287ddf7242066aba
   subpackages:
@@ -297,9 +299,9 @@ imports:
 - name: github.com/jpillora/go-ogle-analytics
   version: 14b04e0594ef6a9fd943363b135656f0ec8c9d0e
 - name: github.com/json-iterator/go
-  version: f2b4162afba35581b6d4a50d3b8f34e33c144682
+  version: 1624edc4454b8682399def8740d46db5e4362ba4
 - name: github.com/kubedb/apimachinery
-  version: aa6713549f8e4c8ad974e6b167219f3030ae8bba
+  version: 444c3cb00470463264c603ecf261cf370eb764c3
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -340,11 +342,11 @@ imports:
 - name: github.com/modern-go/reflect2
   version: 05fbef0ca5da472bbf96c9322b84a53edc03c9fd
 - name: github.com/ncw/swift
-  version: bd8b704d15b2f5357186ac39c863bd74eb837291
+  version: a0320860b16212c2b59b4912bb6508cda1d7cee6
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/olivere/elastic
-  version: 57a99c7dbe0615bfbc09d06a74858ce019391d77
+  version: 4d73bd24ea39a44588a3e485f21ee4722735d2ee
   subpackages:
   - config
   - uritemplates
@@ -419,7 +421,7 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/russross/blackfriday
-  version: 300106c228d52c8941d4b3de6054a6062a86dda3
+  version: 4048872b16cc0fc2c5fd9eacf0ed2c2fedaa0c8c
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/sergi/go-diff
@@ -427,8 +429,6 @@ imports:
   repo: https://github.com/sergi/go-diff
   subpackages:
   - diffmatchpatch
-- name: github.com/shurcooL/sanitized_anchor_name
-  version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/spf13/cobra
   version: ef82de70bb3f60c65fb8eebacbb2d122ef517385
   subpackages:
@@ -509,7 +509,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: e21acd801f91da814261b938941d193bb036441a
+  version: 7954115fcf34e0dcda6981c9ed8a81a293f0489b
   subpackages:
   - gensupport
   - googleapi
@@ -562,7 +562,7 @@ imports:
   - config
   - uritemplates
 - name: gopkg.in/olivere/elastic.v6
-  version: e3492b022a109ac0e52a6d42d5bfb835050fa7f4
+  version: ba73507263a03681330a4003be0327681a15a1c7
 - name: gopkg.in/robfig/cron.v2
   version: ca60c6d796d4b1f7bb2a8fd5271d8a59aeffb4bf
   repo: https://github.com/appscode/cron.git

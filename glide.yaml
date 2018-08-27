@@ -5,7 +5,7 @@ import:
 - package: github.com/codeskyblue/go-sh
   version: master
 - package: github.com/coreos/prometheus-operator
-  version: ccf8867cdb9e5bd099093e27cfdb5fecce15c90b
+  version: v0.23.1
 - package: github.com/graymeta/stow
   repo: https://github.com/appscode/stow.git
   vcs: git
@@ -36,6 +36,8 @@ import:
 - package: golang.org/x/crypto
 - package: gopkg.in/olivere/elastic.v5
   version: v5.0.61
+- package: gopkg.in/olivere/elastic.v6
+  version: v6.1.28
 - package: k8s.io/api
   version: kubernetes-1.11.0
 - package: k8s.io/apiextensions-apiserver
@@ -78,3 +80,5 @@ import:
   version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
 - package: github.com/cpuguy83/go-md2man
   version: v1.0.8
+- package: github.com/json-iterator/go
+  version: 1.1.5
