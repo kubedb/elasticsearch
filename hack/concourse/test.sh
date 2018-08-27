@@ -28,6 +28,6 @@ pushd "$GOPATH"/src/github.com/$ORG_NAME/$REPO_NAME
 ./hack/docker/$OPERATOR_NAME/make.sh push
 
 # run tests
-source ./hack/deploy/setup.sh --docker-registry=kubedbci
+./hack/deploy/setup.sh --docker-registry=kubedbci
 ./hack/make.py test e2e --v=1 --storageclass=$StorageClass --selfhosted-operator=true --ginkgo.flakeAttempts=2
 #./hack/make.py test e2e --v=1 --storageclass=$StorageClass --selfhosted-operator=true --es-version=6.2.4 --ginkgo.flakeAttempts=2
