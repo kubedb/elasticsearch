@@ -513,7 +513,7 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 		// this environment variable will be used to determine url scheme in exporter
 		envList := []core.EnvVar{
 			{
-				Name:  "SSL_ENABLE",
+				Name:  "USE_SSL",
 				Value: fmt.Sprintf("%v", elasticsearch.Spec.EnableSSL),
 			},
 		}
