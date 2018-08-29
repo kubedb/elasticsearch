@@ -474,10 +474,10 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 		container := core.Container{
 			Name: "exporter",
 			Args: append([]string{
-				"export",
-				fmt.Sprintf("--address=:%d", api.PrometheusExporterPortNumber),
-				fmt.Sprintf("--enable-analytics=%v", c.EnableAnalytics),
-			}, c.LoggerOptions.ToFlags()...),
+				fmt.Sprintf("--es.uri=%s://$(DB_USER):$(DB_PASSWORD)@localhost:%d", elasticsearch.StatsService().Scheme(), ElasticsearchRestPort),
+				fmt.Sprintf("--web.listen-address=:%d", api.PrometheusExporterPortNumber),
+				fmt.Sprintf("--web.telemetry-path=%s", elasticsearch.StatsService().Path()),
+			}),
 			Image:           elasticsearchVersion.Spec.Exporter.Image,
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{
@@ -487,43 +487,29 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 					ContainerPort: int32(api.PrometheusExporterPortNumber),
 				},
 			},
-			VolumeMounts: []core.VolumeMount{
-				{
-					Name:      "secret",
-					MountPath: ExporterSecretPath,
+		}
+		envList := []core.EnvVar{
+			{
+				Name:  "DB_USER",
+				Value: AdminUser,
+			},
+			{
+				Name: "DB_PASSWORD",
+				ValueFrom: &core.EnvVarSource{
+					SecretKeyRef: &core.SecretKeySelector{
+						LocalObjectReference: core.LocalObjectReference{
+							Name: elasticsearch.Spec.DatabaseSecret.SecretName,
+						},
+						Key: KeyAdminPassword,
+					},
 				},
 			},
 		}
+
+		container.Env = core_util.UpsertEnvVars(container.Env, envList...)
 		containers := statefulSet.Spec.Template.Spec.Containers
 		containers = core_util.UpsertContainer(containers, container)
 		statefulSet.Spec.Template.Spec.Containers = containers
-
-		volume := core.Volume{
-			Name: "secret",
-			VolumeSource: core.VolumeSource{
-				Secret: &core.SecretVolumeSource{
-					SecretName: elasticsearch.Spec.DatabaseSecret.SecretName,
-				},
-			},
-		}
-		volumes := statefulSet.Spec.Template.Spec.Volumes
-		volumes = core_util.UpsertVolume(volumes, volume)
-		statefulSet.Spec.Template.Spec.Volumes = volumes
-
-		// this environment variable will be used to determine url scheme in exporter
-		envList := []core.EnvVar{
-			{
-				Name:  "USE_SSL",
-				Value: fmt.Sprintf("%v", elasticsearch.Spec.EnableSSL),
-			},
-		}
-
-		for i, container := range statefulSet.Spec.Template.Spec.Containers {
-			if container.Name == "exporter" {
-				statefulSet.Spec.Template.Spec.Containers[i].Env = core_util.UpsertEnvVars(container.Env, envList...)
-				return statefulSet
-			}
-		}
 	}
 	return statefulSet
 }
