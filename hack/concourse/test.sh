@@ -26,10 +26,17 @@ pushd "$GOPATH"/src/github.com/$ORG_NAME/$REPO_NAME
 ./hack/builddeps.sh
 ./hack/dev/update-docker.sh
 
-# uninstall any previous existing configuration
+# clean the cluster in case previous operator exists
 ./hack/deploy/setup.sh --uninstall --purge
 
 # run tests
-./hack/deploy/setup.sh --docker-registry=kubedbci
-./hack/make.py test e2e --v=1 --storageclass=$StorageClass --selfhosted-operator=true --ginkgo.flakeAttempts=2
+source ./hack/deploy/setup.sh --docker-registry=${DOCKER_REGISTRY}
+
+./hack/make.py test e2e \
+    --v=1 \
+    --storageclass=${StorageClass:-starndard} \
+    --selfhosted-operator=true \
+    --docker-registry=${DOCKER_REGISTRY} \
+    --ginkgo.flakeAttempts=2
+
 #./hack/make.py test e2e --v=1 --storageclass=$StorageClass --selfhosted-operator=true --es-version=6.2.4 --ginkgo.flakeAttempts=2
