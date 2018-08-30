@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	CONFIG_MOUNT_PATH = "/elasticsearch/custom-config"
-	EXPORTER_CERT_DIR = "/usr/config/certs"
+	ConfigMountPath = "/elasticsearch/custom-config"
+	ExporterCertDir = "/usr/config/certs"
 )
 
 func (c *Controller) ensureStatefulSet(
@@ -496,8 +496,15 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 		}
 		envList := []core.EnvVar{
 			{
-				Name:  "DB_USER",
-				Value: AdminUser,
+				Name: "DB_USER",
+				ValueFrom: &core.EnvVarSource{
+					SecretKeyRef: &core.SecretKeySelector{
+						LocalObjectReference: core.LocalObjectReference{
+							Name: elasticsearch.Spec.DatabaseSecret.SecretName,
+						},
+						Key: KeyAdminUserName,
+					},
+				},
 			},
 			{
 				Name: "DB_PASSWORD",
@@ -516,7 +523,7 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 		if elasticsearch.Spec.EnableSSL {
 			certVolumeMount := core.VolumeMount{
 				Name:      "exporter-certs",
-				MountPath: EXPORTER_CERT_DIR,
+				MountPath: ExporterCertDir,
 			}
 
 			volumeMounts := container.VolumeMounts
@@ -541,7 +548,7 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 			volumes = core_util.UpsertVolume(volumes, volume)
 			statefulSet.Spec.Template.Spec.Volumes = volumes
 
-			esCaFlag := "--es.ca=" + filepath.Join(EXPORTER_CERT_DIR, "root.pem")
+			esCaFlag := "--es.ca=" + filepath.Join(ExporterCertDir, "root.pem")
 			args := container.Args
 
 			if len(args) == 0 || args[len(args)-1] != esCaFlag {
@@ -702,7 +709,7 @@ func upsertCustomConfig(statefulSet *apps.StatefulSet, elasticsearch *api.Elasti
 			if container.Name == api.ResourceSingularElasticsearch {
 				configVolumeMount := core.VolumeMount{
 					Name:      "custom-config",
-					MountPath: CONFIG_MOUNT_PATH,
+					MountPath: ConfigMountPath,
 				}
 				volumeMounts := container.VolumeMounts
 				volumeMounts = core_util.UpsertVolumeMount(volumeMounts, configVolumeMount)
