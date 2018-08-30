@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
@@ -21,6 +22,7 @@ import (
 
 const (
 	CONFIG_MOUNT_PATH = "/elasticsearch/custom-config"
+	EXPORTER_CERT_DIR = "/usr/config/certs"
 )
 
 func (c *Controller) ensureStatefulSet(
@@ -471,10 +473,14 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 
 func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, elasticsearchVersion *api.ElasticsearchVersion) *apps.StatefulSet {
 	if elasticsearch.GetMonitoringVendor() == mona.VendorPrometheus {
+		scheme := "http"
+		if elasticsearch.Spec.EnableSSL {
+			scheme = "https"
+		}
 		container := core.Container{
 			Name: "exporter",
 			Args: append([]string{
-				fmt.Sprintf("--es.uri=%s://$(DB_USER):$(DB_PASSWORD)@localhost:%d", elasticsearch.StatsService().Scheme(), ElasticsearchRestPort),
+				fmt.Sprintf("--es.uri=%s://$(DB_USER):$(DB_PASSWORD)@localhost:%d", scheme, ElasticsearchRestPort),
 				fmt.Sprintf("--web.listen-address=:%d", api.PrometheusExporterPortNumber),
 				fmt.Sprintf("--web.telemetry-path=%s", elasticsearch.StatsService().Path()),
 			}),
@@ -505,8 +511,45 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 				},
 			},
 		}
-
 		container.Env = core_util.UpsertEnvVars(container.Env, envList...)
+
+		if elasticsearch.Spec.EnableSSL {
+			certVolumeMount := core.VolumeMount{
+				Name:      "exporter-certs",
+				MountPath: EXPORTER_CERT_DIR,
+			}
+
+			volumeMounts := container.VolumeMounts
+			volumeMounts = core_util.UpsertVolumeMount(volumeMounts, certVolumeMount)
+			container.VolumeMounts = volumeMounts
+
+			volume := core.Volume{
+				Name: "exporter-certs",
+				VolumeSource: core.VolumeSource{
+					Secret: &core.SecretVolumeSource{
+						SecretName: elasticsearch.Spec.CertificateSecret.SecretName,
+						Items: []core.KeyToPath{
+							{
+								Key:  "root.pem",
+								Path: "root.pem",
+							},
+						},
+					},
+				},
+			}
+			volumes := statefulSet.Spec.Template.Spec.Volumes
+			volumes = core_util.UpsertVolume(volumes, volume)
+			statefulSet.Spec.Template.Spec.Volumes = volumes
+
+			esCaFlag := "--es.ca=" + filepath.Join(EXPORTER_CERT_DIR, "root.pem")
+			args := container.Args
+
+			if len(args) == 0 || args[len(args)-1] != esCaFlag {
+				args = append(args, esCaFlag)
+			}
+			container.Args = args
+		}
+
 		containers := statefulSet.Spec.Template.Spec.Containers
 		containers = core_util.UpsertContainer(containers, container)
 		statefulSet.Spec.Template.Spec.Containers = containers

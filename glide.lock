@@ -1,5 +1,5 @@
 hash: 0c589e5feac1781160d756fbf53d2928078642af87e42a32202ea384a3461452
-updated: 2018-08-29T16:13:56.827929208+06:00
+updated: 2018-08-30T15:35:43.352734799+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -34,7 +34,7 @@ imports:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: ab96b8d0056d39ca0c57dc6705864423b50515bc
+  version: 033b938d05c0fbabfe8ee056f2088f61cc5f78d9
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -214,7 +214,7 @@ imports:
 - name: github.com/emicklei/go-restful-swagger12
   version: dcef7f55730566d41eae5db10e7d6981829720f6
 - name: github.com/evanphx/json-patch
-  version: afac545df32f2287a079e2dfb7ba2745a643747e
+  version: 94e38aa1586e8a6c8a75770bddf5ff84c48a106b
 - name: github.com/fatih/structs
   version: ebf56d35bba727c68ac77f56f2fcf90b181851aa
 - name: github.com/fsnotify/fsnotify
@@ -301,7 +301,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 1624edc4454b8682399def8740d46db5e4362ba4
 - name: github.com/kubedb/apimachinery
-  version: b42939759a52b9e0f4969d6fa82dc23873414356
+  version: 2b731a8c0ebd43ffb97cda88d285805066064505
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -346,7 +346,7 @@ imports:
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/olivere/elastic
-  version: cb2d6d05f9451337c8852815c23ca057922687eb
+  version: 35b8c89b98904914aed55525be82418e6c9e06d7
   subpackages:
   - config
   - uritemplates
