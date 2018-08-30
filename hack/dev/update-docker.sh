@@ -6,7 +6,7 @@ REPO_ROOT=${GOPATH}/src/github.com/kubedb/elasticsearch
 
 export DB_UPDATE=1
 export TOOLS_UPDATE=1
-export OPERATOR_UPDATE=1
+export EXPORTER_UPDATE=1
 export OPERATOR_UPDATE=1
 
 show_help() {
@@ -30,27 +30,30 @@ while test $# -gt 0; do
       export DB_UPDATE=1
       export TOOLS_UPDATE=0
       export OPERATOR_UPDATE=0
+      export EXPORTER_UPDATE=0
       shift
       ;;
     --tools-only)
       export DB_UPDATE=0
       export TOOLS_UPDATE=1
       export OPERATOR_UPDATE=0
-      shift
-      ;;
-    --operator-only)
-      export DB_UPDATE=0
-      export TOOLS_UPDATE=0
-      export OPERATOR_UPDATE=1
+      export EXPORTER_UPDATE=0
       shift
       ;;
     --exporter-only)
       export DB_UPDATE=0
       export TOOLS_UPDATE=0
-      export OPERATOR_UPDATE=0
       export EXPORTER_UPDATE=1
+      export OPERATOR_UPDATE=0
       shift
-    ;;
+      ;;
+    --operator-only)
+      export DB_UPDATE=0
+      export TOOLS_UPDATE=0
+      export EXPORTER_UPDATE=0
+      export OPERATOR_UPDATE=1
+      shift
+      ;;
     *)
       show_help
       exit 1
@@ -66,6 +69,7 @@ dbversions=(
   6.3.0
   6.3
 )
+
 exporters=(
   1.0.2
 )
@@ -93,7 +97,7 @@ fi
 if [ "$EXPORTER_UPDATE" -eq 1 ]; then
   cowsay -f tux "Processing database-exporter images" || true
   for exporter in "${exporters[@]}"; do
-    ${REPO_ROOT}/hack/docker/es-exporters/${exporter}/make.sh
+    ${REPO_ROOT}/hack/docker/elasticsearch-exporter/${exporter}/make.sh
   done
 fi
 
