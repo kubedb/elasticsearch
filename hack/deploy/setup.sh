@@ -137,7 +137,7 @@ if [ "$MINIKUBE" -eq 1 ]; then
 
   if [ "$MINIKUBE_RUN" -eq 1 ]; then
     $REPO_ROOT/hack/make.py
-    mg-operator run --v=4 \
+    es-operator run --v=4 \
       --secure-port=8443 \
       --kubeconfig="$HOME/.kube/config" \
       --authorization-kubeconfig="$HOME/.kube/config" \
