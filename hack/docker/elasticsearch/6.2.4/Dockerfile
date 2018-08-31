@@ -10,7 +10,7 @@ ENV NODE_NAME="" \
 RUN ./bin/elasticsearch-plugin install ingest-attachment
 
 # Install search-guard
-RUN ./bin/elasticsearch-plugin install -b com.floragunn:search-guard-6:6.2.4-22.1
+RUN ./bin/elasticsearch-plugin install -b com.floragunn:search-guard-6:6.2.4-23.0
 
 RUN chmod +x -R plugins/search-guard-6/tools/*.sh
 

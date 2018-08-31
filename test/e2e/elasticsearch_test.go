@@ -183,7 +183,7 @@ var _ = Describe("Elasticsearch", func() {
 
 				Context("Custom Resource", func() {
 					BeforeEach(func() {
-						elasticsearch.Spec.Resources = &core.ResourceRequirements{
+						elasticsearch.Spec.PodTemplate.Spec.Resources = core.ResourceRequirements{
 							Requests: core.ResourceList{
 								core.ResourceMemory: resource.MustParse("512Mi"),
 							},

@@ -22,7 +22,7 @@ func (i *Invocation) ElasticsearchVersion() *api.ElasticsearchVersion {
 				Image: fmt.Sprintf("%s/elasticsearch:%s", DockerRegistry, DBVersion),
 			},
 			Exporter: api.ElasticsearchVersionExporter{
-				Image: fmt.Sprintf("%s/operator:%s", DockerRegistry, ExporterTag),
+				Image: fmt.Sprintf("%s/elasticsearch_exporter:%v", DockerRegistry, ExporterTag),
 			},
 			Tools: api.ElasticsearchVersionTools{
 				Image: fmt.Sprintf("%s/elasticsearch-tools:%s", DockerRegistry, DBVersion),

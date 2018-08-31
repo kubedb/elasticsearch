@@ -326,7 +326,7 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 
 	heapSize := int64(134217728) // 128mb
 	if elasticsearch.Spec.Resources != nil {
-		if request, found := elasticsearch.Spec.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
+		if request, found := elasticsearch.Spec.PodTemplate.Spec.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
 			heapSize = getHeapSizeForNode(request.Value())
 		}
 	}

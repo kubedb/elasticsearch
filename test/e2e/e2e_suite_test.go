@@ -33,7 +33,7 @@ func init() {
 	flag.StringVar(&storageClass, "storageclass", "standard", "Kubernetes StorageClass name")
 	flag.StringVar(&framework.DBVersion, "es-version", "5.6.4", "Elasticsearch version")
 	flag.StringVar(&framework.DockerRegistry, "docker-registry", "kubedbci", "User provided docker repository")
-	flag.StringVar(&framework.ExporterTag, "exporter-tag", "canary", "Tag of kubedb/operator used as exporter")
+	flag.StringVar(&framework.ExporterTag, "exporter-tag", "1.0.2", "Tag of kubedb/operator used as exporter")
 	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", false, "Enable this for provided controller")
 }
 
@@ -85,7 +85,7 @@ var _ = BeforeSuite(func() {
 
 	if !framework.SelfHostedOperator {
 		stopCh := genericapiserver.SetupSignalHandler()
-		go root.RunOperatorAndServer(kubeconfigPath, stopCh)
+		go root.RunOperatorAndServer(config, kubeconfigPath, stopCh)
 	}
 
 	root.EventuallyCRD().Should(Succeed())
