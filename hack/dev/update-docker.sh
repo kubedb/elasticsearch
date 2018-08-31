@@ -8,6 +8,7 @@ export DB_UPDATE=1
 export TOOLS_UPDATE=1
 export EXPORTER_UPDATE=1
 export OPERATOR_UPDATE=1
+export KIBANA_UPDATE=0
 
 show_help() {
   echo "update-docker.sh [options]"
@@ -18,6 +19,7 @@ show_help() {
   echo "    --tools-only                 update only database-tools images"
   echo "    --operator-only              update only operator image"
   echo "    --exporter-only              update only database-exporter images"
+  echo "    --kibana-only                update only kibana images"
 }
 
 while test $# -gt 0; do
@@ -54,6 +56,14 @@ while test $# -gt 0; do
       export OPERATOR_UPDATE=1
       shift
       ;;
+    --kibana-only)
+      export DB_UPDATE=0
+      export TOOLS_UPDATE=0
+      export EXPORTER_UPDATE=0
+      export OPERATOR_UPDATE=0
+      export KIBANA_UPDATE=1
+      shift
+  ;;
     *)
       show_help
       exit 1
@@ -72,6 +82,10 @@ dbversions=(
 
 exporters=(
   1.0.2
+)
+
+kibanaimages=(
+    6.3.0
 )
 
 echo ""
@@ -97,7 +111,7 @@ fi
 if [ "$EXPORTER_UPDATE" -eq 1 ]; then
   cowsay -f tux "Processing database-exporter images" || true
   for exporter in "${exporters[@]}"; do
-    ${REPO_ROOT}/hack/docker/elasticsearch-exporter/${exporter}/make.sh
+    ${REPO_ROOT}/hack/docker/elasticsearch_exporter/${exporter}/make.sh
   done
 fi
 
@@ -105,4 +119,12 @@ if [ "$OPERATOR_UPDATE" -eq 1 ]; then
   cowsay -f tux "Processing Operator images" || true
   ${REPO_ROOT}/hack/docker/es-operator/make.sh build
   ${REPO_ROOT}/hack/docker/es-operator/make.sh push
+fi
+
+if [ "$KIBANA_UPDATE" -eq 1 ]; then
+    cowsay -f tux "Processing Kibana images" || true
+    for kibana in "${kibanaimages[@]}"; do
+        ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh build
+        ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh push
+    done
 fi
