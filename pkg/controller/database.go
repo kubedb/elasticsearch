@@ -58,7 +58,7 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 		return true, nil
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get Elasticsearch indices.")
+		return "", errors.Wrapf(err, "failed to get Elasticsearch indices. Reason: %v", reason)
 	}
 	return strings.Join(indices, ","), nil
 }
