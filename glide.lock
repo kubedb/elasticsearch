@@ -1,5 +1,5 @@
-hash: cc7c9808c67487a6ad57d021f2406bb1578c810c8c59026b14e5fb4f702457e2
-updated: 2018-09-04T01:14:52.749548006-07:00
+hash: c3041d7eab1f7d45037d777cc2e93efbfd17b0aa08405d8b0c793664e3034d09
+updated: 2018-09-04T13:25:57.347835859-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -217,7 +217,7 @@ imports:
 - name: github.com/emicklei/go-restful-swagger12
   version: dcef7f55730566d41eae5db10e7d6981829720f6
 - name: github.com/evanphx/json-patch
-  version: afac545df32f2287a079e2dfb7ba2745a643747e
+  version: 94e38aa1586e8a6c8a75770bddf5ff84c48a106b
 - name: github.com/fatih/structs
   version: ebf56d35bba727c68ac77f56f2fcf90b181851aa
 - name: github.com/fsnotify/fsnotify
@@ -311,7 +311,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 1624edc4454b8682399def8740d46db5e4362ba4
 - name: github.com/kubedb/apimachinery
-  version: 47d981b293ceda5827bafd9fa1ba0425fd1f3d88
+  version: 1e34763325582740fdd60fb127a594093c3daa49
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -335,6 +335,8 @@ imports:
   - pkg/controller/snapshot
   - pkg/eventer
   - pkg/validator
+- name: github.com/kubedb/cli
+  version: 0683d715b05a368131280047f01f6a9e6c1c2352
 - name: github.com/mailru/easyjson
   version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
   subpackages:

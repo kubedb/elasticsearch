@@ -105,6 +105,10 @@ func setDefaultValues(client kubernetes.Interface, extClient cs.Interface, elast
 		elasticsearch.Spec.StorageType = api.StorageTypeDurable
 	}
 
+	if elasticsearch.Spec.TerminationPolicy == "" {
+		elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyPause
+	}
+
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
 		if topology.Client.Replicas == nil {

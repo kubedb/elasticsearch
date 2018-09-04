@@ -269,6 +269,7 @@ func sampleElasticsearch() api.Elasticsearch {
 					},
 				},
 			},
+			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}
 }
