@@ -33,6 +33,7 @@ DB_BUCKET=${DB_BUCKET:-}
 DB_FOLDER=${DB_FOLDER:-}
 DB_SNAPSHOT=${DB_SNAPSHOT:-}
 DB_DATA_DIR=${DB_DATA_DIR:-/var/data}
+DB_SCHEME=${DB_SCHEME:-https}
 OSM_CONFIG_FILE=/etc/osm/config
 ENABLE_ANALYTICS=${ENABLE_ANALYTICS:-true}
 
@@ -112,9 +113,9 @@ case "$op" in
   backup)
     IFS=$','
     for INDEX in $(echo "$DB_INDICES"); do
-      elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.mapping.json" --type mapping || exit_on_error "failed to dump mapping for $INDEX"
-      elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.analyzer.json" --type analyzer || exit_on_error "failed to dump analyzer for $INDEX"
-      elasticdump --quiet --input "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.data.json" --type data || exit_on_error "failed to dump data for $INDEX"
+      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.mapping.json" --type mapping || exit_on_error "failed to dump mapping for $INDEX"
+      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.analyzer.json" --type analyzer || exit_on_error "failed to dump analyzer for $INDEX"
+      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.data.json" --type data || exit_on_error "failed to dump data for $INDEX"
 
       echo "$INDEX" >>indices.txt
     done
@@ -126,9 +127,9 @@ case "$op" in
 
     IFS=$'\n'
     for INDEX in $(cat indices.txt); do
-      elasticdump --quiet --input "$INDEX.analyzer.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type analyzer || exit_on_error "failed to restore analyzer for $INDEX"
-      elasticdump --quiet --input "$INDEX.mapping.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type mapping || exit_on_error "failed to restore mapping for $INDEX"
-      elasticdump --quiet --input "$INDEX.data.json" --output "https://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type data || exit_on_error "failed to restore data for $INDEX"
+      elasticdump --quiet --input "$INDEX.analyzer.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type analyzer || exit_on_error "failed to restore analyzer for $INDEX"
+      elasticdump --quiet --input "$INDEX.mapping.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type mapping || exit_on_error "failed to restore mapping for $INDEX"
+      elasticdump --quiet --input "$INDEX.data.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type data || exit_on_error "failed to restore data for $INDEX"
     done
     ;;
   *)

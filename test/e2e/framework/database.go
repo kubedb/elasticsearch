@@ -4,25 +4,30 @@ import (
 	"fmt"
 
 	"github.com/appscode/kutil/tools/portforward"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/util/es"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func (f *Framework) GetClientPodName(elasticsearch *api.Elasticsearch) string {
+	clientName := elasticsearch.Name
+
+	if elasticsearch.Spec.Topology != nil {
+		if elasticsearch.Spec.Topology.Client.Prefix != "" {
+			clientName = fmt.Sprintf("%v-%v", elasticsearch.Spec.Topology.Client.Prefix, clientName)
+		}
+	}
+	return fmt.Sprintf("%v-0", clientName)
+}
+
 func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es.ESClient, error) {
 	db, err := f.GetElasticsearch(meta)
 	if err != nil {
 		return nil, err
 	}
-	clientName := db.Name
-
-	if db.Spec.Topology != nil {
-		if db.Spec.Topology.Client.Prefix != "" {
-			clientName = fmt.Sprintf("%v-%v", db.Spec.Topology.Client.Prefix, clientName)
-		}
-	}
-	clientPodName := fmt.Sprintf("%v-0", clientName)
+	clientPodName := f.GetClientPodName(db)
 	tunnel := portforward.NewTunnel(
 		f.kubeClient.CoreV1().RESTClient(),
 		f.restConfig,
@@ -33,7 +38,11 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es.ESClient, error
 	if err := tunnel.ForwardPort(); err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf("https://127.0.0.1:%d", tunnel.Local)
+	scheme := "http"
+	if db.Spec.EnableSSL {
+		scheme = "https"
+	}
+	url := fmt.Sprintf("%v://127.0.0.1:%d", scheme, tunnel.Local)
 	c := controller.New(nil, f.kubeClient, nil, nil, nil, nil, amc.Config{})
 	return es.GetElasticClient(c.Client, db, url)
 }

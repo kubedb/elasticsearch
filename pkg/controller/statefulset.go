@@ -90,8 +90,9 @@ func (c *Controller) ensureStatefulSet(
 		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.Template.Spec.Containers,
 			core.Container{
-				Name:  api.ResourceSingularElasticsearch,
-				Image: elasticsearchVersion.Spec.DB.Image,
+				Name:            api.ResourceSingularElasticsearch,
+				Image:           elasticsearchVersion.Spec.DB.Image,
+				ImagePullPolicy: core.PullIfNotPresent,
 				SecurityContext: &core.SecurityContext{
 					Privileged: types.BoolP(false),
 					Capabilities: &core.Capabilities{

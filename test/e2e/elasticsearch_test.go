@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"os"
 
 	exec_util "github.com/appscode/kutil/tools/exec"
@@ -173,12 +174,12 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Checking new indices")
 					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+					elasticClient.Stop()
 				}
 
 				Context("with Default Resource", func() {
-
 					It("should run successfully", shouldRunSuccessfully)
-
 				})
 
 				Context("Custom Resource", func() {
@@ -191,52 +192,57 @@ var _ = Describe("Elasticsearch", func() {
 					})
 
 					It("should run successfully", shouldRunSuccessfully)
-
-				})
-			})
-
-			Context("Dedicated elasticsearch", func() {
-				BeforeEach(func() {
-					elasticsearch = f.DedicatedElasticsearch()
 				})
 
-				var shouldRunSuccessfully = func() {
-					if skipMessage != "" {
-						Skip(skipMessage)
-					}
-					// Create Elasticsearch
-					createAndWaitForRunning()
-				}
-
-				Context("with Default Resource", func() {
-
-					It("should run successfully", shouldRunSuccessfully)
-
-				})
-
-				Context("Custom Resource", func() {
+				Context("with SSL disabled", func() {
 					BeforeEach(func() {
-						elasticsearch.Spec.Topology.Client.Resources = core.ResourceRequirements{
-							Requests: core.ResourceList{
-								core.ResourceMemory: resource.MustParse("128Mi"),
-							},
-						}
-						elasticsearch.Spec.Topology.Master.Resources = core.ResourceRequirements{
-							Requests: core.ResourceList{
-								core.ResourceMemory: resource.MustParse("128Mi"),
-							},
-						}
-						elasticsearch.Spec.Topology.Data.Resources = core.ResourceRequirements{
-							Requests: core.ResourceList{
-								core.ResourceMemory: resource.MustParse("128Mi"),
-							},
-						}
+						elasticsearch.Spec.EnableSSL = false
 					})
 
-					It("should run successfully", shouldRunSuccessfully)
-
+					It("should take Snapshot successfully", shouldRunSuccessfully)
 				})
 
+				Context("Dedicated elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+					})
+
+					Context("with Default Resource", func() {
+
+						It("should run successfully", shouldRunSuccessfully)
+					})
+
+					Context("Custom Resource", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.Topology.Client.Resources = core.ResourceRequirements{
+								Requests: core.ResourceList{
+									core.ResourceMemory: resource.MustParse("128Mi"),
+								},
+							}
+							elasticsearch.Spec.Topology.Master.Resources = core.ResourceRequirements{
+								Requests: core.ResourceList{
+									core.ResourceMemory: resource.MustParse("128Mi"),
+								},
+							}
+							elasticsearch.Spec.Topology.Data.Resources = core.ResourceRequirements{
+								Requests: core.ResourceList{
+									core.ResourceMemory: resource.MustParse("128Mi"),
+								},
+							}
+						})
+
+						It("should run successfully", shouldRunSuccessfully)
+					})
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should take Snapshot successfully", shouldRunSuccessfully)
+					})
+
+				})
 			})
 
 		})
@@ -286,7 +292,7 @@ var _ = Describe("Elasticsearch", func() {
 				err = f.CreateSnapshot(snapshot)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Check for Successed snapshot")
+				By("Check for succeeded snapshot")
 				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
 
 				if !skipSnapshotDataChecking {
@@ -309,6 +315,30 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				It("should take Snapshot successfully", shouldTakeSnapshot)
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+
+					It("should take Snapshot successfully", shouldTakeSnapshot)
+				})
+
+				Context("with Dedicated elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+						snapshot.Spec.DatabaseName = elasticsearch.Name
+					})
+					It("should take Snapshot successfully", shouldTakeSnapshot)
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should take Snapshot successfully", shouldTakeSnapshot)
+					})
+				})
 			})
 
 			Context("In S3", func() {
@@ -321,6 +351,30 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				It("should take Snapshot successfully", shouldTakeSnapshot)
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+
+					It("should take Snapshot successfully", shouldTakeSnapshot)
+				})
+
+				Context("with Dedicated elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+						snapshot.Spec.DatabaseName = elasticsearch.Name
+					})
+					It("should take Snapshot successfully", shouldTakeSnapshot)
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should take Snapshot successfully", shouldTakeSnapshot)
+					})
+				})
 			})
 
 			Context("In GCS", func() {
@@ -358,6 +412,98 @@ var _ = Describe("Elasticsearch", func() {
 
 				It("should take Snapshot successfully", shouldTakeSnapshot)
 			})
+
+			Context("Delete One Snapshot keeping others", func() {
+				BeforeEach(func() {
+					secret = f.SecretForGCSBackend()
+					snapshot.Spec.StorageSecretName = secret.Name
+					snapshot.Spec.GCS = &store.GCSSpec{
+						Bucket: os.Getenv(GCS_BUCKET_NAME),
+					}
+
+				})
+
+				It("Delete One Snapshot keeping others", func() {
+					// Create and wait for running elasticsearch
+					createAndWaitForRunning()
+
+					By("Create Secret")
+					err := f.CreateSecret(secret)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Creating new indices")
+					err = elasticClient.CreateIndex(2)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking new indices")
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+					elasticClient.Stop()
+
+					By("Create Snapshot")
+					err = f.CreateSnapshot(snapshot)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Check for Succeeded snapshot")
+					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+
+					if !skipSnapshotDataChecking {
+						By("Check for snapshot data")
+						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+					}
+
+					oldSnapshot := snapshot
+
+					// create new Snapshot
+					snapshot := f.Snapshot()
+					snapshot.Spec.DatabaseName = elasticsearch.Name
+					snapshot.Spec.StorageSecretName = secret.Name
+					snapshot.Spec.GCS = &store.GCSSpec{
+						Bucket: os.Getenv(GCS_BUCKET_NAME),
+					}
+
+					By("Create Snapshot")
+					err = f.CreateSnapshot(snapshot)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Check for Succeeded snapshot")
+					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+
+					if !skipSnapshotDataChecking {
+						By("Check for snapshot data")
+						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+					}
+
+					By(fmt.Sprintf("Delete Snapshot %v", snapshot.Name))
+					err = f.DeleteSnapshot(snapshot.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for Deleting Snapshot")
+					f.EventuallySnapshot(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					if !skipSnapshotDataChecking {
+						By("Check for snapshot data")
+						f.EventuallySnapshotDataFound(snapshot).Should(BeFalse())
+					}
+
+					snapshot = oldSnapshot
+
+					By(fmt.Sprintf("Old Snapshot %v Still Exists", snapshot.Name))
+					_, err = f.GetSnapshot(snapshot.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					if !skipSnapshotDataChecking {
+						By(fmt.Sprintf("Check for old snapshot %v data", snapshot.Name))
+						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+					}
+				})
+			})
 		})
 
 		Context("Initialize", func() {
@@ -371,7 +517,7 @@ var _ = Describe("Elasticsearch", func() {
 				snapshot.Spec.DatabaseName = elasticsearch.Name
 			})
 
-			It("should run successfully", func() {
+			var shouldInitialize = func() {
 				// Create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
@@ -396,7 +542,7 @@ var _ = Describe("Elasticsearch", func() {
 				By("Create Snapshot")
 				f.CreateSnapshot(snapshot)
 
-				By("Check for Successed snapshot")
+				By("Check for succeeded snapshot")
 				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
 
 				By("Check for snapshot data")
@@ -427,6 +573,36 @@ var _ = Describe("Elasticsearch", func() {
 
 				By("Checking indices")
 				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+				elasticClient.Stop()
+			}
+
+			Context("-", func() {
+				It("should initialize database successfully", shouldInitialize)
+			})
+
+			Context("with SSL disabled", func() {
+				BeforeEach(func() {
+					elasticsearch.Spec.EnableSSL = false
+				})
+
+				It("should initialize database successfully", shouldInitialize)
+			})
+
+			Context("with Dedicated elasticsearch", func() {
+				BeforeEach(func() {
+					elasticsearch = f.DedicatedElasticsearch()
+					snapshot.Spec.DatabaseName = elasticsearch.Name
+				})
+				It("should initialize database successfully", shouldInitialize)
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+
+					It("should initialize database successfully", shouldInitialize)
+				})
 			})
 		})
 
@@ -470,6 +646,30 @@ var _ = Describe("Elasticsearch", func() {
 			Context("-", func() {
 				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
 			})
+
+			Context("with SSL disabled", func() {
+				BeforeEach(func() {
+					elasticsearch.Spec.EnableSSL = false
+				})
+
+				It("should initialize database successfully", shouldResumeSuccessfully)
+			})
+
+			Context("with Dedicated elasticsearch", func() {
+				BeforeEach(func() {
+					elasticsearch = f.DedicatedElasticsearch()
+					snapshot.Spec.DatabaseName = elasticsearch.Name
+				})
+				It("should initialize database successfully", shouldResumeSuccessfully)
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+
+					It("should initialize database successfully", shouldResumeSuccessfully)
+				})
+			})
 		})
 
 		Context("SnapshotScheduler", func() {
@@ -497,7 +697,7 @@ var _ = Describe("Elasticsearch", func() {
 					}
 				})
 
-				It("should run schedular successfully", func() {
+				var shouldStartupSchedular = func() {
 					// Create and wait for running Elasticsearch
 					createAndWaitForRunning()
 
@@ -506,11 +706,51 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Count multiple Snapshot")
 					f.EventuallySnapshotCount(elasticsearch.ObjectMeta).Should(matcher.MoreThan(3))
+				}
+
+				Context("-", func() {
+					It("should run schedular successfully", shouldStartupSchedular)
+				})
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+
+					It("should run schedular successfully", shouldStartupSchedular)
+				})
+
+				Context("with Dedicated elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+						elasticsearch.Spec.BackupSchedule = &api.BackupScheduleSpec{
+							CronExpression: "@every 1m",
+							Backend: store.Backend{
+								StorageSecretName: secret.Name,
+								Local: &store.LocalSpec{
+									MountPath: "/repo",
+									VolumeSource: core.VolumeSource{
+										EmptyDir: &core.EmptyDirVolumeSource{},
+									},
+								},
+							},
+						}
+						snapshot.Spec.DatabaseName = elasticsearch.Name
+					})
+					It("should run schedular successfully", shouldStartupSchedular)
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should run schedular successfully", shouldStartupSchedular)
+					})
 				})
 			})
 
 			Context("With Update", func() {
-				It("should run schedular successfully", func() {
+				var shouldScheduleWithUpdate = func() {
 					// Create and wait for running Elasticsearch
 					createAndWaitForRunning()
 
@@ -538,6 +778,9 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Count multiple Snapshot")
 					f.EventuallySnapshotCount(elasticsearch.ObjectMeta).Should(matcher.MoreThan(3))
+				}
+				Context("-", func() {
+					It("should run schedular successfully", shouldScheduleWithUpdate)
 				})
 			})
 		})
@@ -635,16 +878,20 @@ var _ = Describe("Elasticsearch", func() {
 
 				By("Checking new indices")
 				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+				elasticClient.Stop()
 			}
 
 			Context("With allowed Envs", func() {
 
-				It("should run successfully with given envs.", func() {
+				var shouldRunWithAllowedEnvs = func() {
 					elasticsearch.Spec.PodTemplate.Spec.Env = allowedEnvList
 					shouldRunSuccessfully()
 
+					podName := f.GetClientPodName(elasticsearch)
+
 					By("Checking pod started with given envs")
-					pod, err := f.KubeClient().CoreV1().Pods(elasticsearch.Namespace).Get(elasticsearch.Name+"-0", metav1.GetOptions{})
+					pod, err := f.KubeClient().CoreV1().Pods(elasticsearch.Namespace).Get(podName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					out, err := exec_util.ExecIntoPod(f.RestConfig(), pod, "env")
@@ -652,6 +899,34 @@ var _ = Describe("Elasticsearch", func() {
 					for _, env := range allowedEnvList {
 						Expect(out).Should(ContainSubstring(env.Name + "=" + env.Value))
 					}
+				}
+
+				Context("-", func() {
+					It("should run successfully with given envs", shouldRunWithAllowedEnvs)
+				})
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+
+					It("should run successfully with given envs", shouldRunWithAllowedEnvs)
+				})
+
+				Context("with Dedicated elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+						snapshot.Spec.DatabaseName = elasticsearch.Name
+					})
+					It("should run successfully with given envs", shouldRunWithAllowedEnvs)
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should run successfully with given envs", shouldRunWithAllowedEnvs)
+					})
 				})
 
 			})
@@ -699,6 +974,45 @@ var _ = Describe("Elasticsearch", func() {
 
 			var userConfig *core.ConfigMap
 
+			var shouldRunWithCustomConfig = func() {
+				userConfig.Data = map[string]string{
+					"common-config.yaml": f.GetCommonConfig(),
+					"master-config.yaml": f.GetMasterConfig(),
+					"client-config.yaml": f.GetClientConfig(),
+					"data-config.yaml":   f.GetDataConfig(),
+				}
+
+				By("Creating configMap: " + userConfig.Name)
+				err := f.CreateConfigMap(userConfig)
+				Expect(err).NotTo(HaveOccurred())
+
+				elasticsearch.Spec.ConfigSource = &core.VolumeSource{
+					ConfigMap: &core.ConfigMapVolumeSource{
+						LocalObjectReference: core.LocalObjectReference{
+							Name: userConfig.Name,
+						},
+					},
+				}
+
+				// Create Elasticsearch
+				createAndWaitForRunning()
+
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading Nodes information")
+				settings, err := elasticClient.GetAllNodesInfo()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking nodes are using provided config")
+				Expect(f.IsUsingProvidedConfig(settings)).Should(BeTrue())
+
+				elasticClient.Stop()
+			}
+
 			Context("With Topology", func() {
 				BeforeEach(func() {
 					elasticsearch = f.DedicatedElasticsearch()
@@ -710,43 +1024,14 @@ var _ = Describe("Elasticsearch", func() {
 					f.DeleteConfigMap(userConfig.ObjectMeta)
 				})
 
-				It("should use config provided in config files", func() {
-					userConfig.Data = map[string]string{
-						"common-config.yaml": f.GetCommonConfig(),
-						"master-config.yaml": f.GetMasterConfig(),
-						"client-config.yaml": f.GetClientConfig(),
-						"data-config.yaml":   f.GetDataConfig(),
-					}
+				It("should use config provided in config files", shouldRunWithCustomConfig)
 
-					By("Creating configMap: " + userConfig.Name)
-					err := f.CreateConfigMap(userConfig)
-					Expect(err).NotTo(HaveOccurred())
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
 
-					elasticsearch.Spec.ConfigSource = &core.VolumeSource{
-						ConfigMap: &core.ConfigMapVolumeSource{
-							LocalObjectReference: core.LocalObjectReference{
-								Name: userConfig.Name,
-							},
-						},
-					}
-
-					// Create Elasticsearch
-					createAndWaitForRunning()
-
-					By("Check for Elastic client")
-					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Reading Nodes information")
-					settings, err := elasticClient.GetAllNodesInfo()
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Checking nodes are using provided config")
-					Expect(f.IsUsingProvidedConfig(settings)).Should(BeTrue())
-
-					elasticClient.Stop()
+					It("should run successfully with given envs", shouldRunWithCustomConfig)
 				})
 
 			})
@@ -761,45 +1046,15 @@ var _ = Describe("Elasticsearch", func() {
 					f.DeleteConfigMap(userConfig.ObjectMeta)
 				})
 
-				It("should use config provided in config files", func() {
-					userConfig.Data = map[string]string{
-						"common-config.yaml": f.GetCommonConfig(),
-						"master-config.yaml": f.GetMasterConfig(),
-						"client-config.yaml": f.GetClientConfig(),
-						"data-config.yaml":   f.GetDataConfig(),
-					}
+				It("should use config provided in config files", shouldRunWithCustomConfig)
 
-					By("Creating configMap: " + userConfig.Name)
-					err := f.CreateConfigMap(userConfig)
-					Expect(err).NotTo(HaveOccurred())
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
 
-					elasticsearch.Spec.ConfigSource = &core.VolumeSource{
-						ConfigMap: &core.ConfigMapVolumeSource{
-							LocalObjectReference: core.LocalObjectReference{
-								Name: userConfig.Name,
-							},
-						},
-					}
-
-					// Create Elasticsearch
-					createAndWaitForRunning()
-
-					By("Check for Elastic client")
-					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Reading Nodes information")
-					settings, err := elasticClient.GetAllNodesInfo()
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Checking nodes are using provided config")
-					Expect(f.IsUsingProvidedConfig(settings)).Should(BeTrue())
-
-					elasticClient.Stop()
+					It("should run successfully with given envs", shouldRunWithCustomConfig)
 				})
-
 			})
 		})
 	})

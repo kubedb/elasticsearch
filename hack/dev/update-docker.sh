@@ -63,7 +63,7 @@ while test $# -gt 0; do
       export OPERATOR_UPDATE=0
       export KIBANA_UPDATE=1
       shift
-  ;;
+      ;;
     *)
       show_help
       exit 1
@@ -85,7 +85,7 @@ exporters=(
 )
 
 kibanaimages=(
-    6.3.0
+  6.3.0
 )
 
 echo ""
@@ -122,9 +122,9 @@ if [ "$OPERATOR_UPDATE" -eq 1 ]; then
 fi
 
 if [ "$KIBANA_UPDATE" -eq 1 ]; then
-    cowsay -f tux "Processing Kibana images" || true
-    for kibana in "${kibanaimages[@]}"; do
-        ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh build
-        ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh push
-    done
+  cowsay -f tux "Processing Kibana images" || true
+  for kibana in "${kibanaimages[@]}"; do
+    ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh build
+    ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh push
+  done
 fi

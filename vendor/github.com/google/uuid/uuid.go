@@ -58,11 +58,11 @@ func Parse(s string) (UUID, error) {
 		14, 16,
 		19, 21,
 		24, 26, 28, 30, 32, 34} {
-		if v, ok := xtob(s[x], s[x+1]); !ok {
+		v, ok := xtob(s[x], s[x+1])
+		if !ok {
 			return uuid, errors.New("invalid UUID format")
-		} else {
-			uuid[i] = v
 		}
+		uuid[i] = v
 	}
 	return uuid, nil
 }
@@ -88,13 +88,23 @@ func ParseBytes(b []byte) (UUID, error) {
 		14, 16,
 		19, 21,
 		24, 26, 28, 30, 32, 34} {
-		if v, ok := xtob(b[x], b[x+1]); !ok {
+		v, ok := xtob(b[x], b[x+1])
+		if !ok {
 			return uuid, errors.New("invalid UUID format")
-		} else {
-			uuid[i] = v
 		}
+		uuid[i] = v
 	}
 	return uuid, nil
+}
+
+// MustParse is like Parse but panics if the string cannot be parsed.
+// It simplifies safe initialization of global variables holding compiled UUIDs.
+func MustParse(s string) UUID {
+	uuid, err := Parse(s)
+	if err != nil {
+		panic(`uuid: Parse(` + s + `): ` + err.Error())
+	}
+	return uuid
 }
 
 // FromBytes creates a new UUID from a byte slice. Returns an error if the slice
@@ -130,7 +140,7 @@ func (uuid UUID) URN() string {
 }
 
 func encodeHex(dst []byte, uuid UUID) {
-	hex.Encode(dst[:], uuid[:4])
+	hex.Encode(dst, uuid[:4])
 	dst[8] = '-'
 	hex.Encode(dst[9:13], uuid[4:6])
 	dst[13] = '-'

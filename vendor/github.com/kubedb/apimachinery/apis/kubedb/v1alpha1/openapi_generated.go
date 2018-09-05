@@ -881,7 +881,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchSpec(ref common.Refer
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec"),
 						},
 					},
-					"TerminationPolicy": {
+					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for database",
 							Type:        []string{"string"},
@@ -1181,6 +1181,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchVersionSpec(ref commo
 							Ref:         ref("github.com/kubedb/apimachinery/apis/kubedb/v1alpha1.ElasticsearchVersionTools"),
 						},
 					},
+					"deprecated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"version", "db", "exporter", "tools"},
 			},
@@ -1379,7 +1386,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_EtcdSpec(ref common.ReferenceCallb
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec"),
 						},
 					},
-					"TerminationPolicy": {
+					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for database",
 							Type:        []string{"string"},
@@ -1579,6 +1586,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_EtcdVersionSpec(ref common.Referen
 						SchemaProps: spec.SchemaProps{
 							Description: "Tools Image",
 							Ref:         ref("github.com/kubedb/apimachinery/apis/kubedb/v1alpha1.EtcdVersionTools"),
+						},
+					},
+					"deprecated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.",
+							Type:        []string{"boolean"},
+							Format:      "",
 						},
 					},
 				},
@@ -1802,7 +1816,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MemcachedSpec(ref common.Reference
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec"),
 						},
 					},
-					"TerminationPolicy": {
+					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for database",
 							Type:        []string{"string"},
@@ -2057,6 +2071,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MemcachedVersionSpec(ref common.Re
 							Ref:         ref("github.com/kubedb/apimachinery/apis/kubedb/v1alpha1.MemcachedVersionExporter"),
 						},
 					},
+					"deprecated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"version", "db", "exporter"},
 			},
@@ -2266,7 +2287,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MongoDBSpec(ref common.ReferenceCa
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec"),
 						},
 					},
-					"TerminationPolicy": {
+					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for database",
 							Type:        []string{"string"},
@@ -2527,6 +2548,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MongoDBVersionSpec(ref common.Refe
 							Ref:         ref("github.com/kubedb/apimachinery/apis/kubedb/v1alpha1.MongoDBVersionTools"),
 						},
 					},
+					"deprecated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"version", "db", "exporter", "tools"},
 			},
@@ -2725,7 +2753,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MySQLSpec(ref common.ReferenceCall
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec"),
 						},
 					},
-					"TerminationPolicy": {
+					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for database",
 							Type:        []string{"string"},
@@ -2984,6 +3012,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MySQLVersionSpec(ref common.Refere
 						SchemaProps: spec.SchemaProps{
 							Description: "Tools Image",
 							Ref:         ref("github.com/kubedb/apimachinery/apis/kubedb/v1alpha1.MySQLVersionTools"),
+						},
+					},
+					"deprecated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.",
+							Type:        []string{"boolean"},
+							Format:      "",
 						},
 					},
 				},
@@ -3328,7 +3363,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_PostgresSpec(ref common.ReferenceC
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec"),
 						},
 					},
-					"TerminationPolicy": {
+					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for database",
 							Type:        []string{"string"},
@@ -3647,6 +3682,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_PostgresVersionSpec(ref common.Ref
 							Ref:         ref("github.com/kubedb/apimachinery/apis/kubedb/v1alpha1.PostgresVersionTools"),
 						},
 					},
+					"deprecated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"version", "db", "exporter", "tools"},
 			},
@@ -3888,7 +3930,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_RedisSpec(ref common.ReferenceCall
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec"),
 						},
 					},
-					"TerminationPolicy": {
+					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for database",
 							Type:        []string{"string"},
@@ -4141,6 +4183,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_RedisVersionSpec(ref common.Refere
 						SchemaProps: spec.SchemaProps{
 							Description: "Exporter Image",
 							Ref:         ref("github.com/kubedb/apimachinery/apis/kubedb/v1alpha1.RedisVersionExporter"),
+						},
+					},
+					"deprecated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.",
+							Type:        []string{"boolean"},
+							Format:      "",
 						},
 					},
 				},

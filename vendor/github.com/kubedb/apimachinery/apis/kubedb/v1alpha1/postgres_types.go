@@ -84,7 +84,7 @@ type PostgresSpec struct {
 
 	// TerminationPolicy controls the delete operation for database
 	// +optional
-	TerminationPolicy TerminationPolicy `json"terminationPolicy,omitempty"`
+	TerminationPolicy TerminationPolicy `json:"terminationPolicy,omitempty"`
 
 	// -------------------------------------------------------------------------
 

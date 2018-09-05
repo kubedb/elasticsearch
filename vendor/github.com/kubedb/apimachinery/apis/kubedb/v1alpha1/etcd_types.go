@@ -73,7 +73,7 @@ type EtcdSpec struct {
 
 	// TerminationPolicy controls the delete operation for database
 	// +optional
-	TerminationPolicy TerminationPolicy `json"terminationPolicy,omitempty"`
+	TerminationPolicy TerminationPolicy `json:"terminationPolicy,omitempty"`
 }
 
 type TLSPolicy struct {

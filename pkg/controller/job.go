@@ -33,6 +33,12 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 		return nil, err
 	}
 
+	// scheme for elasticdump
+	scheme := "http"
+	if elasticsearch.Spec.EnableSSL {
+		scheme = "https"
+	}
+
 	// Get PersistentVolume object for Backup Util pod.
 	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage, jobName, elasticsearch.Namespace)
 	if err != nil {
@@ -76,6 +82,10 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 								fmt.Sprintf(`--enable-analytics=%v`, c.EnableAnalytics),
 							}, snapshot.Spec.PodTemplate.Spec.Args, "--enable-analytics"),
 							Env: []core.EnvVar{
+								{
+									Name:  "DB_SCHEME",
+									Value: scheme,
+								},
 								{
 									Name: "DB_USER",
 									ValueFrom: &core.EnvVarSource{
@@ -185,6 +195,12 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 		return nil, err
 	}
 
+	// scheme for elasticdump
+	scheme := "http"
+	if elasticsearch.Spec.EnableSSL {
+		scheme = "https"
+	}
+
 	// Get PersistentVolume object for Backup Util pod.
 	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage, jobName, snapshot.Namespace)
 	if err != nil {
@@ -221,8 +237,9 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 				Spec: core.PodSpec{
 					Containers: []core.Container{
 						{
-							Name:  api.JobTypeBackup,
-							Image: elasticsearchVersion.Spec.Tools.Image,
+							Name:            api.JobTypeBackup,
+							Image:           elasticsearchVersion.Spec.Tools.Image,
+							ImagePullPolicy: core.PullIfNotPresent,
 							Args: meta_util.UpsertArgumentList([]string{
 								api.JobTypeBackup,
 								fmt.Sprintf(`--host=%s`, elasticsearch.OffshootName()),
@@ -233,6 +250,10 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 								fmt.Sprintf(`--enable-analytics=%v`, c.EnableAnalytics),
 							}, snapshot.Spec.PodTemplate.Spec.Args, "--enable-analytics"),
 							Env: []core.EnvVar{
+								{
+									Name:  "DB_SCHEME",
+									Value: scheme,
+								},
 								{
 									Name: "DB_USER",
 									ValueFrom: &core.EnvVarSource{
