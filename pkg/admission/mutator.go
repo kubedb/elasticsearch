@@ -14,6 +14,7 @@ import (
 	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
 	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -101,14 +102,6 @@ func setDefaultValues(client kubernetes.Interface, extClient cs.Interface, elast
 		return nil, errors.New(`'spec.version' is missing`)
 	}
 
-	if elasticsearch.Spec.StorageType == "" {
-		elasticsearch.Spec.StorageType = api.StorageTypeDurable
-	}
-
-	if elasticsearch.Spec.TerminationPolicy == "" {
-		elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyPause
-	}
-
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
 		if topology.Client.Replicas == nil {
@@ -130,6 +123,18 @@ func setDefaultValues(client kubernetes.Interface, extClient cs.Interface, elast
 
 	if err := setDefaultsFromDormantDB(extClient, elasticsearch); err != nil {
 		return nil, err
+	}
+
+	if elasticsearch.Spec.StorageType == "" {
+		elasticsearch.Spec.StorageType = api.StorageTypeDurable
+	}
+
+	if elasticsearch.Spec.UpdateStrategy.Type == "" {
+		elasticsearch.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
+	}
+
+	if elasticsearch.Spec.TerminationPolicy == "" {
+		elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyPause
 	}
 
 	// If monitoring spec is given without port,
@@ -159,6 +164,18 @@ func setDefaultsFromDormantDB(extClient cs.Interface, elasticsearch *api.Elastic
 
 	// Check Origin Spec
 	ddbOriginSpec := dormantDb.Spec.Origin.Spec.Elasticsearch
+
+	if elasticsearch.Spec.StorageType == "" {
+		elasticsearch.Spec.StorageType = ddbOriginSpec.StorageType
+	}
+
+	if elasticsearch.Spec.UpdateStrategy.Type == "" {
+		elasticsearch.Spec.UpdateStrategy = ddbOriginSpec.UpdateStrategy
+	}
+
+	if elasticsearch.Spec.TerminationPolicy == "" {
+		elasticsearch.Spec.TerminationPolicy = ddbOriginSpec.TerminationPolicy
+	}
 
 	// If DatabaseSecret of new object is not given,
 	// Take dormantDatabaseSecretName

@@ -142,10 +142,6 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 		return fmt.Errorf(`'spec.storageType' is missing`)
 	}
 
-	if elasticsearch.Spec.TerminationPolicy == "" {
-		return fmt.Errorf(`'spec.terminationPolicy' is missing`)
-	}
-
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
 		if elasticsearch.Spec.Replicas != nil {
@@ -225,6 +221,14 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 		if err := amv.ValidateBackupSchedule(client, backupScheduleSpec, elasticsearch.Namespace); err != nil {
 			return err
 		}
+	}
+
+	if elasticsearch.Spec.UpdateStrategy.Type == "" {
+		return fmt.Errorf(`'spec.updateStrategy.type' is missing`)
+	}
+
+	if elasticsearch.Spec.TerminationPolicy == "" {
+		return fmt.Errorf(`'spec.terminationPolicy' is missing`)
 	}
 
 	monitorSpec := elasticsearch.Spec.Monitor
