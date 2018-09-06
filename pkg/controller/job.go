@@ -33,12 +33,6 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 		return nil, err
 	}
 
-	// scheme for elasticdump
-	scheme := "http"
-	if elasticsearch.Spec.EnableSSL {
-		scheme = "https"
-	}
-
 	// Get PersistentVolume object for Backup Util pod.
 	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage, jobName, elasticsearch.Namespace)
 	if err != nil {
@@ -84,7 +78,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 							Env: []core.EnvVar{
 								{
 									Name:  "DB_SCHEME",
-									Value: scheme,
+									Value: elasticsearch.GetConnectionScheme(),
 								},
 								{
 									Name: "DB_USER",
@@ -195,12 +189,6 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 		return nil, err
 	}
 
-	// scheme for elasticdump
-	scheme := "http"
-	if elasticsearch.Spec.EnableSSL {
-		scheme = "https"
-	}
-
 	// Get PersistentVolume object for Backup Util pod.
 	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage, jobName, snapshot.Namespace)
 	if err != nil {
@@ -252,7 +240,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 							Env: []core.EnvVar{
 								{
 									Name:  "DB_SCHEME",
-									Value: scheme,
+									Value: elasticsearch.GetConnectionScheme(),
 								},
 								{
 									Name: "DB_USER",

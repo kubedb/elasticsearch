@@ -33,16 +33,12 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es.ESClient, error
 		f.restConfig,
 		db.Namespace,
 		clientPodName,
-		controller.ElasticsearchRestPort,
+		api.ElasticsearchRestPort,
 	)
 	if err := tunnel.ForwardPort(); err != nil {
 		return nil, err
 	}
-	scheme := "http"
-	if db.Spec.EnableSSL {
-		scheme = "https"
-	}
-	url := fmt.Sprintf("%v://127.0.0.1:%d", scheme, tunnel.Local)
+	url := fmt.Sprintf("%v://127.0.0.1:%d", db.GetConnectionScheme(), tunnel.Local)
 	c := controller.New(nil, f.kubeClient, nil, nil, nil, nil, amc.Config{})
 	return es.GetElasticClient(c.Client, db, url)
 }

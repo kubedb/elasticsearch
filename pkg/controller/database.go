@@ -15,13 +15,9 @@ import (
 )
 
 func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, error) {
-	scheme := "http"
-	if elasticsearch.Spec.EnableSSL {
-		scheme = "https"
-	}
 	var url string
 	if meta.PossiblyInCluster() {
-		url = fmt.Sprintf("%v://%s.%s:%d", scheme, elasticsearch.OffshootName(), elasticsearch.Namespace, ElasticsearchRestPort)
+		url = elasticsearch.GetConnectionURL()
 	} else {
 		clientName := elasticsearch.OffshootName()
 		if elasticsearch.Spec.Topology != nil {
@@ -35,12 +31,12 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 			c.restConfig,
 			elasticsearch.Namespace,
 			clientPodName,
-			ElasticsearchRestPort,
+			api.ElasticsearchRestPort,
 		)
 		if err := tunnel.ForwardPort(); err != nil {
 			return "", err
 		}
-		url = fmt.Sprintf("%v://127.0.0.1:%d", scheme, tunnel.Local)
+		url = fmt.Sprintf("%v://127.0.0.1:%d", elasticsearch.GetConnectionScheme(), tunnel.Local)
 	}
 
 	var reason error

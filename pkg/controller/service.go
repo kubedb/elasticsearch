@@ -23,13 +23,6 @@ var (
 	NodeRoleData   = "node.role.data"
 )
 
-const (
-	ElasticsearchRestPort     = 9200
-	ElasticsearchRestPortName = "http"
-	ElasticsearchNodePort     = 9300
-	ElasticsearchNodePortName = "transport"
-)
-
 func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	// Check if service name exists
 	err := c.checkService(elasticsearch, elasticsearch.OffshootName())
@@ -137,9 +130,9 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 		in.Spec.Selector[NodeRoleClient] = "set"
 		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
 			{
-				Name:       ElasticsearchRestPortName,
-				Port:       ElasticsearchRestPort,
-				TargetPort: intstr.FromString(ElasticsearchRestPortName),
+				Name:       api.ElasticsearchRestPortName,
+				Port:       api.ElasticsearchRestPort,
+				TargetPort: intstr.FromString(api.ElasticsearchRestPortName),
 			},
 		})
 
@@ -181,9 +174,9 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 		in.Spec.Selector[NodeRoleMaster] = "set"
 		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
 			{
-				Name:       ElasticsearchNodePortName,
-				Port:       ElasticsearchNodePort,
-				TargetPort: intstr.FromString(ElasticsearchNodePortName),
+				Name:       api.ElasticsearchNodePortName,
+				Port:       api.ElasticsearchNodePort,
+				TargetPort: intstr.FromString(api.ElasticsearchNodePortName),
 			},
 		})
 		return in
