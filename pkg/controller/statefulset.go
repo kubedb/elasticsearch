@@ -60,7 +60,7 @@ func (c *Controller) ensureStatefulSet(
 	statefulSet, vt, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulSetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
 		in.Labels = core_util.UpsertMap(labels, elasticsearch.OffshootLabels())
 		in.Annotations = elasticsearch.Spec.PodTemplate.Controller.Annotations
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
 		in.Spec.Replicas = types.Int32P(replicas)
 

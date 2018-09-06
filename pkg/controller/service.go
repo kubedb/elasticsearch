@@ -129,7 +129,7 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 	}
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Labels = elasticsearch.OffshootLabels()
 		in.Annotations = elasticsearch.Spec.ServiceTemplate.Annotations
 
@@ -173,7 +173,7 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 	}
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Labels = elasticsearch.OffshootLabels()
 		in.Annotations = elasticsearch.Spec.ServiceTemplate.Annotations
 
@@ -214,7 +214,7 @@ func (c *Controller) ensureStatsService(elasticsearch *api.Elasticsearch) (kutil
 		Namespace: elasticsearch.Namespace,
 	}
 	_, vt, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Labels = elasticsearch.OffshootLabels()
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{

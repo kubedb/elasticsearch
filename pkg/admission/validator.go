@@ -262,6 +262,7 @@ func matchWithDormantDatabase(extClient kubedbv1alpha1.KubedbV1alpha1Interface, 
 
 	// Check Origin Spec
 	drmnOriginSpec := dormantDb.Spec.Origin.Spec.Elasticsearch
+	drmnOriginSpec.SetDefaults()
 	originalSpec := elasticsearch.Spec
 
 	// Skip checking doNotPause
