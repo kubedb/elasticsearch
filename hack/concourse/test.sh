@@ -2,6 +2,7 @@
 
 set -eoux pipefail
 
+#K8S_VERSION=v1.11.2
 ORG_NAME=kubedb
 REPO_NAME=elasticsearch
 OPERATOR_NAME=es-operator
@@ -33,10 +34,25 @@ pushd "$GOPATH"/src/github.com/$ORG_NAME/$REPO_NAME
 source ./hack/deploy/setup.sh --docker-registry=${DOCKER_REGISTRY}
 
 ./hack/make.py test e2e \
-    --v=1 \
-    --storageclass=${StorageClass:-starndard} \
-    --selfhosted-operator=true \
-    --docker-registry=${DOCKER_REGISTRY} \
-    --ginkgo.flakeAttempts=2
+  --v=1 \
+  --storageclass=${StorageClass:-starndard} \
+  --es-version=6.2.4 \
+  --selfhosted-operator=true \
+  --docker-registry=${DOCKER_REGISTRY} \
+  --ginkgo.flakeAttempts=2
 
-#./hack/make.py test e2e --v=1 --storageclass=$StorageClass --selfhosted-operator=true --es-version=6.2.4 --ginkgo.flakeAttempts=2
+#./hack/make.py test e2e \
+#  --v=1 \
+#  --storageclass=${StorageClass:-starndard} \
+#  --es-version=6.3.0 \
+#  --selfhosted-operator=true \
+#  --docker-registry=${DOCKER_REGISTRY} \
+#  --ginkgo.flakeAttempts=2
+
+#./hack/make.py test e2e \
+#  --v=1 \
+#  --storageclass=${StorageClass:-starndard} \
+#  --es-version=5.6.4 \
+#  --selfhosted-operator=true \
+#  --docker-registry=${DOCKER_REGISTRY} \
+#  --ginkgo.flakeAttempts=2

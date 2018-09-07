@@ -191,7 +191,7 @@ func (f *Framework) CleanElasticsearch() {
 			fmt.Printf("error Patching Elasticsearch. error: %v", err)
 		}
 	}
-	if err := f.extClient.Elasticsearches(f.namespace).DeleteCollection(deleteInBackground(), metav1.ListOptions{}); err != nil {
+	if err := f.extClient.Elasticsearches(f.namespace).DeleteCollection(deleteInForeground(), metav1.ListOptions{}); err != nil {
 		fmt.Printf("error in deletion of Elasticsearch. Error: %v", err)
 	}
 }

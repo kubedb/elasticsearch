@@ -90,8 +90,9 @@ func (c *Controller) ensureStatefulSet(
 		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.Template.Spec.Containers,
 			core.Container{
-				Name:  api.ResourceSingularElasticsearch,
-				Image: elasticsearchVersion.Spec.DB.Image,
+				Name:            api.ResourceSingularElasticsearch,
+				Image:           elasticsearchVersion.Spec.DB.Image,
+				ImagePullPolicy: core.PullIfNotPresent,
 				SecurityContext: &core.SecurityContext{
 					Privileged: types.BoolP(false),
 					Capabilities: &core.Capabilities{
@@ -445,15 +446,15 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 	getPorts := func() []core.ContainerPort {
 		portList := []core.ContainerPort{
 			{
-				Name:          ElasticsearchNodePortName,
-				ContainerPort: ElasticsearchNodePort,
+				Name:          api.ElasticsearchNodePortName,
+				ContainerPort: api.ElasticsearchNodePort,
 				Protocol:      core.ProtocolTCP,
 			},
 		}
 		if isClient {
 			portList = append(portList, core.ContainerPort{
-				Name:          ElasticsearchRestPortName,
-				ContainerPort: ElasticsearchRestPort,
+				Name:          api.ElasticsearchRestPortName,
+				ContainerPort: api.ElasticsearchRestPort,
 				Protocol:      core.ProtocolTCP,
 			})
 		}
@@ -473,14 +474,10 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 
 func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, elasticsearchVersion *api.ElasticsearchVersion) *apps.StatefulSet {
 	if elasticsearch.GetMonitoringVendor() == mona.VendorPrometheus {
-		scheme := "http"
-		if elasticsearch.Spec.EnableSSL {
-			scheme = "https"
-		}
 		container := core.Container{
 			Name: "exporter",
 			Args: append([]string{
-				fmt.Sprintf("--es.uri=%s://$(DB_USER):$(DB_PASSWORD)@localhost:%d", scheme, ElasticsearchRestPort),
+				fmt.Sprintf("--es.uri=%s://$(DB_USER):$(DB_PASSWORD)@localhost:%d", elasticsearch.GetConnectionScheme(), api.ElasticsearchRestPort),
 				fmt.Sprintf("--web.listen-address=:%d", api.PrometheusExporterPortNumber),
 				fmt.Sprintf("--web.telemetry-path=%s", elasticsearch.StatsService().Path()),
 			}),

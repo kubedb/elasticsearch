@@ -35,7 +35,7 @@ func ExportReport(
 		return
 	}
 
-	url := fmt.Sprintf("https://%s.%s:%d", kubedbName, namespace, controller.ElasticsearchRestPort)
+	url := elastic.GetConnectionURL()
 	c := controller.New(nil, kubeClient, nil, nil, nil, nil, amc.Config{})
 	client, err := es.GetElasticClient(c.Client, elastic, url)
 	if err != nil {
