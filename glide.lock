@@ -1,5 +1,5 @@
-hash: 5d53feb18817ac69f8d3057dcd7cc264b100316f42f4e443134e7a14ead10cb0
-updated: 2018-09-10T10:54:19.198109215-07:00
+hash: 4c8ca7b34b51e38d3b6bad9b41d22606b68c5f9894de15c32bc0ea2092ee1f1e
+updated: 2018-09-10T16:06:45.507270251-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -218,7 +218,7 @@ imports:
 - name: github.com/emicklei/go-restful-swagger12
   version: dcef7f55730566d41eae5db10e7d6981829720f6
 - name: github.com/evanphx/json-patch
-  version: 94e38aa1586e8a6c8a75770bddf5ff84c48a106b
+  version: afac545df32f2287a079e2dfb7ba2745a643747e
 - name: github.com/fatih/structs
   version: ebf56d35bba727c68ac77f56f2fcf90b181851aa
 - name: github.com/fsnotify/fsnotify
@@ -260,7 +260,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 3af367b6b30c263d47e8895973edcca9a49cf029
+  version: 2006917edc5a27cd174dbc4baba31a137d6cb9ff
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -683,7 +683,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: 8573140a007810ee0d5a165647f171b0a77acfe5
+  version: 9970aee1898bc65beb8f3829b2ddf8e191777f78
   repo: https://github.com/pharmer/apiserver.git
   vcs: git
   subpackages:
@@ -944,7 +944,7 @@ imports:
   - util/retry
   - util/workqueue
 - name: k8s.io/kube-aggregator
-  version: bd6e1ad75c9758cad2069bb2f65880cf805ad8e9
+  version: 07bfdba27d43fe6b7eea965213b3aad555de2457
   subpackages:
   - pkg/apis/apiregistration
   - pkg/apis/apiregistration/v1
