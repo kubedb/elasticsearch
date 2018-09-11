@@ -1,5 +1,5 @@
 hash: a59c4097566331174517ff8581aee35134036918eb627243df04a62f39d92161
-updated: 2018-09-11T16:32:07.3540476+06:00
+updated: 2018-09-14T15:06:44.465949199+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -36,7 +36,7 @@ imports:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: 58a89a000f0c44560e97537d989ec6d2fba95f64
+  version: bd70cefb33397b4c196aca7e33cab656755e195e
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -260,7 +260,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 2006917edc5a27cd174dbc4baba31a137d6cb9ff
+  version: 875f8df8b7965f1eac1098d36d677f807ac0b49e
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -277,7 +277,7 @@ imports:
   - compiler
   - extensions
 - name: github.com/graymeta/stow
-  version: afce6d90444a3ba63c6d6671498c6cdc79375369
+  version: 1849a82ac7fbd3e5cb144bcc711544e90903eac4
   repo: https://github.com/appscode/stow.git
   vcs: git
   subpackages:
@@ -312,7 +312,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 1624edc4454b8682399def8740d46db5e4362ba4
 - name: github.com/kubedb/apimachinery
-  version: e40747156f300904d4e1276180d6d37d409e96c9
+  version: 870ac65aca2d85b1ff5743e149eef38697bec4ed
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -784,7 +784,6 @@ imports:
   - discovery
   - discovery/fake
   - dynamic
-  - dynamic/fake
   - informers
   - informers/admissionregistration
   - informers/admissionregistration/v1alpha1
