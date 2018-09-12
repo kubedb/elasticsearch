@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	dynamic_util "github.com/appscode/kutil/dynamic"
 	meta_util "github.com/appscode/kutil/meta"
@@ -12,6 +11,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/sets"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
@@ -53,23 +53,17 @@ func (c *Controller) WipeOutDatabase(drmn *api.DormantDatabase) error {
 
 // wipeOutDatabase is a generic function to call from WipeOutDatabase and elasticsearch pause method.
 func (c *Controller) wipeOutDatabase(meta metav1.ObjectMeta, secrets []string, ref *core.ObjectReference) error {
-	secretUsed, err := c.isSecretUsed(meta, secrets)
+	secretUsed, err := c.secretsUsedByPeers(meta)
 	if err != nil {
 		return errors.Wrap(err, "error in getting used secret list")
 	}
-	for _, secret := range secrets {
-		if _, err := meta_util.GetString(secretUsed, secret); err == kutil.ErrNotFound {
-			if err := dynamic_util.EnsureOwnerReferenceForItems(
-				c.DynamicClient,
-				core.SchemeGroupVersion.WithResource("secrets"),
-				meta.Namespace,
-				[]string{secret},
-				ref); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	unusedSecrets := sets.NewString(secrets...).Difference(secretUsed)
+	return dynamic_util.EnsureOwnerReferenceForItems(
+		c.DynamicClient,
+		core.SchemeGroupVersion.WithResource("secrets"),
+		meta.Namespace,
+		unusedSecrets.List(),
+		ref)
 }
 
 func (c *Controller) deleteMatchingDormantDatabase(elasticsearch *api.Elasticsearch) error {
@@ -129,32 +123,23 @@ func (c *Controller) createDormantDatabase(elasticsearch *api.Elasticsearch) (*a
 
 // isSecretUsed gets the DBList of same kind, then checks if our required secret is used by those.
 // Similarly, isSecretUsed also checks for DomantDB of similar dbKind label.
-func (c *Controller) isSecretUsed(meta metav1.ObjectMeta, secretList []string) (map[string]string, error) {
-	secretUsed := make(map[string]string)
+func (c *Controller) secretsUsedByPeers(meta metav1.ObjectMeta) (sets.String, error) {
+	secretUsed := sets.NewString()
 
-	elasticsearchList, err := c.esLister.List(labels.Nothing())
+	dbList, err := c.esLister.List(labels.Everything())
 	if err != nil {
 		return nil, err
 	}
-
-	for _, secretName := range secretList {
-		for _, es := range elasticsearchList {
-			if es.Name == meta.Name {
-				continue
-			}
-
-			for _, dbSecret := range es.Spec.GetSecrets() {
-				if dbSecret == secretName {
-					secretUsed[secretName] = ""
-				}
-			}
+	for _, es := range dbList {
+		if es.Name != meta.Name {
+			secretUsed.Insert(es.Spec.GetSecrets()...)
 		}
 	}
 
 	labelMap := map[string]string{
 		api.LabelDatabaseKind: api.ResourceKindElasticsearch,
 	}
-	dormantDatabaseList, err := c.ExtClient.DormantDatabases(meta.Namespace).List(
+	drmnList, err := c.ExtClient.DormantDatabases(meta.Namespace).List(
 		metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(labelMap).String(),
 		},
@@ -162,18 +147,9 @@ func (c *Controller) isSecretUsed(meta metav1.ObjectMeta, secretList []string) (
 	if err != nil {
 		return nil, err
 	}
-
-	for _, secretName := range secretList {
-		for _, ddb := range dormantDatabaseList.Items {
-			if ddb.Name == meta.Name {
-				continue
-			}
-
-			for _, dbSecret := range ddb.GetDatabaseSecrets() {
-				if dbSecret == secretName {
-					secretUsed[secretName] = ""
-				}
-			}
+	for _, ddb := range drmnList.Items {
+		if ddb.Name != meta.Name {
+			secretUsed.Insert(ddb.GetDatabaseSecrets()...)
 		}
 	}
 

@@ -323,7 +323,7 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
+func (c *Controller) terminate(elasticsearch *api.Elasticsearch) error {
 	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
 	if rerr != nil {
 		return rerr
@@ -332,7 +332,7 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 	// If TerminationPolicy is "pause", keep everything (ie, PVCs,Secrets,Snapshots) intact.
 	// In operator, create dormantdatabase
 	if elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyPause {
-		if err := c.removeOwnerReferenceFromObjects(elasticsearch, ref); err != nil {
+		if err := c.removeOwnerReferenceFromOffshoots(elasticsearch, ref); err != nil {
 			return err
 		}
 
@@ -357,7 +357,7 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 		// If TerminationPolicy is "wipeOut", delete everything (ie, PVCs,Secrets,Snapshots).
 		// If TerminationPolicy is "delete", delete PVCs and keep snapshots,secrets intact.
 		// In both these cases, don't create dormantdatabase
-		if err := c.setOwnerReferenceToObjects(elasticsearch, ref); err != nil {
+		if err := c.setOwnerReferenceToOffshoots(elasticsearch, ref); err != nil {
 			return err
 		}
 	}
@@ -373,8 +373,8 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) setOwnerReferenceToObjects(elasticsearch *api.Elasticsearch, ref *core.ObjectReference) error {
-	labelSelector := labels.SelectorFromSet(elasticsearch.OffshootSelectors())
+func (c *Controller) setOwnerReferenceToOffshoots(elasticsearch *api.Elasticsearch, ref *core.ObjectReference) error {
+	selector := labels.SelectorFromSet(elasticsearch.OffshootSelectors())
 
 	// If TerminationPolicy is "wipeOut", delete snapshots and secrets,
 	// else, keep it intact.
@@ -383,7 +383,7 @@ func (c *Controller) setOwnerReferenceToObjects(elasticsearch *api.Elasticsearch
 			c.DynamicClient,
 			api.SchemeGroupVersion.WithResource(api.ResourcePluralSnapshot),
 			elasticsearch.Namespace,
-			labelSelector,
+			selector,
 			ref); err != nil {
 			return err
 		}
@@ -396,7 +396,7 @@ func (c *Controller) setOwnerReferenceToObjects(elasticsearch *api.Elasticsearch
 			c.DynamicClient,
 			api.SchemeGroupVersion.WithResource(api.ResourcePluralSnapshot),
 			elasticsearch.Namespace,
-			labelSelector,
+			selector,
 			ref); err != nil {
 			return err
 		}
@@ -410,18 +410,15 @@ func (c *Controller) setOwnerReferenceToObjects(elasticsearch *api.Elasticsearch
 		}
 	}
 	// delete PVC for both "wipeOut" and "delete" TerminationPolicy.
-	if err := dynamic_util.EnsureOwnerReferenceForSelector(
+	return dynamic_util.EnsureOwnerReferenceForSelector(
 		c.DynamicClient,
 		core.SchemeGroupVersion.WithResource("persistentvolumeclaims"),
 		elasticsearch.Namespace,
-		labelSelector,
-		ref); err != nil {
-		return err
-	}
-	return nil
+		selector,
+		ref)
 }
 
-func (c *Controller) removeOwnerReferenceFromObjects(elasticsearch *api.Elasticsearch, ref *core.ObjectReference) error {
+func (c *Controller) removeOwnerReferenceFromOffshoots(elasticsearch *api.Elasticsearch, ref *core.ObjectReference) error {
 	// First, Get LabelSelector for Other Components
 	labelSelector := labels.SelectorFromSet(elasticsearch.OffshootSelectors())
 
