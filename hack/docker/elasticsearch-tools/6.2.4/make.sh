@@ -9,14 +9,16 @@ source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=elasticsearch-tools
-TAG=6.2.4
+SUFFIX=v1
+DB_VERSION=6.2.4
+TAG="$DB_VERSION-$SUFFIX"
 OSM_VER=${OSM_VER:-0.7.1}
 
 DIST="$REPO_ROOT/dist"
 mkdir -p "$DIST"
 
 build() {
-  pushd "$REPO_ROOT/hack/docker/elasticsearch-tools/$TAG"
+  pushd "$REPO_ROOT/hack/docker/elasticsearch-tools/$DB_VERSION"
 
   # Download osm
   wget https://cdn.appscode.com/binaries/osm/${OSM_VER}/osm-alpine-amd64

@@ -9,8 +9,8 @@ source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=elasticsearch-tools
-DB_VERSION=5.6.4
 SUFFIX=v1
+DB_VERSION=5.6.4
 TAG="$DB_VERSION-$SUFFIX"
 OSM_VER=${OSM_VER:-0.7.1}
 

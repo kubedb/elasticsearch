@@ -7,11 +7,13 @@ source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=elasticsearch
-TAG=6.3.0
+SUFFIX=v1
+DB_VERSION=6.3.0
+TAG="$DB_VERSION-$SUFFIX"
 YQ_VER=${YQ_VER:-2.1.1}
 
 build() {
-  pushd "$REPO_ROOT/hack/docker/elasticsearch/$TAG"
+  pushd "$REPO_ROOT/hack/docker/elasticsearch/$DB_VERSION"
 
   # config merger script
   chmod +x ./config-merger.sh
