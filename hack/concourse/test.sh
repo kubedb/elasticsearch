@@ -36,7 +36,7 @@ source ./hack/deploy/setup.sh --docker-registry=${DOCKER_REGISTRY}
 ./hack/make.py test e2e \
   --v=1 \
   --storageclass=${StorageClass:-starndard} \
-  --es-version=6.2.4 \
+  --es-version=6.2.4-v1 \
   --selfhosted-operator=true \
   --docker-registry=${DOCKER_REGISTRY} \
   --ginkgo.flakeAttempts=2
