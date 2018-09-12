@@ -1024,8 +1024,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyDBSecretCount(elasticsearch.ObjectMeta).Should(Equal(0))
 
 					By("Check for deleted Snapshots")
-					_, err := f.GetSnapshot(snapshot.ObjectMeta)
-					Expect(err).Should(HaveOccurred())
+					f.EventuallySnapshotCount(snapshot.ObjectMeta).Should(Equal(0))
 
 					if !skipSnapshotDataChecking {
 						By("Check for deleted snapshot data")
