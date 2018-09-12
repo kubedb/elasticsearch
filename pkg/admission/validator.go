@@ -321,7 +321,6 @@ func getPreconditionFunc() []mergepatch.PreconditionFunc {
 }
 
 var preconditionSpecFields = []string{
-	"spec.version",
 	"spec.topology.*.prefix",
 	"spec.topology.*.storage",
 	"spec.enableSSL",
