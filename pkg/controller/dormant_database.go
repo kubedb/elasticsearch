@@ -126,7 +126,7 @@ func (c *Controller) createDormantDatabase(elasticsearch *api.Elasticsearch) (*a
 func (c *Controller) secretsUsedByPeers(meta metav1.ObjectMeta) (sets.String, error) {
 	secretUsed := sets.NewString()
 
-	dbList, err := c.esLister.List(labels.Everything())
+	dbList, err := c.esLister.Elasticsearches(meta.Namespace).List(labels.Everything())
 	if err != nil {
 		return nil, err
 	}

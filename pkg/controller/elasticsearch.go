@@ -345,10 +345,10 @@ func (c *Controller) terminate(elasticsearch *api.Elasticsearch) error {
 					return err
 				}
 				if val, _ := meta_util.GetStringValue(ddb.Labels, api.LabelDatabaseKind); val != api.ResourceKindElasticsearch {
-					return fmt.Errorf(`DormantDatabase "%v" of kind %v already exists`, elasticsearch.Name, val)
+					return fmt.Errorf(`DormantDatabase "%s/%s" of kind %v already exists`, elasticsearch.Namespace, elasticsearch.Name, val)
 				}
 			} else {
-				return fmt.Errorf(`failed to create DormantDatabase: "%v". Reason: %v`, elasticsearch.Name, err)
+				return fmt.Errorf(`failed to create DormantDatabase: "%s/%s". Reason: %v`, elasticsearch.Namespace, elasticsearch.Name, err)
 			}
 		}
 	} else {
