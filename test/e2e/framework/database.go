@@ -28,17 +28,17 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es.ESClient, error
 		return nil, err
 	}
 	clientPodName := f.GetClientPodName(db)
-	tunnel := portforward.NewTunnel(
+	f.Tunnel = portforward.NewTunnel(
 		f.kubeClient.CoreV1().RESTClient(),
 		f.restConfig,
 		db.Namespace,
 		clientPodName,
 		api.ElasticsearchRestPort,
 	)
-	if err := tunnel.ForwardPort(); err != nil {
+	if err := f.Tunnel.ForwardPort(); err != nil {
 		return nil, err
 	}
-	url := fmt.Sprintf("%v://127.0.0.1:%d", db.GetConnectionScheme(), tunnel.Local)
-	c := controller.New(nil, f.kubeClient, nil, nil, nil, nil, amc.Config{})
+	url := fmt.Sprintf("%v://127.0.0.1:%d", db.GetConnectionScheme(), f.Tunnel.Local)
+	c := controller.New(nil, f.kubeClient, nil, nil, nil, nil, nil, amc.Config{})
 	return es.GetElasticClient(c.Client, db, url)
 }

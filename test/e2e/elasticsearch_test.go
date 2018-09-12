@@ -66,6 +66,17 @@ var _ = Describe("Elasticsearch", func() {
 		if elasticsearch == nil {
 			Skip("Skipping")
 		}
+
+		By("Check if elasticsearch " + elasticsearch.Name + " exists.")
+		_, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				// Elasticsearch was not created. Hence, rest of cleanup is not necessary.
+				return
+			}
+			Expect(err).NotTo(HaveOccurred())
+		}
+
 		By("Delete elasticsearch: " + elasticsearch.Name)
 		err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 		if err != nil {
@@ -80,7 +91,7 @@ var _ = Describe("Elasticsearch", func() {
 		f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
 		By("Set DormantDatabase Spec.WipeOut to true")
-		_, err := f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+		_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
 			in.Spec.WipeOut = true
 			return in
 		})
@@ -147,6 +158,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 
 					elasticClient.Stop()
+					f.Tunnel.Close()
 
 					By("Delete elasticsearch")
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
@@ -176,6 +188,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 
 					elasticClient.Stop()
+					f.Tunnel.Close()
 				}
 
 				Context("with Default Resource", func() {
@@ -445,6 +458,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 
 					elasticClient.Stop()
+					f.Tunnel.Close()
 
 					By("Create Snapshot")
 					err = f.CreateSnapshot(snapshot)
@@ -538,6 +552,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 
 				elasticClient.Stop()
+				f.Tunnel.Close()
 
 				By("Create Snapshot")
 				f.CreateSnapshot(snapshot)
@@ -545,8 +560,10 @@ var _ = Describe("Elasticsearch", func() {
 				By("Check for succeeded snapshot")
 				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
 
-				By("Check for snapshot data")
-				f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+				if !skipSnapshotDataChecking {
+					By("Check for snapshot data")
+					f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+				}
 
 				oldElasticsearch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -575,6 +592,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 
 				elasticClient.Stop()
+				f.Tunnel.Close()
 			}
 
 			Context("-", func() {
@@ -785,6 +803,264 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
+		Context("Termination Policy", func() {
+			BeforeEach(func() {
+				skipSnapshotDataChecking = false
+				secret = f.SecretForS3Backend()
+				snapshot.Spec.StorageSecretName = secret.Name
+				snapshot.Spec.S3 = &store.S3Spec{
+					Bucket: os.Getenv(S3_BUCKET_NAME),
+				}
+				snapshot.Spec.DatabaseName = elasticsearch.Name
+			})
+
+			AfterEach(func() {
+				if snapshot != nil {
+					By("Delete Existing snapshot")
+					err := f.DeleteSnapshot(snapshot.ObjectMeta)
+					if err != nil {
+						if kerr.IsNotFound(err) {
+							// Elasticsearch was not created. Hence, rest of cleanup is not necessary.
+							return
+						}
+						Expect(err).NotTo(HaveOccurred())
+					}
+				}
+			})
+
+			var shouldRunWithSnapshot = func() {
+				// Create and wait for running Elasticsearch
+				createAndWaitForRunning()
+
+				By("Create Secret")
+				f.CreateSecret(secret)
+
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating new indices")
+				err = elasticClient.CreateIndex(2)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking new indices")
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+				elasticClient.Stop()
+				f.Tunnel.Close()
+
+				By("Create Snapshot")
+				f.CreateSnapshot(snapshot)
+
+				By("Check for succeeded snapshot")
+				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+
+				if !skipSnapshotDataChecking {
+					By("Check for snapshot data")
+					f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+				}
+			}
+
+			Context("with TerminationPolicyPause (default)", func() {
+				var shouldRunWithTerminationPause = func() {
+					shouldRunWithSnapshot()
+
+					By("Delete elasticsearch")
+					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					// DormantDatabase.Status= paused, means elasticsearch object is deleted
+					By("Wait for elasticsearch to be paused")
+					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+
+					By("Check for intact snapshot")
+					_, err := f.GetSnapshot(snapshot.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					if !skipSnapshotDataChecking {
+						By("Check for snapshot data")
+						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+					}
+
+					// Create Elasticsearch object again to resume it
+					By("Create (pause) Elasticsearch: " + elasticsearch.Name)
+					err = f.CreateElasticsearch(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for DormantDatabase to be deleted")
+					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Wait for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking new indices")
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+					elasticClient.Stop()
+					f.Tunnel.Close()
+				}
+
+				It("should create dormantdatabase successfully", shouldRunWithTerminationPause)
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+
+					It("should create dormantdatabase successfully", shouldRunWithTerminationPause)
+				})
+
+				Context("with Dedicated elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+						snapshot.Spec.DatabaseName = elasticsearch.Name
+					})
+					It("should initialize database successfully", shouldRunWithTerminationPause)
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should initialize database successfully", shouldRunWithTerminationPause)
+					})
+				})
+			})
+
+			Context("with TerminationPolicyDelete", func() {
+				BeforeEach(func() {
+					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDelete
+				})
+
+				var shouldRunWithTerminationDelete = func() {
+					shouldRunWithSnapshot()
+
+					By("Delete elasticsearch")
+					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("wait until elasticsearch is deleted")
+					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Check for deleted PVCs")
+					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
+
+					By("Check for intact Secrets")
+					f.EventuallyDBSecretCount(elasticsearch.ObjectMeta).ShouldNot(Equal(0))
+
+					By("Check for intact snapshot")
+					_, err := f.GetSnapshot(snapshot.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					if !skipSnapshotDataChecking {
+						By("Check for intact snapshot data")
+						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+					}
+
+					By("Delete snapshot")
+					err = f.DeleteSnapshot(snapshot.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					if !skipSnapshotDataChecking {
+						By("Check for deleted snapshot data")
+						f.EventuallySnapshotDataFound(snapshot).Should(BeFalse())
+					}
+				}
+
+				It("should run with TerminationPolicyDelete", shouldRunWithTerminationDelete)
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+					It("should run with TerminationPolicyDelete", shouldRunWithTerminationDelete)
+				})
+
+				Context("with Dedicated elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDelete
+						snapshot.Spec.DatabaseName = elasticsearch.Name
+					})
+					It("should initialize database successfully", shouldRunWithTerminationDelete)
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should initialize database successfully", shouldRunWithTerminationDelete)
+					})
+				})
+			})
+
+			Context("with TerminationPolicyWipeOut", func() {
+				BeforeEach(func() {
+					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+				})
+
+				var shouldRunWithTerminationWipeOut = func() {
+					shouldRunWithSnapshot()
+
+					By("Delete elasticsearch")
+					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("wait until elasticsearch is deleted")
+					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Check for deleted PVCs")
+					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
+
+					By("Check for deleted Secrets")
+					f.EventuallyDBSecretCount(elasticsearch.ObjectMeta).Should(Equal(0))
+
+					By("Check for deleted Snapshots")
+					_, err := f.GetSnapshot(snapshot.ObjectMeta)
+					Expect(err).Should(HaveOccurred())
+
+					if !skipSnapshotDataChecking {
+						By("Check for deleted snapshot data")
+						f.EventuallySnapshotDataFound(snapshot).Should(BeFalse())
+					}
+				}
+
+				It("should run with TerminationPolicyDelete", shouldRunWithTerminationWipeOut)
+
+				Context("with SSL disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+					})
+					It("should run with TerminationPolicyDelete", shouldRunWithTerminationWipeOut)
+				})
+
+				Context("with Dedicated elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+						snapshot.Spec.DatabaseName = elasticsearch.Name
+						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+					})
+					It("should initialize database successfully", shouldRunWithTerminationWipeOut)
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should initialize database successfully", shouldRunWithTerminationWipeOut)
+					})
+				})
+			})
+		})
+
 		Context("Environment Variables", func() {
 
 			allowedEnvList := []core.EnvVar{
@@ -851,6 +1127,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 
 				elasticClient.Stop()
+				f.Tunnel.Close()
 
 				By("Delete elasticsearch")
 				err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
@@ -880,6 +1157,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
 
 				elasticClient.Stop()
+				f.Tunnel.Close()
 			}
 
 			Context("With allowed Envs", func() {
@@ -928,7 +1206,6 @@ var _ = Describe("Elasticsearch", func() {
 						It("should run successfully with given envs", shouldRunWithAllowedEnvs)
 					})
 				})
-
 			})
 
 			Context("With forbidden Envs", func() {
@@ -944,7 +1221,6 @@ var _ = Describe("Elasticsearch", func() {
 						Expect(err).To(HaveOccurred())
 					}
 				})
-
 			})
 
 			Context("Update Envs", func() {
@@ -966,7 +1242,6 @@ var _ = Describe("Elasticsearch", func() {
 					})
 					Expect(err).To(HaveOccurred())
 				})
-
 			})
 		})
 
@@ -1011,6 +1286,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(f.IsUsingProvidedConfig(settings)).Should(BeTrue())
 
 				elasticClient.Stop()
+				f.Tunnel.Close()
 			}
 
 			Context("With Topology", func() {
@@ -1033,7 +1309,6 @@ var _ = Describe("Elasticsearch", func() {
 
 					It("should run successfully with given envs", shouldRunWithCustomConfig)
 				})
-
 			})
 
 			Context("Without Topology", func() {

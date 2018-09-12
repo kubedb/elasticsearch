@@ -36,7 +36,7 @@ func ExportReport(
 	}
 
 	url := elastic.GetConnectionURL()
-	c := controller.New(nil, kubeClient, nil, nil, nil, nil, amc.Config{})
+	c := controller.New(nil, kubeClient, nil, nil, nil, nil, nil, amc.Config{})
 	client, err := es.GetElasticClient(c.Client, elastic, url)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

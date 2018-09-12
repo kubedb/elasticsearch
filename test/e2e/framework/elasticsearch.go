@@ -156,6 +156,7 @@ func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) G
 				return false
 			}
 			client.Stop()
+			f.Tunnel.Close()
 			return true
 		},
 		time.Minute*15,

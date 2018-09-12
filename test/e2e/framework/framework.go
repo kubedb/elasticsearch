@@ -2,6 +2,7 @@ package framework
 
 import (
 	"github.com/appscode/go/crypto/rand"
+	"github.com/appscode/kutil/tools/portforward"
 	cs "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -13,6 +14,7 @@ type Framework struct {
 	kubeClient   kubernetes.Interface
 	extClient    cs.KubedbV1alpha1Interface
 	kaClient     ka.Interface
+	Tunnel       *portforward.Tunnel
 	namespace    string
 	name         string
 	StorageClass string
