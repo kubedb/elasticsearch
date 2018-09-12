@@ -2,8 +2,9 @@
 set -xeou pipefail
 
 IMG=elasticsearch
-TAG=5.6
-PATCH=5.6.4
+SUFFIX=v1
+TAG="5.6-$SUFFIX"
+PATCH="5.6.4-$SUFFIX"
 
 docker pull "$DOCKER_REGISTRY/$IMG:$PATCH"
 

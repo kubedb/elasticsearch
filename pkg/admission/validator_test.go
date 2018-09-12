@@ -18,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	fake_dynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
@@ -40,7 +39,6 @@ func TestElasticsearchValidator_Admit(t *testing.T) {
 			validator := ElasticsearchValidator{}
 
 			validator.initialized = true
-			validator.dc = fake_dynamic.NewSimpleDynamicClient(clientSetScheme.Scheme)
 			validator.client = fake.NewSimpleClientset()
 			validator.extClient = extFake.NewSimpleClientset(
 				&api.ElasticsearchVersion{

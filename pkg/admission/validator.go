@@ -19,14 +19,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/mergepatch"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 type ElasticsearchValidator struct {
 	client      kubernetes.Interface
-	dc          dynamic.Interface
 	extClient   cs.Interface
 	lock        sync.RWMutex
 	initialized bool
@@ -57,9 +55,6 @@ func (a *ElasticsearchValidator) Initialize(config *rest.Config, stopCh <-chan s
 
 	var err error
 	if a.client, err = kubernetes.NewForConfig(config); err != nil {
-		return err
-	}
-	if a.dc, err = dynamic.NewForConfig(config); err != nil {
 		return err
 	}
 	if a.extClient, err = cs.NewForConfig(config); err != nil {
