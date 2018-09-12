@@ -154,14 +154,14 @@ func (f *Framework) EventuallyDBSecretCount(meta metav1.ObjectMeta) GomegaAsyncA
 
 	return Eventually(
 		func() int {
-			snapshotList, err := f.kubeClient.CoreV1().Secrets(meta.Namespace).List(
+			secretList, err := f.kubeClient.CoreV1().Secrets(meta.Namespace).List(
 				metav1.ListOptions{
 					LabelSelector: labelSelector.String(),
 				},
 			)
 			Expect(err).NotTo(HaveOccurred())
 
-			return len(snapshotList.Items)
+			return len(secretList.Items)
 		},
 		time.Minute*5,
 		time.Second*5,

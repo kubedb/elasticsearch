@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	dynamic_util "github.com/appscode/kutil/dynamic"
 	meta_util "github.com/appscode/kutil/meta"
@@ -52,12 +53,12 @@ func (c *Controller) WipeOutDatabase(drmn *api.DormantDatabase) error {
 
 // wipeOutDatabase is a generic function to call from WipeOutDatabase and elasticsearch pause method.
 func (c *Controller) wipeOutDatabase(meta metav1.ObjectMeta, secrets []string, ref *core.ObjectReference) error {
+	secretUsed, err := c.isSecretUsed(meta, secrets)
+	if err != nil {
+		return errors.Wrap(err, "error in getting used secret list")
+	}
 	for _, secret := range secrets {
-		found, error := c.isSecretUsed(meta, secret)
-		if error != nil {
-			return error
-		}
-		if !found {
+		if _, err := meta_util.GetString(secretUsed, secret); err == kutil.ErrNotFound {
 			if err := dynamic_util.EnsureOwnerReferenceForItems(
 				c.DynamicClient,
 				core.SchemeGroupVersion.WithResource("secrets"),
@@ -128,20 +129,24 @@ func (c *Controller) createDormantDatabase(elasticsearch *api.Elasticsearch) (*a
 
 // isSecretUsed gets the DBList of same kind, then checks if our required secret is used by those.
 // Similarly, isSecretUsed also checks for DomantDB of similar dbKind label.
-func (c *Controller) isSecretUsed(meta metav1.ObjectMeta, secretName string) (bool, error) {
-	elasticsearchList, err := c.ExtClient.Elasticsearches(meta.Namespace).List(metav1.ListOptions{})
+func (c *Controller) isSecretUsed(meta metav1.ObjectMeta, secretList []string) (map[string]string, error) {
+	secretUsed := make(map[string]string)
+
+	elasticsearchList, err := c.esLister.List(labels.Nothing())
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	for _, es := range elasticsearchList.Items {
-		if es.Name == meta.Name {
-			continue
-		}
+	for _, secretName := range secretList {
+		for _, es := range elasticsearchList {
+			if es.Name == meta.Name {
+				continue
+			}
 
-		for _, secret := range es.Spec.GetSecrets() {
-			if secret == secretName {
-				return true, nil
+			for _, dbSecret := range es.Spec.GetSecrets() {
+				if dbSecret == secretName {
+					secretUsed[secretName] = ""
+				}
 			}
 		}
 	}
@@ -155,20 +160,22 @@ func (c *Controller) isSecretUsed(meta metav1.ObjectMeta, secretName string) (bo
 		},
 	)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	for _, ddb := range dormantDatabaseList.Items {
-		if ddb.Name == meta.Name {
-			continue
-		}
+	for _, secretName := range secretList {
+		for _, ddb := range dormantDatabaseList.Items {
+			if ddb.Name == meta.Name {
+				continue
+			}
 
-		for _, secret := range ddb.GetDatabaseSecrets() {
-			if secret == secretName {
-				return true, nil
+			for _, dbSecret := range ddb.GetDatabaseSecrets() {
+				if dbSecret == secretName {
+					secretUsed[secretName] = ""
+				}
 			}
 		}
 	}
 
-	return false, nil
+	return secretUsed, nil
 }

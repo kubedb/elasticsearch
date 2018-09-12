@@ -7,7 +7,6 @@ import (
 
 	"github.com/appscode/go/log"
 	hookapi "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
-	dynamic_util "github.com/appscode/kutil/dynamic"
 	meta_util "github.com/appscode/kutil/meta"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
@@ -15,18 +14,14 @@ import (
 	amv "github.com/kubedb/apimachinery/pkg/validator"
 	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
-	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/mergepatch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/reference"
 )
 
 type ElasticsearchValidator struct {
@@ -103,9 +98,6 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 			} else if err == nil && obj.Spec.DoNotPause {
 				return hookapi.StatusBadRequest(fmt.Errorf(`elasticsearch "%s" can't be paused. To continue delete, unset spec.doNotPause and retry`, req.Name))
 			}
-			if err = a.handleOwnerReferences(obj); err != nil {
-				return hookapi.StatusInternalServerError(err)
-			}
 		}
 	default:
 		obj, err := meta_util.UnmarshalFromJSON(req.Object.Raw, api.SchemeGroupVersion)
@@ -142,112 +134,6 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 	}
 	status.Allowed = true
 	return status
-}
-
-func (a *ElasticsearchValidator) handleOwnerReferences(elasticsearch *api.Elasticsearch) error {
-	// If TerminationPolicy is "pause", keep everything (ie, PVCs,Secrets,Snapshots) intact.
-	// In operator, create dormantdatabase
-	if elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyPause {
-		if err := a.removeOwnerReferenceFromObjects(elasticsearch); err != nil {
-			return err
-		}
-		return nil
-	}
-	// If TerminationPolicy is "wipeOut", delete everything (ie, PVCs,Secrets,Snapshots).
-	// If TerminationPolicy is "delete", delete PVCs and keep snapshots,secrets intact.
-	// In both these cases, don't create dormantdatabase
-	if err := a.setOwnerReferenceToObjects(elasticsearch); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (a *ElasticsearchValidator) setOwnerReferenceToObjects(elasticsearch *api.Elasticsearch) error {
-	labelSelector := labels.SelectorFromSet(elasticsearch.OffshootSelectors())
-
-	// Get object reference of elasticsearch
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
-	if rerr != nil {
-		return rerr
-	}
-
-	// If TerminationPolicy is "wipeOut", delete snapshots and secrets,
-	// else, keep it intact.
-	if elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyWipeOut {
-		if err := dynamic_util.EnsureOwnerReferenceForSelector(
-			a.dc,
-			api.SchemeGroupVersion.WithResource(api.ResourcePluralSnapshot),
-			elasticsearch.Namespace,
-			labelSelector,
-			ref); err != nil {
-			return err
-		}
-		// Set ownerreference to secrets inside operator
-	} else {
-		// Make sure snapshot and secret's ownerreference is removed.
-		if err := dynamic_util.RemoveOwnerReferenceForSelector(
-			a.dc,
-			api.SchemeGroupVersion.WithResource(api.ResourcePluralSnapshot),
-			elasticsearch.Namespace,
-			labelSelector,
-			ref); err != nil {
-			return err
-		}
-		if err := dynamic_util.RemoveOwnerReferenceForItems(
-			a.dc,
-			core.SchemeGroupVersion.WithResource("secrets"),
-			elasticsearch.Namespace,
-			elasticsearch.Spec.GetSecrets(),
-			ref); err != nil {
-			return err
-		}
-	}
-	// delete PVC for both "wipeOut" and "delete" TerminationPolicy.
-	if err := dynamic_util.EnsureOwnerReferenceForSelector(
-		a.dc,
-		core.SchemeGroupVersion.WithResource("persistentvolumeclaims"),
-		elasticsearch.Namespace,
-		labelSelector,
-		ref); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (a *ElasticsearchValidator) removeOwnerReferenceFromObjects(elasticsearch *api.Elasticsearch) error {
-	// First, Get LabelSelector for Other Components
-	labelSelector := labels.SelectorFromSet(elasticsearch.OffshootSelectors())
-
-	// Get object reference of elasticsearch
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
-	if rerr != nil {
-		return rerr
-	}
-	if err := dynamic_util.RemoveOwnerReferenceForSelector(
-		a.dc,
-		api.SchemeGroupVersion.WithResource(api.ResourcePluralSnapshot),
-		elasticsearch.Namespace,
-		labelSelector,
-		ref); err != nil {
-		return err
-	}
-	if err := dynamic_util.RemoveOwnerReferenceForSelector(
-		a.dc,
-		core.SchemeGroupVersion.WithResource("persistentvolumeclaims"),
-		elasticsearch.Namespace,
-		labelSelector,
-		ref); err != nil {
-		return err
-	}
-	if err := dynamic_util.RemoveOwnerReferenceForItems(
-		a.dc,
-		core.SchemeGroupVersion.WithResource("secrets"),
-		elasticsearch.Namespace,
-		elasticsearch.Spec.GetSecrets(),
-		ref); err != nil {
-		return err
-	}
-	return nil
 }
 
 // ValidateElasticsearch checks if the object satisfies all the requirements.

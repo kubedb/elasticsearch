@@ -8,6 +8,7 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
+	dynamic_util "github.com/appscode/kutil/dynamic"
 	meta_util "github.com/appscode/kutil/meta"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kutildb "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
@@ -17,6 +18,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
@@ -322,9 +324,18 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 }
 
 func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
-	// Create dormantdatabase when TerminationPolicy="pause".
-	// In other cases, don't create it
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+	if rerr != nil {
+		return rerr
+	}
+
+	// If TerminationPolicy is "pause", keep everything (ie, PVCs,Secrets,Snapshots) intact.
+	// In operator, create dormantdatabase
 	if elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyPause {
+		if err := c.removeOwnerReferenceFromObjects(elasticsearch, ref); err != nil {
+			return err
+		}
+
 		if _, err := c.createDormantDatabase(elasticsearch); err != nil {
 			if kerr.IsAlreadyExists(err) {
 				// if already exists, check if it is database of another Kind and return error in that case.
@@ -342,17 +353,12 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 				return fmt.Errorf(`failed to create DormantDatabase: "%v". Reason: %v`, elasticsearch.Name, err)
 			}
 		}
-	}
-
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
-	if rerr != nil {
-		return rerr
-	}
-
-	// If termination policy is wipeout, delete secrets.
-	if elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyWipeOut {
-		if err := c.wipeOutDatabase(elasticsearch.ObjectMeta, elasticsearch.Spec.GetSecrets(), ref); err != nil {
-			return errors.Wrap(err, "error in wiping out database.")
+	} else {
+		// If TerminationPolicy is "wipeOut", delete everything (ie, PVCs,Secrets,Snapshots).
+		// If TerminationPolicy is "delete", delete PVCs and keep snapshots,secrets intact.
+		// In both these cases, don't create dormantdatabase
+		if err := c.setOwnerReferenceToObjects(elasticsearch, ref); err != nil {
+			return err
 		}
 	}
 
@@ -363,6 +369,85 @@ func (c *Controller) pause(elasticsearch *api.Elasticsearch) error {
 			log.Errorln(err)
 			return nil
 		}
+	}
+	return nil
+}
+
+func (c *Controller) setOwnerReferenceToObjects(elasticsearch *api.Elasticsearch, ref *core.ObjectReference) error {
+	labelSelector := labels.SelectorFromSet(elasticsearch.OffshootSelectors())
+
+	// If TerminationPolicy is "wipeOut", delete snapshots and secrets,
+	// else, keep it intact.
+	if elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyWipeOut {
+		if err := dynamic_util.EnsureOwnerReferenceForSelector(
+			c.DynamicClient,
+			api.SchemeGroupVersion.WithResource(api.ResourcePluralSnapshot),
+			elasticsearch.Namespace,
+			labelSelector,
+			ref); err != nil {
+			return err
+		}
+		if err := c.wipeOutDatabase(elasticsearch.ObjectMeta, elasticsearch.Spec.GetSecrets(), ref); err != nil {
+			return errors.Wrap(err, "error in wiping out database.")
+		}
+	} else {
+		// Make sure snapshot and secret's ownerreference is removed.
+		if err := dynamic_util.RemoveOwnerReferenceForSelector(
+			c.DynamicClient,
+			api.SchemeGroupVersion.WithResource(api.ResourcePluralSnapshot),
+			elasticsearch.Namespace,
+			labelSelector,
+			ref); err != nil {
+			return err
+		}
+		if err := dynamic_util.RemoveOwnerReferenceForItems(
+			c.DynamicClient,
+			core.SchemeGroupVersion.WithResource("secrets"),
+			elasticsearch.Namespace,
+			elasticsearch.Spec.GetSecrets(),
+			ref); err != nil {
+			return err
+		}
+	}
+	// delete PVC for both "wipeOut" and "delete" TerminationPolicy.
+	if err := dynamic_util.EnsureOwnerReferenceForSelector(
+		c.DynamicClient,
+		core.SchemeGroupVersion.WithResource("persistentvolumeclaims"),
+		elasticsearch.Namespace,
+		labelSelector,
+		ref); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Controller) removeOwnerReferenceFromObjects(elasticsearch *api.Elasticsearch, ref *core.ObjectReference) error {
+	// First, Get LabelSelector for Other Components
+	labelSelector := labels.SelectorFromSet(elasticsearch.OffshootSelectors())
+
+	if err := dynamic_util.RemoveOwnerReferenceForSelector(
+		c.DynamicClient,
+		api.SchemeGroupVersion.WithResource(api.ResourcePluralSnapshot),
+		elasticsearch.Namespace,
+		labelSelector,
+		ref); err != nil {
+		return err
+	}
+	if err := dynamic_util.RemoveOwnerReferenceForSelector(
+		c.DynamicClient,
+		core.SchemeGroupVersion.WithResource("persistentvolumeclaims"),
+		elasticsearch.Namespace,
+		labelSelector,
+		ref); err != nil {
+		return err
+	}
+	if err := dynamic_util.RemoveOwnerReferenceForItems(
+		c.DynamicClient,
+		core.SchemeGroupVersion.WithResource("secrets"),
+		elasticsearch.Namespace,
+		elasticsearch.Spec.GetSecrets(),
+		ref); err != nil {
+		return err
 	}
 	return nil
 }
