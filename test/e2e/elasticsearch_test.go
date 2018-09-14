@@ -33,6 +33,7 @@ var _ = Describe("Elasticsearch", func() {
 		garbageElasticsearch     *api.ElasticsearchList
 		elasticsearchVersion     *api.ElasticsearchVersion
 		snapshot                 *api.Snapshot
+		snapshotPVC              *core.PersistentVolumeClaim
 		secret                   *core.Secret
 		skipMessage              string
 		skipSnapshotDataChecking bool
@@ -122,6 +123,13 @@ var _ = Describe("Elasticsearch", func() {
 
 		if secret != nil {
 			f.DeleteSecret(secret.ObjectMeta)
+		}
+
+		if snapshotPVC != nil {
+			err := f.DeletePersistentVolumeClaim(snapshotPVC.ObjectMeta)
+			if err != nil && !kerr.IsNotFound(err) {
+				Expect(err).NotTo(HaveOccurred())
+			}
 		}
 
 		err = f.DeleteElasticsearchVersion(elasticsearchVersion.ObjectMeta)
@@ -333,25 +341,21 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				Context("With PVC as Snapshot's backend", func() {
-					var snapPVC *core.PersistentVolumeClaim
 
 					BeforeEach(func() {
-						snapPVC = f.GetPersistentVolumeClaim()
-						err := f.CreatePersistentVolumeClaim(snapPVC)
+						snapshotPVC = f.GetPersistentVolumeClaim()
+						By("Creating PVC for local backend snapshot")
+						err := f.CreatePersistentVolumeClaim(snapshotPVC)
 						Expect(err).NotTo(HaveOccurred())
 
 						snapshot.Spec.Local = &store.LocalSpec{
 							MountPath: "/repo",
 							VolumeSource: core.VolumeSource{
 								PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-									ClaimName: snapPVC.Name,
+									ClaimName: snapshotPVC.Name,
 								},
 							},
 						}
-					})
-
-					AfterEach(func() {
-						f.DeletePersistentVolumeClaim(snapPVC.ObjectMeta)
 					})
 
 					It("should delete Snapshot successfully", func() {
@@ -635,6 +639,33 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("-", func() {
 				It("should initialize database successfully", shouldInitialize)
+			})
+
+			Context("with local volume", func() {
+
+				BeforeEach(func() {
+					snapshotPVC = f.GetPersistentVolumeClaim()
+					By("Creating PVC for local backend snapshot")
+					err := f.CreatePersistentVolumeClaim(snapshotPVC)
+					Expect(err).NotTo(HaveOccurred())
+
+					skipSnapshotDataChecking = true
+					secret = f.SecretForLocalBackend()
+					snapshot.Spec.StorageSecretName = secret.Name
+					snapshot.Spec.Backend = store.Backend{
+						Local: &store.LocalSpec{
+							MountPath: "/repo",
+							VolumeSource: core.VolumeSource{
+								PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
+									ClaimName: snapshotPVC.Name,
+								},
+							},
+						},
+					}
+				})
+
+				It("should initialize database successfully", shouldInitialize)
+
 			})
 
 			Context("with SSL disabled", func() {
@@ -988,6 +1019,9 @@ var _ = Describe("Elasticsearch", func() {
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
+					By("Checking DormantDatabase is not created")
+					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
+
 					By("Check for deleted PVCs")
 					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
 
@@ -1054,6 +1088,9 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Checking DormantDatabase is not created")
+					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
 
 					By("Check for deleted PVCs")
 					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
