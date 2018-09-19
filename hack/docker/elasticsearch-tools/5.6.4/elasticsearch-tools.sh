@@ -78,6 +78,10 @@ while test $# -gt 0; do
       export ENABLE_ANALYTICS=$(echo $1 | sed -e 's/^[^=]*=//g')
       shift
       ;;
+    --)
+      shift
+      break
+      ;;
     *)
       show_help
       exit 1
@@ -113,9 +117,9 @@ case "$op" in
   backup)
     IFS=$','
     for INDEX in $(echo "$DB_INDICES"); do
-      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.mapping.json" --type mapping || exit_on_error "failed to dump mapping for $INDEX"
-      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.analyzer.json" --type analyzer || exit_on_error "failed to dump analyzer for $INDEX"
-      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.data.json" --type data || exit_on_error "failed to dump data for $INDEX"
+      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.mapping.json" --type mapping "$@" || exit_on_error "failed to dump mapping for $INDEX"
+      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.analyzer.json" --type analyzer "$@" || exit_on_error "failed to dump analyzer for $INDEX"
+      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.data.json" --type data "$@" || exit_on_error "failed to dump data for $INDEX"
 
       echo "$INDEX" >>indices.txt
     done
@@ -127,9 +131,9 @@ case "$op" in
 
     IFS=$'\n'
     for INDEX in $(cat indices.txt); do
-      elasticdump --quiet --input "$INDEX.analyzer.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type analyzer || exit_on_error "failed to restore analyzer for $INDEX"
-      elasticdump --quiet --input "$INDEX.mapping.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type mapping || exit_on_error "failed to restore mapping for $INDEX"
-      elasticdump --quiet --input "$INDEX.data.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type data || exit_on_error "failed to restore data for $INDEX"
+      elasticdump --quiet --input "$INDEX.analyzer.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type analyzer "$@" || exit_on_error "failed to restore analyzer for $INDEX"
+      elasticdump --quiet --input "$INDEX.mapping.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type mapping "$@" || exit_on_error "failed to restore mapping for $INDEX"
+      elasticdump --quiet --input "$INDEX.data.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type data "$@" || exit_on_error "failed to restore data for $INDEX"
     done
     ;;
   *)

@@ -74,7 +74,8 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 								fmt.Sprintf(`--folder=%s`, folderName),
 								fmt.Sprintf(`--snapshot=%s`, snapshot.Name),
 								fmt.Sprintf(`--enable-analytics=%v`, c.EnableAnalytics),
-							}, snapshot.Spec.PodTemplate.Spec.Args, "--enable-analytics"),
+								"--",
+							}, elasticsearch.Spec.Init.SnapshotSource.Args, "--enable-analytics"),
 							Env: []core.EnvVar{
 								{
 									Name:  "DB_SCHEME",
@@ -236,6 +237,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 								fmt.Sprintf(`--folder=%s`, folderName),
 								fmt.Sprintf(`--snapshot=%s`, snapshot.Name),
 								fmt.Sprintf(`--enable-analytics=%v`, c.EnableAnalytics),
+								"--",
 							}, snapshot.Spec.PodTemplate.Spec.Args, "--enable-analytics"),
 							Env: []core.EnvVar{
 								{
