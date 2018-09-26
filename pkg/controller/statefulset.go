@@ -323,7 +323,7 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	}
 
 	heapSize := int64(134217728) // 128mb
-	if elasticsearch.Spec.Resources != nil {
+	if elasticsearch.Spec.PodTemplate.Spec.Resources.Size() != 0 {
 		if request, found := elasticsearch.Spec.PodTemplate.Spec.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
 			heapSize = getHeapSizeForNode(request.Value())
 		}
@@ -349,8 +349,8 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	if elasticsearch.Spec.Storage != nil {
 		pvcSpec = *elasticsearch.Spec.Storage
 	}
-	if elasticsearch.Spec.Resources != nil {
-		resources = *elasticsearch.Spec.Resources
+	if elasticsearch.Spec.PodTemplate.Spec.Resources.Size() != 0 {
+		resources = elasticsearch.Spec.PodTemplate.Spec.Resources
 	}
 	return c.ensureStatefulSet(elasticsearch, &pvcSpec, resources, statefulSetName, labels, replicas, envList, true)
 }

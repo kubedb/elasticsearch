@@ -153,7 +153,7 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient kubedbv1alpha1
 		if elasticsearch.Spec.Storage != nil {
 			return errors.New("doesn't support spec.storage when spec.topology is set")
 		}
-		if elasticsearch.Spec.Resources != nil {
+		if elasticsearch.Spec.PodTemplate.Spec.Resources.Size() != 0 {
 			return errors.New("doesn't support spec.resources when spec.topology is set")
 		}
 
