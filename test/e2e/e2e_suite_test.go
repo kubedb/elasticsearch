@@ -8,8 +8,8 @@ import (
 
 	"github.com/appscode/go/homedir"
 	logs "github.com/appscode/go/log/golog"
+	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/scheme"
-	cs "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1"
 	"github.com/kubedb/elasticsearch/pkg/controller"
 	"github.com/kubedb/elasticsearch/test/e2e/framework"
 	. "github.com/onsi/ginkgo"

@@ -6,7 +6,8 @@ import (
 
 	"github.com/appscode/go/types"
 	"github.com/appscode/kutil/meta"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	catalogapi "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
+	dbapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	extFake "github.com/kubedb/apimachinery/client/clientset/versioned/fake"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/scheme"
 	admission "k8s.io/api/admission/v1beta1"
@@ -28,9 +29,9 @@ func init() {
 }
 
 var requestKind = metaV1.GroupVersionKind{
-	Group:   api.SchemeGroupVersion.Group,
-	Version: api.SchemeGroupVersion.Version,
-	Kind:    api.ResourceKindElasticsearch,
+	Group:   dbapi.SchemeGroupVersion.Group,
+	Version: dbapi.SchemeGroupVersion.Version,
+	Kind:    dbapi.ResourceKindElasticsearch,
 }
 
 func TestElasticsearchValidator_Admit(t *testing.T) {
@@ -41,7 +42,7 @@ func TestElasticsearchValidator_Admit(t *testing.T) {
 			validator.initialized = true
 			validator.client = fake.NewSimpleClientset()
 			validator.extClient = extFake.NewSimpleClientset(
-				&api.ElasticsearchVersion{
+				&catalogapi.ElasticsearchVersion{
 					ObjectMeta: metaV1.ObjectMeta{
 						Name: "5.6",
 					},
@@ -61,11 +62,11 @@ func TestElasticsearchValidator_Admit(t *testing.T) {
 				},
 			)
 
-			objJS, err := meta.MarshalToJson(&c.object, api.SchemeGroupVersion)
+			objJS, err := meta.MarshalToJson(&c.object, dbapi.SchemeGroupVersion)
 			if err != nil {
 				panic(err)
 			}
-			oldObjJS, err := meta.MarshalToJson(&c.oldObject, api.SchemeGroupVersion)
+			oldObjJS, err := meta.MarshalToJson(&c.oldObject, dbapi.SchemeGroupVersion)
 			if err != nil {
 				panic(err)
 			}
@@ -113,8 +114,8 @@ var cases = []struct {
 	objectName string
 	namespace  string
 	operation  admission.Operation
-	object     api.Elasticsearch
-	oldObject  api.Elasticsearch
+	object     dbapi.Elasticsearch
+	oldObject  dbapi.Elasticsearch
 	heatUp     bool
 	result     bool
 }{
@@ -124,7 +125,7 @@ var cases = []struct {
 		"default",
 		admission.Create,
 		sampleElasticsearch(),
-		api.Elasticsearch{},
+		dbapi.Elasticsearch{},
 		false,
 		true,
 	},
@@ -134,7 +135,7 @@ var cases = []struct {
 		"default",
 		admission.Create,
 		getAwkwardElasticsearch(),
-		api.Elasticsearch{},
+		dbapi.Elasticsearch{},
 		false,
 		false,
 	},
@@ -204,7 +205,7 @@ var cases = []struct {
 		"default",
 		admission.Delete,
 		sampleElasticsearch(),
-		api.Elasticsearch{},
+		dbapi.Elasticsearch{},
 		true,
 		false,
 	},
@@ -214,7 +215,7 @@ var cases = []struct {
 		"default",
 		admission.Delete,
 		editSpecDoNotPause(sampleElasticsearch()),
-		api.Elasticsearch{},
+		dbapi.Elasticsearch{},
 		true,
 		true,
 	},
@@ -223,31 +224,31 @@ var cases = []struct {
 		"foo",
 		"default",
 		admission.Delete,
-		api.Elasticsearch{},
-		api.Elasticsearch{},
+		dbapi.Elasticsearch{},
+		dbapi.Elasticsearch{},
 		false,
 		true,
 	},
 }
 
-func sampleElasticsearch() api.Elasticsearch {
-	return api.Elasticsearch{
+func sampleElasticsearch() dbapi.Elasticsearch {
+	return dbapi.Elasticsearch{
 		TypeMeta: metaV1.TypeMeta{
-			Kind:       api.ResourceKindElasticsearch,
-			APIVersion: api.SchemeGroupVersion.String(),
+			Kind:       dbapi.ResourceKindElasticsearch,
+			APIVersion: dbapi.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
 			Labels: map[string]string{
-				api.LabelDatabaseKind: api.ResourceKindElasticsearch,
+				dbapi.LabelDatabaseKind: dbapi.ResourceKindElasticsearch,
 			},
 		},
-		Spec: api.ElasticsearchSpec{
+		Spec: dbapi.ElasticsearchSpec{
 			Version:     "5.6",
 			Replicas:    types.Int32P(1),
 			DoNotPause:  true,
-			StorageType: api.StorageTypeDurable,
+			StorageType: dbapi.StorageTypeDurable,
 			Storage: &core.PersistentVolumeClaimSpec{
 				StorageClassName: types.StringP("standard"),
 				Resources: core.ResourceRequirements{
@@ -261,8 +262,8 @@ func sampleElasticsearch() api.Elasticsearch {
 					core.ResourceMemory: resource.MustParse("128Mi"),
 				},
 			},
-			Init: &api.InitSpec{
-				ScriptSource: &api.ScriptSourceSpec{
+			Init: &dbapi.InitSpec{
+				ScriptSource: &dbapi.ScriptSourceSpec{
 					VolumeSource: core.VolumeSource{
 						GitRepo: &core.GitRepoVolumeSource{
 							Repository: "https://github.com/kubedb/elasticsearch-init-scripts.git",
@@ -274,39 +275,39 @@ func sampleElasticsearch() api.Elasticsearch {
 			UpdateStrategy: apps.StatefulSetUpdateStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,
 			},
-			TerminationPolicy: api.TerminationPolicyPause,
+			TerminationPolicy: dbapi.TerminationPolicyPause,
 		},
 	}
 }
 
-func getAwkwardElasticsearch() api.Elasticsearch {
+func getAwkwardElasticsearch() dbapi.Elasticsearch {
 	elasticsearch := sampleElasticsearch()
 	elasticsearch.Spec.Version = "3.0"
 	return elasticsearch
 }
 
-func editExistingSecret(old api.Elasticsearch) api.Elasticsearch {
+func editExistingSecret(old dbapi.Elasticsearch) dbapi.Elasticsearch {
 	old.Spec.DatabaseSecret = &core.SecretVolumeSource{
 		SecretName: "foo-auth",
 	}
 	return old
 }
 
-func editNonExistingSecret(old api.Elasticsearch) api.Elasticsearch {
+func editNonExistingSecret(old dbapi.Elasticsearch) dbapi.Elasticsearch {
 	old.Spec.DatabaseSecret = &core.SecretVolumeSource{
 		SecretName: "foo-auth-fused",
 	}
 	return old
 }
 
-func editStatus(old api.Elasticsearch) api.Elasticsearch {
-	old.Status = api.ElasticsearchStatus{
-		Phase: api.DatabasePhaseCreating,
+func editStatus(old dbapi.Elasticsearch) dbapi.Elasticsearch {
+	old.Status = dbapi.ElasticsearchStatus{
+		Phase: dbapi.DatabasePhaseCreating,
 	}
 	return old
 }
 
-func editSpecMonitor(old api.Elasticsearch) api.Elasticsearch {
+func editSpecMonitor(old dbapi.Elasticsearch) dbapi.Elasticsearch {
 	old.Spec.Monitor = &mona.AgentSpec{
 		Agent: mona.AgentPrometheusBuiltin,
 		Prometheus: &mona.PrometheusSpec{
@@ -317,14 +318,14 @@ func editSpecMonitor(old api.Elasticsearch) api.Elasticsearch {
 }
 
 // should be failed because more fields required for COreOS Monitoring
-func editSpecInvalidMonitor(old api.Elasticsearch) api.Elasticsearch {
+func editSpecInvalidMonitor(old dbapi.Elasticsearch) dbapi.Elasticsearch {
 	old.Spec.Monitor = &mona.AgentSpec{
 		Agent: mona.AgentCoreOSPrometheus,
 	}
 	return old
 }
 
-func editSpecDoNotPause(old api.Elasticsearch) api.Elasticsearch {
+func editSpecDoNotPause(old dbapi.Elasticsearch) dbapi.Elasticsearch {
 	old.Spec.DoNotPause = false
 	return old
 }

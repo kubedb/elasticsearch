@@ -1,5 +1,5 @@
-hash: 80fc2be7c93e561c5c57193be51a4bf79c05838b14108bdc216dc6106711ca59
-updated: 2018-09-20T10:32:00.624195352-07:00
+hash: a59c4097566331174517ff8581aee35134036918eb627243df04a62f39d92161
+updated: 2018-09-26T03:03:29.045261527-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -312,20 +312,28 @@ imports:
 - name: github.com/json-iterator/go
   version: 1624edc4454b8682399def8740d46db5e4362ba4
 - name: github.com/kubedb/apimachinery
-  version: 7760fb61e363cdc939e78708046db6a4d92ca77c
+  version: 483ed62aba8976cb227e543ed9d1223a560f3278
   subpackages:
+  - apis
+  - apis/catalog
+  - apis/catalog/v1alpha1
   - apis/kubedb
   - apis/kubedb/v1alpha1
   - client/clientset/versioned
   - client/clientset/versioned/fake
   - client/clientset/versioned/scheme
+  - client/clientset/versioned/typed/catalog/v1alpha1
+  - client/clientset/versioned/typed/catalog/v1alpha1/fake
   - client/clientset/versioned/typed/kubedb/v1alpha1
   - client/clientset/versioned/typed/kubedb/v1alpha1/fake
   - client/clientset/versioned/typed/kubedb/v1alpha1/util
   - client/informers/externalversions
+  - client/informers/externalversions/catalog
+  - client/informers/externalversions/catalog/v1alpha1
   - client/informers/externalversions/internalinterfaces
   - client/informers/externalversions/kubedb
   - client/informers/externalversions/kubedb/v1alpha1
+  - client/listers/catalog/v1alpha1
   - client/listers/kubedb/v1alpha1
   - pkg/admission
   - pkg/admission/dormantdatabase
@@ -357,7 +365,7 @@ imports:
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/olivere/elastic
-  version: 7c7a23ca147ace22f386500828b95e9cb226f87f
+  version: 18b71235c09c127a0138e941e99524b93687898b
   subpackages:
   - config
   - uritemplates
@@ -520,7 +528,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: 19ff8768a5c0b8e46ea281065664787eefc24121
+  version: e5ba110cb6cd042d05ea6ea2ce9dd13198c6387a
   subpackages:
   - gensupport
   - googleapi

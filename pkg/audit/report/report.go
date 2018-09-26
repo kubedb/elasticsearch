@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	cs "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1"
+	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/util/es"
@@ -17,7 +17,7 @@ import (
 
 func ExportReport(
 	kubeClient kubernetes.Interface,
-	dbClient cs.KubedbV1alpha1Interface,
+	dbClient cs.Interface,
 	namespace string,
 	kubedbName string,
 	index string,
@@ -25,7 +25,7 @@ func ExportReport(
 ) {
 	startTime := metav1.Now()
 
-	elastic, err := dbClient.Elasticsearches(namespace).Get(kubedbName, metav1.GetOptions{})
+	elastic, err := dbClient.KubedbV1alpha1().Elasticsearches(namespace).Get(kubedbName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			http.Error(w, fmt.Sprintf(`Elasticsearch "%v" not found`, kubedbName), http.StatusNotFound)

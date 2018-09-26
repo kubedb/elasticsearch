@@ -5,7 +5,8 @@ import (
 	"os"
 
 	exec_util "github.com/appscode/kutil/tools/exec"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	catalogapi "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
+	dbapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/elasticsearch/test/e2e/framework"
 	"github.com/kubedb/elasticsearch/test/e2e/matcher"
@@ -29,10 +30,10 @@ var _ = Describe("Elasticsearch", func() {
 	var (
 		err                      error
 		f                        *framework.Invocation
-		elasticsearch            *api.Elasticsearch
-		garbageElasticsearch     *api.ElasticsearchList
-		elasticsearchVersion     *api.ElasticsearchVersion
-		snapshot                 *api.Snapshot
+		elasticsearch            *dbapi.Elasticsearch
+		garbageElasticsearch     *dbapi.ElasticsearchList
+		elasticsearchVersion     *catalogapi.ElasticsearchVersion
+		snapshot                 *dbapi.Snapshot
 		snapshotPVC              *core.PersistentVolumeClaim
 		secret                   *core.Secret
 		skipMessage              string
@@ -43,7 +44,7 @@ var _ = Describe("Elasticsearch", func() {
 		f = root.Invoke()
 		elasticsearch = f.CombinedElasticsearch()
 		elasticsearchVersion = f.ElasticsearchVersion()
-		garbageElasticsearch = new(api.ElasticsearchList)
+		garbageElasticsearch = new(dbapi.ElasticsearchList)
 		snapshot = f.Snapshot()
 		secret = new(core.Secret)
 		skipMessage = ""
@@ -92,7 +93,7 @@ var _ = Describe("Elasticsearch", func() {
 		f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
 		By("Set DormantDatabase Spec.WipeOut to true")
-		_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+		_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *dbapi.DormantDatabase) *dbapi.DormantDatabase {
 			in.Spec.WipeOut = true
 			return in
 		})
@@ -288,7 +289,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
 				By("Update elasticsearch to set DoNotPause=false")
-				f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+				f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *dbapi.Elasticsearch) *dbapi.Elasticsearch {
 					in.Spec.DoNotPause = false
 					return in
 				})
@@ -314,7 +315,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Check for succeeded snapshot")
-				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(dbapi.SnapshotPhaseSucceeded))
 
 				if !skipSnapshotDataChecking {
 					By("Check for snapshot data")
@@ -506,7 +507,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Check for Succeeded snapshot")
-					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(dbapi.SnapshotPhaseSucceeded))
 
 					if !skipSnapshotDataChecking {
 						By("Check for snapshot data")
@@ -528,7 +529,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Check for Succeeded snapshot")
-					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(dbapi.SnapshotPhaseSucceeded))
 
 					if !skipSnapshotDataChecking {
 						By("Check for snapshot data")
@@ -600,7 +601,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.CreateSnapshot(snapshot)
 
 				By("Check for succeeded snapshot")
-				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(dbapi.SnapshotPhaseSucceeded))
 
 				if !skipSnapshotDataChecking {
 					By("Check for snapshot data")
@@ -614,8 +615,8 @@ var _ = Describe("Elasticsearch", func() {
 
 				By("Create elasticsearch from snapshot")
 				*elasticsearch = *f.CombinedElasticsearch()
-				elasticsearch.Spec.Init = &api.InitSpec{
-					SnapshotSource: &api.SnapshotSourceSpec{
+				elasticsearch.Spec.Init = &dbapi.InitSpec{
+					SnapshotSource: &dbapi.SnapshotSourceSpec{
 						Namespace: snapshot.Namespace,
 						Name:      snapshot.Name,
 					},
@@ -725,7 +726,7 @@ var _ = Describe("Elasticsearch", func() {
 
 				*elasticsearch = *es
 				if usedInitialized {
-					_, ok := elasticsearch.Annotations[api.AnnotationInitialized]
+					_, ok := elasticsearch.Annotations[dbapi.AnnotationInitialized]
 					Expect(ok).Should(BeTrue())
 				}
 			}
@@ -770,7 +771,7 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("With Startup", func() {
 				BeforeEach(func() {
-					elasticsearch.Spec.BackupSchedule = &api.BackupScheduleSpec{
+					elasticsearch.Spec.BackupSchedule = &dbapi.BackupScheduleSpec{
 						CronExpression: "@every 1m",
 						Backend: store.Backend{
 							StorageSecretName: secret.Name,
@@ -810,7 +811,7 @@ var _ = Describe("Elasticsearch", func() {
 				Context("with Dedicated elasticsearch", func() {
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
-						elasticsearch.Spec.BackupSchedule = &api.BackupScheduleSpec{
+						elasticsearch.Spec.BackupSchedule = &dbapi.BackupScheduleSpec{
 							CronExpression: "@every 1m",
 							Backend: store.Backend{
 								StorageSecretName: secret.Name,
@@ -845,8 +846,8 @@ var _ = Describe("Elasticsearch", func() {
 					f.CreateSecret(secret)
 
 					By("Update elasticsearch")
-					_, err = f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
-						in.Spec.BackupSchedule = &api.BackupScheduleSpec{
+					_, err = f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *dbapi.Elasticsearch) *dbapi.Elasticsearch {
+						in.Spec.BackupSchedule = &dbapi.BackupScheduleSpec{
 							CronExpression: "@every 1m",
 							Backend: store.Backend{
 								StorageSecretName: secret.Name,
@@ -924,7 +925,7 @@ var _ = Describe("Elasticsearch", func() {
 				f.CreateSnapshot(snapshot)
 
 				By("Check for succeeded snapshot")
-				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(dbapi.SnapshotPhaseSucceeded))
 
 				if !skipSnapshotDataChecking {
 					By("Check for snapshot data")
@@ -1006,7 +1007,7 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("with TerminationPolicyDelete", func() {
 				BeforeEach(func() {
-					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDelete
+					elasticsearch.Spec.TerminationPolicy = dbapi.TerminationPolicyDelete
 				})
 
 				var shouldRunWithTerminationDelete = func() {
@@ -1059,7 +1060,7 @@ var _ = Describe("Elasticsearch", func() {
 				Context("with Dedicated elasticsearch", func() {
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
-						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDelete
+						elasticsearch.Spec.TerminationPolicy = dbapi.TerminationPolicyDelete
 						snapshot.Spec.DatabaseName = elasticsearch.Name
 					})
 					It("should initialize database successfully", shouldRunWithTerminationDelete)
@@ -1076,7 +1077,7 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("with TerminationPolicyWipeOut", func() {
 				BeforeEach(func() {
-					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+					elasticsearch.Spec.TerminationPolicy = dbapi.TerminationPolicyWipeOut
 				})
 
 				var shouldRunWithTerminationWipeOut = func() {
@@ -1120,7 +1121,7 @@ var _ = Describe("Elasticsearch", func() {
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
 						snapshot.Spec.DatabaseName = elasticsearch.Name
-						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+						elasticsearch.Spec.TerminationPolicy = dbapi.TerminationPolicyWipeOut
 					})
 					It("should initialize database successfully", shouldRunWithTerminationWipeOut)
 
@@ -1305,7 +1306,7 @@ var _ = Describe("Elasticsearch", func() {
 					shouldRunSuccessfully()
 
 					By("Updating Envs")
-					_, _, err := util.PatchElasticsearch(f.ExtClient(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+					_, _, err := util.PatchElasticsearch(f.ExtClient().KubedbV1alpha1(), elasticsearch, func(in *dbapi.Elasticsearch) *dbapi.Elasticsearch {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "CLUSTER_NAME",

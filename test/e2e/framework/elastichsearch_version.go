@@ -3,7 +3,7 @@ package framework
 import (
 	"fmt"
 
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	api "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,7 +32,7 @@ func (i *Invocation) ElasticsearchVersion() *api.ElasticsearchVersion {
 }
 
 func (f *Framework) CreateElasticsearchVersion(obj *api.ElasticsearchVersion) error {
-	_, err := f.extClient.ElasticsearchVersions().Create(obj)
+	_, err := f.extClient.CatalogV1alpha1().ElasticsearchVersions().Create(obj)
 	if err != nil && !kerr.IsAlreadyExists(err) {
 		return err
 	}
@@ -40,5 +40,5 @@ func (f *Framework) CreateElasticsearchVersion(obj *api.ElasticsearchVersion) er
 }
 
 func (f *Framework) DeleteElasticsearchVersion(meta metav1.ObjectMeta) error {
-	return f.extClient.ElasticsearchVersions().Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.extClient.CatalogV1alpha1().ElasticsearchVersions().Delete(meta.Name, &metav1.DeleteOptions{})
 }
