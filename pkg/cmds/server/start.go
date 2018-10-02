@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/appscode/kutil/tools/clientcmd"
 	"github.com/kubedb/elasticsearch/pkg/controller"
 	"github.com/kubedb/elasticsearch/pkg/server"
 	"github.com/spf13/pflag"
@@ -60,7 +61,7 @@ func (o ElasticsearchServerOptions) Config() (*server.ElasticsearchServerConfig,
 	if err := o.RecommendedOptions.ApplyTo(serverConfig, server.Scheme); err != nil {
 		return nil, err
 	}
-	serverConfig.EnableMetrics = true
+	clientcmd.Fix(serverConfig.ClientConfig)
 
 	controllerConfig := controller.NewOperatorConfig(serverConfig.ClientConfig)
 	if err := o.ExtraOptions.ApplyTo(controllerConfig); err != nil {
