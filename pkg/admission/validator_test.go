@@ -248,7 +248,7 @@ func sampleElasticsearch() api.Elasticsearch {
 			Version:     "5.6",
 			Replicas:    types.Int32P(1),
 			DoNotPause:  true,
-			AuthPlugin:  "SearchGuard",
+			AuthPlugin:  api.ElasticsearchAuthPluginSearchGuard,
 			StorageType: api.StorageTypeDurable,
 			Storage: &core.PersistentVolumeClaimSpec{
 				StorageClassName: types.StringP("standard"),
