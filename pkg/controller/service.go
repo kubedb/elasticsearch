@@ -15,6 +15,7 @@ import (
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 var (
@@ -123,13 +124,16 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Selector[NodeRoleClient] = "set"
-		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
-			{
-				Name:       api.ElasticsearchRestPortName,
-				Port:       api.ElasticsearchRestPort,
-				TargetPort: intstr.FromString(api.ElasticsearchRestPortName),
-			},
-		})
+		in.Spec.Ports = ofst.MergeServicePorts(
+			core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
+				{
+					Name:       api.ElasticsearchRestPortName,
+					Port:       api.ElasticsearchRestPort,
+					TargetPort: intstr.FromString(api.ElasticsearchRestPortName),
+				},
+			}),
+			elasticsearch.Spec.ServiceTemplate.Spec.Ports,
+		)
 
 		if elasticsearch.Spec.ServiceTemplate.Spec.ClusterIP != "" {
 			in.Spec.ClusterIP = elasticsearch.Spec.ServiceTemplate.Spec.ClusterIP
