@@ -89,8 +89,8 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 					break
 				}
 				return hookapi.StatusInternalServerError(err)
-			} else if err == nil && obj.Spec.DoNotPause {
-				return hookapi.StatusBadRequest(fmt.Errorf(`elasticsearch "%s" can't be paused. To continue delete, unset spec.doNotPause and retry`, req.Name))
+			} else if err == nil && obj.Spec.TerminationPolicy == api.TerminationPolicyDoNotTerminate {
+				return hookapi.StatusBadRequest(fmt.Errorf(`elasticsearch "%s" can't be paused. To delete, change spec.terminationPolicy`, req.Name))
 			}
 		}
 	default:
@@ -266,9 +266,6 @@ func matchWithDormantDatabase(extClient cs.Interface, elasticsearch *api.Elastic
 	drmnOriginSpec := dormantDb.Spec.Origin.Spec.Elasticsearch
 	drmnOriginSpec.SetDefaults()
 	originalSpec := elasticsearch.Spec
-
-	// Skip checking doNotPause
-	drmnOriginSpec.DoNotPause = originalSpec.DoNotPause
 
 	// Skip checking UpdateStrategy
 	drmnOriginSpec.UpdateStrategy = originalSpec.UpdateStrategy
