@@ -8,6 +8,7 @@ searchguard="/elasticsearch/plugins/search-guard-6"
 
 sync
 
+if [ "$SEARCHGUARD_DISABLED" == false ]; then
 case "$MODE" in
   client)
     # Run sgadmin in client node (with ordinal 0 only)
@@ -21,6 +22,6 @@ case "$MODE" in
 
   *) ;;
 esac
-
+fi
 echo "Ignore running sgadmin..."
 tail -f /fsloader/run_sgadmin.sh

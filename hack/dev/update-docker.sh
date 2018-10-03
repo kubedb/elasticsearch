@@ -78,6 +78,8 @@ dbversions=(
   6.2
   6.3.0
   6.3
+  6.4.0
+  6.4
 )
 
 exporters=(

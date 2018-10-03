@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/appscode/go/arrays"
 	"github.com/appscode/go/log"
 	hookapi "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	meta_util "github.com/appscode/kutil/meta"
@@ -35,6 +36,11 @@ var forbiddenEnvVars = []string{
 	"NODE_NAME",
 	"NODE_MASTER",
 	"NODE_DATA",
+}
+
+var supportedAuthPlugin = []api.ElasticsearchAuthPlugin{
+	api.ElasticsearchAuthPluginNone,
+	api.ElasticsearchAuthPluginSearchGuard,
 }
 
 func (a *ElasticsearchValidator) Resource() (plural schema.GroupVersionResource, singular string) {
@@ -231,6 +237,12 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 
 	if elasticsearch.Spec.TerminationPolicy == "" {
 		return fmt.Errorf(`'spec.terminationPolicy' is missing`)
+	}
+
+	if elasticsearch.Spec.AuthPlugin == "" {
+		return fmt.Errorf(`'spec.authPlugin' is missing`)
+	} else if ok, _ := arrays.Contains(supportedAuthPlugin, elasticsearch.Spec.AuthPlugin); !ok {
+		return fmt.Errorf(`'spec.authPlugin: %s' is not supported`, elasticsearch.Spec.AuthPlugin)
 	}
 
 	monitorSpec := elasticsearch.Spec.Monitor
