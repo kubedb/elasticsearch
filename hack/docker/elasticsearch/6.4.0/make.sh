@@ -7,9 +7,8 @@ source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=elasticsearch
-SUFFIX=v1
 DB_VERSION=6.4.0
-TAG="$DB_VERSION-$SUFFIX"
+TAG="$DB_VERSION"
 YQ_VER=${YQ_VER:-2.1.1}
 
 build() {
