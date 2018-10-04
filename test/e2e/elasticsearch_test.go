@@ -269,9 +269,9 @@ var _ = Describe("Elasticsearch", func() {
 
 		})
 
-		Context("DoNotPause", func() {
+		Context("DoNotTerminate", func() {
 			BeforeEach(func() {
-				elasticsearch.Spec.DoNotPause = true
+				elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDoNotTerminate
 			})
 
 			It("should work successfully", func() {
@@ -288,9 +288,9 @@ var _ = Describe("Elasticsearch", func() {
 				By("Check for Running elasticsearch")
 				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
-				By("Update elasticsearch to set DoNotPause=false")
+				By("Update elasticsearch to set spec.terminationPolicy = Pause")
 				f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
-					in.Spec.DoNotPause = false
+					in.Spec.TerminationPolicy = api.TerminationPolicyPause
 					return in
 				})
 			})

@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 func init() {
@@ -189,17 +190,17 @@ var cases = []struct {
 		false,
 		false,
 	},
-	{"Edit Spec.DoNotPause",
+	{"Edit Spec.TerminationPolicy",
 		requestKind,
 		"foo",
 		"default",
 		admission.Update,
-		editSpecDoNotPause(sampleElasticsearch()),
+		pauseDatabase(sampleElasticsearch()),
 		sampleElasticsearch(),
 		false,
 		true,
 	},
-	{"Delete Elasticsearch when Spec.DoNotPause=true",
+	{"Delete Elasticsearch when Spec.TerminationPolicy=DoNotTerminate",
 		requestKind,
 		"foo",
 		"default",
@@ -209,12 +210,12 @@ var cases = []struct {
 		true,
 		false,
 	},
-	{"Delete Elasticsearch when Spec.DoNotPause=false",
+	{"Delete Elasticsearch when Spec.TerminationPolicy=Pause",
 		requestKind,
 		"foo",
 		"default",
 		admission.Delete,
-		editSpecDoNotPause(sampleElasticsearch()),
+		pauseDatabase(sampleElasticsearch()),
 		api.Elasticsearch{},
 		true,
 		true,
@@ -247,7 +248,6 @@ func sampleElasticsearch() api.Elasticsearch {
 		Spec: api.ElasticsearchSpec{
 			Version:     "5.6",
 			Replicas:    types.Int32P(1),
-			DoNotPause:  true,
 			AuthPlugin:  api.ElasticsearchAuthPluginSearchGuard,
 			StorageType: api.StorageTypeDurable,
 			Storage: &core.PersistentVolumeClaimSpec{
@@ -258,9 +258,13 @@ func sampleElasticsearch() api.Elasticsearch {
 					},
 				},
 			},
-			Resources: &core.ResourceRequirements{
-				Requests: core.ResourceList{
-					core.ResourceMemory: resource.MustParse("128Mi"),
+			PodTemplate: ofst.PodTemplateSpec{
+				Spec: ofst.PodSpec{
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
 				},
 			},
 			Init: &api.InitSpec{
@@ -276,7 +280,7 @@ func sampleElasticsearch() api.Elasticsearch {
 			UpdateStrategy: apps.StatefulSetUpdateStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,
 			},
-			TerminationPolicy: api.TerminationPolicyPause,
+			TerminationPolicy: api.TerminationPolicyDoNotTerminate,
 		},
 	}
 }
@@ -326,7 +330,7 @@ func editSpecInvalidMonitor(old api.Elasticsearch) api.Elasticsearch {
 	return old
 }
 
-func editSpecDoNotPause(old api.Elasticsearch) api.Elasticsearch {
-	old.Spec.DoNotPause = false
+func pauseDatabase(old api.Elasticsearch) api.Elasticsearch {
+	old.Spec.TerminationPolicy = api.TerminationPolicyPause
 	return old
 }

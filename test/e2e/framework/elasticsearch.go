@@ -186,7 +186,7 @@ func (f *Framework) CleanElasticsearch() {
 	for _, e := range elasticsearchList.Items {
 		if _, _, err := util.PatchElasticsearch(f.extClient.KubedbV1alpha1(), &e, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.ObjectMeta.Finalizers = nil
-			in.Spec.DoNotPause = false
+			in.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 			return in
 		}); err != nil {
 			fmt.Printf("error Patching Elasticsearch. error: %v", err)
