@@ -15,7 +15,7 @@ case "$MODE" in
     ordinal="${NODE_NAME##*-}"
     if [ "$ordinal" == "0" ]; then
       /fsloader/run_sgadmin.sh
-      /fsloader/fsloader run --mount-file "$searchguard"/sgconfig/sg_internal_users.yml \
+      exec /fsloader/fsloader run --mount-file "$searchguard"/sgconfig/sg_internal_users.yml \
         --boot-cmd /fsloader/run_sgadmin.sh
     fi
     ;;
