@@ -191,10 +191,6 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 			return fmt.Errorf(`spec.replicas "%v" invalid. Must be greater than zero`, elasticsearch.Spec.Replicas)
 		}
 
-		if elasticsearch.Spec.Storage == nil {
-			return fmt.Errorf(`invalid Elasticsearch: "%v". spec.storage can't be nil`, elasticsearch.Name)
-		}
-
 		if err := amv.ValidateStorage(client, elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage); err != nil {
 			return err
 		}
