@@ -37,6 +37,13 @@ DB_SCHEME=${DB_SCHEME:-https}
 OSM_CONFIG_FILE=/etc/osm/config
 ENABLE_ANALYTICS=${ENABLE_ANALYTICS:-true}
 
+ES_AUTH_NONE="None"
+ES_AUTH_SEARCHGUARD="SearchGuard"
+ES_AUTH_XPACK="X-Pack"
+
+AUTH_PLUGIN=${AUTH_PLUGIN:-$ES_AUTH_SEARCHGUARD}
+ES_URL=${ES_URL:-}
+
 op=$1
 shift
 
@@ -89,6 +96,15 @@ while test $# -gt 0; do
   esac
 done
 
+case "$AUTH_PLUGIN" in
+  "$ES_AUTH_NONE")
+    ES_URL=$(echo "${DB_SCHEME}://${DB_HOST}:${DB_PORT}")
+    ;;
+  "$ES_AUTH_SEARCHGUARD")
+    ES_URL=$(echo "${DB_SCHEME}://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}")
+    ;;
+esac
+
 if [ -n "$DEBUG" ]; then
   env | sort | grep DB_*
   echo ""
@@ -106,7 +122,7 @@ function exit_on_error() {
 
 # Wait for elasticsearch to start
 # ref: http://unix.stackexchange.com/a/5279
-while ! nc "$DB_HOST" "$DB_PORT" -w 30 >/dev/null; do
+while ! nc "$DB_HOST" "$DB_PORT" -w 60 >/dev/null; do
   echo "Waiting... database is not ready yet"
   sleep 5
 done
@@ -117,9 +133,9 @@ case "$op" in
   backup)
     IFS=$','
     for INDEX in $(echo "$DB_INDICES"); do
-      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.mapping.json" --type mapping "$@" || exit_on_error "failed to dump mapping for $INDEX"
-      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.analyzer.json" --type analyzer "$@" || exit_on_error "failed to dump analyzer for $INDEX"
-      elasticdump --quiet --input "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --output "$INDEX.data.json" --type data "$@" || exit_on_error "failed to dump data for $INDEX"
+      elasticdump --quiet --input "$ES_URL/$INDEX" --output "$INDEX.mapping.json" --type mapping "$@" || exit_on_error "failed to dump mapping for $INDEX"
+      elasticdump --quiet --input "$ES_URL/$INDEX" --output "$INDEX.analyzer.json" --type analyzer "$@" || exit_on_error "failed to dump analyzer for $INDEX"
+      elasticdump --quiet --input "$ES_URL/$INDEX" --output "$INDEX.data.json" --type data "$@" || exit_on_error "failed to dump data for $INDEX"
 
       echo "$INDEX" >>indices.txt
     done
@@ -131,9 +147,9 @@ case "$op" in
 
     IFS=$'\n'
     for INDEX in $(cat indices.txt); do
-      elasticdump --quiet --input "$INDEX.analyzer.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type analyzer "$@" || exit_on_error "failed to restore analyzer for $INDEX"
-      elasticdump --quiet --input "$INDEX.mapping.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type mapping "$@" || exit_on_error "failed to restore mapping for $INDEX"
-      elasticdump --quiet --input "$INDEX.data.json" --output "$DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$INDEX" --type data "$@" || exit_on_error "failed to restore data for $INDEX"
+      elasticdump --quiet --input "$INDEX.analyzer.json" --output "$ES_URL/$INDEX" --type analyzer "$@" || exit_on_error "failed to restore analyzer for $INDEX"
+      elasticdump --quiet --input "$INDEX.mapping.json" --output "$ES_URL/$INDEX" --type mapping "$@" || exit_on_error "failed to restore mapping for $INDEX"
+      elasticdump --quiet --input "$INDEX.data.json" --output "$ES_URL/$INDEX" --type data "$@" || exit_on_error "failed to restore data for $INDEX"
     done
     ;;
   *)
