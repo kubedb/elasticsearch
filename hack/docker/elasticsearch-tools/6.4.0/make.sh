@@ -25,7 +25,8 @@ build() {
   mv osm-alpine-amd64 osm
 
   local cmd="docker build --pull -t $DOCKER_REGISTRY/$IMG:$TAG ."
-  echo $cmd; $cmd
+  echo $cmd
+  $cmd
 
   rm osm
   popd

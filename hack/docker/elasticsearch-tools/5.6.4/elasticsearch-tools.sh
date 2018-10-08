@@ -131,8 +131,12 @@ export NODE_TLS_REJECT_UNAUTHORIZED=0
 
 case "$op" in
   backup)
+    echo "Starting backup......"
+
     IFS=$','
     for INDEX in $(echo "$DB_INDICES"); do
+      echo "Dumping index: $INDEX"
+
       elasticdump --quiet --input "$ES_URL/$INDEX" --output "$INDEX.mapping.json" --type mapping "$@" || exit_on_error "failed to dump mapping for $INDEX"
       elasticdump --quiet --input "$ES_URL/$INDEX" --output "$INDEX.analyzer.json" --type analyzer "$@" || exit_on_error "failed to dump analyzer for $INDEX"
       elasticdump --quiet --input "$ES_URL/$INDEX" --output "$INDEX.data.json" --type data "$@" || exit_on_error "failed to dump data for $INDEX"
@@ -140,17 +144,26 @@ case "$op" in
       echo "$INDEX" >>indices.txt
     done
 
+    echo "Pushing data into backed....."
     osm push --enable-analytics="$ENABLE_ANALYTICS" --osmconfig="$OSM_CONFIG_FILE" -c "$DB_BUCKET" "$DB_DATA_DIR" "$DB_FOLDER/$DB_SNAPSHOT" || exit_on_error "failed to push data"
+
+    echo "Backup successful"
     ;;
   restore)
+    echo "Starting restore process....."
+
     osm pull --enable-analytics="$ENABLE_ANALYTICS" --osmconfig="$OSM_CONFIG_FILE" -c "$DB_BUCKET" "$DB_FOLDER/$DB_SNAPSHOT" "$DB_DATA_DIR" || exit_on_error "failed to pull data"
 
     IFS=$'\n'
     for INDEX in $(cat indices.txt); do
+      echo "Restoring index: $INDEX"
+
       elasticdump --quiet --input "$INDEX.analyzer.json" --output "$ES_URL/$INDEX" --type analyzer "$@" || exit_on_error "failed to restore analyzer for $INDEX"
       elasticdump --quiet --input "$INDEX.mapping.json" --output "$ES_URL/$INDEX" --type mapping "$@" || exit_on_error "failed to restore mapping for $INDEX"
       elasticdump --quiet --input "$INDEX.data.json" --output "$ES_URL/$INDEX" --type data "$@" || exit_on_error "failed to restore data for $INDEX"
     done
+
+    echo "Successfully restored"
     ;;
   *)
     (10)
