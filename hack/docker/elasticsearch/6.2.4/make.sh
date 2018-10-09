@@ -24,8 +24,7 @@ build() {
   mv yq_linux_amd64 yq
 
   local cmd="docker build --pull -t $DOCKER_REGISTRY/$IMG:$TAG ."
-  echo $cmd
-  $cmd
+  echo $cmd; $cmd
 
   rm yq
   popd
