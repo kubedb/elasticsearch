@@ -83,6 +83,7 @@ func (c *Controller) ensureStatefulSet(
 						SecurityContext: &core.SecurityContext{
 							Privileged: types.BoolP(true),
 						},
+						Resources: resources,
 					},
 				},
 				elasticsearch.Spec.PodTemplate.Spec.InitContainers...,

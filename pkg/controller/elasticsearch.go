@@ -27,7 +27,7 @@ import (
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
-	if err := validator.ValidateElasticsearch(c.Client, c.ExtClient, elasticsearch); err != nil {
+	if err := validator.ValidateElasticsearch(c.Client, c.ExtClient, elasticsearch, true); err != nil {
 		c.recorder.Event(
 			elasticsearch,
 			core.EventTypeWarning,

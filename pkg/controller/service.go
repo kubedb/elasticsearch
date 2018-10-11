@@ -186,7 +186,7 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 func (c *Controller) ensureStatsService(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	// return if monitoring is not prometheus
 	if elasticsearch.GetMonitoringVendor() != mona.VendorPrometheus {
-		log.Warningln("spec.monitor.agent is not coreos-operator or builtin.")
+		log.Infoln("spec.monitor.agent is not coreos-operator or builtin.")
 		return kutil.VerbUnchanged, nil
 	}
 

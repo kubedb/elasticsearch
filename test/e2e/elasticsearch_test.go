@@ -70,7 +70,7 @@ var _ = Describe("Elasticsearch", func() {
 		}
 
 		By("Check if elasticsearch " + elasticsearch.Name + " exists.")
-		_, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
+		es, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
 		if err != nil {
 			if kerr.IsNotFound(err) {
 				// Elasticsearch was not created. Hence, rest of cleanup is not necessary.
@@ -89,19 +89,21 @@ var _ = Describe("Elasticsearch", func() {
 			Expect(err).NotTo(HaveOccurred())
 		}
 
-		By("Wait for elasticsearch to be paused")
-		f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+		if es.Spec.TerminationPolicy == api.TerminationPolicyPause {
+			By("Wait for elasticsearch to be paused")
+			f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-		By("Set DormantDatabase Spec.WipeOut to true")
-		_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
-			in.Spec.WipeOut = true
-			return in
-		})
-		Expect(err).NotTo(HaveOccurred())
+			By("Set DormantDatabase Spec.WipeOut to true")
+			_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+				in.Spec.WipeOut = true
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
 
-		By("Delete Dormant Database")
-		err = f.DeleteDormantDatabase(elasticsearch.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
+			By("Delete Dormant Database")
+			err = f.DeleteDormantDatabase(elasticsearch.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+		}
 
 		By("Wait for elasticsearch resources to be wipedOut")
 		f.EventuallyWipedOut(elasticsearch.ObjectMeta).Should(Succeed())
@@ -267,33 +269,6 @@ var _ = Describe("Elasticsearch", func() {
 				})
 			})
 
-		})
-
-		Context("DoNotTerminate", func() {
-			BeforeEach(func() {
-				elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDoNotTerminate
-			})
-
-			It("should work successfully", func() {
-				// Create and wait for running Elasticsearch
-				createAndWaitForRunning()
-
-				By("Delete elasticsearch")
-				err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
-				Expect(err).Should(HaveOccurred())
-
-				By("Elasticsearch is not paused. Check for elasticsearch")
-				f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeTrue())
-
-				By("Check for Running elasticsearch")
-				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
-
-				By("Update elasticsearch to set spec.terminationPolicy = Pause")
-				f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
-					in.Spec.TerminationPolicy = api.TerminationPolicyPause
-					return in
-				})
-			})
 		})
 
 		Context("Snapshot", func() {
@@ -933,6 +908,35 @@ var _ = Describe("Elasticsearch", func() {
 				}
 			}
 
+			Context("with TerminationPolicyDoNotTerminate", func() {
+
+				BeforeEach(func() {
+					skipSnapshotDataChecking = true
+					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDoNotTerminate
+				})
+
+				It("should work successfully", func() {
+					// Create and wait for running Elasticsearch
+					createAndWaitForRunning()
+
+					By("Delete elasticsearch")
+					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+					Expect(err).Should(HaveOccurred())
+
+					By("Elasticsearch is not paused. Check for elasticsearch")
+					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					By("Check for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					By("Update elasticsearch to set spec.terminationPolicy = Pause")
+					f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.TerminationPolicy = api.TerminationPolicyPause
+						return in
+					})
+				})
+			})
+
 			Context("with TerminationPolicyPause (default)", func() {
 				var shouldRunWithTerminationPause = func() {
 					shouldRunWithSnapshot()
@@ -1076,6 +1080,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 
 			Context("with TerminationPolicyWipeOut", func() {
+
 				BeforeEach(func() {
 					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 				})
@@ -1108,7 +1113,7 @@ var _ = Describe("Elasticsearch", func() {
 					}
 				}
 
-				It("should run with TerminationPolicyDelete", shouldRunWithTerminationWipeOut)
+				It("should run with TerminationPolicyWipeOut", shouldRunWithTerminationWipeOut)
 
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
@@ -1404,6 +1409,77 @@ var _ = Describe("Elasticsearch", func() {
 					})
 
 					It("should run successfully with given envs", shouldRunWithCustomConfig)
+				})
+			})
+		})
+
+		Context("StorageType ", func() {
+
+			var shouldRunSuccessfully = func() {
+
+				if skipMessage != "" {
+					Skip(skipMessage)
+				}
+
+				// Create Elasticsearch
+				createAndWaitForRunning()
+
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating new indices")
+				err = elasticClient.CreateIndex(2)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking new indices")
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+				elasticClient.Stop()
+				f.Tunnel.Close()
+			}
+
+			Context("Ephemeral", func() {
+
+				Context("Combined Elasticsearch", func() {
+
+					BeforeEach(func() {
+						elasticsearch.Spec.StorageType = api.StorageTypeEphemeral
+						elasticsearch.Spec.Storage = nil
+						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+					})
+
+					It("should run successfully", shouldRunSuccessfully)
+				})
+
+				Context("Dedicated Elasticsearch", func() {
+					BeforeEach(func() {
+						elasticsearch = f.DedicatedElasticsearch()
+						elasticsearch.Spec.StorageType = api.StorageTypeEphemeral
+						elasticsearch.Spec.Topology.Master.Storage = nil
+						elasticsearch.Spec.Topology.Client.Storage = nil
+						elasticsearch.Spec.Topology.Data.Storage = nil
+						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+					})
+
+					It("should run successfully", shouldRunSuccessfully)
+				})
+
+				Context("Termination Policy Pause", func() {
+
+					BeforeEach(func() {
+						elasticsearch.Spec.StorageType = api.StorageTypeEphemeral
+						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyPause
+					})
+
+					It("should reject to create Elasticsearch object", func() {
+
+						By("Creating Elasticsearch: " + elasticsearch.Name)
+						err := f.CreateElasticsearch(elasticsearch)
+						Expect(err).To(HaveOccurred())
+					})
 				})
 			})
 		})

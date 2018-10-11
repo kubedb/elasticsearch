@@ -128,7 +128,7 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 			}
 		}
 		// validate database specs
-		if err = ValidateElasticsearch(a.client, a.extClient, obj.(*api.Elasticsearch)); err != nil {
+		if err = ValidateElasticsearch(a.client, a.extClient, obj.(*api.Elasticsearch), false); err != nil {
 			return hookapi.StatusForbidden(err)
 		}
 	}
@@ -138,7 +138,7 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 
 // ValidateElasticsearch checks if the object satisfies all the requirements.
 // It is not method of Interface, because it is referenced from controller package too.
-func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, elasticsearch *api.Elasticsearch) error {
+func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, elasticsearch *api.Elasticsearch, strictValidation bool) error {
 	if elasticsearch.Spec.Version == "" {
 		return errors.New(`'spec.version' is missing`)
 	}
@@ -207,14 +207,14 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 	}
 
 	databaseSecret := elasticsearch.Spec.DatabaseSecret
-	if databaseSecret != nil {
+	if databaseSecret != nil && strictValidation {
 		if _, err := client.CoreV1().Secrets(elasticsearch.Namespace).Get(databaseSecret.SecretName, metav1.GetOptions{}); err != nil {
 			return err
 		}
 	}
 
 	certificateSecret := elasticsearch.Spec.CertificateSecret
-	if certificateSecret != nil {
+	if certificateSecret != nil && strictValidation {
 		if _, err := client.CoreV1().Secrets(elasticsearch.Namespace).Get(certificateSecret.SecretName, metav1.GetOptions{}); err != nil {
 			return err
 		}
@@ -233,6 +233,10 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 
 	if elasticsearch.Spec.TerminationPolicy == "" {
 		return fmt.Errorf(`'spec.terminationPolicy' is missing`)
+	}
+
+	if elasticsearch.Spec.StorageType == api.StorageTypeEphemeral && elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyPause {
+		return fmt.Errorf(`'spec.terminationPolicy: Pause' can not be used for 'Ephemeral' storage`)
 	}
 
 	if elasticsearch.Spec.AuthPlugin == "" {
