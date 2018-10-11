@@ -1467,10 +1467,11 @@ var _ = Describe("Elasticsearch", func() {
 					It("should run successfully", shouldRunSuccessfully)
 				})
 
-				Context("Termination Policy Pause", func() {
+				Context("With TerminationPolicyPause", func() {
 
 					BeforeEach(func() {
 						elasticsearch.Spec.StorageType = api.StorageTypeEphemeral
+						elasticsearch.Spec.Storage = nil
 						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyPause
 					})
 
