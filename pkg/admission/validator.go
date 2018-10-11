@@ -206,17 +206,31 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 		return err
 	}
 
-	databaseSecret := elasticsearch.Spec.DatabaseSecret
-	if databaseSecret != nil && strictValidation {
-		if _, err := client.CoreV1().Secrets(elasticsearch.Namespace).Get(databaseSecret.SecretName, metav1.GetOptions{}); err != nil {
+	if strictValidation {
+		databaseSecret := elasticsearch.Spec.DatabaseSecret
+		if databaseSecret != nil {
+			if _, err := client.CoreV1().Secrets(elasticsearch.Namespace).Get(databaseSecret.SecretName, metav1.GetOptions{}); err != nil {
+				return err
+			}
+		}
+
+		certificateSecret := elasticsearch.Spec.CertificateSecret
+		if certificateSecret != nil {
+			if _, err := client.CoreV1().Secrets(elasticsearch.Namespace).Get(certificateSecret.SecretName, metav1.GetOptions{}); err != nil {
+				return err
+			}
+		}
+
+		// Check if elasticsearchVersion is deprecated.
+		// If deprecated, return error
+		elasticsearchVersion, err := extClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+		if err != nil {
 			return err
 		}
-	}
 
-	certificateSecret := elasticsearch.Spec.CertificateSecret
-	if certificateSecret != nil && strictValidation {
-		if _, err := client.CoreV1().Secrets(elasticsearch.Namespace).Get(certificateSecret.SecretName, metav1.GetOptions{}); err != nil {
-			return err
+		if elasticsearchVersion.Spec.Deprecated {
+			return fmt.Errorf("elasticsearch %s/%s is using deprecated version %v. Skipped processing", elasticsearch.Namespace,
+				elasticsearch.Name, elasticsearchVersion.Name)
 		}
 	}
 
