@@ -149,6 +149,9 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 	if elasticsearch.Spec.StorageType == "" {
 		return fmt.Errorf(`'spec.storageType' is missing`)
 	}
+	if elasticsearch.Spec.StorageType != api.StorageTypeDurable && elasticsearch.Spec.StorageType != api.StorageTypeEphemeral {
+		return fmt.Errorf(`'spec.storageType' %s is invalid`, elasticsearch.Spec.StorageType)
+	}
 
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
