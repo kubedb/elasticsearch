@@ -34,7 +34,7 @@ import:
 - package: github.com/spf13/cobra
   version: v0.0.3
 - package: github.com/spf13/pflag
-  version: v1.0.1
+  version: v1.0.3
 - package: golang.org/x/crypto
   version: de0752318171da717af4ce24d0a2e8626afaeb11
 - package: gopkg.in/olivere/elastic.v5
