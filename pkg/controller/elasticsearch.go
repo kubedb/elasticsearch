@@ -35,7 +35,9 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			err.Error(),
 		)
 		log.Errorln(err)
-		return nil // user error so just record error and don't retry.
+		// stop Scheduler in case there is any.
+		c.cronController.StopBackupScheduling(elasticsearch.ObjectMeta)
+		return nil
 	}
 
 	// Delete Matching DormantDatabase if exists any
@@ -230,9 +232,21 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 }
 
 func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) {
+	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		c.recorder.Eventf(
+			elasticsearch,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToSchedule,
+			"Failed to get ElasticsearchVersion for %v. Reason: %v",
+			elasticsearch.Spec.Version, err,
+		)
+		log.Errorln(err)
+		return
+	}
 	// Setup Schedule backup
 	if elasticsearch.Spec.BackupSchedule != nil {
-		err := c.cronController.ScheduleBackup(elasticsearch, elasticsearch.ObjectMeta, elasticsearch.Spec.BackupSchedule)
+		err := c.cronController.ScheduleBackup(elasticsearch, elasticsearch.ObjectMeta, elasticsearch.Spec.BackupSchedule, elasticsearchVersion)
 		if err != nil {
 			c.recorder.Eventf(
 				elasticsearch,
