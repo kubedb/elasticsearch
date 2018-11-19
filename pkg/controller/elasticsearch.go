@@ -42,15 +42,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 
 	// Delete Matching DormantDatabase if exists any
 	if err := c.deleteMatchingDormantDatabase(elasticsearch); err != nil {
-		c.recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			`Failed to delete dormant Database : "%v". Reason: %v`,
-			elasticsearch.Name,
-			err,
-		)
-		return err
+		return fmt.Errorf(`failed to delete dormant Database : "%v". Reason: %v`, elasticsearch.Name, err)
 	}
 
 	if elasticsearch.Status.Phase == "" {
@@ -59,12 +51,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			return in
 		}, apis.EnableStatusSubresource)
 		if err != nil {
-			c.recorder.Eventf(
-				elasticsearch,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToUpdate,
-				err.Error(),
-			)
 			return err
 		}
 		elasticsearch.Status = es.Status
@@ -73,15 +59,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	// create Governing Service
 	governingService := c.GoverningService
 	if err := c.CreateGoverningService(governingService, elasticsearch.Namespace); err != nil {
-		c.recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			`Failed to create ServiceAccount: "%v". Reason: %v`,
-			governingService,
-			err,
-		)
-		return err
+		return fmt.Errorf(`failed to create Service: "%v". Reason: %v`, governingService, err)
 	}
 
 	// ensure database Service
@@ -110,7 +88,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			eventer.EventReasonSuccessful,
 			"Successfully patched Elasticsearch",
 		)
-
 	}
 
 	if _, err := meta_util.GetString(elasticsearch.Annotations, api.AnnotationInitialized); err == kutil.ErrNotFound &&
@@ -144,19 +121,21 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		return in
 	}, apis.EnableStatusSubresource)
 	if err != nil {
-		c.recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToUpdate,
-			err.Error(),
-		)
-
 		return err
 	}
 	elasticsearch.Status = es.Status
 
 	// Ensure Schedule backup
-	c.ensureBackupScheduler(elasticsearch)
+	if err := c.ensureBackupScheduler(elasticsearch); err != nil {
+		c.recorder.Eventf(
+			elasticsearch,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToSchedule,
+			err.Error(),
+		)
+		log.Errorln(err)
+		// Don't return error. Continue processing rest.
+	}
 
 	// ensure StatsService for desired monitoring
 	if _, err := c.ensureStatsService(elasticsearch); err != nil {
@@ -167,7 +146,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			"Failed to manage monitoring system. Reason: %v",
 			err,
 		)
-
 		log.Errorln(err)
 		return nil
 	}
@@ -180,9 +158,10 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 			"Failed to manage monitoring system. Reason: %v",
 			err,
 		)
-		log.Errorln(err)
+		log.Errorf("failed to manage monitoring system. Reason: %v", err)
 		return nil
 	}
+
 	return nil
 }
 
@@ -231,35 +210,21 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 	return vt, nil
 }
 
-func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) {
+func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) error {
 	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
 	if err != nil {
-		c.recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToSchedule,
-			"Failed to get ElasticsearchVersion for %v. Reason: %v",
-			elasticsearch.Spec.Version, err,
-		)
-		log.Errorln(err)
-		return
+		return fmt.Errorf("failed to get ElasticsearchVersion for %v. Reason: %v", elasticsearch.Spec.Version, err)
 	}
 	// Setup Schedule backup
 	if elasticsearch.Spec.BackupSchedule != nil {
-		err := c.cronController.ScheduleBackup(elasticsearch, elasticsearch.ObjectMeta, elasticsearch.Spec.BackupSchedule, elasticsearchVersion)
+		err := c.cronController.ScheduleBackup(elasticsearch, elasticsearch.Spec.BackupSchedule, elasticsearchVersion)
 		if err != nil {
-			c.recorder.Eventf(
-				elasticsearch,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToSchedule,
-				"Failed to schedule snapshot. Reason: %v",
-				err,
-			)
-			log.Errorln(err)
+			return fmt.Errorf("failed to schedule snapshot. Reason: %v", err)
 		}
 	} else {
 		c.cronController.StopBackupScheduling(elasticsearch.ObjectMeta)
 	}
+	return nil
 }
 
 func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
@@ -268,13 +233,6 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 		return in
 	}, apis.EnableStatusSubresource)
 	if err != nil {
-		c.recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToUpdate,
-			err.Error(),
-		)
-
 		return err
 	}
 	elasticsearch.Status = es.Status
@@ -315,6 +273,7 @@ func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
 	if err := c.SetJobOwnerReference(snapshot, job); err != nil {
 		return err
 	}
+
 	return nil
 }
 

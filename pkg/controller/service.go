@@ -33,15 +33,7 @@ func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) (kutil.Verb
 	// create database Service
 	vt1, err := c.createService(elasticsearch)
 	if err != nil {
-		c.recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			"Failed to createOrPatch Service. Reason: %v",
-			err,
-		)
-
-		return kutil.VerbUnchanged, err
+		return kutil.VerbUnchanged, fmt.Errorf("failed to createOrPatch Service. Reason: %v", err)
 	} else if vt1 != kutil.VerbUnchanged {
 		c.recorder.Eventf(
 			elasticsearch,
@@ -61,15 +53,7 @@ func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) (kutil.Verb
 	// create database Service
 	vt2, err := c.createMasterService(elasticsearch)
 	if err != nil {
-		c.recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			"Failed to createOrPatch Service. Reason: %v",
-			err,
-		)
-
-		return kutil.VerbUnchanged, err
+		return kutil.VerbUnchanged, fmt.Errorf("failed to createOrPatch Service. Reason: %v", err)
 	} else if vt2 != kutil.VerbUnchanged {
 		c.recorder.Eventf(
 			elasticsearch,
@@ -220,14 +204,7 @@ func (c *Controller) ensureStatsService(elasticsearch *api.Elasticsearch) (kutil
 		return in
 	})
 	if err != nil {
-		c.recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			"Failed to reconcile stats service. Reason: %v",
-			err,
-		)
-		return kutil.VerbUnchanged, err
+		return kutil.VerbUnchanged, fmt.Errorf("failed to reconcile stats service. Reason: %v", err)
 	} else if vt != kutil.VerbUnchanged {
 		c.recorder.Eventf(
 			elasticsearch,
