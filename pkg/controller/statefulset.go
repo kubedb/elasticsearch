@@ -141,7 +141,7 @@ func (c *Controller) ensureStatefulSet(
 	if vt == kutil.VerbCreated || vt == kutil.VerbPatched {
 		// Check StatefulSet Pod status
 		if err := c.CheckStatefulSetPodStatus(statefulSet); err != nil {
-			return kutil.VerbUnchanged, fmt.Errorf(`Failed to be running after StatefulSet %v. Reason: %v`, vt, err)
+			return kutil.VerbUnchanged, err
 		}
 		c.recorder.Eventf(
 			elasticsearch,
@@ -363,7 +363,7 @@ func (c *Controller) checkStatefulSet(elasticsearch *api.Elasticsearch, name str
 
 	if statefulSet.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch ||
 		statefulSet.Labels[api.LabelDatabaseName] != elasticsearchName {
-		return fmt.Errorf(`intended statefulSet "%v" already exists`, name)
+		return fmt.Errorf(`intended statefulSet "%v/%v" already exists`, elasticsearch.Namespace, name)
 	}
 
 	return nil

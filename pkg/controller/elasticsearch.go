@@ -42,7 +42,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 
 	// Delete Matching DormantDatabase if exists any
 	if err := c.deleteMatchingDormantDatabase(elasticsearch); err != nil {
-		return fmt.Errorf(`failed to delete dormant Database : "%v". Reason: %v`, elasticsearch.Name, err)
+		return fmt.Errorf(`failed to delete dormant Database : "%v/%v". Reason: %v`, elasticsearch.Namespace, elasticsearch.Name, err)
 	}
 
 	if elasticsearch.Status.Phase == "" {
@@ -59,7 +59,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	// create Governing Service
 	governingService := c.GoverningService
 	if err := c.CreateGoverningService(governingService, elasticsearch.Namespace); err != nil {
-		return fmt.Errorf(`failed to create Service: "%v". Reason: %v`, governingService, err)
+		return fmt.Errorf(`failed to create Service: "%v/%v". Reason: %v`, elasticsearch.Namespace, governingService, err)
 	}
 
 	// ensure database Service
@@ -110,7 +110,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		}
 		err = c.initialize(elasticsearch)
 		if err != nil {
-			return fmt.Errorf("failed to complete initialization. Reason: %v", err)
+			return fmt.Errorf(`failed to complete initialization for "%v/%v". Reason: %v`, elasticsearch.Namespace, elasticsearch.Name, err)
 		}
 		return nil
 	}
@@ -213,13 +213,13 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) error {
 	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get ElasticsearchVersion for %v. Reason: %v", elasticsearch.Spec.Version, err)
+		return fmt.Errorf("failed to get ElasticsearchVersion %v for %v/%v. Reason: %v", elasticsearch.Spec.Version, elasticsearch.Namespace, elasticsearch.Name, err)
 	}
 	// Setup Schedule backup
 	if elasticsearch.Spec.BackupSchedule != nil {
 		err := c.cronController.ScheduleBackup(elasticsearch, elasticsearch.Spec.BackupSchedule, elasticsearchVersion)
 		if err != nil {
-			return fmt.Errorf("failed to schedule snapshot. Reason: %v", err)
+			return fmt.Errorf("failed to schedule snapshot for %v/%v. Reason: %v", elasticsearch.Namespace, elasticsearch.Name, err)
 		}
 	} else {
 		c.cronController.StopBackupScheduling(elasticsearch.ObjectMeta)

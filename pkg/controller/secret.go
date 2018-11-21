@@ -77,7 +77,7 @@ func (c *Controller) findCertSecret(elasticsearch *api.Elasticsearch) (*core.Sec
 
 	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch ||
 		secret.Labels[api.LabelDatabaseName] != elasticsearch.Name {
-		return nil, fmt.Errorf(`intended secret "%v" already exists`, name)
+		return nil, fmt.Errorf(`intended secret "%v/%v" already exists`, elasticsearch.Namespace, name)
 	}
 
 	return secret, nil
@@ -182,7 +182,7 @@ func (c *Controller) findDatabaseSecret(elasticsearch *api.Elasticsearch) (*core
 
 	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch ||
 		secret.Labels[api.LabelDatabaseName] != elasticsearch.Name {
-		return nil, fmt.Errorf(`intended secret "%v" already exists`, name)
+		return nil, fmt.Errorf(`intended secret "%v/%v" already exists`, elasticsearch.Namespace, name)
 	}
 
 	return secret, nil
