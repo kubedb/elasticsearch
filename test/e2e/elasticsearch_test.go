@@ -46,7 +46,7 @@ var _ = Describe("Elasticsearch", func() {
 		elasticsearchVersion = f.ElasticsearchVersion()
 		garbageElasticsearch = new(api.ElasticsearchList)
 		snapshot = f.Snapshot()
-		secret = new(core.Secret)
+		secret = nil
 		skipMessage = ""
 		skipSnapshotDataChecking = true
 	})
@@ -62,6 +62,13 @@ var _ = Describe("Elasticsearch", func() {
 
 		By("Wait for Running elasticsearch")
 		f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+
+		By("Wait for AppBinding to create")
+		f.EventuallyAppBinding(elasticsearch.ObjectMeta).Should(BeTrue())
+
+		By("Check valid AppBinding Specs")
+		err := f.CheckAppBindingSpec(elasticsearch.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
 	}
 
 	var deleteTestResource = func() {
@@ -125,7 +132,8 @@ var _ = Describe("Elasticsearch", func() {
 		}
 
 		if secret != nil {
-			f.DeleteSecret(secret.ObjectMeta)
+			err := f.DeleteSecret(secret.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		}
 
 		if snapshotPVC != nil {
@@ -338,7 +346,8 @@ var _ = Describe("Elasticsearch", func() {
 						shouldTakeSnapshot()
 
 						By("Deleting Snapshot")
-						f.DeleteSnapshot(snapshot.ObjectMeta)
+						err := f.DeleteSnapshot(snapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
 
 						By("Waiting Snapshot to be deleted")
 						f.EventuallySnapshot(snapshot.ObjectMeta).Should(BeFalse())
@@ -554,7 +563,8 @@ var _ = Describe("Elasticsearch", func() {
 				createAndWaitForRunning()
 
 				By("Create Secret")
-				f.CreateSecret(secret)
+				err := f.CreateSecret(secret)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Check for Elastic client")
 				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -573,7 +583,8 @@ var _ = Describe("Elasticsearch", func() {
 				f.Tunnel.Close()
 
 				By("Create Snapshot")
-				f.CreateSnapshot(snapshot)
+				err = f.CreateSnapshot(snapshot)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Check for succeeded snapshot")
 				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
@@ -680,7 +691,8 @@ var _ = Describe("Elasticsearch", func() {
 				createAndWaitForRunning()
 
 				By("Delete elasticsearch")
-				f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+				err := f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Wait for elasticsearch to be paused")
 				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
@@ -737,7 +749,8 @@ var _ = Describe("Elasticsearch", func() {
 
 		Context("SnapshotScheduler", func() {
 			AfterEach(func() {
-				f.DeleteSecret(secret.ObjectMeta)
+				err := f.DeleteSecret(secret.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			BeforeEach(func() {
@@ -765,7 +778,8 @@ var _ = Describe("Elasticsearch", func() {
 					createAndWaitForRunning()
 
 					By("Create Secret")
-					f.CreateSecret(secret)
+					err := f.CreateSecret(secret)
+					Expect(err).NotTo(HaveOccurred())
 
 					By("Count multiple Snapshot")
 					f.EventuallySnapshotCount(elasticsearch.ObjectMeta).Should(matcher.MoreThan(3))
@@ -818,7 +832,8 @@ var _ = Describe("Elasticsearch", func() {
 					createAndWaitForRunning()
 
 					By("Create Secret")
-					f.CreateSecret(secret)
+					err := f.CreateSecret(secret)
+					Expect(err).NotTo(HaveOccurred())
 
 					By("Update elasticsearch")
 					_, err = f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -878,7 +893,8 @@ var _ = Describe("Elasticsearch", func() {
 				createAndWaitForRunning()
 
 				By("Create Secret")
-				f.CreateSecret(secret)
+				err := f.CreateSecret(secret)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Check for Elastic client")
 				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -897,7 +913,8 @@ var _ = Describe("Elasticsearch", func() {
 				f.Tunnel.Close()
 
 				By("Create Snapshot")
-				f.CreateSnapshot(snapshot)
+				err = f.CreateSnapshot(snapshot)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Check for succeeded snapshot")
 				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
@@ -930,10 +947,11 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Update elasticsearch to set spec.terminationPolicy = Pause")
-					f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+					_, err := f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
 						in.Spec.TerminationPolicy = api.TerminationPolicyPause
 						return in
 					})
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 
@@ -1377,7 +1395,8 @@ var _ = Describe("Elasticsearch", func() {
 
 				AfterEach(func() {
 					By("Deleting configMap: " + userConfig.Name)
-					f.DeleteConfigMap(userConfig.ObjectMeta)
+					err := f.DeleteConfigMap(userConfig.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("should use config provided in config files", shouldRunWithCustomConfig)
@@ -1398,7 +1417,8 @@ var _ = Describe("Elasticsearch", func() {
 
 				AfterEach(func() {
 					By("Deleting configMap: " + userConfig.Name)
-					f.DeleteConfigMap(userConfig.ObjectMeta)
+					err := f.DeleteConfigMap(userConfig.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("should use config provided in config files", shouldRunWithCustomConfig)
