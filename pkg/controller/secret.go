@@ -325,7 +325,7 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 }
 
 // This is done to fix 0.8.0 -> 0.9.0 upgrade due to
-// https://github.com/kubedb/elasticsearch/pull/179/files#diff-10ddaf307bbebafda149db10a28b9c24R20 commit
+// https://github.com/kubedb/elasticsearch/pull/181/files#diff-10ddaf307bbebafda149db10a28b9c24R23 commit
 func (c *Controller) upgradeDatabaseSecret(elasticsearch *api.Elasticsearch) error {
 	meta := metav1.ObjectMeta{
 		Name:      elasticsearch.OffshootName() + "-auth",
