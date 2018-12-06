@@ -328,7 +328,7 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 // https://github.com/kubedb/elasticsearch/pull/181/files#diff-10ddaf307bbebafda149db10a28b9c24R23 commit
 func (c *Controller) upgradeDatabaseSecret(elasticsearch *api.Elasticsearch) error {
 	meta := metav1.ObjectMeta{
-		Name:      elasticsearch.OffshootName() + "-auth",
+		Name:      elasticsearch.Spec.DatabaseSecret.SecretName,
 		Namespace: elasticsearch.Namespace,
 	}
 
