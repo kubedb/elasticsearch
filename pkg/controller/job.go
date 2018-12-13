@@ -207,6 +207,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 
 	indices, err := c.getAllIndices(elasticsearch)
 	if err != nil {
+		fmt.Println("Error in getAllIndices: ", err)
 		return nil, err
 	}
 
