@@ -51,7 +51,6 @@ func (c *Controller) getAllIndices(elasticsearch *api.Elasticsearch) (string, er
 		defer client.Stop()
 		indices, err = client.GetIndexNames()
 		if err != nil {
-			fmt.Println("Error in GetIndexNames: ", err)
 			log.Warningln(err)
 			reason = err
 			return false, nil
