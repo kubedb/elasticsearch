@@ -10,6 +10,15 @@ import (
 	appcat_cs "kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1"
 )
 
+var (
+	DockerRegistry     = "kubedbci"
+	SelfHostedOperator = false
+	DBCatalogName      = "6.2-v1"
+	DBVersion          = "6.2-v1"
+	DBToolsTag         = "6.2-v2"
+	ExporterTag        = "1.0.2"
+)
+
 type Framework struct {
 	restConfig       *rest.Config
 	kubeClient       kubernetes.Interface

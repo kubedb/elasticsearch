@@ -2,7 +2,7 @@
 set -xeou pipefail
 
 IMG=elasticsearch-tools
-SUFFIX=v1
+SUFFIX=v2
 TAG="6.3-$SUFFIX"
 PATCH="6.3.0-$SUFFIX"
 

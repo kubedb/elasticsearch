@@ -26,17 +26,17 @@ import (
 )
 
 var (
-	storageClass string
+	storageClass = "standard"
 )
 
 func init() {
 	scheme.AddToScheme(clientSetScheme.Scheme)
 
-	flag.StringVar(&storageClass, "storageclass", "standard", "Kubernetes StorageClass name")
-	flag.StringVar(&framework.DBVersion, "es-version", "5.6.4-v1", "Elasticsearch version")
-	flag.StringVar(&framework.DockerRegistry, "docker-registry", "kubedbci", "User provided docker repository")
-	flag.StringVar(&framework.ExporterTag, "exporter-tag", "1.0.2", "Tag of kubedb/operator used as exporter")
-	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", false, "Enable this for provided controller")
+	flag.StringVar(&storageClass, "storageclass", storageClass, "Kubernetes StorageClass name")
+	flag.StringVar(&framework.DBVersion, "es-version", framework.DBVersion, "Elasticsearch version")
+	flag.StringVar(&framework.DockerRegistry, "docker-registry", framework.DockerRegistry, "User provided docker repository")
+	flag.StringVar(&framework.ExporterTag, "exporter-tag", framework.ExporterTag, "Tag of kubedb/operator used as exporter")
+	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", framework.SelfHostedOperator, "Enable this for provided controller")
 }
 
 const (
