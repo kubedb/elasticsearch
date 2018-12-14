@@ -66,7 +66,7 @@ func (f *Framework) EventuallySnapshotPhase(meta metav1.ObjectMeta) GomegaAsyncA
 			Expect(err).NotTo(HaveOccurred())
 			return snapshot.Status.Phase
 		},
-		time.Minute*5,
+		time.Minute*6,
 		time.Second*5,
 	)
 }

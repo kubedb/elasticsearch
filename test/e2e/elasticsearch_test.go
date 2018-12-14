@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	core_util "github.com/appscode/kutil/core/v1"
 	exec_util "github.com/appscode/kutil/tools/exec"
 	catalog "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
@@ -568,6 +569,60 @@ var _ = Describe("Elasticsearch", func() {
 						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
 					}
 				})
+			})
+
+			Context("Invalid Database Secret", func() {
+
+				BeforeEach(func() {
+					skipSnapshotDataChecking = true
+					secret = f.SecretForLocalBackend()
+					snapshot.Spec.StorageSecretName = secret.Name
+					snapshot.Spec.Local = &store.LocalSpec{
+						MountPath: "/repo",
+						VolumeSource: core.VolumeSource{
+							EmptyDir: &core.EmptyDirVolumeSource{},
+						},
+					}
+				})
+
+				Context("In Local Backend", func() {
+
+					It("should fail to take Snapshot", func() {
+
+						By("Checking Snapshot succeed with valid database secret")
+						shouldTakeSnapshot()
+
+						By("Deleting succeeded snapshot")
+						err := f.DeleteSnapshot(snapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Patching Database Secret to invalid one")
+						es, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						dbSecret, err := f.KubeClient().CoreV1().Secrets(es.Namespace).Get(es.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
+						_, _, err = core_util.PatchSecret(f.KubeClient(), dbSecret, func(in *core.Secret) *core.Secret {
+							in.StringData = map[string]string{
+								"ADMIN_PASSWORD": "invalid",
+							}
+							return in
+						})
+
+						By("Create Snapshot")
+						err = f.CreateSnapshot(snapshot)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Check for failed snapshot")
+						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseFailed))
+
+						By("Check for failure reason: Unauthorized")
+						snap, err := f.GetSnapshot(snapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(snap.Status.Reason).Should(ContainSubstring("Unauthorized"))
+					})
+				})
+
 			})
 		})
 
