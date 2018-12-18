@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"fmt"
 	"os"
+	"unsafe"
 
 	core_util "github.com/appscode/kutil/core/v1"
 	exec_util "github.com/appscode/kutil/tools/exec"
@@ -147,6 +148,13 @@ var _ = Describe("Elasticsearch", func() {
 		err = f.DeleteElasticsearchVersion(elasticsearchVersion.ObjectMeta)
 		if err != nil && !kerr.IsNotFound(err) {
 			Expect(err).NotTo(HaveOccurred())
+		}
+	})
+
+	// if secret is empty (no .env file) then skip
+	JustBeforeEach(func() {
+		if unsafe.Sizeof(secret) == 0 {
+			skipMessage = "Skipping. Reason: Secret is empty."
 		}
 	})
 
