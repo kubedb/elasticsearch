@@ -129,6 +129,7 @@ func (c *Controller) ensureStatefulSet(
 
 		in = upsertCertificate(in, elasticsearch.Spec.CertificateSecret.SecretName, isClient, elasticsearch.Spec.EnableSSL)
 		in = upsertDataVolume(in, elasticsearch.Spec.StorageType, pvcSpec)
+		in = upsertTemporaryVolume(in)
 		in.Spec.UpdateStrategy = elasticsearch.Spec.UpdateStrategy
 
 		return in
@@ -675,6 +676,28 @@ func upsertDataVolume(statefulSet *apps.StatefulSet, st api.StorageType, pvcSpec
 				statefulSet.Spec.VolumeClaimTemplates = core_util.UpsertVolumeClaim(statefulSet.Spec.VolumeClaimTemplates, claim)
 			}
 
+			return statefulSet
+		}
+	}
+	return statefulSet
+}
+
+func upsertTemporaryVolume(statefulSet *apps.StatefulSet) *apps.StatefulSet {
+	for i, container := range statefulSet.Spec.Template.Spec.Containers {
+		if container.Name == api.ResourceSingularElasticsearch {
+			volumeMount := core.VolumeMount{
+				Name:      "temp",
+				MountPath: "/tmp",
+			}
+			statefulSet.Spec.Template.Spec.Containers[i].VolumeMounts = core_util.UpsertVolumeMount(container.VolumeMounts, volumeMount)
+
+			volume := core.Volume{
+				Name: "temp",
+				VolumeSource: core.VolumeSource{
+					EmptyDir: &core.EmptyDirVolumeSource{},
+				},
+			}
+			statefulSet.Spec.Template.Spec.Volumes = core_util.UpsertVolume(statefulSet.Spec.Template.Spec.Volumes, volume)
 			return statefulSet
 		}
 	}
