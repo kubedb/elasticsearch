@@ -39,6 +39,6 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es.ESClient, error
 		return nil, err
 	}
 	url := fmt.Sprintf("%v://127.0.0.1:%d", db.GetConnectionScheme(), f.Tunnel.Local)
-	c := controller.New(nil, f.kubeClient, nil, nil, nil, nil, nil, nil, amc.Config{}, nil)
-	return es.GetElasticClient(c.Client, db, url)
+	c := controller.New(nil, f.kubeClient, nil, f.extClient, nil, nil, nil, nil, amc.Config{}, nil)
+	return es.GetElasticClient(c.Client, c.ExtClient, db, url)
 }

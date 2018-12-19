@@ -56,7 +56,7 @@ func (c *Controller) ensureStatefulSet(
 		return kutil.VerbUnchanged, rerr
 	}
 
-	searchGuard := string(elasticsearch.Spec.Version[0])
+	searchGuard := string(elasticsearchVersion.Spec.Version[0])
 
 	statefulSet, vt, err := app_util.CreateOrPatchStatefulSet(c.Client, statefulSetMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
 		in.Labels = core_util.UpsertMap(labels, elasticsearch.OffshootLabels())

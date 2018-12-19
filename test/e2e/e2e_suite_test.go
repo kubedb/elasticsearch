@@ -35,6 +35,7 @@ func init() {
 	flag.StringVar(&storageClass, "storageclass", storageClass, "Kubernetes StorageClass name")
 	flag.StringVar(&framework.DockerRegistry, "docker-registry", framework.DockerRegistry, "User provided docker repository")
 	flag.StringVar(&framework.DBVersion, "es-version", framework.DBVersion, "Elasticsearch version")
+	flag.StringVar(&framework.DBCatalogName, "es-catalog", framework.DBCatalogName, "ElasticsearchVersion crd name")
 	flag.StringVar(&framework.DBToolsTag, "es-tools", framework.DBToolsTag, "Tools image to use for backup and recovery")
 	flag.StringVar(&framework.ExporterTag, "exporter-tag", framework.ExporterTag, "Tag of kubedb/operator used as exporter")
 	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", framework.SelfHostedOperator, "Enable this for provided controller")
