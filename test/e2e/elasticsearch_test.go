@@ -900,7 +900,6 @@ var _ = Describe("Elasticsearch", func() {
 								},
 							},
 						}
-						snapshot.Spec.DatabaseName = elasticsearch.Name
 					})
 					It("should run schedular successfully", shouldStartupSchedular)
 
