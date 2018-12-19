@@ -32,14 +32,30 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 		in.Annotations = db.Spec.ServiceTemplate.Annotations
 
 		in.Spec.Type = appmeta.Type()
+		in.Spec.ClientConfig.Service = &appcat.ServiceReference{
+			Scheme: db.GetConnectionScheme(),
+			Name:   db.ServiceName(),
+			Port:   defaultClientPort.Port,
+		}
+		in.Spec.ClientConfig.InsecureSkipTLSVerify = false
+
 		in.Spec.Secret = &core.LocalObjectReference{
 			Name: db.Spec.DatabaseSecret.SecretName,
 		}
-		in.Spec.ClientConfig.Service = &appcat.ServiceReference{
-			Name: db.ServiceName(),
-			Port: defaultClientPort.Port,
+		in.Spec.SecretTransforms = []appcat.SecretTransform{
+			{
+				RenameKey: &appcat.RenameKeyTransform{
+					From: KeyAdminUserName,
+					To:   appcat.KeyUsername,
+				},
+			},
+			{
+				RenameKey: &appcat.RenameKeyTransform{
+					From: KeyAdminPassword,
+					To:   appcat.KeyPassword,
+				},
+			},
 		}
-		in.Spec.ClientConfig.InsecureSkipTLSVerify = true
 
 		return in
 	})
