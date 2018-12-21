@@ -5,6 +5,7 @@ import (
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/pkg/eventer"
+	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
@@ -26,6 +27,19 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 		return kutil.VerbUnchanged, err
 	}
 
+	var caBundle []byte
+	if db.Spec.EnableSSL {
+		certSecret, err := c.Client.CoreV1().Secrets(db.Namespace).Get(db.Spec.CertificateSecret.SecretName, metav1.GetOptions{})
+		if err != nil {
+			return kutil.VerbUnchanged, errors.Wrapf(err, "failed to read certificate secret for Elasticsearch %s/%s", db.Namespace, db.Name)
+		}
+		if v, ok := certSecret.Data["root.pem"]; !ok {
+			return kutil.VerbUnchanged, errors.Errorf("root.pem is missing in certificate secret for Elasticsearch %s/%s", db.Namespace, db.Name)
+		} else {
+			caBundle = v
+		}
+	}
+
 	_, vt, err := appcat_util.CreateOrPatchAppBinding(c.AppCatalogClient, meta, func(in *appcat.AppBinding) *appcat.AppBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Labels = db.OffshootLabels()
@@ -37,6 +51,7 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 			Name:   db.ServiceName(),
 			Port:   defaultClientPort.Port,
 		}
+		in.Spec.ClientConfig.CABundle = caBundle
 		in.Spec.ClientConfig.InsecureSkipTLSVerify = false
 
 		in.Spec.Secret = &core.LocalObjectReference{
