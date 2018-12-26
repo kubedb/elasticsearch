@@ -1,4 +1,4 @@
-package pkcs12
+package keytool
 
 import (
 	"crypto/x509"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/appscode/go/ioutil"
 	"github.com/kubedb/elasticsearch/third_party/golang/crypto/pkcs12"
-	keystorego "github.com/pavel-v-chernykh/keystore-go"
+	keystore "github.com/pavel-v-chernykh/keystore-go"
 	"github.com/pkg/errors"
 )
 
@@ -43,18 +43,18 @@ func PKCS12ToJKS(sourceFile, destinationFile, pass, alias string) error {
 		return errors.Wrapf(err, "failed to marshal pvtKeys to PKCS8PrivateKey.")
 	}
 
-	certChain := []keystorego.Certificate{}
+	var certChain []keystore.Certificate
 	for _, cert := range certs {
-		certChain = append(certChain, keystorego.Certificate{
+		certChain = append(certChain, keystore.Certificate{
 			Type:    defaultCertificateType,
 			Content: cert.Raw,
 		})
 	}
 
 	// create keystore
-	ks := keystorego.KeyStore{
-		alias: &keystorego.PrivateKeyEntry{
-			Entry: keystorego.Entry{
+	ks := keystore.KeyStore{
+		alias: &keystore.PrivateKeyEntry{
+			Entry: keystore.Entry{
 				CreationDate: time.Now(),
 			},
 			PrivKey:   keyBytes,
@@ -81,26 +81,26 @@ func PEMToJKS(sourceFile, destinationFile, pass, alias string) error {
 	// decode .pem file content
 	decodedContent, _ := pem.Decode([]byte(srcContent))
 
-	var ks keystorego.KeyStore
+	var ks keystore.KeyStore
 
 	// create keystore based on content type
 	switch decodedContent.Type {
 	case contentTypePrivateKey:
-		ks = keystorego.KeyStore{
-			alias: &keystorego.PrivateKeyEntry{
-				Entry: keystorego.Entry{
+		ks = keystore.KeyStore{
+			alias: &keystore.PrivateKeyEntry{
+				Entry: keystore.Entry{
 					CreationDate: time.Now(),
 				},
 				PrivKey: decodedContent.Bytes,
 			},
 		}
 	case contentTypeCertificate:
-		ks = keystorego.KeyStore{
-			alias: &keystorego.TrustedCertificateEntry{
-				Entry: keystorego.Entry{
+		ks = keystore.KeyStore{
+			alias: &keystore.TrustedCertificateEntry{
+				Entry: keystore.Entry{
 					CreationDate: time.Now(),
 				},
-				Certificate: keystorego.Certificate{
+				Certificate: keystore.Certificate{
 					Type:    defaultCertificateType,
 					Content: decodedContent.Bytes,
 				},
@@ -120,15 +120,12 @@ func PEMToJKS(sourceFile, destinationFile, pass, alias string) error {
 	return nil
 }
 
-func writeKeyStoreFile(keyStore keystorego.KeyStore, filename string, password string) error {
+func writeKeyStoreFile(keyStore keystore.KeyStore, filename string, password string) error {
 	o, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
 	defer o.Close()
-	if err != nil {
-		return err
-	}
-	err = keystorego.Encode(o, keyStore, []byte(password))
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return keystore.Encode(o, keyStore, []byte(password))
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/ioutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	keystore "github.com/kubedb/elasticsearch/pkg/keystore"
+	"github.com/kubedb/elasticsearch/pkg/keytool"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/cert"
 )
@@ -76,7 +76,7 @@ func createCaCertificate(certPath string) (*rsa.PrivateKey, *x509.Certificate, s
 
 	pass := rand.Characters(6)
 
-	err = keystore.PEMToJKS(filepath.Join(certPath, rootCert), filepath.Join(certPath, rootKeyStore), pass, rootAlias)
+	err = keytool.PEMToJKS(filepath.Join(certPath, rootCert), filepath.Join(certPath, rootKeyStore), pass, rootAlias)
 	if err != nil {
 		return nil, nil, "", fmt.Errorf("failed to convert %s to %s. Reason: %v", rootCert, rootKeyStore, errors.Cause(err))
 	}
@@ -126,7 +126,7 @@ func createNodeCertificate(certPath string, elasticsearch *api.Elasticsearch, ca
 		return errors.New(fmt.Sprintf("failed to generate %s. Reason: %s", nodePKCS12, err.Error()))
 	}
 
-	err = keystore.PKCS12ToJKS(filepath.Join(certPath, nodePKCS12), filepath.Join(certPath, nodeKeyStore), pass, nodeAlias)
+	err = keytool.PKCS12ToJKS(filepath.Join(certPath, nodePKCS12), filepath.Join(certPath, nodeKeyStore), pass, nodeAlias)
 	if err != nil {
 		return fmt.Errorf("failed to convert %s to %s. Reason: %v", nodePKCS12, nodeKeyStore, errors.Cause(err))
 	}
@@ -181,7 +181,7 @@ func createAdminCertificate(certPath string, caKey *rsa.PrivateKey, caCert *x509
 		return errors.New("failed to generate " + sgAdminKeyStore)
 	}
 
-	err = keystore.PKCS12ToJKS(filepath.Join(certPath, sgAdminPKCS12), filepath.Join(certPath, sgAdminKeyStore), pass, sgAdminAlias)
+	err = keytool.PKCS12ToJKS(filepath.Join(certPath, sgAdminPKCS12), filepath.Join(certPath, sgAdminKeyStore), pass, sgAdminAlias)
 	if err != nil {
 		return fmt.Errorf("failed to convert %s to %s. Reason: %v", sgAdminPKCS12, sgAdminKeyStore, errors.Cause(err))
 	}
@@ -239,7 +239,7 @@ func createClientCertificate(certPath string, elasticsearch *api.Elasticsearch, 
 		return errors.New("failed to generate client.pkcs12")
 	}
 
-	err = keystore.PKCS12ToJKS(filepath.Join(certPath, clientPKCS12), filepath.Join(certPath, clientKeyStore), pass, clientAlias)
+	err = keytool.PKCS12ToJKS(filepath.Join(certPath, clientPKCS12), filepath.Join(certPath, clientKeyStore), pass, clientAlias)
 	if err != nil {
 		return fmt.Errorf("failed to convert %s to %s: Reason: %v", clientPKCS12, clientKeyStore, errors.Cause(err))
 	}
