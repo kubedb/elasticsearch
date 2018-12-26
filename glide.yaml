@@ -105,3 +105,6 @@ import:
   repo: https://github.com/kmodules/offshoot-api.git
   vcs: git
   version: release-9.0
+- package: github.com/pavel-v-chernykh/keystore-go
+  vcs: git
+  version: v2.1.0

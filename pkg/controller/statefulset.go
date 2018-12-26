@@ -557,27 +557,27 @@ func upsertCertificate(statefulSet *apps.StatefulSet, secretName string, isClien
 			SecretName: secretName,
 			Items: []core.KeyToPath{
 				{
-					Key:  "root.jks",
-					Path: "root.jks",
+					Key:  rootKeyStore,
+					Path: rootKeyStore,
 				},
 				{
-					Key:  "node.jks",
-					Path: "node.jks",
+					Key:  nodeKeyStore,
+					Path: nodeKeyStore,
 				},
 			},
 		}
 
 		if isEnalbeSSL {
 			svs.Items = append(svs.Items, core.KeyToPath{
-				Key:  "client.jks",
-				Path: "client.jks",
+				Key:  clientKeyStore,
+				Path: clientKeyStore,
 			})
 		}
 
 		if isClientNode {
 			svs.Items = append(svs.Items, core.KeyToPath{
-				Key:  "sgadmin.jks",
-				Path: "sgadmin.jks",
+				Key:  sgAdminKeyStore,
+				Path: sgAdminKeyStore,
 			})
 		}
 		return svs
