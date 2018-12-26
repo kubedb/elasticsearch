@@ -33,12 +33,10 @@ func PKCS12ToJKS(sourceFile, destinationFile, pass, alias string) error {
 		return errors.Wrapf(err, "failed to decode pkcs12 encoded %s", sourceFile)
 	}
 
-	var pvtKey interface{}
-	for _, key := range pvtKeys {
-		pvtKey = key
+	if len(pvtKeys) == 0 {
+		return errors.Errorf("missing privates keys in pkcs12 encoded %s", sourceFile)
 	}
-
-	keyBytes, err := x509.MarshalPKCS8PrivateKey(pvtKey)
+	keyBytes, err := x509.MarshalPKCS8PrivateKey(pvtKeys[0])
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal pvtKeys to PKCS8PrivateKey.")
 	}
