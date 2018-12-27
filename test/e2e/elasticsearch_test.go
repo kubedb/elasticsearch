@@ -422,6 +422,53 @@ var _ = Describe("Elasticsearch", func() {
 						It("should take Snapshot successfully", shouldTakeSnapshot)
 					})
 				})
+
+				Context("Delete One Snapshot keeping others", func() {
+
+					It("Delete One Snapshot keeping others", func() {
+						// Create and wait for running elasticsearch
+						shouldTakeSnapshot()
+
+						oldSnapshot := snapshot.DeepCopy()
+
+						// New snapshot that has old snapshot's name in prefix
+						snapshot.Name += "-2"
+
+						By(fmt.Sprintf("Create Snapshot %v", snapshot.Name))
+						err = f.CreateSnapshot(snapshot)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Check for Succeeded snapshot")
+						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+
+						if !skipSnapshotDataChecking {
+							By("Check for snapshot data")
+							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+						}
+
+						// delete old snapshot
+						By(fmt.Sprintf("Delete old Snapshot %v", oldSnapshot.Name))
+						err = f.DeleteSnapshot(oldSnapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Waiting for old Snapshot to be deleted")
+						f.EventuallySnapshot(oldSnapshot.ObjectMeta).Should(BeFalse())
+						if !skipSnapshotDataChecking {
+							By(fmt.Sprintf("Check data for old snapshot %v", oldSnapshot.Name))
+							f.EventuallySnapshotDataFound(oldSnapshot).Should(BeFalse())
+						}
+
+						// check remaining snapshot
+						By(fmt.Sprintf("Checking another Snapshot %v still exists", snapshot.Name))
+						_, err = f.GetSnapshot(snapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						if !skipSnapshotDataChecking {
+							By(fmt.Sprintf("Check data for remaining snapshot %v", snapshot.Name))
+							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+						}
+					})
+				})
 			})
 
 			Context("In GCS", func() {
@@ -459,6 +506,53 @@ var _ = Describe("Elasticsearch", func() {
 						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseFailed))
 					})
 				})
+
+				Context("Delete One Snapshot keeping others", func() {
+
+					It("Delete One Snapshot keeping others", func() {
+						// Create and wait for running elasticsearch
+						shouldTakeSnapshot()
+
+						oldSnapshot := snapshot.DeepCopy()
+
+						// New snapshot that has old snapshot's name in prefix
+						snapshot.Name += "-2"
+
+						By(fmt.Sprintf("Create Snapshot %v", snapshot.Name))
+						err = f.CreateSnapshot(snapshot)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Check for Succeeded snapshot")
+						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+
+						if !skipSnapshotDataChecking {
+							By("Check for snapshot data")
+							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+						}
+
+						// delete old snapshot
+						By(fmt.Sprintf("Delete old Snapshot %v", oldSnapshot.Name))
+						err = f.DeleteSnapshot(oldSnapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Waiting for old Snapshot to be deleted")
+						f.EventuallySnapshot(oldSnapshot.ObjectMeta).Should(BeFalse())
+						if !skipSnapshotDataChecking {
+							By(fmt.Sprintf("Check data for old snapshot %v", oldSnapshot.Name))
+							f.EventuallySnapshotDataFound(oldSnapshot).Should(BeFalse())
+						}
+
+						// check remaining snapshot
+						By(fmt.Sprintf("Checking another Snapshot %v still exists", snapshot.Name))
+						_, err = f.GetSnapshot(snapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						if !skipSnapshotDataChecking {
+							By(fmt.Sprintf("Check data for remaining snapshot %v", snapshot.Name))
+							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+						}
+					})
+				})
 			})
 
 			Context("In Azure", func() {
@@ -471,6 +565,53 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				It("should take Snapshot successfully", shouldTakeSnapshot)
+
+				Context("Delete One Snapshot keeping others", func() {
+
+					It("Delete One Snapshot keeping others", func() {
+						// Create and wait for running elasticsearch
+						shouldTakeSnapshot()
+
+						oldSnapshot := snapshot.DeepCopy()
+
+						// New snapshot that has old snapshot's name in prefix
+						snapshot.Name += "-2"
+
+						By(fmt.Sprintf("Create Snapshot %v", snapshot.Name))
+						err = f.CreateSnapshot(snapshot)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Check for Succeeded snapshot")
+						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+
+						if !skipSnapshotDataChecking {
+							By("Check for snapshot data")
+							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+						}
+
+						// delete old snapshot
+						By(fmt.Sprintf("Delete old Snapshot %v", oldSnapshot.Name))
+						err = f.DeleteSnapshot(oldSnapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Waiting for old Snapshot to be deleted")
+						f.EventuallySnapshot(oldSnapshot.ObjectMeta).Should(BeFalse())
+						if !skipSnapshotDataChecking {
+							By(fmt.Sprintf("Check data for old snapshot %v", oldSnapshot.Name))
+							f.EventuallySnapshotDataFound(oldSnapshot).Should(BeFalse())
+						}
+
+						// check remaining snapshot
+						By(fmt.Sprintf("Checking another Snapshot %v still exists", snapshot.Name))
+						_, err = f.GetSnapshot(snapshot.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						if !skipSnapshotDataChecking {
+							By(fmt.Sprintf("Check data for remaining snapshot %v", snapshot.Name))
+							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+						}
+					})
+				})
 			})
 
 			Context("In Swift", func() {
@@ -483,99 +624,6 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				It("should take Snapshot successfully", shouldTakeSnapshot)
-			})
-
-			Context("Delete One Snapshot keeping others", func() {
-				BeforeEach(func() {
-					secret = f.SecretForGCSBackend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.GCS = &store.GCSSpec{
-						Bucket: os.Getenv(GCS_BUCKET_NAME),
-					}
-
-				})
-
-				It("Delete One Snapshot keeping others", func() {
-					// Create and wait for running elasticsearch
-					createAndWaitForRunning()
-
-					By("Create Secret")
-					err := f.CreateSecret(secret)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Check for Elastic client")
-					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Creating new indices")
-					err = elasticClient.CreateIndex(2)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
-
-					elasticClient.Stop()
-					f.Tunnel.Close()
-
-					By("Create Snapshot")
-					err = f.CreateSnapshot(snapshot)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Check for Succeeded snapshot")
-					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-					if !skipSnapshotDataChecking {
-						By("Check for snapshot data")
-						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-					}
-
-					oldSnapshot := snapshot
-
-					// create new Snapshot
-					snapshot := f.Snapshot()
-					snapshot.Spec.DatabaseName = elasticsearch.Name
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.GCS = &store.GCSSpec{
-						Bucket: os.Getenv(GCS_BUCKET_NAME),
-					}
-
-					By("Create Snapshot")
-					err = f.CreateSnapshot(snapshot)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Check for Succeeded snapshot")
-					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-					if !skipSnapshotDataChecking {
-						By("Check for snapshot data")
-						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-					}
-
-					By(fmt.Sprintf("Delete Snapshot %v", snapshot.Name))
-					err = f.DeleteSnapshot(snapshot.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Wait for Deleting Snapshot")
-					f.EventuallySnapshot(elasticsearch.ObjectMeta).Should(BeFalse())
-
-					if !skipSnapshotDataChecking {
-						By("Check for snapshot data")
-						f.EventuallySnapshotDataFound(snapshot).Should(BeFalse())
-					}
-
-					snapshot = oldSnapshot
-
-					By(fmt.Sprintf("Old Snapshot %v Still Exists", snapshot.Name))
-					_, err = f.GetSnapshot(snapshot.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					if !skipSnapshotDataChecking {
-						By(fmt.Sprintf("Check for old snapshot %v data", snapshot.Name))
-						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-					}
-				})
 			})
 
 			Context("Invalid Database Secret", func() {
