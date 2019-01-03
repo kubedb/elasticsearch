@@ -33,7 +33,15 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage, jobName, elasticsearch.Namespace)
+	pvcSpec := snapshot.Spec.PodVolumeClaimSpec
+	if pvcSpec == nil {
+		if elasticsearch.Spec.Topology != nil {
+			pvcSpec = elasticsearch.Spec.Topology.Data.Storage
+		} else {
+			pvcSpec = elasticsearch.Spec.Storage
+		}
+	}
+	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, pvcSpec, jobName, elasticsearch.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +205,15 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, elasticsearch.Spec.Storage, jobName, snapshot.Namespace)
+	pvcSpec := snapshot.Spec.PodVolumeClaimSpec
+	if pvcSpec == nil {
+		if elasticsearch.Spec.Topology != nil {
+			pvcSpec = elasticsearch.Spec.Topology.Data.Storage
+		} else {
+			pvcSpec = elasticsearch.Spec.Storage
+		}
+	}
+	persistentVolume, err := c.getVolumeForSnapshot(elasticsearch.Spec.StorageType, pvcSpec, jobName, snapshot.Namespace)
 	if err != nil {
 		return nil, err
 	}
