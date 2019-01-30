@@ -17,6 +17,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var (
+	JobPvcStorageSize = "2Gi"
+	DBPvcStorageSize  = "1Gi"
+)
+
 func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 	return &api.Elasticsearch{
 		ObjectMeta: metav1.ObjectMeta{
@@ -33,7 +38,7 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 			Storage: &core.PersistentVolumeClaimSpec{
 				Resources: core.ResourceRequirements{
 					Requests: core.ResourceList{
-						core.ResourceStorage: resource.MustParse("1Gi"),
+						core.ResourceStorage: resource.MustParse(DBPvcStorageSize),
 					},
 				},
 				StorageClassName: types.StringP(i.StorageClass),
@@ -60,7 +65,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 					Storage: &core.PersistentVolumeClaimSpec{
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
-								core.ResourceStorage: resource.MustParse("1Gi"),
+								core.ResourceStorage: resource.MustParse(DBPvcStorageSize),
 							},
 						},
 						StorageClassName: types.StringP(i.StorageClass),
@@ -72,7 +77,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 					Storage: &core.PersistentVolumeClaimSpec{
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
-								core.ResourceStorage: resource.MustParse("1Gi"),
+								core.ResourceStorage: resource.MustParse(DBPvcStorageSize),
 							},
 						},
 						StorageClassName: types.StringP(i.StorageClass),
@@ -84,7 +89,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 					Storage: &core.PersistentVolumeClaimSpec{
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
-								core.ResourceStorage: resource.MustParse("1Gi"),
+								core.ResourceStorage: resource.MustParse(DBPvcStorageSize),
 							},
 						},
 						StorageClassName: types.StringP(i.StorageClass),
