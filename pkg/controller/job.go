@@ -32,21 +32,28 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	pvcSpec := elasticsearch.Spec.Storage
-	if elasticsearch.Spec.Topology != nil {
-		pvcSpec = elasticsearch.Spec.Topology.Data.Storage
+	pvcSpec := snapshot.Spec.PodVolumeClaimSpec
+	if pvcSpec == nil {
+		if elasticsearch.Spec.Topology != nil {
+			pvcSpec = elasticsearch.Spec.Topology.Data.Storage
+		} else {
+			pvcSpec = elasticsearch.Spec.Storage
+		}
 	}
-	persistentVolume, err := c.GetVolumeForSnapshot(
-		elasticsearch.Spec.StorageType,
-		pvcSpec, snapshot.Spec.PodVolumeClaimSpec,
-		jobName, snapshot.Namespace,
-	)
+	st := snapshot.Spec.StorageType
+	if st == nil {
+		st = &elasticsearch.Spec.StorageType
+	}
+	persistentVolume, err := c.GetVolumeForSnapshot(*st, pvcSpec, jobName, snapshot.Namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	// Folder name inside Cloud bucket where backup will be uploaded
-	folderName, _ := snapshot.Location()
+	folderName, err := snapshot.Location()
+	if err != nil {
+		return nil, err
+	}
 
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -204,15 +211,19 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 	}
 
 	// Get PersistentVolume object for Backup Util pod.
-	pvcSpec := elasticsearch.Spec.Storage
-	if elasticsearch.Spec.Topology != nil {
-		pvcSpec = elasticsearch.Spec.Topology.Data.Storage
+	pvcSpec := snapshot.Spec.PodVolumeClaimSpec
+	if pvcSpec == nil {
+		if elasticsearch.Spec.Topology != nil {
+			pvcSpec = elasticsearch.Spec.Topology.Data.Storage
+		} else {
+			pvcSpec = elasticsearch.Spec.Storage
+		}
 	}
-	persistentVolume, err := c.GetVolumeForSnapshot(
-		elasticsearch.Spec.StorageType,
-		pvcSpec, snapshot.Spec.PodVolumeClaimSpec,
-		jobName, snapshot.Namespace,
-	)
+	st := snapshot.Spec.StorageType
+	if st == nil {
+		st = &elasticsearch.Spec.StorageType
+	}
+	persistentVolume, err := c.GetVolumeForSnapshot(*st, pvcSpec, jobName, snapshot.Namespace)
 	if err != nil {
 		return nil, err
 	}

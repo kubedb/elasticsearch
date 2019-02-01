@@ -1,5 +1,5 @@
 hash: 74025c57e00c473df34c829d909150e991189ce6b77f44e346e4aa0e868fcb06
-updated: 2019-01-30T11:45:02.023969553+06:00
+updated: 2019-02-01T18:31:19.890088537+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -343,7 +343,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 1624edc4454b8682399def8740d46db5e4362ba4
 - name: github.com/kubedb/apimachinery
-  version: 93ee997d13112ef1e11544b1151aed9af4588fc9
+  version: 09643adec7040cd232060c8936219106b65caa1b
   subpackages:
   - apis
   - apis/authorization
@@ -409,7 +409,7 @@ imports:
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/olivere/elastic
-  version: 6ccad33b0c169f9ec98095394d74dd7291b5c477
+  version: 2220b205e6d33a5752daed9b63dbb51b40c5e364
   subpackages:
   - config
   - uritemplates
