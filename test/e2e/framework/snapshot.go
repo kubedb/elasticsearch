@@ -134,7 +134,7 @@ func (f *Framework) EventuallyJobVolumeEmptyDirSize(meta metav1.ObjectMeta) Gome
 			return ed.SizeLimit.String()
 		},
 		time.Minute*5,
-		time.Second*2,
+		time.Second*1,
 	)
 }
 

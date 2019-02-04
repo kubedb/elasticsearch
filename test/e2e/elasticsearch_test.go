@@ -684,7 +684,6 @@ var _ = Describe("Elasticsearch", func() {
 			Context("Snapshot PodVolume Template - In S3", func() {
 
 				BeforeEach(func() {
-					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 					secret = f.SecretForS3Backend()
 					snapshot.Spec.StorageSecretName = secret.Name
 					snapshot.Spec.S3 = &store.S3Spec{
@@ -769,7 +768,7 @@ var _ = Describe("Elasticsearch", func() {
 					Context("DBStorageType - Durable", func() {
 						BeforeEach(func() {
 							elasticsearch.Spec.StorageType = api.StorageTypeDurable
-							elasticsearch.Spec.Storage = &core.PersistentVolumeClaimSpec{
+							storage := core.PersistentVolumeClaimSpec{
 								Resources: core.ResourceRequirements{
 									Requests: core.ResourceList{
 										core.ResourceStorage: resource.MustParse(framework.DBPvcStorageSize),
@@ -777,7 +776,13 @@ var _ = Describe("Elasticsearch", func() {
 								},
 								StorageClassName: types.StringP(root.StorageClass),
 							}
-
+							if elasticsearch.Spec.Topology != nil {
+								elasticsearch.Spec.Topology.Client.Storage = &storage
+								elasticsearch.Spec.Topology.Data.Storage = &storage
+								elasticsearch.Spec.Topology.Master.Storage = &storage
+							} else {
+								elasticsearch.Spec.Storage = &storage
+							}
 						})
 
 						It("should Handle Job Volume Successfully", shouldHandleJobVolumeSuccessfully)
@@ -792,6 +797,13 @@ var _ = Describe("Elasticsearch", func() {
 						Context("DBPvcSpec is nil", func() {
 							BeforeEach(func() {
 								elasticsearch.Spec.Storage = nil
+								if elasticsearch.Spec.Topology != nil {
+									elasticsearch.Spec.Topology.Client.Storage = nil
+									elasticsearch.Spec.Topology.Data.Storage = nil
+									elasticsearch.Spec.Topology.Master.Storage = nil
+								} else {
+									elasticsearch.Spec.Storage = nil
+								}
 							})
 
 							It("should Handle Job Volume Successfully", shouldHandleJobVolumeSuccessfully)
@@ -799,13 +811,20 @@ var _ = Describe("Elasticsearch", func() {
 
 						Context("DBPvcSpec is given [not nil]", func() {
 							BeforeEach(func() {
-								elasticsearch.Spec.Storage = &core.PersistentVolumeClaimSpec{
+								storage := core.PersistentVolumeClaimSpec{
 									Resources: core.ResourceRequirements{
 										Requests: core.ResourceList{
 											core.ResourceStorage: resource.MustParse(framework.DBPvcStorageSize),
 										},
 									},
 									StorageClassName: types.StringP(root.StorageClass),
+								}
+								if elasticsearch.Spec.Topology != nil {
+									elasticsearch.Spec.Topology.Client.Storage = &storage
+									elasticsearch.Spec.Topology.Data.Storage = &storage
+									elasticsearch.Spec.Topology.Master.Storage = &storage
+								} else {
+									elasticsearch.Spec.Storage = &storage
 								}
 							})
 
@@ -848,7 +867,17 @@ var _ = Describe("Elasticsearch", func() {
 						snapshot.Spec.StorageType = nil
 					})
 
-					snapshotPvcScenarios()
+					Context("-", func() {
+						snapshotPvcScenarios()
+					})
+
+					Context("with Dedicated elasticsearch", func() {
+						BeforeEach(func() {
+							elasticsearch = f.DedicatedElasticsearch()
+							snapshot.Spec.DatabaseName = elasticsearch.Name
+						})
+						snapshotPvcScenarios()
+					})
 				})
 
 				Context("Snapshot StorageType is Ephemeral", func() {
@@ -857,7 +886,17 @@ var _ = Describe("Elasticsearch", func() {
 						snapshot.Spec.StorageType = &ephemeral
 					})
 
-					snapshotPvcScenarios()
+					Context("-", func() {
+						snapshotPvcScenarios()
+					})
+
+					Context("with Dedicated elasticsearch", func() {
+						BeforeEach(func() {
+							elasticsearch = f.DedicatedElasticsearch()
+							snapshot.Spec.DatabaseName = elasticsearch.Name
+						})
+						snapshotPvcScenarios()
+					})
 				})
 
 				Context("Snapshot StorageType is Durable", func() {
@@ -866,7 +905,17 @@ var _ = Describe("Elasticsearch", func() {
 						snapshot.Spec.StorageType = &durable
 					})
 
-					snapshotPvcScenarios()
+					Context("-", func() {
+						snapshotPvcScenarios()
+					})
+
+					Context("with Dedicated elasticsearch", func() {
+						BeforeEach(func() {
+							elasticsearch = f.DedicatedElasticsearch()
+							snapshot.Spec.DatabaseName = elasticsearch.Name
+						})
+						snapshotPvcScenarios()
+					})
 				})
 			})
 		})
@@ -1595,7 +1644,7 @@ var _ = Describe("Elasticsearch", func() {
 					pod, err := f.KubeClient().CoreV1().Pods(elasticsearch.Namespace).Get(podName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
-					out, err := exec_util.ExecIntoPod(f.RestConfig(), pod, "env")
+					out, err := exec_util.ExecIntoPod(f.RestConfig(), pod, exec_util.Command("env"))
 					Expect(err).NotTo(HaveOccurred())
 					for _, env := range allowedEnvList {
 						Expect(out).Should(ContainSubstring(env.Name + "=" + env.Value))

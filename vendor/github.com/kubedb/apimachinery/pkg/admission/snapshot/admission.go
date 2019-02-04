@@ -173,8 +173,10 @@ func (a *SnapshotValidator) validateSnapshot(snapshot *api.Snapshot) error {
 }
 
 func verifyStorageType(snapshot *api.Snapshot, dbPvcSpec *core.PersistentVolumeClaimSpec) error {
-	if snapshot.Spec.StorageType != nil && *snapshot.Spec.StorageType == api.StorageTypeDurable &&
-		snapshot.Spec.PodVolumeClaimSpec == nil && dbPvcSpec == nil {
+	if snapshot.Spec.StorageType != nil &&
+		*snapshot.Spec.StorageType == api.StorageTypeDurable &&
+		snapshot.Spec.PodVolumeClaimSpec == nil &&
+		dbPvcSpec == nil {
 		return fmt.Errorf("snapshot storagetype is durable but, " +
 			"pvc Spec is not specified in either PodVolumeClaimSpec or db.Spec.Storage")
 	}

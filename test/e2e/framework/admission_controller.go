@@ -49,7 +49,7 @@ func (f *Framework) EventuallyAPIServiceReady() GomegaAsyncAssertion {
 			if err := f.isApiSvcReady("v1alpha1.validators.kubedb.com"); err != nil {
 				return err
 			}
-			time.Sleep(time.Second * 3) // let the resource become available
+			time.Sleep(time.Second * 5) // let the resource become available
 
 			// Check if the annotations of validating webhook is updated by operator/controller
 			apiSvc, err := f.kaClient.ApiregistrationV1beta1().APIServices().Get("v1alpha1.validators.kubedb.com", metav1.GetOptions{})
