@@ -5,8 +5,6 @@ import (
 	"os"
 
 	"github.com/appscode/go/types"
-	core_util "github.com/appscode/kutil/core/v1"
-	exec_util "github.com/appscode/kutil/tools/exec"
 	catalog "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
@@ -18,6 +16,8 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_util "kmodules.xyz/client-go/core/v1"
+	exec_util "kmodules.xyz/client-go/tools/exec"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
