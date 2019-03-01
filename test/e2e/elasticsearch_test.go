@@ -219,7 +219,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.Tunnel.Close()
 				}
 
-				Context("with Default Resource", func() {
+				FContext("with Default Resource", func() {
 					It("should run successfully", shouldRunSuccessfully)
 				})
 
