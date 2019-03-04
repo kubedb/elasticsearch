@@ -63,6 +63,35 @@ func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch) error {
 	return err
 }
 
+func (c *Controller) ensureSnapshotRole(elasticsearch *api.Elasticsearch) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+	if rerr != nil {
+		return rerr
+	}
+	// Create new Roles
+	_, _, err := rbac_util.CreateOrPatchRole(
+		c.Client,
+		metav1.ObjectMeta{
+			Name:      elasticsearch.SnapshotSAName(),
+			Namespace: elasticsearch.Namespace,
+		},
+		func(in *rbac.Role) *rbac.Role {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+			in.Rules = []rbac.PolicyRule{
+				{
+					APIGroups:     []string{policy_v1beta1.GroupName},
+					Resources:     []string{"podsecuritypolicies"},
+					Verbs:         []string{"use"},
+					ResourceNames: []string{elasticsearch.SnapshotSAName()},
+				},
+			}
+			return in
+		},
+	)
+	return err
+}
+
+
 func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch) error {
 	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
 	if rerr != nil {
@@ -86,6 +115,38 @@ func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch) error {
 				{
 					Kind:      rbac.ServiceAccountKind,
 					Name:      elasticsearch.OffshootName(),
+					Namespace: elasticsearch.Namespace,
+				},
+			}
+			return in
+		},
+	)
+	return err
+}
+
+func (c *Controller) createSnapshotRoleBinding(elasticsearch *api.Elasticsearch) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+	if rerr != nil {
+		return rerr
+	}
+	// Ensure new RoleBindings
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(
+		c.Client,
+		metav1.ObjectMeta{
+			Name:      elasticsearch.SnapshotSAName(),
+			Namespace: elasticsearch.Namespace,
+		},
+		func(in *rbac.RoleBinding) *rbac.RoleBinding {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+			in.RoleRef = rbac.RoleRef{
+				APIGroup: rbac.GroupName,
+				Kind:     "Role",
+				Name:     elasticsearch.SnapshotSAName(),
+			}
+			in.Subjects = []rbac.Subject{
+				{
+					Kind:      rbac.ServiceAccountKind,
+					Name:      elasticsearch.SnapshotSAName(),
 					Namespace: elasticsearch.Namespace,
 				},
 			}
@@ -149,6 +210,56 @@ func (c *Controller) ensurePSP(elasticsearch *api.Elasticsearch) error {
 	return err
 }
 
+func (c *Controller) ensureSnapshotPSP(elasticsearch *api.Elasticsearch) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+	if rerr != nil {
+		return rerr
+	}
+
+	// Ensure Pod Security policy for ElasticsearchDB Snapshot
+	noEscalation := false
+	_, _, err := policy_util.CreateOrPatchPodSecurityPolicy(c.Client,
+		metav1.ObjectMeta{
+			Name: elasticsearch.SnapshotSAName(),
+		},
+		func(in *policy_v1beta1.PodSecurityPolicy) *policy_v1beta1.PodSecurityPolicy {
+			//TODO: possible function EnsureOwnerReference(&psp.ObjectMeta, ref) in kutil for non namespaced resources.
+			in.OwnerReferences = []metav1.OwnerReference{
+				{
+					APIVersion: ref.APIVersion,
+					Kind:       ref.Kind,
+					Name:       ref.Name,
+					UID:        ref.UID,
+				},
+			}
+			in.Spec = policy_v1beta1.PodSecurityPolicySpec{
+				Privileged:               false,
+				AllowPrivilegeEscalation: &noEscalation,
+				Volumes: []policy_v1beta1.FSType{
+					policy_v1beta1.All,
+				},
+				HostIPC:     false,
+				HostNetwork: false,
+				HostPID:     false,
+				RunAsUser: policy_v1beta1.RunAsUserStrategyOptions{
+					Rule: policy_v1beta1.RunAsUserStrategyRunAsAny,
+				},
+				SELinux: policy_v1beta1.SELinuxStrategyOptions{
+					Rule: policy_v1beta1.SELinuxStrategyRunAsAny,
+				},
+				FSGroup: policy_v1beta1.FSGroupStrategyOptions{
+					Rule: policy_v1beta1.FSGroupStrategyRunAsAny,
+				},
+				SupplementalGroups: policy_v1beta1.SupplementalGroupsStrategyOptions{
+					Rule: policy_v1beta1.SupplementalGroupsStrategyRunAsAny,
+				},
+			}
+			return in
+		},
+	)
+	return err
+}
+
 func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 	//Create PSP
 	if err := c.ensurePSP(elasticsearch); err != nil {
@@ -170,5 +281,28 @@ func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 			return err
 		}
 	}
+
+	//Create PSP for Snapshot
+	if err := c.ensureSnapshotPSP(elasticsearch); err != nil {
+		return err
+	}
+
+	// Create New Role for Snapshot
+	if err := c.ensureSnapshotRole(elasticsearch); err != nil {
+		return err
+	}
+
+	// Create New RoleBinding for Snapshot
+	if err := c.createSnapshotRoleBinding(elasticsearch); err != nil {
+		return err
+	}
+
+	// Create New Snapshot ServiceAccount
+	if err := c.createServiceAccount(elasticsearch, elasticsearch.SnapshotSAName()); err != nil {
+		if !kerr.IsAlreadyExists(err) {
+			return err
+		}
+	}
+
 	return nil
 }
