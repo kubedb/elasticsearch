@@ -14,27 +14,7 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1beta1"
 )
 
-func (c *Controller) createServiceAccount(elasticsearch *api.Elasticsearch, saName string) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
-	if rerr != nil {
-		return rerr
-	}
-	// Create new ServiceAccount
-	_, _, err := core_util.CreateOrPatchServiceAccount(
-		c.Client,
-		metav1.ObjectMeta{
-			Name:      saName,
-			Namespace: elasticsearch.Namespace,
-		},
-		func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-			return in
-		},
-	)
-	return err
-}
-
-func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch) error {
+func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch, name string) error {
 	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
 	if rerr != nil {
 		return rerr
@@ -44,7 +24,7 @@ func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch) error {
 	_, _, err := rbac_util.CreateOrPatchRole(
 		c.Client,
 		metav1.ObjectMeta{
-			Name:      elasticsearch.OffshootName(),
+			Name:      name,
 			Namespace: elasticsearch.Namespace,
 		},
 		func(in *rbac.Role) *rbac.Role {
@@ -54,7 +34,7 @@ func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch) error {
 					APIGroups:     []string{policy_v1beta1.GroupName},
 					Resources:     []string{"podsecuritypolicies"},
 					Verbs:         []string{"use"},
-					ResourceNames: []string{elasticsearch.OffshootName()},
+					ResourceNames: []string{name},
 				},
 			}
 			return in
@@ -63,36 +43,7 @@ func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch) error {
 	return err
 }
 
-func (c *Controller) ensureSnapshotRole(elasticsearch *api.Elasticsearch) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
-	if rerr != nil {
-		return rerr
-	}
-	// Create new Roles
-	_, _, err := rbac_util.CreateOrPatchRole(
-		c.Client,
-		metav1.ObjectMeta{
-			Name:      elasticsearch.SnapshotSAName(),
-			Namespace: elasticsearch.Namespace,
-		},
-		func(in *rbac.Role) *rbac.Role {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-			in.Rules = []rbac.PolicyRule{
-				{
-					APIGroups:     []string{policy_v1beta1.GroupName},
-					Resources:     []string{"podsecuritypolicies"},
-					Verbs:         []string{"use"},
-					ResourceNames: []string{elasticsearch.SnapshotSAName()},
-				},
-			}
-			return in
-		},
-	)
-	return err
-}
-
-
-func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch) error {
+func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch, name string) error {
 	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
 	if rerr != nil {
 		return rerr
@@ -101,7 +52,7 @@ func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch) error {
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(
 		c.Client,
 		metav1.ObjectMeta{
-			Name:      elasticsearch.OffshootName(),
+			Name:      name,
 			Namespace: elasticsearch.Namespace,
 		},
 		func(in *rbac.RoleBinding) *rbac.RoleBinding {
@@ -109,44 +60,12 @@ func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch) error {
 			in.RoleRef = rbac.RoleRef{
 				APIGroup: rbac.GroupName,
 				Kind:     "Role",
-				Name:     elasticsearch.OffshootName(),
+				Name:     name,
 			}
 			in.Subjects = []rbac.Subject{
 				{
 					Kind:      rbac.ServiceAccountKind,
-					Name:      elasticsearch.OffshootName(),
-					Namespace: elasticsearch.Namespace,
-				},
-			}
-			return in
-		},
-	)
-	return err
-}
-
-func (c *Controller) createSnapshotRoleBinding(elasticsearch *api.Elasticsearch) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
-	if rerr != nil {
-		return rerr
-	}
-	// Ensure new RoleBindings
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(
-		c.Client,
-		metav1.ObjectMeta{
-			Name:      elasticsearch.SnapshotSAName(),
-			Namespace: elasticsearch.Namespace,
-		},
-		func(in *rbac.RoleBinding) *rbac.RoleBinding {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-			in.RoleRef = rbac.RoleRef{
-				APIGroup: rbac.GroupName,
-				Kind:     "Role",
-				Name:     elasticsearch.SnapshotSAName(),
-			}
-			in.Subjects = []rbac.Subject{
-				{
-					Kind:      rbac.ServiceAccountKind,
-					Name:      elasticsearch.SnapshotSAName(),
+					Name:      name,
 					Namespace: elasticsearch.Namespace,
 				},
 			}
@@ -169,7 +88,7 @@ func (c *Controller) ensurePSP(elasticsearch *api.Elasticsearch) error {
 			Name: elasticsearch.OffshootName(),
 		},
 		func(in *policy_v1beta1.PodSecurityPolicy) *policy_v1beta1.PodSecurityPolicy {
-			//TODO: possible function EnsureOwnerReference(&psp.ObjectMeta, ref) in kutil for non namespaced resources.
+			//TODO: possible function EnsureOwnerReference(&psp.ObjectMeta, ref) in kmodules/client-go for non namespaced resources.
 			in.OwnerReferences = []metav1.OwnerReference{
 				{
 					APIVersion: ref.APIVersion,
@@ -179,7 +98,7 @@ func (c *Controller) ensurePSP(elasticsearch *api.Elasticsearch) error {
 				},
 			}
 			in.Spec = policy_v1beta1.PodSecurityPolicySpec{
-				Privileged:               false,
+				Privileged:               true,
 				AllowPrivilegeEscalation: &escalate,
 				Volumes: []policy_v1beta1.FSType{
 					policy_v1beta1.All,
@@ -216,7 +135,7 @@ func (c *Controller) ensureSnapshotPSP(elasticsearch *api.Elasticsearch) error {
 		return rerr
 	}
 
-	// Ensure Pod Security policy for ElasticsearchDB Snapshot
+	// Ensure Pod Security policy for Elasticsearch DB Snapshot
 	noEscalation := false
 	_, _, err := policy_util.CreateOrPatchPodSecurityPolicy(c.Client,
 		metav1.ObjectMeta{
@@ -260,6 +179,26 @@ func (c *Controller) ensureSnapshotPSP(elasticsearch *api.Elasticsearch) error {
 	return err
 }
 
+func (c *Controller) createServiceAccount(elasticsearch *api.Elasticsearch, saName string) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+	if rerr != nil {
+		return rerr
+	}
+	// Create new ServiceAccount
+	_, _, err := core_util.CreateOrPatchServiceAccount(
+		c.Client,
+		metav1.ObjectMeta{
+			Name:      saName,
+			Namespace: elasticsearch.Namespace,
+		},
+		func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+			return in
+		},
+	)
+	return err
+}
+
 func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 	//Create PSP
 	if err := c.ensurePSP(elasticsearch); err != nil {
@@ -267,12 +206,12 @@ func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// Create New Role
-	if err := c.ensureRole(elasticsearch); err != nil {
+	if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName()); err != nil {
 		return err
 	}
 
 	// Create New RoleBinding
-	if err := c.createRoleBinding(elasticsearch); err != nil {
+	if err := c.createRoleBinding(elasticsearch, elasticsearch.OffshootName()); err != nil {
 		return err
 	}
 	// Create New ServiceAccount
@@ -288,12 +227,12 @@ func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// Create New Role for Snapshot
-	if err := c.ensureSnapshotRole(elasticsearch); err != nil {
+	if err := c.ensureRole(elasticsearch, elasticsearch.SnapshotSAName()); err != nil {
 		return err
 	}
 
 	// Create New RoleBinding for Snapshot
-	if err := c.createSnapshotRoleBinding(elasticsearch); err != nil {
+	if err := c.createRoleBinding(elasticsearch, elasticsearch.SnapshotSAName()); err != nil {
 		return err
 	}
 
