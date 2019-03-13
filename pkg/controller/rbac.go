@@ -14,7 +14,10 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1beta1"
 )
 
-func (c *Controller) ensureRole(db *api.Elasticsearch, name string) error {
+const dbPSP string = "elasticsearch-db"
+const snapshotPSP string = "elasticsearch-snapshot"
+
+func (c *Controller) ensureRole(db *api.Elasticsearch, name string, pspName string) error {
 	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
@@ -24,7 +27,7 @@ func (c *Controller) ensureRole(db *api.Elasticsearch, name string) error {
 	_, _, err := rbac_util.CreateOrPatchRole(
 		c.Client,
 		metav1.ObjectMeta{
-			Name:      db.OffshootName(),
+			Name:      name,
 			Namespace: db.Namespace,
 		},
 		func(in *rbac.Role) *rbac.Role {
@@ -35,7 +38,7 @@ func (c *Controller) ensureRole(db *api.Elasticsearch, name string) error {
 					APIGroups:     []string{policy_v1beta1.GroupName},
 					Resources:     []string{"podsecuritypolicies"},
 					Verbs:         []string{"use"},
-					ResourceNames: []string{name}, // psp nname
+					ResourceNames: []string{pspName },
 				},
 			}
 			return in
@@ -208,7 +211,7 @@ func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// Create New Role
-	if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName()); err != nil {
+	if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName(), dbPSP); err != nil {
 		return err
 	}
 
@@ -229,7 +232,7 @@ func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// Create New Role for Snapshot
-	if err := c.ensureRole(elasticsearch, elasticsearch.SnapshotSAName()); err != nil {
+	if err := c.ensureRole(elasticsearch, elasticsearch.SnapshotSAName(), snapshotPSP); err != nil {
 		return err
 	}
 
