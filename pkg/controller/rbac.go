@@ -14,8 +14,8 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1beta1"
 )
 
-func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch, name string) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+func (c *Controller) ensureRole(db *api.Elasticsearch, name string) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
 	}
@@ -24,17 +24,18 @@ func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch, name string) e
 	_, _, err := rbac_util.CreateOrPatchRole(
 		c.Client,
 		metav1.ObjectMeta{
-			Name:      name,
-			Namespace: elasticsearch.Namespace,
+			Name:      db.OffshootName(),
+			Namespace: db.Namespace,
 		},
 		func(in *rbac.Role) *rbac.Role {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+			in.Labels = db.OffshootLabels()
 			in.Rules = []rbac.PolicyRule{
 				{
 					APIGroups:     []string{policy_v1beta1.GroupName},
 					Resources:     []string{"podsecuritypolicies"},
 					Verbs:         []string{"use"},
-					ResourceNames: []string{name},
+					ResourceNames: []string{name}, // psp nname
 				},
 			}
 			return in
@@ -43,8 +44,8 @@ func (c *Controller) ensureRole(elasticsearch *api.Elasticsearch, name string) e
 	return err
 }
 
-func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch, name string) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+func (c *Controller) createRoleBinding(db *api.Elasticsearch, name string) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
 	}
@@ -53,10 +54,11 @@ func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch, name st
 		c.Client,
 		metav1.ObjectMeta{
 			Name:      name,
-			Namespace: elasticsearch.Namespace,
+			Namespace: db.Namespace,
 		},
 		func(in *rbac.RoleBinding) *rbac.RoleBinding {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+			in.Labels = db.OffshootLabels()
 			in.RoleRef = rbac.RoleRef{
 				APIGroup: rbac.GroupName,
 				Kind:     "Role",
@@ -66,7 +68,7 @@ func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch, name st
 				{
 					Kind:      rbac.ServiceAccountKind,
 					Name:      name,
-					Namespace: elasticsearch.Namespace,
+					Namespace: db.Namespace,
 				},
 			}
 			return in
@@ -75,8 +77,8 @@ func (c *Controller) createRoleBinding(elasticsearch *api.Elasticsearch, name st
 	return err
 }
 
-func (c *Controller) ensurePSP(elasticsearch *api.Elasticsearch) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+func (c *Controller) ensurePSP(db *api.Elasticsearch) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
 	}
@@ -85,7 +87,7 @@ func (c *Controller) ensurePSP(elasticsearch *api.Elasticsearch) error {
 	escalate := true
 	_, _, err := policy_util.CreateOrPatchPodSecurityPolicy(c.Client,
 		metav1.ObjectMeta{
-			Name: elasticsearch.OffshootName(),
+			Name: db.OffshootName(),
 		},
 		func(in *policy_v1beta1.PodSecurityPolicy) *policy_v1beta1.PodSecurityPolicy {
 			//TODO: possible function EnsureOwnerReference(&psp.ObjectMeta, ref) in kmodules/client-go for non namespaced resources.
