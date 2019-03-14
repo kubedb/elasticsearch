@@ -90,6 +90,7 @@ func (c *Controller) createServiceAccount(db *api.Elasticsearch, saName string) 
 		},
 		func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+			in.Labels = db.OffshootLabels()
 			return in
 		},
 	)
