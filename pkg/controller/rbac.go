@@ -13,9 +13,6 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1beta1"
 )
 
-const dbPSP string = "elasticsearch-db"
-const snapshotPSP string = "elasticsearch-snapshot"
-
 func (c *Controller) ensureRole(db *api.Elasticsearch, name string, pspName string) error {
 	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
@@ -79,8 +76,8 @@ func (c *Controller) createRoleBinding(db *api.Elasticsearch, name string) error
 	return err
 }
 
-func (c *Controller) createServiceAccount(elasticsearch *api.Elasticsearch, saName string) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, elasticsearch)
+func (c *Controller) createServiceAccount(db *api.Elasticsearch, saName string) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
 	}
@@ -89,7 +86,7 @@ func (c *Controller) createServiceAccount(elasticsearch *api.Elasticsearch, saNa
 		c.Client,
 		metav1.ObjectMeta{
 			Name:      saName,
-			Namespace: elasticsearch.Namespace,
+			Namespace: db.Namespace,
 		},
 		func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
@@ -99,9 +96,25 @@ func (c *Controller) createServiceAccount(elasticsearch *api.Elasticsearch, saNa
 	return err
 }
 
+func (c *Controller) getPolicyNames(db *api.Elasticsearch) (string, string, error) {
+	dbVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(db.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return "", "", err
+	}
+	dbPolicyName := dbVersion.Spec.PodSecurityPolicies.DatabasePolicyName
+	snapshotPolicyName := dbVersion.Spec.PodSecurityPolicies.SnapshotterPolicyName
+
+	return dbPolicyName, snapshotPolicyName, nil
+}
+
 func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
+	dbPolicyName, snapshotPolicyName, err := c.getPolicyNames(elasticsearch)
+	if err != nil {
+		return err
+	}
+
 	// Create New Role
-	if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName(), dbPSP); err != nil {
+	if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName(), dbPolicyName); err != nil {
 		return err
 	}
 
@@ -118,7 +131,7 @@ func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// Create New Role for Snapshot
-	if err := c.ensureRole(elasticsearch, elasticsearch.SnapshotSAName(), snapshotPSP); err != nil {
+	if err := c.ensureRole(elasticsearch, elasticsearch.SnapshotSAName(), snapshotPolicyName); err != nil {
 		return err
 	}
 
