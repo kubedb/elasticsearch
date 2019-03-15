@@ -28,6 +28,13 @@ func (i *Invocation) ElasticsearchVersion() *api.ElasticsearchVersion {
 			Tools: api.ElasticsearchVersionTools{
 				Image: fmt.Sprintf("%s/elasticsearch-tools:%s", DockerRegistry, DBToolsTag),
 			},
+			InitContainer: api.ElasticsearchVersionInitContainer{
+				Image: "kubedb/busybox",
+			},
+			PodSecurityPolicies: api.ElasticsearchVersionPodSecurityPolicy{
+				SnapshotterPolicyName: "elasticsearch-snapshot",
+				DatabasePolicyName:    "elasticsearch-db",
+			},
 		},
 	}
 }
