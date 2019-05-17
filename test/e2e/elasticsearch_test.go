@@ -18,6 +18,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	core_util "kmodules.xyz/client-go/core/v1"
 	exec_util "kmodules.xyz/client-go/tools/exec"
 	store "kmodules.xyz/objectstore-api/api/v1"
@@ -333,6 +334,36 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Resume DB")
 					createAndWaitForRunning()
+				})
+			})
+
+			Context("PDB", func() {
+
+				It("should run eviction successfully", func() {
+					// Create Elasticsearch
+					By("Create DB")
+					elasticsearch.Spec.Replicas = types.Int32P(3)
+					createAndWaitForRunning()
+					//Evict a Elasticsearch pod
+					By("Try to evict Pods")
+					err := f.EvictPodsFromStatefulSet(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				FIt("should run eviction on cluster successfully", func() {
+					// Create Elasticsearch
+					By("Create DB")
+					elasticsearch = f.DedicatedElasticsearch()
+					elasticsearch.Spec.Topology.Client.Replicas = types.Int32P(3)
+					elasticsearch.Spec.Topology.Master.Replicas = types.Int32P(3)
+					elasticsearch.Spec.Topology.Data.Replicas = types.Int32P(3)
+
+					elasticsearch.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					createAndWaitForRunning()
+					//Evict a Elasticsearch pod
+					By("Try to evict Pods")
+					err := f.EvictPodsFromStatefulSet(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})
