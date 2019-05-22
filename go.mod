@@ -3,12 +3,15 @@ module github.com/kubedb/elasticsearch
 go 1.12
 
 require (
+	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
 	github.com/appscode/go v0.0.0-20190523031839-1468ee3a76e8
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/coreos/prometheus-operator v0.29.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/graymeta/stow v0.0.0-00010101000000-000000000000
+	github.com/kr/pty v1.1.4 // indirect
 	github.com/kubedb/apimachinery v0.0.0-20190526014453-48e4bab67179
+	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/ncw/swift v1.0.47 // indirect
 	github.com/olivere/elastic v6.2.17+incompatible // indirect
 	github.com/onsi/ginkgo v1.8.0
@@ -28,7 +31,7 @@ require (
 	k8s.io/cli-runtime v0.0.0-20190325194458-f2b4781c3ae1 // indirect
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/kube-aggregator v0.0.0-20190325191802-5268a8efdb65
-	kmodules.xyz/client-go v0.0.0-20190524133821-9c8a87771aea
+	kmodules.xyz/client-go v0.0.0-20190527113919-eb165836b702
 	kmodules.xyz/custom-resources v0.0.0-20190508103408-464e8324c3ec
 	kmodules.xyz/monitoring-agent-api v0.0.0-20190508125842-489150794b9b
 	kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9

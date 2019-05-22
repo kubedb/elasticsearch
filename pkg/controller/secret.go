@@ -148,11 +148,8 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 	name := fmt.Sprintf("%v-cert", elasticsearch.OffshootName())
 	secret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
-				api.LabelDatabaseKind: api.ResourceKindElasticsearch,
-				api.LabelDatabaseName: elasticsearch.Name,
-			},
+			Name:   name,
+			Labels: elasticsearch.OffshootLabels(),
 		},
 		Type: core.SecretTypeOpaque,
 		Data: data,
@@ -310,11 +307,8 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 	name := fmt.Sprintf("%v-auth", elasticsearch.OffshootName())
 	secret := &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
-				api.LabelDatabaseKind: api.ResourceKindElasticsearch,
-				api.LabelDatabaseName: elasticsearch.Name,
-			},
+			Name:   name,
+			Labels: elasticsearch.OffshootLabels(),
 		},
 		Type: core.SecretTypeOpaque,
 		Data: data,

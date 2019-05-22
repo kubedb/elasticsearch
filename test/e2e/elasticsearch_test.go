@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	catalog "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
@@ -13,6 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -286,6 +288,53 @@ var _ = Describe("Elasticsearch", func() {
 				})
 			})
 
+			Context("with custom SA Name", func() {
+				BeforeEach(func() {
+					var customSecret *core.Secret
+					customSecret = f.SecretForDatabaseAuthentication(elasticsearch.ObjectMeta, false)
+					elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
+						SecretName: customSecret.Name,
+					}
+					err := f.CreateSecret(customSecret)
+					Expect(err).NotTo(HaveOccurred())
+					elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = "my-custom-sa"
+					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyPause
+				})
+
+				It("should start and resume successfully", func() {
+					//shouldTakeSnapshot()
+					createAndWaitForRunning()
+					if elasticsearch == nil {
+						Skip("Skipping")
+					}
+					By("Check if Postgres " + elasticsearch.Name + " exists.")
+					_, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
+					if err != nil {
+						if kerr.IsNotFound(err) {
+							// Postgres was not created. Hence, rest of cleanup is not necessary.
+							return
+						}
+						Expect(err).NotTo(HaveOccurred())
+					}
+
+					By("Delete elasticsearch: " + elasticsearch.Name)
+					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+					if err != nil {
+						if kerr.IsNotFound(err) {
+							// Postgres was not created. Hence, rest of cleanup is not necessary.
+							log.Infof("Skipping rest of cleanup. Reason: Postgres %s is not found.", elasticsearch.Name)
+							return
+						}
+						Expect(err).NotTo(HaveOccurred())
+					}
+
+					By("Wait for elasticsearch to be paused")
+					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+
+					By("Resume DB")
+					createAndWaitForRunning()
+				})
+			})
 		})
 
 		Context("Snapshot", func() {
@@ -314,6 +363,189 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
 				}
 			}
+
+			Context("For Custom Resources", func() {
+
+				BeforeEach(func() {
+					secret = f.SecretForGCSBackend()
+					snapshot.Spec.StorageSecretName = secret.Name
+					snapshot.Spec.GCS = &store.GCSSpec{
+						Bucket: os.Getenv(GCS_BUCKET_NAME),
+					}
+				})
+
+				Context("with custom SA", func() {
+					var customSAForDB *core.ServiceAccount
+					var customRoleForDB *rbac.Role
+					var customRoleBindingForDB *rbac.RoleBinding
+					var customSAForSnapshot *core.ServiceAccount
+					var customRoleForSnapshot *rbac.Role
+					var customRoleBindingForSnapshot *rbac.RoleBinding
+					BeforeEach(func() {
+						skipSnapshotDataChecking = false
+						snapshot.Spec.StorageSecretName = secret.Name
+						snapshot.Spec.DatabaseName = elasticsearch.Name
+						//Get custom resources
+						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+						customSAForDB = f.ServiceAccount()
+						elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = customSAForDB.Name
+						customRoleForDB = f.RoleForElasticsearch(elasticsearch.ObjectMeta)
+						customRoleBindingForDB = f.RoleBinding(customSAForDB.Name, customRoleForDB.Name)
+
+						customSAForSnapshot = f.ServiceAccount()
+						snapshot.Spec.PodTemplate.Spec.ServiceAccountName = customSAForSnapshot.Name
+						customRoleForSnapshot = f.RoleForSnapshot(elasticsearch.ObjectMeta)
+						customRoleBindingForSnapshot = f.RoleBinding(customSAForSnapshot.Name, customRoleForSnapshot.Name)
+
+						//Create custom resources
+						By("Create Database SA")
+						err = f.CreateServiceAccount(customSAForDB)
+						Expect(err).NotTo(HaveOccurred())
+						By("Create Database Role")
+						err = f.CreateRole(customRoleForDB)
+						Expect(err).NotTo(HaveOccurred())
+						By("Create Database RoleBinding")
+						err = f.CreateRoleBinding(customRoleBindingForDB)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Create Snapshot SA")
+						err = f.CreateServiceAccount(customSAForSnapshot)
+						Expect(err).NotTo(HaveOccurred())
+						By("Create Snapshot Role")
+						err = f.CreateRole(customRoleForSnapshot)
+						Expect(err).NotTo(HaveOccurred())
+						By("Create Snapshot RoleBinding")
+						err = f.CreateRoleBinding(customRoleBindingForSnapshot)
+						Expect(err).NotTo(HaveOccurred())
+					})
+					It("should take snapshot to GCS successfully", func() {
+						shouldTakeSnapshot()
+					})
+					It("should init from GCS snapshot successfully", func() {
+						By("Start initializing From Snapshot")
+						// Create and wait for running Elasticsearch
+						createAndWaitForRunning()
+
+						By("Create Secret")
+						err := f.CreateSecret(secret)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Check for Elastic client")
+						f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+						elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Creating new indices")
+						err = elasticClient.CreateIndex(2)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Checking new indices")
+						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+						elasticClient.Stop()
+						f.Tunnel.Close()
+
+						By("Create Snapshot")
+						err = f.CreateSnapshot(snapshot)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Check for succeeded snapshot")
+						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+
+						if !skipSnapshotDataChecking {
+							By("Check for snapshot data")
+							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
+						}
+						By("Getting old ES")
+						oldElasticsearch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						garbageElasticsearch.Items = append(garbageElasticsearch.Items, *oldElasticsearch)
+
+						By("Create elasticsearch from snapshot")
+						*elasticsearch = *f.CombinedElasticsearch()
+						elasticsearch.Spec.Init = &api.InitSpec{
+							SnapshotSource: &api.SnapshotSourceSpec{
+								Namespace: snapshot.Namespace,
+								Name:      snapshot.Name,
+							},
+						}
+
+						By("Creating new role and bind with existing SA")
+						By("Get new Role and RB")
+						customRoleForReplayDB := f.RoleForElasticsearch(elasticsearch.ObjectMeta)
+						customRoleBindingForReplayDB := f.RoleBinding(customSAForDB.Name, customRoleForReplayDB.Name)
+
+						By("Create Database Role")
+						err = f.CreateRole(customRoleForReplayDB)
+						Expect(err).NotTo(HaveOccurred())
+						By("Create Database RoleBinding")
+						err = f.CreateRoleBinding(customRoleBindingForReplayDB)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Setting SA name in ES")
+						elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = customSAForDB.Name
+
+						// Create and wait for running Elasticsearch
+						createAndWaitForRunning()
+
+						By("Check for Elastic client")
+						f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+						elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Checking indices")
+						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+						elasticClient.Stop()
+						f.Tunnel.Close()
+					})
+				})
+
+				Context("with custom Secret", func() {
+					var kubedbSecret *core.Secret
+					var customSecret *core.Secret
+					BeforeEach(func() {
+						customSecret = f.SecretForDatabaseAuthentication(elasticsearch.ObjectMeta, false)
+						elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
+							SecretName: customSecret.Name,
+						}
+					})
+
+					It("should keep secret after taking snapshot to GCS  successfully", func() {
+						By("Create Database Secret")
+						err := f.CreateSecret(customSecret)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Take snapshot")
+						shouldTakeSnapshot()
+						By("Delete test resources")
+						deleteTestResource()
+						By("Check if custom secret exists")
+						err = f.CheckSecret(customSecret)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should remove secret after taking snapshot to GCS successfully", func() {
+						kubedbSecret = f.SecretForDatabaseAuthentication(elasticsearch.ObjectMeta, true)
+						elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
+							SecretName: kubedbSecret.Name,
+						}
+						By("Create Database Secret")
+						err = f.CreateSecret(kubedbSecret)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Take snapshot")
+						shouldTakeSnapshot()
+						By("Check if custom secret id deleted")
+						deleteTestResource()
+						err = f.CheckSecret(kubedbSecret)
+						Expect(err).To(HaveOccurred())
+					})
+				})
+			})
 
 			Context("In Local", func() {
 				BeforeEach(func() {

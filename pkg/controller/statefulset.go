@@ -132,7 +132,7 @@ func (c *Controller) ensureStatefulSet(
 		in = upsertTemporaryVolume(in)
 
 		if c.EnableRBAC {
-			in.Spec.Template.Spec.ServiceAccountName = elasticsearch.OffshootName()
+			in.Spec.Template.Spec.ServiceAccountName = elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName
 		}
 
 		in.Spec.UpdateStrategy = elasticsearch.Spec.UpdateStrategy

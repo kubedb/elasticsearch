@@ -2,6 +2,7 @@ package controller
 
 import (
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	policy_v1beta1 "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1beta1"
@@ -45,7 +46,7 @@ func (c *Controller) ensureRole(db *api.Elasticsearch, name string, pspName stri
 	return err
 }
 
-func (c *Controller) createRoleBinding(db *api.Elasticsearch, name string) error {
+func (c *Controller) createRoleBinding(db *api.Elasticsearch, roleName string, saName string) error {
 	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
@@ -54,7 +55,7 @@ func (c *Controller) createRoleBinding(db *api.Elasticsearch, name string) error
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(
 		c.Client,
 		metav1.ObjectMeta{
-			Name:      name,
+			Name:      roleName,
 			Namespace: db.Namespace,
 		},
 		func(in *rbac.RoleBinding) *rbac.RoleBinding {
@@ -63,12 +64,12 @@ func (c *Controller) createRoleBinding(db *api.Elasticsearch, name string) error
 			in.RoleRef = rbac.RoleRef{
 				APIGroup: rbac.GroupName,
 				Kind:     "Role",
-				Name:     name,
+				Name:     roleName,
 			}
 			in.Subjects = []rbac.Subject{
 				{
 					Kind:      rbac.ServiceAccountKind,
-					Name:      name,
+					Name:      saName,
 					Namespace: db.Namespace,
 				},
 			}
@@ -110,27 +111,46 @@ func (c *Controller) getPolicyNames(db *api.Elasticsearch) (string, string, erro
 	return dbPolicyName, snapshotPolicyName, nil
 }
 
-func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
-	dbPolicyName, snapshotPolicyName, err := c.getPolicyNames(elasticsearch)
+func (c *Controller) ensureDatabaseRBAC(elasticsearch *api.Elasticsearch) error {
+	dbPolicyName, _, err := c.getPolicyNames(elasticsearch)
 	if err != nil {
 		return err
 	}
 
-	// Create New Role
-	if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName(), dbPolicyName); err != nil {
-		return err
+	saName := elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName
+	if saName == "" {
+		return errors.New("Service Account Name should not empty.")
 	}
-
-	// Create New RoleBinding
-	if err := c.createRoleBinding(elasticsearch, elasticsearch.OffshootName()); err != nil {
-		return err
-	}
-
-	// Create New ServiceAccount
-	if err := c.createServiceAccount(elasticsearch, elasticsearch.OffshootName()); err != nil {
-		if !kerr.IsAlreadyExists(err) {
+	_, err = c.Client.CoreV1().ServiceAccounts(elasticsearch.Namespace).Get(saName, metav1.GetOptions{})
+	if err != nil {
+		if !kerr.IsNotFound(err) {
 			return err
 		}
+		// Create New Role
+		if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName(), dbPolicyName); err != nil {
+			return err
+		}
+
+		// Create New RoleBinding
+		if err := c.createRoleBinding(elasticsearch, elasticsearch.OffshootName(), saName); err != nil {
+			return err
+		}
+
+		// Create New ServiceAccount
+		if err := c.createServiceAccount(elasticsearch, saName); err != nil {
+			if !kerr.IsAlreadyExists(err) {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Controller) ensureSnapshotRBAC(elasticsearch *api.Elasticsearch) error {
+	_, snapshotPolicyName, err := c.getPolicyNames(elasticsearch)
+	if err != nil {
+		return err
 	}
 
 	// Create New Role for Snapshot
@@ -139,7 +159,7 @@ func (c *Controller) ensureRBACStuff(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// Create New RoleBinding for Snapshot
-	if err := c.createRoleBinding(elasticsearch, elasticsearch.SnapshotSAName()); err != nil {
+	if err := c.createRoleBinding(elasticsearch, elasticsearch.SnapshotSAName(), elasticsearch.SnapshotSAName()); err != nil {
 		return err
 	}
 

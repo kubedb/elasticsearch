@@ -300,6 +300,9 @@ func matchWithDormantDatabase(extClient cs.Interface, elasticsearch *api.Elastic
 	// Skip checking UpdateStrategy
 	drmnOriginSpec.UpdateStrategy = originalSpec.UpdateStrategy
 
+	// Skip checking ServiceAccountName
+	drmnOriginSpec.PodTemplate.Spec.ServiceAccountName = elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName
+
 	// Skip checking TerminationPolicy
 	drmnOriginSpec.TerminationPolicy = originalSpec.TerminationPolicy
 

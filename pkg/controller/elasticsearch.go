@@ -181,8 +181,8 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 	}
 
 	if c.EnableRBAC {
-		// Ensure ClusterRoles for statefulsets
-		if err := c.ensureRBACStuff(elasticsearch); err != nil {
+		// Ensure Service account, role, rolebinding, and PSP for database statefulsets
+		if err := c.ensureDatabaseRBAC(elasticsearch); err != nil {
 			return kutil.VerbUnchanged, err
 		}
 	}

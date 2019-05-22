@@ -183,6 +183,9 @@ func setDefaultsFromDormantDB(extClient cs.Interface, elasticsearch *api.Elastic
 	// Skip checking UpdateStrategy
 	ddbOriginSpec.UpdateStrategy = elasticsearch.Spec.UpdateStrategy
 
+	// Skip checking ServiceAccountName
+	ddbOriginSpec.PodTemplate.Spec.ServiceAccountName = elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName
+
 	// Skip checking TerminationPolicy
 	ddbOriginSpec.TerminationPolicy = elasticsearch.Spec.TerminationPolicy
 

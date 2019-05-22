@@ -10,10 +10,12 @@ import (
 	"github.com/appscode/go/log"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	. "github.com/onsi/gomega"
+	"golang.org/x/crypto/bcrypt"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	meta_util "kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
@@ -166,4 +168,52 @@ func (f *Framework) EventuallyDBSecretCount(meta metav1.ObjectMeta) GomegaAsyncA
 		time.Minute*5,
 		time.Second*5,
 	)
+}
+
+func (f *Framework) CheckSecret(secret *core.Secret) error {
+	_, err := f.kubeClient.CoreV1().Secrets(f.namespace).Get(secret.Name, metav1.GetOptions{})
+	return err
+}
+
+func (i *Invocation) SecretForDatabaseAuthentication(meta metav1.ObjectMeta, mangedByKubeDB bool) *core.Secret {
+	//mangedByKubeDB mimics a secret created and manged by kubedb and not user.
+	// It should get deleted during wipeout
+	adminPassword := rand.Characters(8)
+	hashedAdminPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
+	if err != nil {
+		log.Errorf("Error Generating hashedAdminPassword. Err = ", err)
+		return nil
+	}
+
+	readallPassword := rand.Characters(8)
+	hashedReadallPassword, err := bcrypt.GenerateFromPassword([]byte(readallPassword), bcrypt.DefaultCost)
+	if err != nil {
+		log.Errorf("Error Generating hashedReadallPassword. Err = ", err)
+		return nil
+	}
+
+	var dbObjectMeta = metav1.ObjectMeta{
+		Name:      fmt.Sprintf("kubedb-%v-%v", meta.Name, CustomSecretSuffix),
+		Namespace: meta.Namespace,
+	}
+	if mangedByKubeDB {
+		dbObjectMeta.Labels = map[string]string{
+			meta_util.ManagedByLabelKey: api.GenericKey,
+		}
+	}
+
+	return &core.Secret{
+		ObjectMeta: dbObjectMeta,
+		Data: map[string][]byte{
+			KeyAdminUserName:        []byte(AdminUser),
+			KeyAdminPassword:        []byte(adminPassword),
+			KeyReadAllUserName:      []byte(ReadAllUser),
+			KeyReadAllPassword:      []byte(readallPassword),
+			"sg_action_groups.yml":  []byte(action_group),
+			"sg_config.yml":         []byte(config),
+			"sg_internal_users.yml": []byte(fmt.Sprintf(internal_user, hashedAdminPassword, hashedReadallPassword)),
+			"sg_roles.yml":          []byte(roles),
+			"sg_roles_mapping.yml":  []byte(roles_mapping),
+		},
+	}
 }
