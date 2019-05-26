@@ -3,20 +3,19 @@ module github.com/kubedb/elasticsearch
 go 1.12
 
 require (
-	github.com/appscode/go v0.0.0-20190424183524-60025f1135c9
+	github.com/appscode/go v0.0.0-20190523031839-1468ee3a76e8
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/coreos/prometheus-operator v0.29.0
-	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/graymeta/stow v0.0.0-00010101000000-000000000000
-	github.com/kubedb/apimachinery v0.0.0-20190508221312-5ba915343400
+	github.com/kubedb/apimachinery v0.0.0-20190526014453-48e4bab67179
+	github.com/ncw/swift v1.0.47 // indirect
 	github.com/olivere/elastic v6.2.17+incompatible // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1
-	github.com/russross/blackfriday v1.5.2 // indirect
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.4
 	github.com/spf13/pflag v1.0.3
 	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284
 	gomodules.xyz/cert v1.0.0
@@ -29,8 +28,8 @@ require (
 	k8s.io/cli-runtime v0.0.0-20190325194458-f2b4781c3ae1 // indirect
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/kube-aggregator v0.0.0-20190325191802-5268a8efdb65
-	kmodules.xyz/client-go v0.0.0-20190508091620-0d215c04352f
-	kmodules.xyz/custom-resources v0.0.0-20190225012057-ed1c15a0bbda
+	kmodules.xyz/client-go v0.0.0-20190524133821-9c8a87771aea
+	kmodules.xyz/custom-resources v0.0.0-20190508103408-464e8324c3ec
 	kmodules.xyz/monitoring-agent-api v0.0.0-20190508125842-489150794b9b
 	kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9
 	kmodules.xyz/offshoot-api v0.0.0-20190508142450-1c69d50f3c1c
