@@ -2,7 +2,6 @@ package controller
 
 import (
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	policy_v1beta1 "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1beta1"
@@ -112,36 +111,39 @@ func (c *Controller) getPolicyNames(db *api.Elasticsearch) (string, string, erro
 }
 
 func (c *Controller) ensureDatabaseRBAC(elasticsearch *api.Elasticsearch) error {
-	dbPolicyName, _, err := c.getPolicyNames(elasticsearch)
-	if err != nil {
-		return err
-	}
-
 	saName := elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName
 	if saName == "" {
-		return errors.New("Service Account Name should not empty.")
+		saName = elasticsearch.OffshootName()
+		elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = saName
 	}
-	_, err = c.Client.CoreV1().ServiceAccounts(elasticsearch.Namespace).Get(saName, metav1.GetOptions{})
-	if err != nil {
-		if !kerr.IsNotFound(err) {
-			return err
-		}
-		// Create New Role
-		if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName(), dbPolicyName); err != nil {
-			return err
-		}
 
-		// Create New RoleBinding
-		if err := c.createRoleBinding(elasticsearch, elasticsearch.OffshootName(), saName); err != nil {
-			return err
-		}
-
-		// Create New ServiceAccount
-		if err := c.createServiceAccount(elasticsearch, saName); err != nil {
+	sa, err := c.Client.CoreV1().ServiceAccounts(elasticsearch.Namespace).Get(saName, metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		// create service account, since it does not exist
+		if err = c.createServiceAccount(elasticsearch, saName); err != nil {
 			if !kerr.IsAlreadyExists(err) {
 				return err
 			}
 		}
+	} else if err != nil {
+		return err
+	} else if !core_util.IsOwnedBy(sa, elasticsearch) {
+		// user provided the service account, so do nothing.
+		return nil
+	}
+
+	// Create New Role
+	pspName, _, err := c.getPolicyNames(elasticsearch)
+	if err != nil {
+		return err
+	}
+	if err := c.ensureRole(elasticsearch, elasticsearch.OffshootName(), pspName); err != nil {
+		return err
+	}
+
+	// Create New RoleBinding
+	if err := c.createRoleBinding(elasticsearch, elasticsearch.OffshootName(), saName); err != nil {
+		return err
 	}
 
 	return nil
