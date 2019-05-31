@@ -343,6 +343,7 @@ var _ = Describe("Elasticsearch", func() {
 					// Create Elasticsearch
 					By("Create DB")
 					elasticsearch.Spec.Replicas = types.Int32P(3)
+					elasticsearch.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 					createAndWaitForRunning()
 					//Evict a Elasticsearch pod
 					By("Try to evict Pods")
@@ -350,7 +351,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 
-				FIt("should run eviction on cluster successfully", func() {
+				It("should run eviction on cluster successfully", func() {
 					// Create Elasticsearch
 					By("Create DB")
 					elasticsearch = f.DedicatedElasticsearch()
@@ -358,7 +359,9 @@ var _ = Describe("Elasticsearch", func() {
 					elasticsearch.Spec.Topology.Master.Replicas = types.Int32P(3)
 					elasticsearch.Spec.Topology.Data.Replicas = types.Int32P(3)
 
-					elasticsearch.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					elasticsearch.Spec.Topology.Client.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					elasticsearch.Spec.Topology.Data.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					elasticsearch.Spec.Topology.Master.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 					createAndWaitForRunning()
 					//Evict a Elasticsearch pod
 					By("Try to evict Pods")

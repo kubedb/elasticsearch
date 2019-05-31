@@ -13,6 +13,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 	kutil "kmodules.xyz/client-go"
@@ -35,6 +36,7 @@ func (c *Controller) ensureStatefulSet(
 	replicas int32,
 	envList []core.EnvVar,
 	isClient bool,
+	maxUnavailable *intstr.IntOrString,
 ) (kutil.VerbType, error) {
 
 	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
@@ -159,8 +161,8 @@ func (c *Controller) ensureStatefulSet(
 	}
 
 	// ensure pdb
-	if elasticsearch.Spec.MaxUnavailable != nil {
-		if err := c.createPodDisruptionBudget(statefulSet, elasticsearch.Spec.MaxUnavailable); err != nil {
+	if maxUnavailable != nil {
+		if err := c.createPodDisruptionBudget(statefulSet, maxUnavailable); err != nil {
 			return vt, err
 		}
 	}
@@ -225,8 +227,9 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 	if clientNode.Replicas != nil {
 		replicas = types.Int32(clientNode.Replicas)
 	}
+	maxUnavailable := elasticsearch.Spec.Topology.Client.MaxUnavailable
 
-	return c.ensureStatefulSet(elasticsearch, clientNode.Storage, clientNode.Resources, statefulSetName, labels, replicas, envList, true)
+	return c.ensureStatefulSet(elasticsearch, clientNode.Storage, clientNode.Resources, statefulSetName, labels, replicas, envList, true, maxUnavailable)
 }
 
 func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -273,7 +276,9 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		},
 	}
 
-	return c.ensureStatefulSet(elasticsearch, masterNode.Storage, masterNode.Resources, statefulSetName, labels, replicas, envList, false)
+	maxUnavailable := elasticsearch.Spec.Topology.Master.MaxUnavailable
+
+	return c.ensureStatefulSet(elasticsearch, masterNode.Storage, masterNode.Resources, statefulSetName, labels, replicas, envList, false, maxUnavailable)
 }
 
 func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -316,7 +321,9 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		replicas = types.Int32(dataNode.Replicas)
 	}
 
-	return c.ensureStatefulSet(elasticsearch, dataNode.Storage, dataNode.Resources, statefulSetName, labels, replicas, envList, false)
+	maxUnavailable := elasticsearch.Spec.Topology.Data.MaxUnavailable
+
+	return c.ensureStatefulSet(elasticsearch, dataNode.Storage, dataNode.Resources, statefulSetName, labels, replicas, envList, false, maxUnavailable)
 }
 
 func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
@@ -361,7 +368,10 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	if elasticsearch.Spec.PodTemplate.Spec.Resources.Size() != 0 {
 		resources = elasticsearch.Spec.PodTemplate.Spec.Resources
 	}
-	return c.ensureStatefulSet(elasticsearch, &pvcSpec, resources, statefulSetName, labels, replicas, envList, true)
+
+	maxUnavailable := elasticsearch.Spec.MaxUnavailable
+
+	return c.ensureStatefulSet(elasticsearch, &pvcSpec, resources, statefulSetName, labels, replicas, envList, true, maxUnavailable)
 }
 
 func (c *Controller) checkStatefulSet(elasticsearch *api.Elasticsearch, name string) error {
