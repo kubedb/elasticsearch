@@ -257,6 +257,11 @@ func (in *ElasticsearchNode) DeepCopyInto(out *ElasticsearchNode) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.MaxUnavailable != nil {
+		in, out := &in.MaxUnavailable, &out.MaxUnavailable
+		*out = new(intstr.IntOrString)
+		**out = **in
+	}
 	return
 }
 

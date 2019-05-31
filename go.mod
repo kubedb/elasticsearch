@@ -8,12 +8,13 @@ require (
 	github.com/coreos/prometheus-operator v0.29.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/graymeta/stow v0.0.0-00010101000000-000000000000
-	github.com/kubedb/apimachinery v0.0.0-20190531052949-c9bc03fe5ee9
+	github.com/kubedb/apimachinery v0.0.0-20190531094000-484c1e50f6df
 	github.com/olivere/elastic v6.2.17+incompatible // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1
+	github.com/prometheus/procfs v0.0.1 // indirect
 	github.com/spf13/cobra v0.0.4
 	github.com/spf13/pflag v1.0.3
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
@@ -25,6 +26,7 @@ require (
 	k8s.io/apimachinery v0.0.0-20190508063446-a3da69d3723c
 	k8s.io/apiserver v0.0.0-20190508183956-3a0abf14e58a
 	k8s.io/client-go v11.0.0+incompatible
+	k8s.io/klog v0.3.2 // indirect
 	k8s.io/kube-aggregator v0.0.0-20190508104018-6d3d96b06d29
 	kmodules.xyz/client-go v0.0.0-20190527113919-eb165836b702
 	kmodules.xyz/custom-resources v0.0.0-20190508103408-464e8324c3ec
