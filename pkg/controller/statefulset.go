@@ -158,16 +158,9 @@ func (c *Controller) ensureStatefulSet(
 		)
 	}
 
-	if elasticsearch.Spec.Topology != nil {
-		// ensure pdb
-		if elasticsearch.Spec.MaxUnavailable != nil {
-			if err := c.CreateElasticsearchPodDisruptionBudget(statefulSet, elasticsearch.Spec.MaxUnavailable); err != nil {
-				return vt, err
-			}
-		}
-	} else {
-		// ensure pdb
-		if err := c.CreateStatefulSetPodDisruptionBudget(statefulSet); err != nil {
+	// ensure pdb
+	if elasticsearch.Spec.MaxUnavailable != nil {
+		if err := c.createPodDisruptionBudget(statefulSet, elasticsearch.Spec.MaxUnavailable); err != nil {
 			return vt, err
 		}
 	}

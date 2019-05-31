@@ -454,7 +454,7 @@ func (c *Controller) UpsertDatabaseAnnotation(meta metav1.ObjectMeta, annotation
 	return err
 }
 
-func (c *Controller) CreateElasticsearchPodDisruptionBudget(sts *appsv1.StatefulSet, maxUnavailable *intstr.IntOrString) error {
+func (c *Controller) createPodDisruptionBudget(sts *appsv1.StatefulSet, maxUnavailable *intstr.IntOrString) error {
 	ref, err := reference.GetReference(clientsetscheme.Scheme, sts)
 	if err != nil {
 		return err
