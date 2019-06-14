@@ -444,7 +444,7 @@ func (c *Controller) UpsertDatabaseAnnotation(meta metav1.ObjectMeta, annotation
 	}
 
 	_, _, err = util.PatchElasticsearch(c.ExtClient.KubedbV1alpha1(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-		in.Annotations = core_util.UpsertMap(elasticsearch.Annotations, annotation)
+		in.Annotations = core_util.UpsertMap(in.Annotations, annotation)
 		return in
 	})
 	return err
