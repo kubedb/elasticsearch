@@ -90,29 +90,42 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		)
 	}
 
+	// ensure appbinding before ensuring Restic scheduler and restore
+	_, err = c.ensureAppBinding(elasticsearch)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
 	if _, err := meta_util.GetString(elasticsearch.Annotations, api.AnnotationInitialized); err == kutil.ErrNotFound &&
 		elasticsearch.Spec.Init != nil &&
-		elasticsearch.Spec.Init.SnapshotSource != nil {
-
-		snapshotSource := elasticsearch.Spec.Init.SnapshotSource
+		(elasticsearch.Spec.Init.SnapshotSource != nil || elasticsearch.Spec.Init.StashRestoreSession != nil) {
 
 		if elasticsearch.Status.Phase == api.DatabasePhaseInitializing {
 			return nil
 		}
 
-		jobName := fmt.Sprintf("%s-%s", api.DatabaseNamePrefix, snapshotSource.Name)
-		if _, err := c.Client.BatchV1().Jobs(snapshotSource.Namespace).Get(jobName, metav1.GetOptions{}); err != nil {
-			if !kerr.IsNotFound(err) {
-				return err
+		// add phase that database is being initialized
+		mg, err := util.UpdateElasticsearchStatus(c.ExtClient.KubedbV1alpha1(), elasticsearch, func(in *api.ElasticsearchStatus) *api.ElasticsearchStatus {
+			in.Phase = api.DatabasePhaseInitializing
+			return in
+		}, apis.EnableStatusSubresource)
+		if err != nil {
+			return err
+		}
+		elasticsearch.Status = mg.Status
+
+		init := elasticsearch.Spec.Init
+		if init.SnapshotSource != nil {
+			err = c.initializeFromSnapshot(elasticsearch)
+			if err != nil {
+				return fmt.Errorf("failed to complete initialization. Reason: %v", err)
 			}
-		} else {
+			return err
+		} else if init.StashRestoreSession != nil {
+			log.Debugf("Elasticsearch %v/%v is waiting for restoreSession to be succeeded", elasticsearch.Namespace, elasticsearch.Name)
 			return nil
 		}
-		err = c.initialize(elasticsearch)
-		if err != nil {
-			return fmt.Errorf(`failed to complete initialization for "%v/%v". Reason: %v`, elasticsearch.Namespace, elasticsearch.Name, err)
-		}
-		return nil
 	}
 
 	es, err := util.UpdateElasticsearchStatus(c.ExtClient.KubedbV1alpha1(), elasticsearch, func(in *api.ElasticsearchStatus) *api.ElasticsearchStatus {
@@ -162,11 +175,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		return nil
 	}
 
-	_, err = c.ensureAppBinding(elasticsearch)
-	if err != nil {
-		log.Errorln(err)
-		return err
-	}
 	return nil
 }
 
@@ -239,17 +247,17 @@ func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) err
 	return nil
 }
 
-func (c *Controller) initialize(elasticsearch *api.Elasticsearch) error {
-	es, err := util.UpdateElasticsearchStatus(c.ExtClient.KubedbV1alpha1(), elasticsearch, func(in *api.ElasticsearchStatus) *api.ElasticsearchStatus {
-		in.Phase = api.DatabasePhaseInitializing
-		return in
-	}, apis.EnableStatusSubresource)
-	if err != nil {
-		return err
-	}
-	elasticsearch.Status = es.Status
-
+func (c *Controller) initializeFromSnapshot(elasticsearch *api.Elasticsearch) error {
 	snapshotSource := elasticsearch.Spec.Init.SnapshotSource
+	jobName := fmt.Sprintf("%s-%s", api.DatabaseNamePrefix, snapshotSource.Name)
+	if _, err := c.Client.BatchV1().Jobs(snapshotSource.Namespace).Get(jobName, metav1.GetOptions{}); err != nil {
+		if !kerr.IsNotFound(err) {
+			return err
+		}
+	} else {
+		return nil
+	}
+
 	// Event for notification that kubernetes objects are creating
 	c.recorder.Eventf(
 		elasticsearch,

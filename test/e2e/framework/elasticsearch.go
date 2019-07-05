@@ -102,31 +102,31 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 }
 
 func (f *Framework) CreateElasticsearch(obj *api.Elasticsearch) error {
-	_, err := f.extClient.KubedbV1alpha1().Elasticsearches(obj.Namespace).Create(obj)
+	_, err := f.dbClient.KubedbV1alpha1().Elasticsearches(obj.Namespace).Create(obj)
 	return err
 }
 
 func (f *Framework) GetElasticsearch(meta metav1.ObjectMeta) (*api.Elasticsearch, error) {
-	return f.extClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 }
 
 func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func(*api.Elasticsearch) *api.Elasticsearch) (*api.Elasticsearch, error) {
-	elasticsearch, err := f.extClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	elasticsearch, _, err = util.PatchElasticsearch(f.extClient.KubedbV1alpha1(), elasticsearch, transform)
+	elasticsearch, _, err = util.PatchElasticsearch(f.dbClient.KubedbV1alpha1(), elasticsearch, transform)
 	return elasticsearch, err
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
-	return f.extClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(meta.Name, nil)
+	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(meta.Name, nil)
 }
 
 func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.extClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			_, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			if err != nil {
 				if kerr.IsNotFound(err) {
 					return false
@@ -141,10 +141,22 @@ func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncA
 	)
 }
 
+func (f *Framework) EventuallyElasticsearchPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() api.DatabasePhase {
+			db, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			return db.Status.Phase
+		},
+		time.Minute*5,
+		time.Second*5,
+	)
+}
+
 func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			elasticsearch, err := f.extClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			elasticsearch, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return elasticsearch.Status.Phase == api.DatabasePhaseRunning
 		},
@@ -184,12 +196,12 @@ func (f *Framework) EventuallyElasticsearchIndicesCount(client es.ESClient) Gome
 }
 
 func (f *Framework) CleanElasticsearch() {
-	elasticsearchList, err := f.extClient.KubedbV1alpha1().Elasticsearches(f.namespace).List(metav1.ListOptions{})
+	elasticsearchList, err := f.dbClient.KubedbV1alpha1().Elasticsearches(f.namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return
 	}
 	for _, e := range elasticsearchList.Items {
-		if _, _, err := util.PatchElasticsearch(f.extClient.KubedbV1alpha1(), &e, func(in *api.Elasticsearch) *api.Elasticsearch {
+		if _, _, err := util.PatchElasticsearch(f.dbClient.KubedbV1alpha1(), &e, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.ObjectMeta.Finalizers = nil
 			in.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 			return in
@@ -197,7 +209,7 @@ func (f *Framework) CleanElasticsearch() {
 			fmt.Printf("error Patching Elasticsearch. error: %v", err)
 		}
 	}
-	if err := f.extClient.KubedbV1alpha1().Elasticsearches(f.namespace).DeleteCollection(deleteInForeground(), metav1.ListOptions{}); err != nil {
+	if err := f.dbClient.KubedbV1alpha1().Elasticsearches(f.namespace).DeleteCollection(deleteInForeground(), metav1.ListOptions{}); err != nil {
 		fmt.Printf("error in deletion of Elasticsearch. Error: %v", err)
 	}
 }

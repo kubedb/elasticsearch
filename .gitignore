@@ -27,6 +27,7 @@ _testmain.go
 /.markdownlint.json
 /.vscode
 /apiserver.local.config
+/test/e2e/apiserver.local.config
 /coverage.txt
 /dist
 /hack/config/.env

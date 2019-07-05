@@ -3,24 +3,26 @@ module github.com/kubedb/elasticsearch
 go 1.12
 
 require (
-	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
 	github.com/appscode/go v0.0.0-20190523031839-1468ee3a76e8
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
+	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/prometheus-operator v0.29.0
+	github.com/emicklei/go-restful v2.9.6+incompatible // indirect
 	github.com/fortytw2/leaktest v1.3.0 // indirect
+	github.com/go-openapi/spec v0.19.2 // indirect
 	github.com/graymeta/stow v0.0.0-00010101000000-000000000000
-	github.com/kr/pty v1.1.4 // indirect
-	github.com/kubedb/apimachinery v0.0.0-20190526014453-48e4bab67179
-	github.com/magiconair/properties v1.8.1 // indirect
-	github.com/ncw/swift v1.0.47 // indirect
+	github.com/kubedb/apimachinery v0.0.0-20190531094000-484c1e50f6df
 	github.com/olivere/elastic v6.2.17+incompatible // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1
-	github.com/spf13/cobra v0.0.4
+	github.com/prometheus/client_golang v0.9.4 // indirect
+	github.com/prometheus/procfs v0.0.3 // indirect
+	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284
+	go.etcd.io/bbolt v1.3.3 // indirect
+	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
 	gomodules.xyz/cert v1.0.0
 	gopkg.in/olivere/elastic.v5 v5.0.61
 	gopkg.in/olivere/elastic.v6 v6.2.17
@@ -28,16 +30,18 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20190508184259-7784d62bc471
 	k8s.io/apimachinery v0.0.0-20190508063446-a3da69d3723c
 	k8s.io/apiserver v0.0.0-20190508183956-3a0abf14e58a
-	k8s.io/cli-runtime v0.0.0-20190325194458-f2b4781c3ae1 // indirect
 	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/kube-aggregator v0.0.0-20190325191802-5268a8efdb65
+	k8s.io/klog v0.3.3 // indirect
+	k8s.io/kube-aggregator v0.0.0-20190508104018-6d3d96b06d29
+	k8s.io/kubernetes v1.14.3 // indirect
 	kmodules.xyz/client-go v0.0.0-20190527113919-eb165836b702
 	kmodules.xyz/custom-resources v0.0.0-20190508103408-464e8324c3ec
 	kmodules.xyz/monitoring-agent-api v0.0.0-20190508125842-489150794b9b
 	kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9
-	kmodules.xyz/offshoot-api v0.0.0-20190508142450-1c69d50f3c1c
+	kmodules.xyz/offshoot-api v0.0.0-20190527060812-295f97bb8061
 	kmodules.xyz/webhook-runtime v0.0.0-20190508093950-b721b4eba5e5
 	sigs.k8s.io/yaml v1.1.0
+	stash.appscode.dev/stash v0.0.0-20190612050756-955b1adbae81
 )
 
 replace (
