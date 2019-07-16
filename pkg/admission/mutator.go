@@ -197,7 +197,7 @@ func setDefaultsFromDormantDB(extClient cs.Interface, elasticsearch *api.Elastic
 
 	if _, err := meta_util.GetString(elasticsearch.Annotations, api.AnnotationInitialized); err == kutil.ErrNotFound &&
 		elasticsearch.Spec.Init != nil &&
-		elasticsearch.Spec.Init.SnapshotSource != nil {
+		(elasticsearch.Spec.Init.SnapshotSource != nil || elasticsearch.Spec.Init.StashRestoreSession != nil) {
 		elasticsearch.Annotations = core_util.UpsertMap(elasticsearch.Annotations, map[string]string{
 			api.AnnotationInitialized: "",
 		})

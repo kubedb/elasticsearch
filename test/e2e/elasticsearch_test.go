@@ -1279,7 +1279,7 @@ var _ = Describe("Elasticsearch", func() {
 			// 1st: Deploy stash latest operator
 			// 2nd: create elasticsearch related tasks and functions by helm chart from
 			// https://github.com/stashed/elasticsearch
-			FContext("With Stash/Restic", func() {
+			Context("With Stash/Restic", func() {
 				var bc *stashV1beta1.BackupConfiguration
 				var bs *stashV1beta1.BackupSession
 				var rs *stashV1beta1.RestoreSession
