@@ -12,17 +12,21 @@ import (
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	validator "github.com/kubedb/elasticsearch/pkg/admission"
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 	kutil "kmodules.xyz/client-go"
 	core_util "kmodules.xyz/client-go/core/v1"
 	dynamic_util "kmodules.xyz/client-go/dynamic"
 	meta_util "kmodules.xyz/client-go/meta"
+	policy_util "kmodules.xyz/client-go/policy/v1beta1"
 	storage "kmodules.xyz/objectstore-api/osm"
 )
 
@@ -455,5 +459,32 @@ func (c *Controller) UpsertDatabaseAnnotation(meta metav1.ObjectMeta, annotation
 		in.Annotations = core_util.UpsertMap(in.Annotations, annotation)
 		return in
 	})
+	return err
+}
+
+func (c *Controller) createPodDisruptionBudget(sts *appsv1.StatefulSet, maxUnavailable *intstr.IntOrString) error {
+	ref, err := reference.GetReference(clientsetscheme.Scheme, sts)
+	if err != nil {
+		return err
+	}
+
+	m := metav1.ObjectMeta{
+		Name:      sts.Name,
+		Namespace: sts.Namespace,
+	}
+	_, _, err = policy_util.CreateOrPatchPodDisruptionBudget(c.Client, m,
+		func(in *policyv1beta1.PodDisruptionBudget) *policyv1beta1.PodDisruptionBudget {
+			in.Labels = sts.Labels
+			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+
+			in.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: sts.Spec.Template.Labels,
+			}
+
+			in.Spec.MaxUnavailable = maxUnavailable
+
+			in.Spec.MinAvailable = nil
+			return in
+		})
 	return err
 }

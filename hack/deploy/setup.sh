@@ -123,8 +123,13 @@ if [ "$APPSCODE_ENV" = "dev" ]; then
   echo ""
 
   if [[ ! -d $INSTALLER_ROOT ]]; then
+<<<<<<< HEAD
     echo ">>> Cloning installer repo"
     git clone -b $INSTALLER_BRANCH https://github.com/kubedb/installer.git "${INSTALLER_ROOT}"
+=======
+    echo ">>> Cloning cli repo"
+    git clone -b $CLI_BRANCH https://github.com/kubedb/installer.git "${INSTALLER_ROOT}"
+>>>>>>> master
     pushd $INSTALLER_ROOT
   else
     pushd $INSTALLER_ROOT
