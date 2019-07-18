@@ -12,7 +12,7 @@ import (
 	"encoding/asn1"
 	"errors"
 
-	"github.com/kubedb/elasticsearch/third_party/golang/crypto/pkcs12/internal/rc2"
+	"kubedb.dev/elasticsearch/third_party/golang/crypto/pkcs12/internal/rc2"
 )
 
 var (

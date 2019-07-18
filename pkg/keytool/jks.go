@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/appscode/go/ioutil"
-	"github.com/kubedb/elasticsearch/third_party/golang/crypto/pkcs12"
 	keystore "github.com/pavel-v-chernykh/keystore-go"
 	"github.com/pkg/errors"
+	"kubedb.dev/elasticsearch/third_party/golang/crypto/pkcs12"
 )
 
 const (

@@ -6,11 +6,6 @@ import (
 
 	"github.com/appscode/go/encoding/json/types"
 	"github.com/appscode/go/log"
-	"github.com/kubedb/apimachinery/apis"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
-	"github.com/kubedb/apimachinery/pkg/eventer"
-	validator "github.com/kubedb/elasticsearch/pkg/admission"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -28,6 +23,11 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	policy_util "kmodules.xyz/client-go/policy/v1beta1"
 	storage "kmodules.xyz/objectstore-api/osm"
+	"kubedb.dev/apimachinery/apis"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	"kubedb.dev/apimachinery/pkg/eventer"
+	validator "kubedb.dev/elasticsearch/pkg/admission"
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {

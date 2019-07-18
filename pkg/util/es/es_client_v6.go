@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/appscode/go/crypto/rand"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	esv6 "gopkg.in/olivere/elastic.v6"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"sigs.k8s.io/yaml"
 )
 

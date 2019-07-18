@@ -4,11 +4,11 @@ import (
 	"strings"
 
 	string_util "github.com/appscode/go/strings"
-	"github.com/kubedb/elasticsearch/pkg/util/es"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kubedb.dev/elasticsearch/pkg/util/es"
 	"sigs.k8s.io/yaml"
 )
 

@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
-	amc "github.com/kubedb/apimachinery/pkg/controller"
-	"github.com/kubedb/elasticsearch/pkg/controller"
-	"github.com/kubedb/elasticsearch/pkg/util/es"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	cs "kubedb.dev/apimachinery/client/clientset/versioned"
+	amc "kubedb.dev/apimachinery/pkg/controller"
+	"kubedb.dev/elasticsearch/pkg/controller"
+	"kubedb.dev/elasticsearch/pkg/util/es"
 )
 
 func ExportReport(

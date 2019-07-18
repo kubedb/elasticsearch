@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"strings"
 
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
 	esv5 "gopkg.in/olivere/elastic.v5"
 	esv6 "gopkg.in/olivere/elastic.v6"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 )
 
 const (

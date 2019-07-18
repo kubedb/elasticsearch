@@ -8,7 +8,6 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/log"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	. "github.com/onsi/gomega"
 	"golang.org/x/crypto/bcrypt"
 	core "k8s.io/api/core/v1"
@@ -18,6 +17,7 @@ import (
 	v1 "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"stash.appscode.dev/stash/pkg/restic"
 )
 

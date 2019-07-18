@@ -9,8 +9,8 @@ export MINIKUBE_RUN=0
 export SELF_HOSTED=1
 export ARGS="" # Forward arguments to installer script
 
-REPO_ROOT="$GOPATH/src/github.com/kubedb/elasticsearch"
-INSTALLER_ROOT="$GOPATH/src/github.com/kubedb/installer"
+REPO_ROOT="$GOPATH/src/kubedb.dev/elasticsearch"
+INSTALLER_ROOT="$GOPATH/src/kubedb.dev/installer"
 
 pushd $REPO_ROOT
 
