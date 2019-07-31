@@ -939,7 +939,7 @@ kmodules.xyz/offshoot-api/api/v1
 # kmodules.xyz/webhook-runtime v0.0.0-20190715115250-a84fbf77dd30
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-# kubedb.dev/apimachinery v0.0.0-20190718012505-6973f90fefd0
+# kubedb.dev/apimachinery v0.0.0-20190731194925-9549fe9cb250
 kubedb.dev/apimachinery/client/clientset/versioned/scheme
 kubedb.dev/apimachinery/apis/kubedb/v1alpha1
 kubedb.dev/apimachinery/client/clientset/versioned
@@ -957,15 +957,10 @@ kubedb.dev/apimachinery/pkg/eventer
 kubedb.dev/apimachinery/pkg/admission/dormantdatabase
 kubedb.dev/apimachinery/pkg/admission/namespace
 kubedb.dev/apimachinery/pkg/admission/snapshot
-kubedb.dev/apimachinery/apis/authorization/v1alpha1
-kubedb.dev/apimachinery/apis/config/v1alpha1
 kubedb.dev/apimachinery/apis/kubedb
-kubedb.dev/apimachinery/client/clientset/versioned/typed/authorization/v1alpha1
 kubedb.dev/apimachinery/client/clientset/versioned/typed/catalog/v1alpha1
-kubedb.dev/apimachinery/client/clientset/versioned/typed/config/v1alpha1
 kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1
 kubedb.dev/apimachinery/client/clientset/versioned/fake
-kubedb.dev/apimachinery/client/informers/externalversions/authorization
 kubedb.dev/apimachinery/client/informers/externalversions/catalog
 kubedb.dev/apimachinery/client/informers/externalversions/internalinterfaces
 kubedb.dev/apimachinery/client/informers/externalversions/kubedb
@@ -973,14 +968,9 @@ kubedb.dev/apimachinery/client/informers/externalversions/kubedb/v1alpha1
 kubedb.dev/apimachinery/pkg/controller/job
 kubedb.dev/apimachinery/apis/catalog
 kubedb.dev/apimachinery/pkg/admission
-kubedb.dev/apimachinery/apis/authorization
-kubedb.dev/apimachinery/client/clientset/versioned/typed/authorization/v1alpha1/fake
 kubedb.dev/apimachinery/client/clientset/versioned/typed/catalog/v1alpha1/fake
-kubedb.dev/apimachinery/client/clientset/versioned/typed/config/v1alpha1/fake
 kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/fake
-kubedb.dev/apimachinery/client/informers/externalversions/authorization/v1alpha1
 kubedb.dev/apimachinery/client/informers/externalversions/catalog/v1alpha1
-kubedb.dev/apimachinery/client/listers/authorization/v1alpha1
 kubedb.dev/apimachinery/client/listers/catalog/v1alpha1
 # sigs.k8s.io/kustomize v2.0.3+incompatible
 sigs.k8s.io/kustomize/pkg/fs
@@ -1013,7 +1003,7 @@ sigs.k8s.io/structured-merge-diff/value
 sigs.k8s.io/structured-merge-diff/schema
 # sigs.k8s.io/yaml v1.1.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/stash v0.0.0-20190718155146-3de534baa0a0
+# stash.appscode.dev/stash v0.0.0-20190730144328-4ec6caf83810
 stash.appscode.dev/stash/client/clientset/versioned
 stash.appscode.dev/stash/client/informers/externalversions
 stash.appscode.dev/stash/apis/stash/v1alpha1

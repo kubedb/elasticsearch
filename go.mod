@@ -32,9 +32,9 @@ require (
 	kmodules.xyz/objectstore-api v0.0.0-20190718002052-da668b440b0b
 	kmodules.xyz/offshoot-api v0.0.0-20190715115723-36c8fce142c1
 	kmodules.xyz/webhook-runtime v0.0.0-20190715115250-a84fbf77dd30
-	kubedb.dev/apimachinery v0.0.0-20190718012505-6973f90fefd0
+	kubedb.dev/apimachinery v0.0.0-20190731194925-9549fe9cb250
 	sigs.k8s.io/yaml v1.1.0
-	stash.appscode.dev/stash v0.0.0-20190718155146-3de534baa0a0
+	stash.appscode.dev/stash v0.0.0-20190730144328-4ec6caf83810
 )
 
 replace (
