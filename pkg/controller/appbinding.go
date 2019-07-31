@@ -50,7 +50,6 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 	_, vt, err := appcat_util.CreateOrPatchAppBinding(c.AppCatalogClient, meta, func(in *appcat.AppBinding) *appcat.AppBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Labels = db.OffshootLabels()
-		in.Annotations = db.Spec.ServiceTemplate.Annotations
 
 		in.Spec.Type = appmeta.Type()
 		in.Spec.Version = elasticsearchVersion.Spec.Version
