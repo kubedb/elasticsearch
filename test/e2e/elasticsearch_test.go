@@ -341,7 +341,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 
-				FIt("should run eviction on cluster successfully", func() {
+				It("should run eviction on cluster successfully", func() {
 					// Create Elasticsearch
 					By("Create DB")
 					elasticsearch = f.DedicatedElasticsearch()
