@@ -1556,6 +1556,7 @@ var _ = Describe("Elasticsearch", func() {
 					elasticsearch = f.DedicatedElasticsearch()
 					snapshot.Spec.DatabaseName = elasticsearch.Name
 				})
+
 				It("should initialize database successfully", shouldResumeSuccessfully)
 
 				Context("with SSL disabled", func() {
@@ -2115,6 +2116,7 @@ var _ = Describe("Elasticsearch", func() {
 						elasticsearch = f.DedicatedElasticsearch()
 						snapshot.Spec.DatabaseName = elasticsearch.Name
 					})
+
 					It("should run successfully with given envs", shouldRunWithAllowedEnvs)
 
 					Context("with SSL disabled", func() {
