@@ -502,7 +502,7 @@ func (c *Controller) upsertMonitoringContainer(statefulSet *apps.StatefulSet, el
 				fmt.Sprintf("--es.uri=%s", getURI(elasticsearch)),
 				fmt.Sprintf("--web.listen-address=:%d", api.PrometheusExporterPortNumber),
 				fmt.Sprintf("--web.telemetry-path=%s", elasticsearch.StatsService().Path()),
-			}),
+			}, elasticsearch.Spec.Monitor.Args...),
 			Image:           elasticsearchVersion.Spec.Exporter.Image,
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{
