@@ -158,6 +158,13 @@ case "$op" in
     for INDEX in $(cat indices.txt); do
       echo "Restoring index: $INDEX"
 
+      if [[ "$INDEX" == "searchguard" ]]; then
+        echo "skipping searchguard." #todo: delete
+        # ignore searchguard indices.
+        # ref: https://forum.search-guard.com/t/is-admin-cant-update-mapping-settings-or-aliases-of-searchguard-index-since-25-0-release/1616.
+        continue
+      fi
+
       elasticdump --quiet --input "$INDEX.analyzer.json" --output "$ES_URL/$INDEX" --type analyzer "$@" || exit_on_error "failed to restore analyzer for $INDEX"
       elasticdump --quiet --input "$INDEX.mapping.json" --output "$ES_URL/$INDEX" --type mapping "$@" || exit_on_error "failed to restore mapping for $INDEX"
       elasticdump --quiet --input "$INDEX.data.json" --output "$ES_URL/$INDEX" --type data "$@" || exit_on_error "failed to restore data for $INDEX"

@@ -39,6 +39,10 @@ searchguard.disabled: ${SEARCHGUARD_DISABLED:false}
 # disable Search Guard enterprise modules by default
 searchguard.enterprise_modules_enabled: false
 
+# filter out the searchguard index from all-index requests.
+# ref: https://forum.search-guard.com/t/is-admin-cant-update-mapping-settings-or-aliases-of-searchguard-index-since-25-0-release/1616
+searchguard.filter_sgindex_from_all_requests: true
+
 searchguard.ssl.transport.keystore_filepath: certs/node.jks
 searchguard.ssl.transport.keystore_password: ${KEY_PASS}
 searchguard.ssl.transport.truststore_filepath: certs/root.jks
