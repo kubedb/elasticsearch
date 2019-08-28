@@ -82,6 +82,8 @@ dbversions=(
   6.4
   6.5.3
   6.5
+  6.8
+  6.8.0
 )
 
 exporters=(
@@ -91,6 +93,7 @@ exporters=(
 kibanaimages=(
   6.3.0
   6.5.3
+  6.8.0
 )
 
 echo ""
