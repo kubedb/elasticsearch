@@ -11,6 +11,7 @@ require (
 	github.com/onsi/gomega v1.5.0
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1
+	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
