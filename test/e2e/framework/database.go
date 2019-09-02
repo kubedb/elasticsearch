@@ -3,12 +3,12 @@ package framework
 import (
 	"fmt"
 
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	amc "github.com/kubedb/apimachinery/pkg/controller"
-	"github.com/kubedb/elasticsearch/pkg/controller"
-	"github.com/kubedb/elasticsearch/pkg/util/es"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/tools/portforward"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	amc "kubedb.dev/apimachinery/pkg/controller"
+	"kubedb.dev/elasticsearch/pkg/controller"
+	"kubedb.dev/elasticsearch/pkg/util/es"
 )
 
 func (f *Framework) GetClientPodName(elasticsearch *api.Elasticsearch) string {
@@ -39,6 +39,6 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es.ESClient, error
 		return nil, err
 	}
 	url := fmt.Sprintf("%v://127.0.0.1:%d", db.GetConnectionScheme(), f.Tunnel.Local)
-	c := controller.New(nil, f.kubeClient, nil, f.extClient, nil, nil, nil, nil, amc.Config{}, nil)
+	c := controller.New(nil, f.kubeClient, nil, f.dbClient, nil, nil, nil, nil, nil, amc.Config{}, nil)
 	return es.GetElasticClient(c.Client, c.ExtClient, db, url)
 }

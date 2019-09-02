@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/kubedb/elasticsearch)](https://goreportcard.com/report/github.com/kubedb/elasticsearch)
+[![Go Report Card](https://goreportcard.com/badge/kubedb.dev/elasticsearch)](https://goreportcard.com/report/kubedb.dev/elasticsearch)
 [![Build Status](https://travis-ci.org/kubedb/elasticsearch.svg?branch=master)](https://travis-ci.org/kubedb/elasticsearch)
 [![codecov](https://codecov.io/gh/kubedb/elasticsearch/branch/master/graph/badge.svg)](https://codecov.io/gh/kubedb/elasticsearch)
 [![Slack](http://slack.kubernetes.io/badge.svg)](http://slack.kubernetes.io/#kubedb)

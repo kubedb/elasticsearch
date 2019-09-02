@@ -6,8 +6,6 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
 	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -21,6 +19,8 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	hookapi "kmodules.xyz/webhook-runtime/admission/v1beta1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 )
 
 type ElasticsearchMutator struct {
@@ -197,7 +197,7 @@ func setDefaultsFromDormantDB(extClient cs.Interface, elasticsearch *api.Elastic
 
 	if _, err := meta_util.GetString(elasticsearch.Annotations, api.AnnotationInitialized); err == kutil.ErrNotFound &&
 		elasticsearch.Spec.Init != nil &&
-		elasticsearch.Spec.Init.SnapshotSource != nil {
+		(elasticsearch.Spec.Init.SnapshotSource != nil || elasticsearch.Spec.Init.StashRestoreSession != nil) {
 		elasticsearch.Annotations = core_util.UpsertMap(elasticsearch.Annotations, map[string]string{
 			api.AnnotationInitialized: "",
 		})

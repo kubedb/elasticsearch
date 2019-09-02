@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	. "github.com/onsi/gomega"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 )
 
 func (f *Framework) EventuallyAppBinding(meta metav1.ObjectMeta) GomegaAsyncAssertion {

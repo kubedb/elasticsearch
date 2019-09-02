@@ -2,7 +2,7 @@
 set -eou pipefail
 
 GOPATH=$(go env GOPATH)
-REPO_ROOT=${GOPATH}/src/github.com/kubedb/elasticsearch
+REPO_ROOT=${GOPATH}/src/kubedb.dev/elasticsearch
 
 export DB_UPDATE=1
 export TOOLS_UPDATE=1
@@ -82,6 +82,8 @@ dbversions=(
   6.4
   6.5.3
   6.5
+  6.8
+  6.8.0
   7.2.0
   7.2
 )
@@ -93,6 +95,7 @@ exporters=(
 kibanaimages=(
   6.3.0
   6.5.3
+  6.8.0
   7.2.0
 )
 

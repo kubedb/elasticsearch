@@ -6,11 +6,6 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	catalog "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
-	"github.com/kubedb/elasticsearch/test/e2e/framework"
-	"github.com/kubedb/elasticsearch/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
@@ -18,9 +13,16 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	core_util "kmodules.xyz/client-go/core/v1"
 	exec_util "kmodules.xyz/client-go/tools/exec"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	"kubedb.dev/elasticsearch/test/e2e/framework"
+	"kubedb.dev/elasticsearch/test/e2e/matcher"
+	stashV1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	stashV1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 const (
@@ -36,7 +38,6 @@ var _ = Describe("Elasticsearch", func() {
 		f                        *framework.Invocation
 		elasticsearch            *api.Elasticsearch
 		garbageElasticsearch     *api.ElasticsearchList
-		elasticsearchVersion     *catalog.ElasticsearchVersion
 		snapshot                 *api.Snapshot
 		snapshotPVC              *core.PersistentVolumeClaim
 		secret                   *core.Secret
@@ -47,7 +48,6 @@ var _ = Describe("Elasticsearch", func() {
 	BeforeEach(func() {
 		f = root.Invoke()
 		elasticsearch = f.CombinedElasticsearch()
-		elasticsearchVersion = f.ElasticsearchVersion()
 		garbageElasticsearch = new(api.ElasticsearchList)
 		snapshot = f.Snapshot()
 		secret = nil
@@ -56,10 +56,6 @@ var _ = Describe("Elasticsearch", func() {
 	})
 
 	var createAndWaitForRunning = func() {
-		By("Create ElasticsearchVersion: " + elasticsearchVersion.Name)
-		err = f.CreateElasticsearchVersion(elasticsearchVersion)
-		Expect(err).NotTo(HaveOccurred())
-
 		By("Create Elasticsearch: " + elasticsearch.Name)
 		err = f.CreateElasticsearch(elasticsearch)
 		Expect(err).NotTo(HaveOccurred())
@@ -145,11 +141,6 @@ var _ = Describe("Elasticsearch", func() {
 			if err != nil && !kerr.IsNotFound(err) {
 				Expect(err).NotTo(HaveOccurred())
 			}
-		}
-
-		err = f.DeleteElasticsearchVersion(elasticsearchVersion.ObjectMeta)
-		if err != nil && !kerr.IsNotFound(err) {
-			Expect(err).NotTo(HaveOccurred())
 		}
 	})
 
@@ -333,6 +324,39 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Resume DB")
 					createAndWaitForRunning()
+				})
+			})
+
+			Context("PDB", func() {
+
+				It("should run eviction successfully", func() {
+					// Create Elasticsearch
+					By("Create DB")
+					elasticsearch.Spec.Replicas = types.Int32P(3)
+					elasticsearch.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					createAndWaitForRunning()
+					//Evict a Elasticsearch pod
+					By("Try to evict Pods")
+					err := f.EvictPodsFromStatefulSet(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should run eviction on cluster successfully", func() {
+					// Create Elasticsearch
+					By("Create DB")
+					elasticsearch = f.DedicatedElasticsearch()
+					elasticsearch.Spec.Topology.Client.Replicas = types.Int32P(3)
+					elasticsearch.Spec.Topology.Master.Replicas = types.Int32P(3)
+					elasticsearch.Spec.Topology.Data.Replicas = types.Int32P(3)
+
+					elasticsearch.Spec.Topology.Client.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					elasticsearch.Spec.Topology.Data.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					elasticsearch.Spec.Topology.Master.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					createAndWaitForRunning()
+					//Evict a Elasticsearch pod
+					By("Try to evict Pods")
+					err := f.EvictPodsFromStatefulSet(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})
@@ -1284,6 +1308,197 @@ var _ = Describe("Elasticsearch", func() {
 					It("should initialize database successfully", shouldInitialize)
 				})
 			})
+
+			// To run this test,
+			// 1st: Deploy stash latest operator
+			// 2nd: create elasticsearch related tasks and functions by helm chart from
+			// https://github.com/stashed/elasticsearch
+			Context("With Stash/Restic", func() {
+				var bc *stashV1beta1.BackupConfiguration
+				var bs *stashV1beta1.BackupSession
+				var rs *stashV1beta1.RestoreSession
+				var repo *stashV1alpha1.Repository
+
+				BeforeEach(func() {
+					skipSnapshotDataChecking = true
+					if !f.FoundStashCRDs() {
+						Skip("Skipping tests for stash integration. reason: stash operator is not running.")
+					}
+				})
+
+				AfterEach(func() {
+					By("Deleting BackupConfiguration")
+					err := f.DeleteBackupConfiguration(bc.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Deleting BackupSession")
+					err = f.DeleteBackupSession(bs.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Deleting RestoreSession")
+					err = f.DeleteRestoreSession(rs.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Deleting Repository")
+					err = f.DeleteRepository(repo.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				var createAndWaitForInitializing = func() {
+					By("Creating Elasticsearch: " + elasticsearch.Name)
+					err = f.CreateElasticsearch(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for Initializing elasticsearch")
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseInitializing))
+
+					By("Wait for AppBinding to create")
+					f.EventuallyAppBinding(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					By("Check valid AppBinding Specs")
+					err = f.CheckAppBindingSpec(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+				}
+
+				var shouldInitializeFromStash = func() {
+
+					// Create and wait for running Elasticsearch
+					createAndWaitForRunning()
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Creating new indices")
+					err = elasticClient.CreateIndex(2)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking new indices")
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+					elasticClient.Stop()
+					f.Tunnel.Close()
+
+					By("Create Secret")
+					err = f.CreateSecret(secret)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Create Repositories")
+					err = f.CreateRepository(repo)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Create BackupConfiguration")
+					err = f.CreateBackupConfiguration(bc)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Create BackupSession")
+					err = f.CreateBackupSession(bs)
+					Expect(err).NotTo(HaveOccurred())
+
+					// eventually backupsession succeeded
+					By("Check for Succeeded backupsession")
+					f.EventuallyBackupSessionPhase(bs.ObjectMeta).Should(Equal(stashV1beta1.BackupSessionSucceeded))
+
+					oldElasticsearch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					garbageElasticsearch.Items = append(garbageElasticsearch.Items, *oldElasticsearch)
+
+					By("Create elasticsearch from stash")
+					*elasticsearch = *f.CombinedElasticsearch()
+					rs = f.RestoreSession(elasticsearch.ObjectMeta, oldElasticsearch.ObjectMeta)
+					elasticsearch.Spec.DatabaseSecret = oldElasticsearch.Spec.DatabaseSecret
+					elasticsearch.Spec.Init = &api.InitSpec{
+						StashRestoreSession: &core.LocalObjectReference{
+							Name: rs.Name,
+						},
+					}
+
+					// Create and wait for running Elasticsearch
+					createAndWaitForInitializing()
+
+					By("Create RestoreSession")
+					err = f.CreateRestoreSession(rs)
+					Expect(err).NotTo(HaveOccurred())
+
+					// eventually backupsession succeeded
+					By("Check for Succeeded restoreSession")
+					f.EventuallyRestoreSessionPhase(rs.ObjectMeta).Should(Equal(stashV1beta1.RestoreSessionSucceeded))
+
+					By("Wait for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking indices")
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+
+					elasticClient.Stop()
+					f.Tunnel.Close()
+				}
+
+				Context("From GCS backend", func() {
+
+					BeforeEach(func() {
+						secret = f.SecretForGCSBackend()
+						secret = f.PatchSecretForRestic(secret)
+						bc = f.BackupConfiguration(elasticsearch.ObjectMeta)
+						bs = f.BackupSession(elasticsearch.ObjectMeta)
+						repo = f.Repository(elasticsearch.ObjectMeta, secret.Name)
+
+						repo.Spec.Backend = store.Backend{
+							GCS: &store.GCSSpec{
+								Bucket: os.Getenv("GCS_BUCKET_NAME"),
+								Prefix: fmt.Sprintf("stash/%v/%v", elasticsearch.Namespace, elasticsearch.Name),
+							},
+							StorageSecretName: secret.Name,
+						}
+					})
+
+					It("should run successfully", shouldInitializeFromStash)
+
+					Context("with SSL disabled", func() {
+						BeforeEach(func() {
+							elasticsearch.Spec.EnableSSL = false
+						})
+
+						It("should take Snapshot successfully", shouldInitializeFromStash)
+					})
+
+					Context("with Dedicated elasticsearch", func() {
+						BeforeEach(func() {
+							elasticsearch = f.DedicatedElasticsearch()
+							bc = f.BackupConfiguration(elasticsearch.ObjectMeta)
+							bs = f.BackupSession(elasticsearch.ObjectMeta)
+							repo = f.Repository(elasticsearch.ObjectMeta, secret.Name)
+
+							repo.Spec.Backend = store.Backend{
+								GCS: &store.GCSSpec{
+									Bucket: os.Getenv("GCS_BUCKET_NAME"),
+									Prefix: fmt.Sprintf("stash/%v/%v", elasticsearch.Namespace, elasticsearch.Name),
+								},
+								StorageSecretName: secret.Name,
+							}
+						})
+						It("should take Snapshot successfully", shouldInitializeFromStash)
+
+						Context("with SSL disabled", func() {
+							BeforeEach(func() {
+								elasticsearch.Spec.EnableSSL = false
+							})
+
+							It("should take Snapshot successfully", shouldInitializeFromStash)
+						})
+					})
+				})
+
+			})
 		})
 
 		Context("Resume", func() {
@@ -1341,6 +1556,7 @@ var _ = Describe("Elasticsearch", func() {
 					elasticsearch = f.DedicatedElasticsearch()
 					snapshot.Spec.DatabaseName = elasticsearch.Name
 				})
+
 				It("should initialize database successfully", shouldResumeSuccessfully)
 
 				Context("with SSL disabled", func() {
@@ -1900,6 +2116,7 @@ var _ = Describe("Elasticsearch", func() {
 						elasticsearch = f.DedicatedElasticsearch()
 						snapshot.Spec.DatabaseName = elasticsearch.Name
 					})
+
 					It("should run successfully with given envs", shouldRunWithAllowedEnvs)
 
 					Context("with SSL disabled", func() {

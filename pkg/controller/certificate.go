@@ -16,10 +16,10 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/ioutil"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/kubedb/elasticsearch/pkg/keytool"
 	"github.com/pkg/errors"
 	"gomodules.xyz/cert"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/elasticsearch/pkg/keytool"
 )
 
 const (

@@ -1,5 +1,24 @@
 # Change Log
 
+## [v0.13.0-rc.0](https://github.com/kubedb/elasticsearch/tree/v0.13.0-rc.0) (2019-08-22)
+[Full Changelog](https://github.com/kubedb/elasticsearch/compare/0.12.0...v0.13.0-rc.0)
+
+**Merged pull requests:**
+
+- Add e2e test commands to Makefile [\#274](https://github.com/kubedb/elasticsearch/pull/274) ([the-redback](https://github.com/the-redback))
+- Update dependencies [\#273](https://github.com/kubedb/elasticsearch/pull/273) ([tamalsaha](https://github.com/tamalsaha))
+- Don't set annotation to AppBinding [\#272](https://github.com/kubedb/elasticsearch/pull/272) ([hossainemruz](https://github.com/hossainemruz))
+- Set database version in AppBinding [\#271](https://github.com/kubedb/elasticsearch/pull/271) ([hossainemruz](https://github.com/hossainemruz))
+- Change package path to kubedb.dev/elasticsearch [\#270](https://github.com/kubedb/elasticsearch/pull/270) ([tamalsaha](https://github.com/tamalsaha))
+- Add license header to Makefiles [\#269](https://github.com/kubedb/elasticsearch/pull/269) ([tamalsaha](https://github.com/tamalsaha))
+- Support initializing from stash restoresession. [\#267](https://github.com/kubedb/elasticsearch/pull/267) ([the-redback](https://github.com/the-redback))
+- Fix UpsertDatabaseAnnotation\(\) function [\#266](https://github.com/kubedb/elasticsearch/pull/266) ([hossainemruz](https://github.com/hossainemruz))
+- Add install, uninstall and purge command in Makefile [\#264](https://github.com/kubedb/elasticsearch/pull/264) ([hossainemruz](https://github.com/hossainemruz))
+- Add Makefile [\#263](https://github.com/kubedb/elasticsearch/pull/263) ([tamalsaha](https://github.com/tamalsaha))
+- Pod Disruption Budget for Elasticsearch [\#262](https://github.com/kubedb/elasticsearch/pull/262) ([iamrz1](https://github.com/iamrz1))
+- Handling resource ownership [\#261](https://github.com/kubedb/elasticsearch/pull/261) ([iamrz1](https://github.com/iamrz1))
+- Update to k8s 1.14.0 client libraries using go.mod [\#260](https://github.com/kubedb/elasticsearch/pull/260) ([tamalsaha](https://github.com/tamalsaha))
+
 ## [0.12.0](https://github.com/kubedb/elasticsearch/tree/0.12.0) (2019-05-06)
 [Full Changelog](https://github.com/kubedb/elasticsearch/compare/0.11.0...0.12.0)
 
