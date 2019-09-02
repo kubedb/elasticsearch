@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/appscode/go/arrays"
 	"github.com/appscode/go/log"
 	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
@@ -36,11 +35,6 @@ var forbiddenEnvVars = []string{
 	"NODE_NAME",
 	"NODE_MASTER",
 	"NODE_DATA",
-}
-
-var supportedAuthPlugin = []api.ElasticsearchAuthPlugin{
-	api.ElasticsearchAuthPluginNone,
-	api.ElasticsearchAuthPluginSearchGuard,
 }
 
 func (a *ElasticsearchValidator) Resource() (plural schema.GroupVersionResource, singular string) {
@@ -95,7 +89,7 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 					break
 				}
 				return hookapi.StatusInternalServerError(err)
-			} else if err == nil && obj.Spec.TerminationPolicy == api.TerminationPolicyDoNotTerminate {
+			} else if obj.Spec.TerminationPolicy == api.TerminationPolicyDoNotTerminate {
 				return hookapi.StatusBadRequest(fmt.Errorf(`elasticsearch "%v/%v" can't be paused. To delete, change spec.terminationPolicy`, req.Namespace, req.Name))
 			}
 		}
@@ -257,10 +251,8 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 		return fmt.Errorf(`'spec.terminationPolicy: Pause' can not be used for 'Ephemeral' storage`)
 	}
 
-	if elasticsearch.Spec.AuthPlugin == "" {
-		return fmt.Errorf(`'spec.authPlugin' is missing`)
-	} else if ok, _ := arrays.Contains(supportedAuthPlugin, elasticsearch.Spec.AuthPlugin); !ok {
-		return fmt.Errorf(`'spec.authPlugin: %s' is not supported`, elasticsearch.Spec.AuthPlugin)
+	if elasticsearch.Spec.DisableSecurity && elasticsearch.Spec.EnableSSL {
+		return fmt.Errorf(`to enable 'spec.enableSSL', 'spec.disableSecurity' needs to be set to false`)
 	}
 
 	monitorSpec := elasticsearch.Spec.Monitor

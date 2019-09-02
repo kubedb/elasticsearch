@@ -100,7 +100,7 @@ func (c *Controller) createServiceAccount(db *api.Elasticsearch, saName string) 
 }
 
 func (c *Controller) getPolicyNames(db *api.Elasticsearch) (string, string, error) {
-	dbVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(db.Spec.Version), metav1.GetOptions{})
+	dbVersion, err := c.esVersionLister.Get(string(db.Spec.Version))
 	if err != nil {
 		return "", "", err
 	}

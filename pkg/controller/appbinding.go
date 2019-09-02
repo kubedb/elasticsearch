@@ -42,7 +42,7 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 		}
 	}
 
-	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(db.Spec.Version), metav1.GetOptions{})
+	elasticsearchVersion, err := c.esVersionLister.Get(string(db.Spec.Version))
 	if err != nil {
 		return kutil.VerbUnchanged, fmt.Errorf("failed to get ElasticsearchVersion %v for %v/%v. Reason: %v", db.Spec.Version, db.Namespace, db.Name, err)
 	}

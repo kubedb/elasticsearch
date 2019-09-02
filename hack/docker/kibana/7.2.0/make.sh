@@ -2,20 +2,15 @@
 set -xeou pipefail
 
 GOPATH=$(go env GOPATH)
-REPO_ROOT="$GOPATH/src/github.com/kubedb/elasticsearch"
+REPO_ROOT="$GOPATH/src/kubedb.dev/elasticsearch"
 source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=kibana
 TAG=7.2.0
 
-build() {
-    pushd "$REPO_ROOT/hack/docker/$IMG/$TAG"
 
-    local cmd="docker build --pull -t $DOCKER_REGISTRY/$IMG:$TAG ."
-    echo $cmd; $cmd
+docker pull "docker.elastic.co/kibana/kibana:$TAG"
 
-    popd
-}
-
-binary_repo $@
+docker tag "docker.elastic.co/kibana/kibana:$TAG" "$DOCKER_REGISTRY/$IMG:$TAG"
+docker push "$DOCKER_REGISTRY/$IMG:$TAG"

@@ -186,11 +186,7 @@ func (m *MariaDBSpec) SetDefaults() {
 		m.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
 	}
 	if m.TerminationPolicy == "" {
-		if m.StorageType == StorageTypeEphemeral {
-			m.TerminationPolicy = TerminationPolicyDelete
-		} else {
-			m.TerminationPolicy = TerminationPolicyPause
-		}
+		m.TerminationPolicy = TerminationPolicyDelete
 	}
 }
 

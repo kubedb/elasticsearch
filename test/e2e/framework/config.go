@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"path/filepath"
 	"strings"
 
 	string_util "github.com/appscode/go/strings"
@@ -8,14 +9,30 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	v1alpha12 "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/elasticsearch/pkg/util/es"
 	"sigs.k8s.io/yaml"
 )
 
-func (f *Invocation) GetCommonConfig() string {
+func (f *Invocation) getDataPath(elasticsearch *v1alpha12.Elasticsearch) string {
+	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	path := "/data"
+	if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginXpack {
+		path = "/usr/share/elasticsearch/data"
+	}
+
+	return path
+}
+
+func (f *Invocation) GetCommonConfig(elasticsearch *v1alpha12.Elasticsearch) string {
+	dataPath := f.getDataPath(elasticsearch)
+
 	commonSetting := es.Setting{
 		Path: &es.PathSetting{
-			Logs: "/data/elasticsearch/common-logdir",
+			Logs: filepath.Join(dataPath, "/elasticsearch/common-logdir"),
 		},
 	}
 	data, err := yaml.Marshal(commonSetting)
@@ -23,13 +40,12 @@ func (f *Invocation) GetCommonConfig() string {
 	return string(data)
 }
 
-func (f *Invocation) GetMasterConfig() string {
+func (f *Invocation) GetMasterConfig(elasticsearch *v1alpha12.Elasticsearch) string {
+	dataPath := f.getDataPath(elasticsearch)
+
 	masterSetting := es.Setting{
-		Node: &es.NodeSetting{
-			Name: "es-node-master",
-		},
 		Path: &es.PathSetting{
-			Data: []string{"/data/elasticsearch/master-datadir"},
+			Data: []string{filepath.Join(dataPath, "/elasticsearch/master-datadir")},
 		},
 	}
 	data, err := yaml.Marshal(masterSetting)
@@ -37,13 +53,11 @@ func (f *Invocation) GetMasterConfig() string {
 	return string(data)
 }
 
-func (f *Invocation) GetClientConfig() string {
+func (f *Invocation) GetClientConfig(elasticsearch *v1alpha12.Elasticsearch) string {
+	dataPath := f.getDataPath(elasticsearch)
 	clientSetting := es.Setting{
-		Node: &es.NodeSetting{
-			Name: "es-node-client",
-		},
 		Path: &es.PathSetting{
-			Data: []string{"/data/elasticsearch/client-datadir"},
+			Data: []string{filepath.Join(dataPath, "/elasticsearch/client-datadir")},
 		},
 	}
 	data, err := yaml.Marshal(clientSetting)
@@ -51,13 +65,11 @@ func (f *Invocation) GetClientConfig() string {
 	return string(data)
 }
 
-func (f *Invocation) GetDataConfig() string {
+func (f *Invocation) GetDataConfig(elasticsearch *v1alpha12.Elasticsearch) string {
+	dataPath := f.getDataPath(elasticsearch)
 	dataSetting := es.Setting{
-		Node: &es.NodeSetting{
-			Name: "es-node-data",
-		},
 		Path: &es.PathSetting{
-			Data: []string{"/data/elasticsearch/data-datadir"},
+			Data: []string{filepath.Join(dataPath, "/elasticsearch/data-datadir")},
 		},
 	}
 	data, err := yaml.Marshal(dataSetting)
@@ -75,49 +87,35 @@ func (f *Invocation) GetCustomConfig() *core.ConfigMap {
 	}
 }
 
-func (f *Invocation) IsUsingProvidedConfig(nodeInfo []es.NodeInfo) bool {
+func (f *Invocation) IsUsingProvidedConfig(elasticsearch *v1alpha12.Elasticsearch, nodeInfo []es.NodeInfo) bool {
 	for _, node := range nodeInfo {
 		if string_util.Contains(node.Roles, "master") || strings.HasSuffix(node.Name, "master") {
 			masterConfig := &es.Setting{}
-			err := yaml.Unmarshal([]byte(f.GetMasterConfig()), masterConfig)
+			err := yaml.Unmarshal([]byte(f.GetMasterConfig(elasticsearch)), masterConfig)
 			Expect(err).NotTo(HaveOccurred())
-
-			if node.Name != masterConfig.Node.Name {
-				return false
-			}
 
 			if !string_util.EqualSlice(node.Settings.Path.Data, masterConfig.Path.Data) {
 				return false
 			}
 		}
-
 		if (string_util.Contains(node.Roles, "ingest") &&
 			!string_util.Contains(node.Roles, "master")) ||
 			strings.HasSuffix(node.Name, "client") { // master config has higher precedence
 
 			clientConfig := &es.Setting{}
-			err := yaml.Unmarshal([]byte(f.GetClientConfig()), clientConfig)
+			err := yaml.Unmarshal([]byte(f.GetClientConfig(elasticsearch)), clientConfig)
 			Expect(err).NotTo(HaveOccurred())
 
-			if node.Name != clientConfig.Node.Name {
-				return false
-			}
 			if !string_util.EqualSlice(node.Settings.Path.Data, clientConfig.Path.Data) {
 				return false
 			}
 		}
-
 		if (string_util.Contains(node.Roles, "data") &&
 			!(string_util.Contains(node.Roles, "master") || string_util.Contains(node.Roles, "ingest"))) ||
 			strings.HasSuffix(node.Name, "data") { //master and ingest config has higher precedence
-
 			dataConfig := &es.Setting{}
-			err := yaml.Unmarshal([]byte(f.GetDataConfig()), dataConfig)
+			err := yaml.Unmarshal([]byte(f.GetDataConfig(elasticsearch)), dataConfig)
 			Expect(err).NotTo(HaveOccurred())
-
-			if node.Name != dataConfig.Node.Name {
-				return false
-			}
 			if !string_util.EqualSlice(node.Settings.Path.Data, dataConfig.Path.Data) {
 				return false
 			}
@@ -125,13 +123,11 @@ func (f *Invocation) IsUsingProvidedConfig(nodeInfo []es.NodeInfo) bool {
 
 		// check for common config
 		commonConfig := &es.Setting{}
-		err := yaml.Unmarshal([]byte(f.GetCommonConfig()), commonConfig)
+		err := yaml.Unmarshal([]byte(f.GetCommonConfig(elasticsearch)), commonConfig)
 		Expect(err).NotTo(HaveOccurred())
-
 		if node.Settings.Path.Logs != commonConfig.Path.Logs {
 			return false
 		}
-
 	}
 	return true
 }

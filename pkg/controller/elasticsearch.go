@@ -191,6 +191,9 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 	if err = c.ensureDatabaseSecret(elasticsearch); err != nil {
 		return kutil.VerbUnchanged, err
 	}
+	if err = c.ensureDatabaseConfigForXPack(elasticsearch); err != nil {
+		return kutil.VerbUnchanged, err
+	}
 
 	if c.EnableRBAC {
 		// Ensure Service account, role, rolebinding, and PSP for database statefulsets
@@ -235,7 +238,7 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 }
 
 func (c *Controller) ensureBackupScheduler(elasticsearch *api.Elasticsearch) error {
-	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	elasticsearchVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
 	if err != nil {
 		return fmt.Errorf("failed to get ElasticsearchVersion %v for %v/%v. Reason: %v", elasticsearch.Spec.Version, elasticsearch.Namespace, elasticsearch.Name, err)
 	}
@@ -428,7 +431,7 @@ func (c *Controller) removeOwnerReferenceFromOffshoots(elasticsearch *api.Elasti
 }
 
 func (c *Controller) GetDatabase(meta metav1.ObjectMeta) (runtime.Object, error) {
-	elasticsearch, err := c.ExtClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := c.esLister.Elasticsearches(meta.Namespace).Get(meta.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -437,7 +440,7 @@ func (c *Controller) GetDatabase(meta metav1.ObjectMeta) (runtime.Object, error)
 }
 
 func (c *Controller) SetDatabaseStatus(meta metav1.ObjectMeta, phase api.DatabasePhase, reason string) error {
-	elasticsearch, err := c.ExtClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := c.esLister.Elasticsearches(meta.Namespace).Get(meta.Name)
 	if err != nil {
 		return err
 	}
@@ -450,7 +453,7 @@ func (c *Controller) SetDatabaseStatus(meta metav1.ObjectMeta, phase api.Databas
 }
 
 func (c *Controller) UpsertDatabaseAnnotation(meta metav1.ObjectMeta, annotation map[string]string) error {
-	elasticsearch, err := c.ExtClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := c.esLister.Elasticsearches(meta.Namespace).Get(meta.Name)
 	if err != nil {
 		return err
 	}

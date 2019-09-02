@@ -25,6 +25,7 @@ import (
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	catalog_lister "kubedb.dev/apimachinery/client/listers/catalog/v1alpha1"
 	api_listers "kubedb.dev/apimachinery/client/listers/kubedb/v1alpha1"
 	amc "kubedb.dev/apimachinery/pkg/controller"
 	drmnc "kubedb.dev/apimachinery/pkg/controller/dormantdatabase"
@@ -48,9 +49,10 @@ type Controller struct {
 	selector labels.Selector
 
 	// Elasticsearch
-	esQueue    *queue.Worker
-	esInformer cache.SharedIndexInformer
-	esLister   api_listers.ElasticsearchLister
+	esQueue         *queue.Worker
+	esInformer      cache.SharedIndexInformer
+	esLister        api_listers.ElasticsearchLister
+	esVersionLister catalog_lister.ElasticsearchVersionLister
 }
 
 var _ amc.Snapshotter = &Controller{}

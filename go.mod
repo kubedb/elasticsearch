@@ -6,12 +6,12 @@ require (
 	github.com/appscode/go v0.0.0-20190920081029-7b75ec783e2e
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/coreos/prometheus-operator v0.31.1
-	github.com/olivere/elastic v6.2.22+incompatible // indirect
+	github.com/olivere/elastic v6.2.23+incompatible // indirect
+	github.com/olivere/elastic/v7 v7.0.6
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1
-	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
@@ -31,7 +31,7 @@ require (
 	kmodules.xyz/objectstore-api v0.0.0-20190808153322-733e8798e8de
 	kmodules.xyz/offshoot-api v0.0.0-20190808152534-e3dc715f844b
 	kmodules.xyz/webhook-runtime v0.0.0-20190808145328-4186c470d56b
-	kubedb.dev/apimachinery v0.13.0-rc.0
+	kubedb.dev/apimachinery v0.13.0-rc.0.0.20191001052046-9b4868f1298a
 	sigs.k8s.io/yaml v1.1.0
 	stash.appscode.dev/stash v0.9.0-rc.0
 )

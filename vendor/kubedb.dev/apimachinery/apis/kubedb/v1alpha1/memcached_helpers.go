@@ -177,7 +177,7 @@ func (m *MemcachedSpec) SetDefaults() {
 		m.UpdateStrategy.Type = apps.RollingUpdateDeploymentStrategyType
 	}
 	if m.TerminationPolicy == "" {
-		m.TerminationPolicy = TerminationPolicyPause
+		m.TerminationPolicy = TerminationPolicyDelete
 	}
 }
 

@@ -8,7 +8,8 @@ export DB_UPDATE=1
 export TOOLS_UPDATE=1
 export EXPORTER_UPDATE=1
 export OPERATOR_UPDATE=1
-export KIBANA_UPDATE=0
+export KIBANA_UPDATE=1
+export YQ_UPDATE=1
 
 show_help() {
   echo "update-docker.sh [options]"
@@ -20,6 +21,7 @@ show_help() {
   echo "    --operator-only              update only operator image"
   echo "    --exporter-only              update only database-exporter images"
   echo "    --kibana-only                update only kibana images"
+  echo "    --yq-only                update only kibana images"
 }
 
 while test $# -gt 0; do
@@ -33,6 +35,8 @@ while test $# -gt 0; do
       export TOOLS_UPDATE=0
       export OPERATOR_UPDATE=0
       export EXPORTER_UPDATE=0
+      export KIBANA_UPDATE=0
+      export YQ_UPDATE=0
       shift
       ;;
     --tools-only)
@@ -40,6 +44,8 @@ while test $# -gt 0; do
       export TOOLS_UPDATE=1
       export OPERATOR_UPDATE=0
       export EXPORTER_UPDATE=0
+      export KIBANA_UPDATE=0
+      export YQ_UPDATE=0
       shift
       ;;
     --exporter-only)
@@ -47,6 +53,8 @@ while test $# -gt 0; do
       export TOOLS_UPDATE=0
       export EXPORTER_UPDATE=1
       export OPERATOR_UPDATE=0
+      export KIBANA_UPDATE=0
+      export YQ_UPDATE=0
       shift
       ;;
     --operator-only)
@@ -54,6 +62,8 @@ while test $# -gt 0; do
       export TOOLS_UPDATE=0
       export EXPORTER_UPDATE=0
       export OPERATOR_UPDATE=1
+      export KIBANA_UPDATE=0
+      export YQ_UPDATE=0
       shift
       ;;
     --kibana-only)
@@ -62,6 +72,16 @@ while test $# -gt 0; do
       export EXPORTER_UPDATE=0
       export OPERATOR_UPDATE=0
       export KIBANA_UPDATE=1
+      export YQ_UPDATE=0
+      shift
+      ;;
+    --yq-only)
+      export DB_UPDATE=0
+      export TOOLS_UPDATE=0
+      export EXPORTER_UPDATE=0
+      export OPERATOR_UPDATE=0
+      export KIBANA_UPDATE=0
+      export YQ_UPDATE=1
       shift
       ;;
     *)
@@ -82,8 +102,10 @@ dbversions=(
   6.4
   6.5.3
   6.5
-  6.8
   6.8.0
+#  6.8.0-sg
+  6.8
+#  7.2.0-sg
   7.2.0
   7.2
 )
@@ -97,6 +119,11 @@ kibanaimages=(
   6.5.3
   6.8.0
   7.2.0
+)
+
+yqimages=(
+  2.4.0
+  latest
 )
 
 echo ""
@@ -137,5 +164,12 @@ if [ "$KIBANA_UPDATE" -eq 1 ]; then
   for kibana in "${kibanaimages[@]}"; do
     ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh build
     ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh push
+  done
+fi
+
+if [ "$YQ_UPDATE" -eq 1 ]; then
+  cowsay -f tux "Processing YQ images" || true
+  for yq in "${yqimages[@]}"; do
+    ${REPO_ROOT}/hack/docker/yq/${yq}/make.sh
   done
 fi
