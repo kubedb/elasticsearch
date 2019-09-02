@@ -17,7 +17,6 @@ bootstrap:
   memory_lock: false
 
 http:
-  enabled: ${HTTP_ENABLE}
   compression: true
   cors:
     enabled: ${HTTP_CORS_ENABLE}
@@ -27,8 +26,8 @@ http:
 
 discovery:
   zen:
-    ping.unicast.hosts: ${DISCOVERY_SERVICE}
     minimum_master_nodes: ${NUMBER_OF_MASTERS}
+  seed_hosts: ${DISCOVERY_SERVICE}
 
 # ref: https://github.com/floragunncom/search-guard-ssl/issues/43
 xpack.security.enabled: ${XPACK_SECURITY_ENABLED:false}

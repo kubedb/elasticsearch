@@ -96,7 +96,7 @@ func (c *Controller) ensureStatefulSet(
 			core.Container{
 				Name:            api.ResourceSingularElasticsearch,
 				Image:           elasticsearchVersion.Spec.DB.Image,
-				ImagePullPolicy: core.PullIfNotPresent,
+				ImagePullPolicy: core.PullAlways, // todo: undo
 				SecurityContext: &core.SecurityContext{
 					Privileged: types.BoolP(false),
 					Capabilities: &core.Capabilities{
