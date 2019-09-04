@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
@@ -240,6 +241,12 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		statefulSetName = fmt.Sprintf("%v-%v", masterNode.Prefix, statefulSetName)
 	}
 
+	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
+
 	labels := elasticsearch.OffshootLabels()
 	labels[NodeRoleMaster] = "set"
 
@@ -275,6 +282,8 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
 	}
+
+	envList = getEnvForES7( envList, elasticsearchVersion, statefulSetName, replicas)
 
 	maxUnavailable := elasticsearch.Spec.Topology.Master.MaxUnavailable
 
@@ -333,6 +342,12 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	labels[NodeRoleMaster] = "set"
 	labels[NodeRoleData] = "set"
 
+	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
+
 	replicas := int32(1)
 	if elasticsearch.Spec.Replicas != nil {
 		replicas = types.Int32(elasticsearch.Spec.Replicas)
@@ -368,6 +383,9 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	if elasticsearch.Spec.PodTemplate.Spec.Resources.Size() != 0 {
 		resources = elasticsearch.Spec.PodTemplate.Spec.Resources
 	}
+
+	envList = getEnvForES7(envList, elasticsearchVersion, statefulSetName, replicas)
+
 
 	maxUnavailable := elasticsearch.Spec.MaxUnavailable
 
@@ -758,4 +776,24 @@ func getURI(e *api.Elasticsearch) string {
 		log.Infoln("Invalid Auth Plugin")
 	}
 	return ""
+}
+
+// Extra env variables for >= ES7
+func getEnvForES7(envList []core.EnvVar, esVersion *catalog.ElasticsearchVersion, stsName string, replicas int32) []core.EnvVar {
+	if !strings.HasPrefix(esVersion.Spec.Version, "7.") {
+		return envList
+	}
+
+	var value string
+	for i := int32(0); i < replicas; i++ {
+		if i != 0 {
+			value += ","
+		}
+		value += fmt.Sprintf("%v-%v",stsName,i)
+	}
+
+	return append(envList, core.EnvVar{
+		Name: "INITIAL_MASTER_NODES",
+		Value: value,
+	})
 }

@@ -1,5 +1,6 @@
 cluster:
   name: ${CLUSTER_NAME}
+  initial_master_nodes: ${INITIAL_MASTER_NODES}
 
 node:
   master: ${NODE_MASTER}

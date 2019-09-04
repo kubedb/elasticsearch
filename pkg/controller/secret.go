@@ -189,32 +189,45 @@ func (c *Controller) findDatabaseSecret(elasticsearch *api.Elasticsearch) (*core
 }
 
 var action_group = `
+_sg_meta:
+  type: "actionsgroups"
+  config_version: 2
+
 UNLIMITED:
-  - "*"
+  allowed_actions:
+    - "*"
 
 READ:
-  - "indices:data/read*"
-  - "indices:admin/mappings/fields/get*"
+  allowed_actions:
+    - "indices:data/read*"
+    - "indices:admin/mappings/fields/get*"
 
 CLUSTER_COMPOSITE_OPS_RO:
-  - "indices:data/read/mget"
-  - "indices:data/read/msearch"
-  - "indices:data/read/mtv"
-  - "indices:data/read/coordinate-msearch*"
-  - "indices:admin/aliases/exists*"
-  - "indices:admin/aliases/get*"
+  allowed_actions:
+    - "indices:data/read/mget"
+    - "indices:data/read/msearch"
+    - "indices:data/read/mtv"
+    - "indices:data/read/coordinate-msearch*"
+    - "indices:admin/aliases/exists*"
+    - "indices:admin/aliases/get*"
 
 CLUSTER_KUBEDB_SNAPSHOT:
-  - "indices:data/read/scroll*"
-  - "cluster:monitor/main"
+  allowed_actions:
+    - "indices:data/read/scroll*"
+    - "cluster:monitor/main"
 
 INDICES_KUBEDB_SNAPSHOT:
-  - "indices:admin/get"
-  - "indices:monitor/settings/get"
-  - "indices:admin/mappings/get"
+  allowed_actions:
+    - "indices:admin/get"
+    - "indices:monitor/settings/get"
+    - "indices:admin/mappings/get"
 `
 
 var config = `
+_sg_meta:
+  type: "config"
+  config_version: 1
+
 searchguard:
   dynamic:
     authc:
@@ -228,6 +241,12 @@ searchguard:
           type: internal
 `
 
+var internal_user_sg_meta = `
+_sg_meta:
+  type: "internalusers"
+  config_version: 1
+`
+
 var internal_user = `
 admin:
   hash: %s
@@ -237,6 +256,10 @@ readall:
 `
 
 var roles = `
+_sg_meta:
+  type: "roles"
+  config_version: 1
+
 sg_all_access:
   cluster:
     - UNLIMITED
@@ -260,6 +283,10 @@ sg_readall:
 `
 
 var roles_mapping = `
+_sg_meta:
+  type: "rolesmapping"
+  config_version: 1
+
 sg_all_access:
   users:
     - admin
@@ -299,7 +326,7 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 		KeyReadAllPassword:      []byte(readallPassword),
 		"sg_action_groups.yml":  []byte(action_group),
 		"sg_config.yml":         []byte(config),
-		"sg_internal_users.yml": []byte(fmt.Sprintf(internal_user, hashedAdminPassword, hashedReadallPassword)),
+		"sg_internal_users.yml": []byte(fmt.Sprintf(internal_user_sg_meta, internal_user, hashedAdminPassword, hashedReadallPassword)),
 		"sg_roles.yml":          []byte(roles),
 		"sg_roles_mapping.yml":  []byte(roles_mapping),
 	}

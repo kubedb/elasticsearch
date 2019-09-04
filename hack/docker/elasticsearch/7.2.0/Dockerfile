@@ -65,7 +65,7 @@ ENV NODE_NAME="" \
 RUN ./bin/elasticsearch-plugin install --batch ingest-attachment
 
 # Install search-guard
-RUN ./bin/elasticsearch-plugin install --batch -b com.floragunn:search-guard-7:7.2.0-35.0.0
+RUN ./bin/elasticsearch-plugin install --batch -b com.floragunn:search-guard-7:7.2.0-36.1.0
 RUN chmod +x -R plugins/search-guard-7/tools/*.sh
 
 # Add Elasticsearch configuration files
