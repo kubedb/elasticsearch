@@ -190,7 +190,7 @@ func (c *Controller) findDatabaseSecret(elasticsearch *api.Elasticsearch) (*core
 
 var action_group = `
 _sg_meta:
-  type: "actionsgroups"
+  type: "actiongroups"
   config_version: 2
 
 UNLIMITED:
@@ -226,13 +226,13 @@ INDICES_KUBEDB_SNAPSHOT:
 var config = `
 _sg_meta:
   type: "config"
-  config_version: 1
-
-searchguard:
+  config_version: 2
+sg_config:
   dynamic:
     authc:
       basic_internal_auth_domain:
-        enabled: true
+        http_enabled: true
+        transport_enabled: true
         order: 4
         http_authenticator:
           type: basic
@@ -241,13 +241,11 @@ searchguard:
           type: internal
 `
 
-var internal_user_sg_meta = `
+var internal_user = `
 _sg_meta:
   type: "internalusers"
-  config_version: 1
-`
+  config_version: 2
 
-var internal_user = `
 admin:
   hash: %s
 
@@ -258,34 +256,38 @@ readall:
 var roles = `
 _sg_meta:
   type: "roles"
-  config_version: 1
-
+  config_version: 2
 sg_all_access:
-  cluster:
-    - UNLIMITED
-  indices:
-    '*':
-      '*':
-        - UNLIMITED
-  tenants:
-    adm_tenant: RW
-    test_tenant_ro: RW
-
+  cluster_permissions:
+  - UNLIMITED
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "UNLIMITED"
+  tenant_permissions:
+  - tenant_patterns:
+    - adm_tenant
+    - test_tenant_ro
+    allowed_actions:
+    - SGS_KIBANA_ALL_WRITE
 sg_readall:
-  cluster:
-    - CLUSTER_COMPOSITE_OPS_RO
-    - CLUSTER_KUBEDB_SNAPSHOT
-  indices:
-    '*':
-      '*':
-        - READ
-        - INDICES_KUBEDB_SNAPSHOT
+  cluster_permissions:
+  - "CLUSTER_COMPOSITE_OPS_RO"
+  - "CLUSTER_KUBEDB_SNAPSHOT"
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "READ"
+    - "INDICES_KUBEDB_SNAPSHOT"
+  tenant_permissions: []
 `
 
 var roles_mapping = `
 _sg_meta:
   type: "rolesmapping"
-  config_version: 1
+  config_version: 2
 
 sg_all_access:
   users:
@@ -294,6 +296,22 @@ sg_all_access:
 sg_readall:
   users:
     - readall
+`
+
+var tenants = `
+_sg_meta:
+  type: "tenants"
+  config_version: 2
+test_tenant_ro:
+  reserved: false
+  hidden: false
+  description: "test_tenant_ro. Migrated from v6"
+  static: false
+adm_tenant:
+  reserved: false
+  hidden: false
+  description: "adm_tenant. Migrated from v6"
+  static: false
 `
 
 func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*core.SecretVolumeSource, error) {
@@ -326,9 +344,10 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 		KeyReadAllPassword:      []byte(readallPassword),
 		"sg_action_groups.yml":  []byte(action_group),
 		"sg_config.yml":         []byte(config),
-		"sg_internal_users.yml": []byte(fmt.Sprintf(internal_user_sg_meta, internal_user, hashedAdminPassword, hashedReadallPassword)),
+		"sg_internal_users.yml": []byte(fmt.Sprintf(internal_user, hashedAdminPassword, hashedReadallPassword)),
 		"sg_roles.yml":          []byte(roles),
 		"sg_roles_mapping.yml":  []byte(roles_mapping),
+		"sg_tenants.yml":        []byte(tenants),
 	}
 
 	name := fmt.Sprintf("%v-auth", elasticsearch.OffshootName())

@@ -246,7 +246,6 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		return kutil.VerbUnchanged, err
 	}
 
-
 	labels := elasticsearch.OffshootLabels()
 	labels[NodeRoleMaster] = "set"
 
@@ -283,7 +282,7 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		},
 	}
 
-	envList = getEnvForES7( envList, elasticsearchVersion, statefulSetName, replicas)
+	envList = getEnvForES7(envList, elasticsearchVersion, statefulSetName, replicas)
 
 	maxUnavailable := elasticsearch.Spec.Topology.Master.MaxUnavailable
 
@@ -347,7 +346,6 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 		return kutil.VerbUnchanged, err
 	}
 
-
 	replicas := int32(1)
 	if elasticsearch.Spec.Replicas != nil {
 		replicas = types.Int32(elasticsearch.Spec.Replicas)
@@ -385,7 +383,6 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	}
 
 	envList = getEnvForES7(envList, elasticsearchVersion, statefulSetName, replicas)
-
 
 	maxUnavailable := elasticsearch.Spec.MaxUnavailable
 
@@ -789,11 +786,11 @@ func getEnvForES7(envList []core.EnvVar, esVersion *catalog.ElasticsearchVersion
 		if i != 0 {
 			value += ","
 		}
-		value += fmt.Sprintf("%v-%v",stsName,i)
+		value += fmt.Sprintf("%v-%v", stsName, i)
 	}
 
 	return append(envList, core.EnvVar{
-		Name: "INITIAL_MASTER_NODES",
+		Name:  "INITIAL_MASTER_NODES",
 		Value: value,
 	})
 }
