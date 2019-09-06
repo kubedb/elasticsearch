@@ -51,6 +51,8 @@ type Controller struct {
 	esQueue    *queue.Worker
 	esInformer cache.SharedIndexInformer
 	esLister   api_listers.ElasticsearchLister
+
+	// Todo: may be use esVersionLister as well.
 }
 
 var _ amc.Snapshotter = &Controller{}

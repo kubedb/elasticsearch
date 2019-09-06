@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/appscode/go/crypto/rand"
 	"golang.org/x/crypto/bcrypt"
@@ -189,6 +190,32 @@ func (c *Controller) findDatabaseSecret(elasticsearch *api.Elasticsearch) (*core
 }
 
 var action_group = `
+UNLIMITED:
+  - "*"
+
+READ:
+  - "indices:data/read*"
+  - "indices:admin/mappings/fields/get*"
+
+CLUSTER_COMPOSITE_OPS_RO:
+  - "indices:data/read/mget"
+  - "indices:data/read/msearch"
+  - "indices:data/read/mtv"
+  - "indices:data/read/coordinate-msearch*"
+  - "indices:admin/aliases/exists*"
+  - "indices:admin/aliases/get*"
+
+CLUSTER_KUBEDB_SNAPSHOT:
+  - "indices:data/read/scroll*"
+  - "cluster:monitor/main"
+
+INDICES_KUBEDB_SNAPSHOT:
+  - "indices:admin/get"
+  - "indices:monitor/settings/get"
+  - "indices:admin/mappings/get"
+`
+
+var action_group_es7 = `
 _sg_meta:
   type: "actiongroups"
   config_version: 2
@@ -224,6 +251,20 @@ INDICES_KUBEDB_SNAPSHOT:
 `
 
 var config = `
+searchguard:
+  dynamic:
+    authc:
+      basic_internal_auth_domain:
+        enabled: true
+        order: 4
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: internal
+`
+
+var config_es7 = `
 _sg_meta:
   type: "config"
   config_version: 2
@@ -242,6 +283,14 @@ sg_config:
 `
 
 var internal_user = `
+admin:
+  hash: %s
+
+readall:
+  hash: %s
+`
+
+var internal_user_es7 = `
 _sg_meta:
   type: "internalusers"
   config_version: 2
@@ -254,6 +303,29 @@ readall:
 `
 
 var roles = `
+sg_all_access:
+  cluster:
+    - UNLIMITED
+  indices:
+    '*':
+      '*':
+        - UNLIMITED
+  tenants:
+    adm_tenant: RW
+    test_tenant_ro: RW
+
+sg_readall:
+  cluster:
+    - CLUSTER_COMPOSITE_OPS_RO
+    - CLUSTER_KUBEDB_SNAPSHOT
+  indices:
+    '*':
+      '*':
+        - READ
+        - INDICES_KUBEDB_SNAPSHOT
+`
+
+var roles_es7 = `
 _sg_meta:
   type: "roles"
   config_version: 2
@@ -285,6 +357,16 @@ sg_readall:
 `
 
 var roles_mapping = `
+sg_all_access:
+  users:
+    - admin
+
+sg_readall:
+  users:
+    - readall
+`
+
+var roles_mapping_es7 = `
 _sg_meta:
   type: "rolesmapping"
   config_version: 2
@@ -325,6 +407,11 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 		}, nil
 	}
 
+	esVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
 	adminPassword := rand.Characters(8)
 	hashedAdminPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -348,6 +435,14 @@ func (c *Controller) createDatabaseSecret(elasticsearch *api.Elasticsearch) (*co
 		"sg_roles.yml":          []byte(roles),
 		"sg_roles_mapping.yml":  []byte(roles_mapping),
 		"sg_tenants.yml":        []byte(tenants),
+	}
+	if strings.HasPrefix(esVersion.Spec.Version, "7.") {
+		data["sg_action_groups.yml"] = []byte(action_group_es7)
+		data["sg_config.yml"] = []byte(config_es7)
+		data["sg_internal_users.yml"] = []byte(fmt.Sprintf(internal_user_es7, hashedAdminPassword, hashedReadallPassword))
+		data["sg_roles.yml"] = []byte(roles_es7)
+		data["sg_roles_mapping.yml"] = []byte(roles_mapping_es7)
+		data["sg_tenants.yml"] = []byte(tenants)
 	}
 
 	name := fmt.Sprintf("%v-auth", elasticsearch.OffshootName())

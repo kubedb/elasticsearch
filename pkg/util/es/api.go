@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	esv5 "gopkg.in/olivere/elastic.v5"
-	esv6 "gopkg.in/olivere/elastic.v6"
+	esv6 "github.com/olivere/elastic"
+	esv7 "github.com/olivere/elastic/v7"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
@@ -117,6 +118,32 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 		}
 
 		return &ESClientV6{client: client}, nil
+	case strings.HasPrefix(string(elasicsearchversion.Spec.Version), "7."):
+		client, err := esv7.NewClient(
+			esv7.SetHttpClient(&http.Client{
+				Timeout: 0,
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				},
+			}),
+			esv7.SetBasicAuth(string(secret.Data[KeyAdminUserName]), string(secret.Data[KeyAdminPassword])),
+			esv7.SetURL(url),
+			esv7.SetHealthcheck(false), // don't check health here. otherwise error message can be misleading for invalid credentials
+			esv7.SetSniff(false),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// do a manual health check to test client
+		_, err = client.ClusterHealth().Do(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
+		return &ESClientV7{client: client}, nil
 	}
 
 	return nil, fmt.Errorf("unknown database verserion: %s", db.Spec.Version)
