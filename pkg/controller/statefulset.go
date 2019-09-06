@@ -205,6 +205,11 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 		heapSize = getHeapSizeForNode(request.Value())
 	}
 
+	esVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
 	envList := []core.EnvVar{
 		{
 			Name:  "NODE_MASTER",
@@ -222,6 +227,12 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 			Name:  "ES_JAVA_OPTS",
 			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
+	}
+	if strings.HasPrefix(esVersion.Spec.Version, "7.") {
+		envList = append(envList, core.EnvVar{
+			Name:  "INITIAL_MASTER_NODES",
+			Value: getInitialMasterNodes(elasticsearch),
+		})
 	}
 
 	replicas := int32(1)
@@ -241,7 +252,7 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		statefulSetName = fmt.Sprintf("%v-%v", masterNode.Prefix, statefulSetName)
 	}
 
-	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	esVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -282,7 +293,12 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		},
 	}
 
-	envList = getEnvForES7(envList, elasticsearchVersion, statefulSetName, replicas)
+	if strings.HasPrefix(esVersion.Spec.Version, "7.") {
+		envList = append(envList, core.EnvVar{
+			Name:  "INITIAL_MASTER_NODES",
+			Value: getInitialMasterNodes(elasticsearch),
+		})
+	}
 
 	maxUnavailable := elasticsearch.Spec.Topology.Master.MaxUnavailable
 
@@ -305,6 +321,11 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		heapSize = getHeapSizeForNode(request.Value())
 	}
 
+	esVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
 	envList := []core.EnvVar{
 		{
 			Name:  "NODE_MASTER",
@@ -322,6 +343,12 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 			Name:  "ES_JAVA_OPTS",
 			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
+	}
+	if strings.HasPrefix(esVersion.Spec.Version, "7.") {
+		envList = append(envList, core.EnvVar{
+			Name:  "INITIAL_MASTER_NODES",
+			Value: getInitialMasterNodes(elasticsearch),
+		})
 	}
 
 	replicas := int32(1)
@@ -341,7 +368,7 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	labels[NodeRoleMaster] = "set"
 	labels[NodeRoleData] = "set"
 
-	elasticsearchVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	esVersion, err := c.ExtClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -372,6 +399,12 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
 	}
+	if strings.HasPrefix(esVersion.Spec.Version, "7.") {
+		envList = append(envList, core.EnvVar{
+			Name:  "INITIAL_MASTER_NODES",
+			Value: getInitialMasterNodes(elasticsearch),
+		})
+	}
 
 	var pvcSpec core.PersistentVolumeClaimSpec
 	var resources core.ResourceRequirements
@@ -381,8 +414,6 @@ func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil
 	if elasticsearch.Spec.PodTemplate.Spec.Resources.Size() != 0 {
 		resources = elasticsearch.Spec.PodTemplate.Spec.Resources
 	}
-
-	envList = getEnvForES7(envList, elasticsearchVersion, statefulSetName, replicas)
 
 	maxUnavailable := elasticsearch.Spec.MaxUnavailable
 
@@ -775,13 +806,16 @@ func getURI(e *api.Elasticsearch) string {
 	return ""
 }
 
-// Extra env variables for >= ES7
-func getEnvForES7(envList []core.EnvVar, esVersion *catalog.ElasticsearchVersion, stsName string, replicas int32) []core.EnvVar {
-	if !strings.HasPrefix(esVersion.Spec.Version, "7.") {
-		return envList
-	}
+// INITIAL_MASTER_NODES value for >= ES7
+func getInitialMasterNodes(es *api.Elasticsearch) string {
 
 	var value string
+	stsName := getMasterNodeStatefulsetName(es)
+	replicas := types.Int32(es.Spec.Replicas)
+	if es.Spec.Topology != nil {
+		replicas = types.Int32(es.Spec.Topology.Master.Replicas)
+	}
+
 	for i := int32(0); i < replicas; i++ {
 		if i != 0 {
 			value += ","
@@ -789,8 +823,15 @@ func getEnvForES7(envList []core.EnvVar, esVersion *catalog.ElasticsearchVersion
 		value += fmt.Sprintf("%v-%v", stsName, i)
 	}
 
-	return append(envList, core.EnvVar{
-		Name:  "INITIAL_MASTER_NODES",
-		Value: value,
-	})
+	return value
+}
+
+func getMasterNodeStatefulsetName(elasticsearch *api.Elasticsearch) string {
+	statefulSetName := elasticsearch.OffshootName()
+	topology := elasticsearch.Spec.Topology
+
+	if topology != nil && topology.Master.Prefix != "" {
+		statefulSetName = fmt.Sprintf("%v-%v", topology.Master.Prefix, statefulSetName)
+	}
+	return statefulSetName
 }
