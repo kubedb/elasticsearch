@@ -6,7 +6,7 @@ require (
 	github.com/appscode/go v0.0.0-20190808133642-1d4ef1f1c1e0
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/coreos/prometheus-operator v0.31.1
-	github.com/olivere/elastic v6.2.23+incompatible
+	github.com/olivere/elastic v6.2.23+incompatible // indirect
 	github.com/olivere/elastic/v7 v7.0.6
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
@@ -18,6 +18,7 @@ require (
 	gomodules.xyz/cert v1.0.0
 	gomodules.xyz/stow v0.2.0
 	gopkg.in/olivere/elastic.v5 v5.0.61
+	gopkg.in/olivere/elastic.v6 v6.2.17
 	k8s.io/api v0.0.0-20190503110853-61630f889b3c
 	k8s.io/apiextensions-apiserver v0.0.0-20190516231611-bf6753f2aa24
 	k8s.io/apimachinery v0.0.0-20190508063446-a3da69d3723c
