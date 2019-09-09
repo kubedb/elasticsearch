@@ -97,7 +97,7 @@ func (c *Controller) ensureStatefulSet(
 			core.Container{
 				Name:            api.ResourceSingularElasticsearch,
 				Image:           elasticsearchVersion.Spec.DB.Image,
-				ImagePullPolicy: core.PullAlways, // todo: undo
+				ImagePullPolicy: core.PullIfNotPresent,
 				SecurityContext: &core.SecurityContext{
 					Privileged: types.BoolP(false),
 					Capabilities: &core.Capabilities{
@@ -808,7 +808,6 @@ func getURI(e *api.Elasticsearch) string {
 
 // INITIAL_MASTER_NODES value for >= ES7
 func getInitialMasterNodes(es *api.Elasticsearch) string {
-
 	var value string
 	stsName := getMasterNodeStatefulsetName(es)
 	replicas := types.Int32(es.Spec.Replicas)
