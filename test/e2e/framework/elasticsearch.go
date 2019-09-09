@@ -178,7 +178,6 @@ func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) G
 		func() bool {
 			client, err := f.GetElasticClient(meta)
 			if err != nil {
-				fmt.Println("---------- err:", err)
 				return false
 			}
 			client.Stop()

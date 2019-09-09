@@ -1486,6 +1486,7 @@ var _ = Describe("Elasticsearch", func() {
 								StorageSecretName: secret.Name,
 							}
 						})
+
 						It("should take Snapshot successfully", shouldInitializeFromStash)
 
 						Context("with SSL disabled", func() {

@@ -51,7 +51,7 @@ func NewExtraOptions() *ExtraOptions {
 		GoverningService:  "kubedb",
 		ResyncPeriod:      10 * time.Minute,
 		MaxNumRequeues:    5,
-		NumThreads:        6, //todo: undo
+		NumThreads:        2, //todo: undo
 		// ref: https://github.com/kubernetes/ingress-nginx/blob/e4d53786e771cc6bdd55f180674b79f5b692e552/pkg/ingress/controller/launch.go#L252-L259
 		// High enough QPS to fit all expected use cases. QPS=0 is not set here, because client code is overriding it.
 		QPS: 1e6,
