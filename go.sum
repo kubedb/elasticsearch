@@ -52,6 +52,8 @@ github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb
 github.com/appscode/docker-registry-client v0.0.0-20180426150142-1bb02bb202b0/go.mod h1:W9bsWfSbgJXUXzBZ+tSBV2g+zzT7ANPHQFsSXRHYKsA=
 github.com/appscode/go v0.0.0-20190808133642-1d4ef1f1c1e0 h1:EZp2qE4LUJUG0wMHyUxOg982hVbOFh7qqcM1XIMVGpk=
 github.com/appscode/go v0.0.0-20190808133642-1d4ef1f1c1e0/go.mod h1:iy07dV61Z7QQdCKJCIvUoDL21u6AIceRhZzyleh2ymc=
+github.com/appscode/go v0.0.0-20190920081029-7b75ec783e2e h1:c2EGRz/Xi/CGm+P0v/pbUHDZcGcOqtbl65RyvKcJFJg=
+github.com/appscode/go v0.0.0-20190920081029-7b75ec783e2e/go.mod h1:hUW7Fq0KY2/ntGnYAzemyUpIhLL6bXrTljN6SRY/+Lc=
 github.com/appscode/osm v0.12.0 h1:7Rde+KnOp3EvHscXHS6rfdqiq6IO/2HZ2pKeE4f/sRo=
 github.com/appscode/osm v0.12.0/go.mod h1:+ZXU2HilSSow2o0gsOolJfOTkhqQ2FcGROOum4wEh4w=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
@@ -623,6 +625,8 @@ gomodules.xyz/stow v0.2.0 h1:GYymuy7sxAifaL0IXEmoHApeguXHK0hFT7ZQiYA8KTU=
 gomodules.xyz/stow v0.2.0/go.mod h1:YDDPM4nmJgQhxq4I5aGtLM/xrvJzDSVM/fbc7NGizpY=
 gomodules.xyz/version v0.0.0-20190507203204-7cec7ee542d3 h1:MiBtMikyjuBwD22+QIEsbnMHdRkknM/0N5ig34jSNgQ=
 gomodules.xyz/version v0.0.0-20190507203204-7cec7ee542d3/go.mod h1:Y8xuV02mL/45psyPKG3NCVOwvAOy6T5Kx0l3rCjKSjU=
+gomodules.xyz/version v0.1.0 h1:inGItCg/egI0jPMeIE0SQkiDIJaodOMoCrxYqasQLR0=
+gomodules.xyz/version v0.1.0/go.mod h1:Y8xuV02mL/45psyPKG3NCVOwvAOy6T5Kx0l3rCjKSjU=
 google.golang.org/api v0.0.0-20180910000450-7ca32eb868bf/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
 google.golang.org/api v0.0.0-20181220000619-583d854617af/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
 google.golang.org/api v0.1.0/go.mod h1:UGEZY7KEX120AnNLIHFMKIo4obdJhkp2tPbaPlQx13Y=

@@ -22,7 +22,7 @@ github.com/NYTimes/gziphandler
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
-# github.com/appscode/go v0.0.0-20190808133642-1d4ef1f1c1e0
+# github.com/appscode/go v0.0.0-20190920081029-7b75ec783e2e
 github.com/appscode/go/version
 github.com/appscode/go/runtime
 github.com/appscode/go/arrays
@@ -390,7 +390,7 @@ gomodules.xyz/stow/google
 gomodules.xyz/stow/local
 gomodules.xyz/stow/s3
 gomodules.xyz/stow/swift
-# gomodules.xyz/version v0.0.0-20190507203204-7cec7ee542d3
+# gomodules.xyz/version v0.1.0
 gomodules.xyz/version
 # google.golang.org/api v0.3.2
 google.golang.org/api/storage/v1
@@ -760,6 +760,7 @@ k8s.io/client-go/tools/portforward
 k8s.io/client-go/transport/spdy
 k8s.io/client-go/util/workqueue
 k8s.io/client-go/util/jsonpath
+k8s.io/client-go/util/homedir
 k8s.io/client-go/pkg/apis/clientauthentication
 k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1
 k8s.io/client-go/pkg/apis/clientauthentication/v1beta1
@@ -806,7 +807,6 @@ k8s.io/client-go/listers/core/v1
 k8s.io/client-go/informers/auditregistration/v1alpha1
 k8s.io/client-go/tools/auth
 k8s.io/client-go/tools/clientcmd/api/latest
-k8s.io/client-go/util/homedir
 k8s.io/client-go/informers/admissionregistration/v1beta1
 k8s.io/client-go/informers/apps/v1
 k8s.io/client-go/informers/apps/v1beta1
