@@ -231,7 +231,7 @@ var _ = Describe("Elasticsearch", func() {
 				Context("with authPlugin disabled", func() {
 					BeforeEach(func() {
 						elasticsearch.Spec.EnableSSL = false
-						elasticsearch.Spec.EnableSecurity = types.BoolP(false)
+						elasticsearch.Spec.DisableSecurity = true
 					})
 
 					It("should run successfully", shouldRunSuccessfully)
@@ -1310,7 +1310,7 @@ var _ = Describe("Elasticsearch", func() {
 			Context("with authPlugin disabled", func() {
 				BeforeEach(func() {
 					elasticsearch.Spec.EnableSSL = false
-					elasticsearch.Spec.EnableSecurity = types.BoolP(false)
+					elasticsearch.Spec.DisableSecurity = true
 				})
 
 				It("should run successfully", shouldInitialize)
@@ -1334,7 +1334,7 @@ var _ = Describe("Elasticsearch", func() {
 				Context("with authPlugin disabled", func() {
 					BeforeEach(func() {
 						elasticsearch.Spec.EnableSSL = false
-						elasticsearch.Spec.EnableSecurity = types.BoolP(false)
+						elasticsearch.Spec.DisableSecurity = true
 					})
 
 					It("should run successfully", shouldInitialize)
