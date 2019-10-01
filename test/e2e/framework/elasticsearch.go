@@ -52,6 +52,7 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 				},
 				StorageClassName: types.StringP(i.StorageClass),
 			},
+			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}
 }
@@ -106,6 +107,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 				},
 			},
 			EnableSSL: true,
+			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}
 }
