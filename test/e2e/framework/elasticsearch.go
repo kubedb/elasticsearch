@@ -16,8 +16,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	meta_util "kmodules.xyz/client-go/meta"
+	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	util "kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"kubedb.dev/elasticsearch/pkg/util/es"
 )
 
@@ -51,6 +52,7 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 				},
 				StorageClassName: types.StringP(i.StorageClass),
 			},
+			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}
 }
@@ -105,6 +107,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 				},
 			},
 			EnableSSL: true,
+			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}
 }
@@ -280,4 +283,18 @@ func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 		}
 	}
 	return err
+}
+
+func (f *Framework) IndicesCount(obj *api.Elasticsearch, indicesCount int) int {
+	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(obj.Spec.Version), metav1.GetOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	es, err := f.GetElasticsearch(obj.ObjectMeta)
+	Expect(err).NotTo(HaveOccurred())
+
+	if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginSearchGuard &&
+		!es.Spec.DisableSecurity {
+		return indicesCount + 1
+	}
+	return indicesCount
 }

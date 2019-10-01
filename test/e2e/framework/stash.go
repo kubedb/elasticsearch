@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	StashESBackupTask  = "elasticsearch-backup-6.3"
-	StashESRestoreTask = "elasticsearch-restore-6.3"
+	StashESBackupTask  = "elasticsearch-backup-7.2"
+	StashESRestoreTask = "elasticsearch-restore-7.2"
 )
 
 func (f *Framework) FoundStashCRDs() bool {

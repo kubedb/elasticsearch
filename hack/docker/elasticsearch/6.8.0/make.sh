@@ -9,24 +9,8 @@ DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=elasticsearch
 DB_VERSION=6.8.0
 TAG="$DB_VERSION"
-YQ_VER=${YQ_VER:-2.1.1}
 
-build() {
-  pushd "$REPO_ROOT/hack/docker/elasticsearch/$DB_VERSION"
+docker pull "docker.elastic.co/elasticsearch/elasticsearch:$DB_VERSION"
 
-  # config merger script
-  chmod +x ./config-merger.sh
-
-  # download yq
-  wget https://github.com/mikefarah/yq/releases/download/$YQ_VER/yq_linux_amd64
-  chmod +x yq_linux_amd64
-  mv yq_linux_amd64 yq
-
-  local cmd="docker build --pull -t $DOCKER_REGISTRY/$IMG:$TAG ."
-  echo $cmd; $cmd
-
-  rm yq
-  popd
-}
-
-binary_repo $@
+docker tag "docker.elastic.co/elasticsearch/elasticsearch:$DB_VERSION" "$DOCKER_REGISTRY/$IMG:$TAG"
+docker push "$DOCKER_REGISTRY/$IMG:$TAG"

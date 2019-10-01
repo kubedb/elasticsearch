@@ -176,7 +176,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 					elasticClient.Stop()
 					f.Tunnel.Close()
@@ -206,7 +206,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 					elasticClient.Stop()
 					f.Tunnel.Close()
@@ -228,12 +228,21 @@ var _ = Describe("Elasticsearch", func() {
 					It("should run successfully", shouldRunSuccessfully)
 				})
 
+				Context("with authPlugin disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+						elasticsearch.Spec.DisableSecurity = true
+					})
+
+					It("should run successfully", shouldRunSuccessfully)
+				})
+
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
 						elasticsearch.Spec.EnableSSL = false
 					})
 
-					It("should take Snapshot successfully", shouldRunSuccessfully)
+					It("should run successfully", shouldRunSuccessfully)
 				})
 
 				Context("Dedicated elasticsearch", func() {
@@ -371,8 +380,21 @@ var _ = Describe("Elasticsearch", func() {
 				// Create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating new indices")
+				err = elasticClient.CreateIndex(2)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking new indices")
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
+
 				By("Create Secret")
-				err := f.CreateSecret(secret)
+				err = f.CreateSecret(secret)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Create Snapshot")
@@ -465,7 +487,7 @@ var _ = Describe("Elasticsearch", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Checking new indices")
-						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 						elasticClient.Stop()
 						f.Tunnel.Close()
@@ -521,7 +543,7 @@ var _ = Describe("Elasticsearch", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						By("Checking indices")
-						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 						elasticClient.Stop()
 						f.Tunnel.Close()
@@ -1207,7 +1229,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 				elasticClient.Stop()
 				f.Tunnel.Close()
@@ -1248,7 +1270,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 				elasticClient.Stop()
 				f.Tunnel.Close()
@@ -1285,6 +1307,15 @@ var _ = Describe("Elasticsearch", func() {
 
 			})
 
+			Context("with authPlugin disabled", func() {
+				BeforeEach(func() {
+					elasticsearch.Spec.EnableSSL = false
+					elasticsearch.Spec.DisableSecurity = true
+				})
+
+				It("should run successfully", shouldInitialize)
+			})
+
 			Context("with SSL disabled", func() {
 				BeforeEach(func() {
 					elasticsearch.Spec.EnableSSL = false
@@ -1299,6 +1330,15 @@ var _ = Describe("Elasticsearch", func() {
 					snapshot.Spec.DatabaseName = elasticsearch.Name
 				})
 				It("should initialize database successfully", shouldInitialize)
+
+				Context("with authPlugin disabled", func() {
+					BeforeEach(func() {
+						elasticsearch.Spec.EnableSSL = false
+						elasticsearch.Spec.DisableSecurity = true
+					})
+
+					It("should run successfully", shouldInitialize)
+				})
 
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
@@ -1376,7 +1416,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 					elasticClient.Stop()
 					f.Tunnel.Close()
@@ -1437,7 +1477,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Checking indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 					elasticClient.Stop()
 					f.Tunnel.Close()
@@ -1486,6 +1526,7 @@ var _ = Describe("Elasticsearch", func() {
 								StorageSecretName: secret.Name,
 							}
 						})
+
 						It("should take Snapshot successfully", shouldInitializeFromStash)
 
 						Context("with SSL disabled", func() {
@@ -1729,7 +1770,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 				elasticClient.Stop()
 				f.Tunnel.Close()
@@ -1816,7 +1857,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 					elasticClient.Stop()
 					f.Tunnel.Close()
@@ -2044,7 +2085,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 				elasticClient.Stop()
 				f.Tunnel.Close()
@@ -2074,7 +2115,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 				elasticClient.Stop()
 				f.Tunnel.Close()
@@ -2172,10 +2213,10 @@ var _ = Describe("Elasticsearch", func() {
 
 			var shouldRunWithCustomConfig = func() {
 				userConfig.Data = map[string]string{
-					"common-config.yaml": f.GetCommonConfig(),
-					"master-config.yaml": f.GetMasterConfig(),
-					"client-config.yaml": f.GetClientConfig(),
-					"data-config.yaml":   f.GetDataConfig(),
+					"common-config.yaml": f.GetCommonConfig(elasticsearch),
+					"master-config.yaml": f.GetMasterConfig(elasticsearch),
+					"client-config.yaml": f.GetClientConfig(elasticsearch),
+					"data-config.yaml":   f.GetDataConfig(elasticsearch),
 				}
 
 				By("Creating configMap: " + userConfig.Name)
@@ -2204,7 +2245,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking nodes are using provided config")
-				Expect(f.IsUsingProvidedConfig(settings)).Should(BeTrue())
+				Expect(f.IsUsingProvidedConfig(elasticsearch, settings)).Should(BeTrue())
 
 				elasticClient.Stop()
 				f.Tunnel.Close()
@@ -2278,7 +2319,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(3))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
 
 				elasticClient.Stop()
 				f.Tunnel.Close()

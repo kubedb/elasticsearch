@@ -356,7 +356,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchNode":              schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchNode(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchSpec":              schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchStatus":            schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchStatus(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchSummary":           schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchSummary(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.Etcd":                           schema_apimachinery_apis_kubedb_v1alpha1_Etcd(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.EtcdList":                       schema_apimachinery_apis_kubedb_v1alpha1_EtcdList(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.EtcdSpec":                       schema_apimachinery_apis_kubedb_v1alpha1_EtcdSpec(ref),
@@ -390,7 +389,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.MySQLStatus":                    schema_apimachinery_apis_kubedb_v1alpha1_MySQLStatus(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.Origin":                         schema_apimachinery_apis_kubedb_v1alpha1_Origin(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.OriginSpec":                     schema_apimachinery_apis_kubedb_v1alpha1_OriginSpec(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PXCSpec":                        schema_apimachinery_apis_kubedb_v1alpha1_PXCSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PerconaXtraDB":                  schema_apimachinery_apis_kubedb_v1alpha1_PerconaXtraDB(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PerconaXtraDBList":              schema_apimachinery_apis_kubedb_v1alpha1_PerconaXtraDBList(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PerconaXtraDBSpec":              schema_apimachinery_apis_kubedb_v1alpha1_PerconaXtraDBSpec(ref),
@@ -398,13 +396,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.Postgres":                       schema_apimachinery_apis_kubedb_v1alpha1_Postgres(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresArchiverSpec":           schema_apimachinery_apis_kubedb_v1alpha1_PostgresArchiverSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresList":                   schema_apimachinery_apis_kubedb_v1alpha1_PostgresList(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresSchemaInfo":             schema_apimachinery_apis_kubedb_v1alpha1_PostgresSchemaInfo(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresSpec":                   schema_apimachinery_apis_kubedb_v1alpha1_PostgresSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresStatus":                 schema_apimachinery_apis_kubedb_v1alpha1_PostgresStatus(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresSummary":                schema_apimachinery_apis_kubedb_v1alpha1_PostgresSummary(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresTableInfo":              schema_apimachinery_apis_kubedb_v1alpha1_PostgresTableInfo(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresWALSourceSpec":          schema_apimachinery_apis_kubedb_v1alpha1_PostgresWALSourceSpec(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ProxysqlSpec":                   schema_apimachinery_apis_kubedb_v1alpha1_ProxysqlSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.RecoveryTarget":                 schema_apimachinery_apis_kubedb_v1alpha1_RecoveryTarget(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.Redis":                          schema_apimachinery_apis_kubedb_v1alpha1_Redis(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.RedisClusterSpec":               schema_apimachinery_apis_kubedb_v1alpha1_RedisClusterSpec(ref),
@@ -16162,9 +16156,16 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchSpec(ref common.Refer
 							Ref:         ref("k8s.io/api/core/v1.SecretVolumeSource"),
 						},
 					},
+					"disableSecurity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "disable security of authPlugin (ie, xpack or searchguard). It disables authentication security of user. If unset, default is false",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 					"authPlugin": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Authentication plugin used by Elasticsearch cluster. If unset, defaults to SearchGuard.",
+							Description: "Authentication plugin used by Elasticsearch cluster. If unset, defaults to SearchGuard. Deprecated: Use elasticsearchVersion.Spec.AuthPlugin instead",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -16281,46 +16282,6 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchStatus(ref common.Ref
 		},
 		Dependencies: []string{
 			"github.com/appscode/go/encoding/json/types.IntHash"},
-	}
-}
-
-func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchSummary(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Following structure is used for audit summary report",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"idCount": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"integer"},
-										Format: "int64",
-									},
-								},
-							},
-						},
-					},
-					"mapping": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"object"},
-							Format: "",
-						},
-					},
-					"setting": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"object"},
-							Format: "",
-						},
-					},
-				},
-				Required: []string{"idCount", "mapping", "setting"},
-			},
-		},
 	}
 }
 
@@ -17917,33 +17878,6 @@ func schema_apimachinery_apis_kubedb_v1alpha1_OriginSpec(ref common.ReferenceCal
 	}
 }
 
-func schema_apimachinery_apis_kubedb_v1alpha1_PXCSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"clusterName": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name of the cluster and should be identical on all nodes.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"proxysql": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Proxysql configuration",
-							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ProxysqlSpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ProxysqlSpec"},
-	}
-}
-
 func schema_apimachinery_apis_kubedb_v1alpha1_PerconaXtraDB(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -18048,15 +17982,9 @@ func schema_apimachinery_apis_kubedb_v1alpha1_PerconaXtraDBSpec(ref common.Refer
 					},
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Number of instances to deploy for PerconaXtraDB",
+							Description: "Number of instances to deploy for PerconaXtraDB. Replicas: 1\t\t-->\t\tDeploy standalone PerconaXtraDB Replicas: > 1\t-->\t\tDeploy PerconaXtraDB cluster with specified number of masters",
 							Type:        []string{"integer"},
 							Format:      "int32",
-						},
-					},
-					"pxc": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PXC is the cluster specification for PerconaXtraDB Cluster",
-							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PXCSpec"),
 						},
 					},
 					"storageType": {
@@ -18126,7 +18054,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_PerconaXtraDBSpec(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/apps/v1.StatefulSetUpdateStrategy", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.VolumeSource", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.InitSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PXCSpec"},
+			"k8s.io/api/apps/v1.StatefulSetUpdateStrategy", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.VolumeSource", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.InitSpec"},
 	}
 }
 
@@ -18267,34 +18195,6 @@ func schema_apimachinery_apis_kubedb_v1alpha1_PostgresList(ref common.ReferenceC
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.Postgres"},
-	}
-}
-
-func schema_apimachinery_apis_kubedb_v1alpha1_PostgresSchemaInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"table": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresTableInfo"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"table"},
-			},
-		},
-		Dependencies: []string{
-			"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresTableInfo"},
 	}
 }
 
@@ -18459,66 +18359,6 @@ func schema_apimachinery_apis_kubedb_v1alpha1_PostgresStatus(ref common.Referenc
 	}
 }
 
-func schema_apimachinery_apis_kubedb_v1alpha1_PostgresSummary(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"schema": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresSchemaInfo"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"schema"},
-			},
-		},
-		Dependencies: []string{
-			"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.PostgresSchemaInfo"},
-	}
-}
-
-func schema_apimachinery_apis_kubedb_v1alpha1_PostgresTableInfo(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Following structures are used for audit summary report",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"totalRow": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
-						},
-					},
-					"maxId": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
-						},
-					},
-					"nextId": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
-						},
-					},
-				},
-				Required: []string{"totalRow", "maxId", "nextId"},
-			},
-		},
-	}
-}
-
 func schema_apimachinery_apis_kubedb_v1alpha1_PostgresWALSourceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -18582,33 +18422,6 @@ func schema_apimachinery_apis_kubedb_v1alpha1_PostgresWALSourceSpec(ref common.R
 		},
 		Dependencies: []string{
 			"kmodules.xyz/objectstore-api/api/v1.AzureSpec", "kmodules.xyz/objectstore-api/api/v1.B2Spec", "kmodules.xyz/objectstore-api/api/v1.GCSSpec", "kmodules.xyz/objectstore-api/api/v1.LocalSpec", "kmodules.xyz/objectstore-api/api/v1.RestServerSpec", "kmodules.xyz/objectstore-api/api/v1.S3Spec", "kmodules.xyz/objectstore-api/api/v1.SwiftSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.RecoveryTarget"},
-	}
-}
-
-func schema_apimachinery_apis_kubedb_v1alpha1_ProxysqlSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"replicas": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Number of Proxysql nodes. Currently we support only replicas = 1.",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"podTemplate": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PodTemplate is an optional configuration for pods used to expose proxysql",
-							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec"},
 	}
 }
 

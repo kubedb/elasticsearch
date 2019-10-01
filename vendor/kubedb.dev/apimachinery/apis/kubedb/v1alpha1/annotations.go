@@ -38,6 +38,8 @@ const (
 	MongoDBConfigdbPort = 27017
 	MongoDBMongosPort   = 27017
 
+	MySQLUserKey         = "username"
+	MySQLPasswordKey     = "password"
 	MySQLNodePort        = 3306
 	MySQLGroupComPort    = 33060
 	MySQLMaxGroupMembers = 9
@@ -50,17 +52,15 @@ const (
 	// for BaseServerID calculated as max MySQL server_id value - max Replication Group size.
 	MySQLMaxBaseServerID = uint(4294967295 - 9)
 
-	PerconaXtraDBClusterRecommendedVersion = "5.7"
-	PerconaXtraDBMaxClusterNameLength      = 32
-	PerconaXtraDBStandaloneReplicas        = 1
-	PerconaXtraDBDefaultClusterSize        = 3
-	PerconaXtraDBDataMountPath             = "/var/lib/mysql"
-	PerconaXtraDBDataLostFoundPath         = PerconaXtraDBDataMountPath + "lost+found"
-
-	PerconaXtraDBInitDBMountPath       = "/docker-entrypoint-initdb.d"
-	PerconaXtraDBCustomConfigMountPath = "/etc/mysql/conf.d"
-	PerconaXtraDBClusterLabelKey       = PerconaXtraDBKey + "/cluster"
-	PerconaXtraDBProxysqlLabelKey      = PerconaXtraDBKey + "/proxysql"
+	PerconaXtraDBClusterRecommendedVersion    = "5.7"
+	PerconaXtraDBMaxClusterNameLength         = 32
+	PerconaXtraDBStandaloneReplicas           = 1
+	PerconaXtraDBDefaultClusterSize           = 3
+	PerconaXtraDBDataMountPath                = "/var/lib/mysql"
+	PerconaXtraDBDataLostFoundPath            = PerconaXtraDBDataMountPath + "lost+found"
+	PerconaXtraDBInitDBMountPath              = "/docker-entrypoint-initdb.d"
+	PerconaXtraDBCustomConfigMountPath        = "/etc/percona-server.conf.d/"
+	PerconaXtraDBClusterCustomConfigMountPath = "/etc/mysql/percona-xtradb-cluster.conf.d/"
 
 	ProxysqlUser          = "proxysqluser"
 	ProxysqlPassword      = "proxysqlpass"

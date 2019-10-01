@@ -53,7 +53,6 @@ func (c *Controller) ensureService(elasticsearch *api.Elasticsearch) (kutil.Verb
 			"Successfully %s Service",
 			vt1,
 		)
-
 	}
 
 	// Check if service name exists
