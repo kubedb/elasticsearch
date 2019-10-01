@@ -92,22 +92,24 @@ while test $# -gt 0; do
 done
 
 dbversions=(
-  5.6.4
-  5.6
-  6.2.4
-  6.2
-  6.3.0
-  6.3
-  6.4.0
-  6.4
-  6.5.3
-  6.5
-  6.8.0
+#  5.6.4
+#  5.6
+#  6.2.4
+#  6.2
+#  6.3.0
+#  6.3
+#  6.4.0
+#  6.4
+#  6.5.3
+#  6.5
 #  6.8.0-sg
-  6.8
 #  7.2.0-sg
+  6.8.0
+  6.8
   7.2.0
   7.2
+  7.3.2
+  7.3
 )
 
 exporters=(
@@ -119,6 +121,7 @@ kibanaimages=(
   6.5.3
   6.8.0
   7.2.0
+  7.3.2
 )
 
 yqimages=(
@@ -153,12 +156,6 @@ if [ "$EXPORTER_UPDATE" -eq 1 ]; then
   done
 fi
 
-if [ "$OPERATOR_UPDATE" -eq 1 ]; then
-  cowsay -f tux "Processing Operator images" || true
-  ${REPO_ROOT}/hack/docker/es-operator/make.sh build
-  ${REPO_ROOT}/hack/docker/es-operator/make.sh push
-fi
-
 if [ "$KIBANA_UPDATE" -eq 1 ]; then
   cowsay -f tux "Processing Kibana images" || true
   for kibana in "${kibanaimages[@]}"; do
@@ -172,4 +169,10 @@ if [ "$YQ_UPDATE" -eq 1 ]; then
   for yq in "${yqimages[@]}"; do
     ${REPO_ROOT}/hack/docker/yq/${yq}/make.sh
   done
+fi
+
+if [ "$OPERATOR_UPDATE" -eq 1 ]; then
+  cowsay -f tux "Processing Operator images" || true
+  ${REPO_ROOT}/hack/docker/es-operator/make.sh build
+  ${REPO_ROOT}/hack/docker/es-operator/make.sh push
 fi
