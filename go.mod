@@ -3,7 +3,7 @@ module kubedb.dev/elasticsearch
 go 1.12
 
 require (
-	github.com/appscode/go v0.0.0-20190808133642-1d4ef1f1c1e0
+	github.com/appscode/go v0.0.0-20190920081029-7b75ec783e2e
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/coreos/prometheus-operator v0.31.1
 	github.com/olivere/elastic v6.2.22+incompatible // indirect
