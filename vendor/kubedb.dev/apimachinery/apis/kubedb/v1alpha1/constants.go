@@ -9,6 +9,10 @@ const (
 	LabelDatabaseName = GenericKey + "/name"
 	LabelRole         = GenericKey + "/role"
 
+	ComponentDatabase = "database"
+	RoleStats         = "stats"
+	DefaultStatsPath  = "/metrics"
+
 	PostgresKey         = ResourceSingularPostgres + "." + GenericKey
 	ElasticsearchKey    = ResourceSingularElasticsearch + "." + GenericKey
 	MySQLKey            = ResourceSingularMySQL + "." + GenericKey

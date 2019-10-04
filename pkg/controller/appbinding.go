@@ -47,7 +47,7 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 		return kutil.VerbUnchanged, fmt.Errorf("failed to get ElasticsearchVersion %v for %v/%v. Reason: %v", db.Spec.Version, db.Namespace, db.Name, err)
 	}
 
-	_, vt, err := appcat_util.CreateOrPatchAppBinding(c.AppCatalogClient, meta, func(in *appcat.AppBinding) *appcat.AppBinding {
+	_, vt, err := appcat_util.CreateOrPatchAppBinding(c.AppCatalogClient.AppcatalogV1alpha1(), meta, func(in *appcat.AppBinding) *appcat.AppBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Labels = db.OffshootLabels()
 

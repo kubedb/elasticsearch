@@ -106,7 +106,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 					},
 				},
 			},
-			EnableSSL: true,
+			EnableSSL:         true,
 			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}

@@ -928,9 +928,15 @@ kmodules.xyz/client-go/tools/queue
 # kmodules.xyz/custom-resources v0.0.0-20190808144301-114abf10dfe2
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
+kmodules.xyz/custom-resources/client/clientset/versioned
 kmodules.xyz/custom-resources/client/clientset/versioned/scheme
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1/util
+kmodules.xyz/custom-resources/client/informers/externalversions
+kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog
+kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alpha1
+kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
+kmodules.xyz/custom-resources/client/listers/appcatalog/v1alpha1
 # kmodules.xyz/monitoring-agent-api v0.0.0-20190808150221-601a4005b7f7
 kmodules.xyz/monitoring-agent-api/agents
 kmodules.xyz/monitoring-agent-api/agents/coreosprometheusoperator
@@ -944,7 +950,7 @@ kmodules.xyz/offshoot-api/api/v1
 # kmodules.xyz/webhook-runtime v0.0.0-20190808145328-4186c470d56b
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-# kubedb.dev/apimachinery v0.13.0-rc.0.0.20191001052046-9b4868f1298a
+# kubedb.dev/apimachinery v0.13.0-rc.0.0.20191004055707-d4fad2ecf87f
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/catalog
 kubedb.dev/apimachinery/apis/catalog/v1alpha1

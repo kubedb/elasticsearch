@@ -230,6 +230,11 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 			return fmt.Errorf("elasticsearch %s/%s is using deprecated version %v. Skipped processing", elasticsearch.Namespace,
 				elasticsearch.Name, elasticsearchVersion.Name)
 		}
+
+		if err := elasticsearchVersion.ValidateSpecs(); err != nil {
+			return fmt.Errorf("elasticsearch %s/%s is using invalid elasticsearchVersion %v. Skipped processing. reason: %v", elasticsearch.Namespace,
+				elasticsearch.Name, elasticsearchVersion.Name, err)
+		}
 	}
 
 	backupScheduleSpec := elasticsearch.Spec.BackupSchedule

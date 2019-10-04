@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"fmt"
+
 	apps "k8s.io/api/apps/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
@@ -31,7 +32,7 @@ func (e Elasticsearch) OffshootLabels() map[string]string {
 	out[meta_util.NameLabelKey] = ResourceSingularElasticsearch
 	out[meta_util.VersionLabelKey] = string(e.Spec.Version)
 	out[meta_util.InstanceLabelKey] = e.Name
-	out[meta_util.ComponentLabelKey] = "database"
+	out[meta_util.ComponentLabelKey] = ComponentDatabase
 	out[meta_util.ManagedByLabelKey] = GenericKey
 	return meta_util.FilterKeys(GenericKey, out, e.Labels)
 }
@@ -110,7 +111,7 @@ func (e elasticsearchStatsService) ServiceMonitorName() string {
 }
 
 func (e elasticsearchStatsService) Path() string {
-	return "/metrics"
+	return DefaultStatsPath
 }
 
 func (e elasticsearchStatsService) Scheme() string {
@@ -123,7 +124,7 @@ func (e Elasticsearch) StatsService() mona.StatsAccessor {
 
 func (e Elasticsearch) StatsServiceLabels() map[string]string {
 	lbl := meta_util.FilterKeys(GenericKey, e.OffshootSelectors(), e.Labels)
-	lbl[LabelRole] = "stats"
+	lbl[LabelRole] = RoleStats
 	return lbl
 }
 
