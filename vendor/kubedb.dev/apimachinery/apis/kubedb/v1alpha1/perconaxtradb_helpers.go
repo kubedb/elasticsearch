@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/types"
 	apps "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -32,7 +33,7 @@ func (p PerconaXtraDB) OffshootLabels() map[string]string {
 	out[meta_util.NameLabelKey] = ResourceSingularPerconaXtraDB
 	out[meta_util.VersionLabelKey] = string(p.Spec.Version)
 	out[meta_util.InstanceLabelKey] = p.Name
-	out[meta_util.ComponentLabelKey] = "database"
+	out[meta_util.ComponentLabelKey] = ComponentDatabase
 	out[meta_util.ManagedByLabelKey] = GenericKey
 	return meta_util.FilterKeys(GenericKey, out, p.Labels)
 }
@@ -110,7 +111,7 @@ func (p perconaXtraDBStatsService) ServiceMonitorName() string {
 }
 
 func (p perconaXtraDBStatsService) Path() string {
-	return "/metrics"
+	return DefaultStatsPath
 }
 
 func (p perconaXtraDBStatsService) Scheme() string {
@@ -123,7 +124,7 @@ func (p PerconaXtraDB) StatsService() mona.StatsAccessor {
 
 func (p PerconaXtraDB) StatsServiceLabels() map[string]string {
 	lbl := meta_util.FilterKeys(GenericKey, p.OffshootSelectors(), p.Labels)
-	lbl[LabelRole] = "stats"
+	lbl[LabelRole] = RoleStats
 	return lbl
 }
 
@@ -201,6 +202,49 @@ func (p *PerconaXtraDBSpec) SetDefaults() {
 	}
 	if p.TerminationPolicy == "" {
 		p.TerminationPolicy = TerminationPolicyDelete
+	}
+	p.setDefaultProbes()
+}
+
+// setDefaultProbes sets defaults only when probe fields are nil.
+// In operator, check if the value of probe fields is "{}".
+// For "{}", ignore readinessprobe or livenessprobe in statefulset.
+// Ref: https://github.com/mattlord/Docker-InnoDB-Cluster/blob/master/healthcheck.sh#L10
+func (p *PerconaXtraDBSpec) setDefaultProbes() {
+	if p == nil {
+		return
+	}
+
+	var readynessProbeCmd []string
+	if types.Int32(p.Replicas) > 1 {
+		readynessProbeCmd = []string{
+			"/cluster-check.sh",
+		}
+	} else {
+		readynessProbeCmd = []string{
+			"bash",
+			"-c",
+			`export MYSQL_PWD="${MYSQL_ROOT_PASSWORD}"
+ping_resp=$(mysqladmin -uroot ping)
+if [[ "$ping_resp" != "mysqld is alive" ]]; then
+    echo "[ERROR] server is not ready. PING_RESPONSE: $ping_resp"
+    exit 1
+fi
+`,
+		}
+	}
+
+	readinessProbe := &core.Probe{
+		Handler: core.Handler{
+			Exec: &core.ExecAction{
+				Command: readynessProbeCmd,
+			},
+		},
+		InitialDelaySeconds: 30,
+		PeriodSeconds:       10,
+	}
+	if p.PodTemplate.Spec.ReadinessProbe == nil {
+		p.PodTemplate.Spec.ReadinessProbe = readinessProbe
 	}
 }
 
