@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	v1 "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
+	googleconsts "kmodules.xyz/constants/google"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"stash.appscode.dev/stash/pkg/restic"
@@ -50,16 +51,9 @@ func (i *Invocation) SecretForS3Backend() *core.Secret {
 }
 
 func (i *Invocation) SecretForGCSBackend() *core.Secret {
-	if os.Getenv(store.GOOGLE_PROJECT_ID) == "" ||
-		(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") == "" && os.Getenv(store.GOOGLE_SERVICE_ACCOUNT_JSON_KEY) == "") {
+	jsonKey := googleconsts.ServiceAccountFromEnv()
+	if jsonKey == "" || os.Getenv(store.GOOGLE_PROJECT_ID) == "" {
 		return &core.Secret{}
-	}
-
-	jsonKey := os.Getenv(store.GOOGLE_SERVICE_ACCOUNT_JSON_KEY)
-	if jsonKey == "" {
-		if keyBytes, err := ioutil.ReadFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")); err == nil {
-			jsonKey = string(keyBytes)
-		}
 	}
 
 	return &core.Secret{
