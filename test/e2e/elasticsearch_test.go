@@ -939,7 +939,7 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 			})
-			
+
 			Context("Snapshot PodVolume Template - In S3", func() {
 
 				BeforeEach(func() {
@@ -1193,7 +1193,7 @@ var _ = Describe("Elasticsearch", func() {
 
 			var shouldInitialize = func() {
 				// create and wait for running Elasticsearch
-				createAndWaitForRunning()
+				createAndInsertData()
 
 				By("Create Secret")
 				err := f.CreateSecret(secret)
