@@ -17,7 +17,9 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	googleconsts "kmodules.xyz/constants/google"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/elasticsearch/pkg/controller"
 	"stash.appscode.dev/stash/pkg/restic"
 )
 
@@ -182,7 +184,10 @@ func (f *Framework) CheckSecret(secret *core.Secret) error {
 	return err
 }
 
-func (i *Invocation) SecretForDatabaseAuthentication(meta metav1.ObjectMeta, mangedByKubeDB bool) *core.Secret {
+func (i *Invocation) SecretForDatabaseAuthentication(es *api.Elasticsearch, mangedByKubeDB bool) *core.Secret {
+	esVersion, err := i.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(es.Spec.Version), metav1.GetOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
 	//mangedByKubeDB mimics a secret created and manged by kubedb and not user.
 	// It should get deleted during wipeout
 	adminPassword := rand.Characters(8)
@@ -200,8 +205,8 @@ func (i *Invocation) SecretForDatabaseAuthentication(meta metav1.ObjectMeta, man
 	}
 
 	var dbObjectMeta = metav1.ObjectMeta{
-		Name:      fmt.Sprintf("kubedb-%v-%v", meta.Name, CustomSecretSuffix),
-		Namespace: meta.Namespace,
+		Name:      fmt.Sprintf("kubedb-%v-%v", es.Name, CustomSecretSuffix),
+		Namespace: es.Namespace,
 	}
 	if mangedByKubeDB {
 		dbObjectMeta.Labels = map[string]string{
@@ -209,9 +214,10 @@ func (i *Invocation) SecretForDatabaseAuthentication(meta metav1.ObjectMeta, man
 		}
 	}
 
-	return &core.Secret{
-		ObjectMeta: dbObjectMeta,
-		Data: map[string][]byte{
+	var data map[string][]byte
+
+	if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginSearchGuard {
+		data = map[string][]byte{
 			KeyAdminUserName:        []byte(AdminUser),
 			KeyAdminPassword:        []byte(adminPassword),
 			KeyReadAllUserName:      []byte(ReadAllUser),
@@ -221,6 +227,16 @@ func (i *Invocation) SecretForDatabaseAuthentication(meta metav1.ObjectMeta, man
 			"sg_internal_users.yml": []byte(fmt.Sprintf(internal_user, hashedAdminPassword, hashedReadallPassword)),
 			"sg_roles.yml":          []byte(roles),
 			"sg_roles_mapping.yml":  []byte(roles_mapping),
-		},
+		}
+	} else if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginXpack {
+		data = map[string][]byte{
+			KeyAdminUserName: []byte(controller.ElasticUser),
+			KeyAdminPassword: []byte(adminPassword),
+		}
+	}
+
+	return &core.Secret{
+		ObjectMeta: dbObjectMeta,
+		Data:       data,
 	}
 }
