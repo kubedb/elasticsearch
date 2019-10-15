@@ -1448,7 +1448,7 @@ var _ = Describe("Elasticsearch", func() {
 						}
 					})
 
-					FIt("should run successfully", shouldInitializeFromStash)
+					It("should run successfully", shouldInitializeFromStash)
 
 					Context("with SSL disabled", func() {
 						BeforeEach(func() {
