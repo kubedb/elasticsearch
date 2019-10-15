@@ -376,11 +376,11 @@ clean:
 .PHONY: stash-install
 stash-install:
 	@curl -fsSL https://github.com/stashed/installer/raw/master/deploy/stash.sh | bash
-	@curl -fsSL https://github.com/stashed/catalog/raw/master/deploy/script.sh | bash -s -- --catalog=stash-mongodb --docker-registry=stashed
+	@curl -fsSL https://github.com/stashed/catalog/raw/master/deploy/script.sh | bash -s -- --catalog=stash-elasticsearch --docker-registry=stashed
 
 .PHONY: stash-uninstall
 stash-uninstall:
-	@curl -fsSL https://github.com/stashed/catalog/raw/master/deploy/script.sh | bash -s -- --catalog=stash-mongodb --uninstall || true
+	@curl -fsSL https://github.com/stashed/catalog/raw/master/deploy/script.sh | bash -s -- --catalog=stash-elasticsearch --uninstall || true
 	@curl -fsSL https://github.com/stashed/installer/raw/master/deploy/stash.sh | bash -s -- --uninstall
 
 .PHONY: stash-purge

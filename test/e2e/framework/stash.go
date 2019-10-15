@@ -14,11 +14,6 @@ import (
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-var (
-	StashESBackupTask  = "elasticsearch-backup-7.2"
-	StashESRestoreTask = "elasticsearch-restore-7.2"
-)
-
 func (f *Framework) FoundStashCRDs() bool {
 	return controller.FoundStashCRDs(f.apiExtKubeClient)
 }

@@ -16,6 +16,8 @@ var (
 	DockerRegistry     = "kubedbci"
 	SelfHostedOperator = true
 	DBCatalogName      = "7.3.2"
+	StashESBackupTask  = "elasticsearch-backup-7.3.2"
+	StashESRestoreTask = "elasticsearch-restore-7.3.2"
 )
 
 type Framework struct {
