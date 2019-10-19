@@ -117,8 +117,8 @@ exporters=(
 )
 
 kibanaimages=(
-  6.3.0
-  6.5.3
+#  6.3.0
+#  6.5.3
   6.8.0
   7.2.0
   7.3.2
@@ -134,7 +134,7 @@ env | sort | grep -e DOCKER_REGISTRY -e APPSCODE_ENV || true
 echo ""
 
 if [ "$DB_UPDATE" -eq 1 ]; then
-  cowsay -f tux "Processing database images" || true
+  cowsay -f tux "Processing database images" || echo "Processing database images"
   for db in "${dbversions[@]}"; do
     ${REPO_ROOT}/hack/docker/elasticsearch/${db}/make.sh build
     ${REPO_ROOT}/hack/docker/elasticsearch/${db}/make.sh push
@@ -142,7 +142,7 @@ if [ "$DB_UPDATE" -eq 1 ]; then
 fi
 
 if [ "$TOOLS_UPDATE" -eq 1 ]; then
-  cowsay -f tux "Processing database-tools images" || true
+  cowsay -f tux "Processing database-tools images" || echo "Processing database-tools images"
   for db in "${dbversions[@]}"; do
     ${REPO_ROOT}/hack/docker/elasticsearch-tools/${db}/make.sh build
     ${REPO_ROOT}/hack/docker/elasticsearch-tools/${db}/make.sh push
@@ -150,14 +150,14 @@ if [ "$TOOLS_UPDATE" -eq 1 ]; then
 fi
 
 if [ "$EXPORTER_UPDATE" -eq 1 ]; then
-  cowsay -f tux "Processing database-exporter images" || true
+  cowsay -f tux "Processing database-exporter images" || echo "Processing database-exporter images"
   for exporter in "${exporters[@]}"; do
     ${REPO_ROOT}/hack/docker/elasticsearch_exporter/${exporter}/make.sh
   done
 fi
 
 if [ "$KIBANA_UPDATE" -eq 1 ]; then
-  cowsay -f tux "Processing Kibana images" || true
+  cowsay -f tux "Processing Kibana images" || echo "Processing Kibana images"
   for kibana in "${kibanaimages[@]}"; do
     ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh build
     ${REPO_ROOT}/hack/docker/kibana/${kibana}/make.sh push
@@ -165,14 +165,8 @@ if [ "$KIBANA_UPDATE" -eq 1 ]; then
 fi
 
 if [ "$YQ_UPDATE" -eq 1 ]; then
-  cowsay -f tux "Processing YQ images" || true
+  cowsay -f tux "Processing YQ images" || echo "Processing YQ images"
   for yq in "${yqimages[@]}"; do
     ${REPO_ROOT}/hack/docker/yq/${yq}/make.sh
   done
-fi
-
-if [ "$OPERATOR_UPDATE" -eq 1 ]; then
-  cowsay -f tux "Processing Operator images" || true
-  ${REPO_ROOT}/hack/docker/es-operator/make.sh build
-  ${REPO_ROOT}/hack/docker/es-operator/make.sh push
 fi

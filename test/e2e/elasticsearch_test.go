@@ -42,6 +42,7 @@ var _ = Describe("Elasticsearch", func() {
 		snapshotPVC              *core.PersistentVolumeClaim
 		secret                   *core.Secret
 		skipMessage              string
+		indicesCount             int
 		skipSnapshotDataChecking bool
 	)
 
@@ -50,6 +51,7 @@ var _ = Describe("Elasticsearch", func() {
 		elasticsearch = f.CombinedElasticsearch()
 		garbageElasticsearch = new(api.ElasticsearchList)
 		snapshot = f.Snapshot()
+		indicesCount = 0
 		secret = nil
 		skipMessage = ""
 		skipSnapshotDataChecking = true
@@ -69,6 +71,28 @@ var _ = Describe("Elasticsearch", func() {
 		By("Check valid AppBinding Specs")
 		err := f.CheckAppBindingSpec(elasticsearch.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
+	}
+
+	var createAndInsertData = func() {
+
+		createAndWaitForRunning()
+
+		By("Check for Elastic client")
+		f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+		elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("Creating new indices")
+		err = elasticClient.CreateIndex(2)
+		Expect(err).NotTo(HaveOccurred())
+		indicesCount += 2
+
+		By("Checking new indices")
+		f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+
+		elasticClient.Stop()
+		f.Tunnel.Close()
 	}
 
 	var deleteTestResource = func() {
@@ -162,24 +186,8 @@ var _ = Describe("Elasticsearch", func() {
 						Skip(skipMessage)
 					}
 
-					// Create Elasticsearch
-					createAndWaitForRunning()
-
-					By("Check for Elastic client")
-					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Creating new indices")
-					err = elasticClient.CreateIndex(2)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-					elasticClient.Stop()
-					f.Tunnel.Close()
+					// create elasticsearch and insert data
+					createAndInsertData()
 
 					By("Delete elasticsearch")
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
@@ -188,7 +196,7 @@ var _ = Describe("Elasticsearch", func() {
 					By("Wait for elasticsearch to be paused")
 					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-					// Create Elasticsearch object again to resume it
+					// create elasticsearch object again to resume it
 					By("Create Elasticsearch: " + elasticsearch.Name)
 					err = f.CreateElasticsearch(elasticsearch)
 					Expect(err).NotTo(HaveOccurred())
@@ -202,14 +210,13 @@ var _ = Describe("Elasticsearch", func() {
 					By("Check for Elastic client")
 					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
-					elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
+					defer elasticClient.Stop()
+					defer f.Tunnel.Close()
 
 					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-					elasticClient.Stop()
-					f.Tunnel.Close()
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 				}
 
 				Context("with Default Resource", func() {
@@ -291,7 +298,7 @@ var _ = Describe("Elasticsearch", func() {
 			Context("with custom SA Name", func() {
 				BeforeEach(func() {
 					var customSecret *core.Secret
-					customSecret = f.SecretForDatabaseAuthentication(elasticsearch.ObjectMeta, false)
+					customSecret = f.SecretForDatabaseAuthentication(elasticsearch, false)
 					elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
 						SecretName: customSecret.Name,
 					}
@@ -339,7 +346,7 @@ var _ = Describe("Elasticsearch", func() {
 			Context("PDB", func() {
 
 				It("should run eviction successfully", func() {
-					// Create Elasticsearch
+					// create elasticsearch
 					By("Create DB")
 					elasticsearch.Spec.Replicas = types.Int32P(3)
 					elasticsearch.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
@@ -351,7 +358,7 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				It("should run eviction on cluster successfully", func() {
-					// Create Elasticsearch
+					// create elasticsearch
 					By("Create DB")
 					elasticsearch = f.DedicatedElasticsearch()
 					elasticsearch.Spec.Topology.Client.Replicas = types.Int32P(3)
@@ -377,21 +384,8 @@ var _ = Describe("Elasticsearch", func() {
 			})
 
 			var shouldTakeSnapshot = func() {
-				// Create and wait for running Elasticsearch
-				createAndWaitForRunning()
-
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating new indices")
-				err = elasticClient.CreateIndex(2)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
+				// create elasticsearch and insert data
+				createAndInsertData()
 
 				By("Create Secret")
 				err = f.CreateSecret(secret)
@@ -427,6 +421,7 @@ var _ = Describe("Elasticsearch", func() {
 					var customSAForSnapshot *core.ServiceAccount
 					var customRoleForSnapshot *rbac.Role
 					var customRoleBindingForSnapshot *rbac.RoleBinding
+
 					BeforeEach(func() {
 						skipSnapshotDataChecking = false
 						snapshot.Spec.StorageSecretName = secret.Name
@@ -464,33 +459,19 @@ var _ = Describe("Elasticsearch", func() {
 						err = f.CreateRoleBinding(customRoleBindingForSnapshot)
 						Expect(err).NotTo(HaveOccurred())
 					})
+
 					It("should take snapshot to GCS successfully", func() {
 						shouldTakeSnapshot()
 					})
+
 					It("should init from GCS snapshot successfully", func() {
 						By("Start initializing From Snapshot")
-						// Create and wait for running Elasticsearch
-						createAndWaitForRunning()
+						// create elasticsearch and insert data
+						createAndInsertData()
 
 						By("Create Secret")
 						err := f.CreateSecret(secret)
 						Expect(err).NotTo(HaveOccurred())
-
-						By("Check for Elastic client")
-						f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-						elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Creating new indices")
-						err = elasticClient.CreateIndex(2)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Checking new indices")
-						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-						elasticClient.Stop()
-						f.Tunnel.Close()
 
 						By("Create Snapshot")
 						err = f.CreateSnapshot(snapshot)
@@ -533,28 +514,28 @@ var _ = Describe("Elasticsearch", func() {
 						By("Setting SA name in ES")
 						elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = customSAForDB.Name
 
-						// Create and wait for running Elasticsearch
+						// create and wait for running Elasticsearch
 						createAndWaitForRunning()
 
 						By("Check for Elastic client")
 						f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
-						elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+						elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
+						defer elasticClient.Stop()
+						defer f.Tunnel.Close()
 
 						By("Checking indices")
-						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-						elasticClient.Stop()
-						f.Tunnel.Close()
+						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 					})
 				})
 
 				Context("with custom Secret", func() {
 					var kubedbSecret *core.Secret
 					var customSecret *core.Secret
+
 					BeforeEach(func() {
-						customSecret = f.SecretForDatabaseAuthentication(elasticsearch.ObjectMeta, false)
+						customSecret = f.SecretForDatabaseAuthentication(elasticsearch, false)
 						elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
 							SecretName: customSecret.Name,
 						}
@@ -575,7 +556,7 @@ var _ = Describe("Elasticsearch", func() {
 					})
 
 					It("should remove secret after taking snapshot to GCS successfully", func() {
-						kubedbSecret = f.SecretForDatabaseAuthentication(elasticsearch.ObjectMeta, true)
+						kubedbSecret = f.SecretForDatabaseAuthentication(elasticsearch, true)
 						elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
 							SecretName: kubedbSecret.Name,
 						}
@@ -705,7 +686,7 @@ var _ = Describe("Elasticsearch", func() {
 				Context("Delete One Snapshot keeping others", func() {
 
 					It("Delete One Snapshot keeping others", func() {
-						// Create and wait for running elasticsearch
+						// create and wait for running elasticsearch
 						shouldTakeSnapshot()
 
 						oldSnapshot := snapshot.DeepCopy()
@@ -770,7 +751,7 @@ var _ = Describe("Elasticsearch", func() {
 						}
 					})
 					It("snapshot should fail", func() {
-						// Create and wait for running Elasticsearch
+						// create and wait for running Elasticsearch
 						createAndWaitForRunning()
 
 						By("Create Secret")
@@ -789,7 +770,7 @@ var _ = Describe("Elasticsearch", func() {
 				Context("Delete One Snapshot keeping others", func() {
 
 					It("Delete One Snapshot keeping others", func() {
-						// Create and wait for running elasticsearch
+						// create and wait for running elasticsearch
 						shouldTakeSnapshot()
 
 						oldSnapshot := snapshot.DeepCopy()
@@ -848,7 +829,7 @@ var _ = Describe("Elasticsearch", func() {
 				Context("Delete One Snapshot keeping others", func() {
 
 					It("Delete One Snapshot keeping others", func() {
-						// Create and wait for running elasticsearch
+						// create and wait for running elasticsearch
 						shouldTakeSnapshot()
 
 						oldSnapshot := snapshot.DeepCopy()
@@ -970,8 +951,8 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				var shouldHandleJobVolumeSuccessfully = func() {
-					// Create and wait for running Elasticsearch
-					createAndWaitForRunning()
+					// create elasticsearch and insert data
+					createAndInsertData()
 
 					By("Get Elasticsearch")
 					es, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
@@ -1211,28 +1192,12 @@ var _ = Describe("Elasticsearch", func() {
 			})
 
 			var shouldInitialize = func() {
-				// Create and wait for running Elasticsearch
-				createAndWaitForRunning()
+				// create and wait for running Elasticsearch
+				createAndInsertData()
 
 				By("Create Secret")
 				err := f.CreateSecret(secret)
 				Expect(err).NotTo(HaveOccurred())
-
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating new indices")
-				err = elasticClient.CreateIndex(2)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-				elasticClient.Stop()
-				f.Tunnel.Close()
 
 				By("Create Snapshot")
 				err = f.CreateSnapshot(snapshot)
@@ -1260,20 +1225,19 @@ var _ = Describe("Elasticsearch", func() {
 					},
 				}
 
-				// Create and wait for running Elasticsearch
+				// create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
 				By("Check for Elastic client")
 				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
-				elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
+				defer elasticClient.Stop()
+				defer f.Tunnel.Close()
 
 				By("Checking indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-				elasticClient.Stop()
-				f.Tunnel.Close()
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 			}
 
 			Context("-", func() {
@@ -1402,24 +1366,8 @@ var _ = Describe("Elasticsearch", func() {
 
 				var shouldInitializeFromStash = func() {
 
-					// Create and wait for running Elasticsearch
-					createAndWaitForRunning()
-
-					By("Check for Elastic client")
-					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Creating new indices")
-					err = elasticClient.CreateIndex(2)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-					elasticClient.Stop()
-					f.Tunnel.Close()
+					// create elasticsearch and insert data
+					createAndInsertData()
 
 					By("Create Secret")
 					err = f.CreateSecret(secret)
@@ -1456,7 +1404,7 @@ var _ = Describe("Elasticsearch", func() {
 						},
 					}
 
-					// Create and wait for running Elasticsearch
+					// create and wait for running Elasticsearch
 					createAndWaitForInitializing()
 
 					By("Create RestoreSession")
@@ -1473,14 +1421,13 @@ var _ = Describe("Elasticsearch", func() {
 					By("Check for Elastic client")
 					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
-					elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
+					defer elasticClient.Stop()
+					defer f.Tunnel.Close()
 
 					By("Checking indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-					elasticClient.Stop()
-					f.Tunnel.Close()
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 				}
 
 				Context("From GCS backend", func() {
@@ -1549,7 +1496,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 
 			var shouldResumeSuccessfully = func() {
-				// Create and wait for running Elasticsearch
+				// create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
 				By("Delete elasticsearch")
@@ -1559,7 +1506,7 @@ var _ = Describe("Elasticsearch", func() {
 				By("Wait for elasticsearch to be paused")
 				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-				// Create Elasticsearch object again to resume it
+				// create elasticsearch object again to resume it
 				By("Create Elasticsearch: " + elasticsearch.Name)
 				err = f.CreateElasticsearch(elasticsearch)
 				Expect(err).NotTo(HaveOccurred())
@@ -1638,7 +1585,7 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				var shouldStartupSchedular = func() {
-					// Create and wait for running Elasticsearch
+					// create and wait for running Elasticsearch
 					createAndWaitForRunning()
 
 					By("Create Secret")
@@ -1691,7 +1638,7 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("With Update", func() {
 				var shouldScheduleWithUpdate = func() {
-					// Create and wait for running Elasticsearch
+					// create and wait for running Elasticsearch
 					createAndWaitForRunning()
 
 					By("Create Secret")
@@ -1752,28 +1699,12 @@ var _ = Describe("Elasticsearch", func() {
 			})
 
 			var shouldRunWithSnapshot = func() {
-				// Create and wait for running Elasticsearch
-				createAndWaitForRunning()
+				// create elasticsearch and insert data
+				createAndInsertData()
 
 				By("Create Secret")
 				err := f.CreateSecret(secret)
 				Expect(err).NotTo(HaveOccurred())
-
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating new indices")
-				err = elasticClient.CreateIndex(2)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-				elasticClient.Stop()
-				f.Tunnel.Close()
 
 				By("Create Snapshot")
 				err = f.CreateSnapshot(snapshot)
@@ -1796,7 +1727,7 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				It("should work successfully", func() {
-					// Create and wait for running Elasticsearch
+					// create and wait for running Elasticsearch
 					createAndWaitForRunning()
 
 					By("Delete elasticsearch")
@@ -1839,7 +1770,7 @@ var _ = Describe("Elasticsearch", func() {
 						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
 					}
 
-					// Create Elasticsearch object again to resume it
+					// create elasticsearch object again to resume it
 					By("Create (pause) Elasticsearch: " + elasticsearch.Name)
 					err = f.CreateElasticsearch(elasticsearch)
 					Expect(err).NotTo(HaveOccurred())
@@ -1855,12 +1786,11 @@ var _ = Describe("Elasticsearch", func() {
 
 					elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
+					defer elasticClient.Stop()
+					defer f.Tunnel.Close()
 
 					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-					elasticClient.Stop()
-					f.Tunnel.Close()
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 				}
 
 				It("should create dormantdatabase successfully", shouldRunWithTerminationPause)
@@ -2071,24 +2001,8 @@ var _ = Describe("Elasticsearch", func() {
 					Skip(skipMessage)
 				}
 
-				// Create Elasticsearch
-				createAndWaitForRunning()
-
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating new indices")
-				err = elasticClient.CreateIndex(2)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-				elasticClient.Stop()
-				f.Tunnel.Close()
+				// create elasticsearch and insert data
+				createAndInsertData()
 
 				By("Delete elasticsearch")
 				err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
@@ -2097,7 +2011,7 @@ var _ = Describe("Elasticsearch", func() {
 				By("Wait for elasticsearch to be paused")
 				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
 
-				// Create Elasticsearch object again to resume it
+				// create elasticsearch object again to resume it
 				By("Create Elasticsearch: " + elasticsearch.Name)
 				err = f.CreateElasticsearch(elasticsearch)
 				Expect(err).NotTo(HaveOccurred())
@@ -2111,14 +2025,13 @@ var _ = Describe("Elasticsearch", func() {
 				By("Check for Elastic client")
 				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
-				elasticClient, err = f.GetElasticClient(elasticsearch.ObjectMeta)
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
+				defer elasticClient.Stop()
+				defer f.Tunnel.Close()
 
 				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-				elasticClient.Stop()
-				f.Tunnel.Close()
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 			}
 
 			Context("With allowed Envs", func() {
@@ -2231,7 +2144,7 @@ var _ = Describe("Elasticsearch", func() {
 					},
 				}
 
-				// Create Elasticsearch
+				// create elasticsearch
 				createAndWaitForRunning()
 
 				By("Check for Elastic client")
@@ -2305,24 +2218,9 @@ var _ = Describe("Elasticsearch", func() {
 					Skip(skipMessage)
 				}
 
-				// Create Elasticsearch
-				createAndWaitForRunning()
+				// create elasticsearch and insert data
+				createAndInsertData()
 
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
-				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating new indices")
-				err = elasticClient.CreateIndex(2)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, 2)))
-
-				elasticClient.Stop()
-				f.Tunnel.Close()
 			}
 
 			Context("Ephemeral", func() {
