@@ -23,7 +23,6 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	policy_util "kmodules.xyz/client-go/policy/v1beta1"
 	storage "kmodules.xyz/objectstore-api/osm"
-	"kubedb.dev/apimachinery/apis"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"kubedb.dev/apimachinery/pkg/eventer"
@@ -53,7 +52,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		es, err := util.UpdateElasticsearchStatus(c.ExtClient.KubedbV1alpha1(), elasticsearch, func(in *api.ElasticsearchStatus) *api.ElasticsearchStatus {
 			in.Phase = api.DatabasePhaseCreating
 			return in
-		}, apis.EnableStatusSubresource)
+		})
 		if err != nil {
 			return err
 		}
@@ -113,7 +112,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		mg, err := util.UpdateElasticsearchStatus(c.ExtClient.KubedbV1alpha1(), elasticsearch, func(in *api.ElasticsearchStatus) *api.ElasticsearchStatus {
 			in.Phase = api.DatabasePhaseInitializing
 			return in
-		}, apis.EnableStatusSubresource)
+		})
 		if err != nil {
 			return err
 		}
@@ -136,7 +135,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		in.Phase = api.DatabasePhaseRunning
 		in.ObservedGeneration = types.NewIntHash(elasticsearch.Generation, meta_util.GenerationHash(elasticsearch))
 		return in
-	}, apis.EnableStatusSubresource)
+	})
 	if err != nil {
 		return err
 	}
@@ -448,7 +447,7 @@ func (c *Controller) SetDatabaseStatus(meta metav1.ObjectMeta, phase api.Databas
 		in.Phase = phase
 		in.Reason = reason
 		return in
-	}, apis.EnableStatusSubresource)
+	})
 	return err
 }
 
