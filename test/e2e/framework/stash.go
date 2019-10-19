@@ -25,23 +25,25 @@ func (i *Invocation) BackupConfiguration(meta metav1.ObjectMeta) *v1beta1.Backup
 			Namespace: i.namespace,
 		},
 		Spec: v1beta1.BackupConfigurationSpec{
-			Task: v1beta1.TaskRef{
-				Name: StashESBackupTask,
-			},
 			Repository: core.LocalObjectReference{
 				Name: meta.Name,
-			},
-			//Schedule: "*/3 * * * *",
-			Target: &v1beta1.BackupTarget{
-				Ref: v1beta1.TargetRef{
-					APIVersion: v1alpha13.SchemeGroupVersion.String(),
-					Kind:       v1alpha13.ResourceKindApp,
-					Name:       meta.Name,
-				},
 			},
 			RetentionPolicy: v1alpha1.RetentionPolicy{
 				KeepLast: 5,
 				Prune:    true,
+			},
+			BackupConfigurationTemplateSpec: v1beta1.BackupConfigurationTemplateSpec{
+				Task: v1beta1.TaskRef{
+					Name: StashESBackupTask,
+				},
+				//Schedule: "*/3 * * * *",
+				Target: &v1beta1.BackupTarget{
+					Ref: v1beta1.TargetRef{
+						APIVersion: v1alpha13.SchemeGroupVersion.String(),
+						Kind:       v1alpha13.ResourceKindApp,
+						Name:       meta.Name,
+					},
+				},
 			},
 		},
 	}
@@ -83,7 +85,12 @@ func (i *Invocation) BackupSession(meta metav1.ObjectMeta) *v1beta1.BackupSessio
 			Namespace: i.namespace,
 		},
 		Spec: v1beta1.BackupSessionSpec{
-			BackupConfiguration: core.LocalObjectReference{
+			Invoker: v1beta1.BackupInvokerRef{
+				APIGroup: v1beta1.SchemeGroupVersion.Group,
+				Kind:     v1beta1.ResourceKindBackupConfiguration,
+				Name:     meta.Name,
+			},
+			BackupConfiguration: &core.LocalObjectReference{
 				Name: meta.Name,
 			},
 		},

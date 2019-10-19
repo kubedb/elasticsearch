@@ -4,7 +4,6 @@ import (
 	"github.com/appscode/go/log"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
-	"kubedb.dev/apimachinery/apis"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 )
@@ -14,7 +13,7 @@ func (c *Controller) initWatcher() {
 	c.esQueue = queue.New("Elasticsearch", c.MaxNumRequeues, c.NumThreads, c.runElasticsearch)
 	c.esLister = c.KubedbInformerFactory.Kubedb().V1alpha1().Elasticsearches().Lister()
 	c.esVersionLister = c.KubedbInformerFactory.Catalog().V1alpha1().ElasticsearchVersions().Lister()
-	c.esInformer.AddEventHandler(queue.NewObservableUpdateHandler(c.esQueue.GetQueue(), apis.EnableStatusSubresource))
+	c.esInformer.AddEventHandler(queue.NewObservableUpdateHandler(c.esQueue.GetQueue(), true))
 }
 
 func (c *Controller) runElasticsearch(key string) error {
