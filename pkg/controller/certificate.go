@@ -14,12 +14,13 @@ import (
 	"path/filepath"
 	"time"
 
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/elasticsearch/pkg/keytool"
+
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/ioutil"
 	"github.com/pkg/errors"
 	"gomodules.xyz/cert"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/elasticsearch/pkg/keytool"
 )
 
 const (

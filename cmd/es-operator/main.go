@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 
-	"kmodules.xyz/client-go/logs"
 	_ "kubedb.dev/apimachinery/client/clientset/versioned/scheme"
 	"kubedb.dev/elasticsearch/pkg/cmds"
+
+	"kmodules.xyz/client-go/logs"
 )
 
 func main() {

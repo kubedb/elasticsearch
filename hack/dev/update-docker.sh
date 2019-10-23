@@ -7,7 +7,6 @@ REPO_ROOT=${GOPATH}/src/kubedb.dev/elasticsearch
 export DB_UPDATE=1
 export TOOLS_UPDATE=1
 export EXPORTER_UPDATE=1
-export OPERATOR_UPDATE=1
 export KIBANA_UPDATE=1
 export YQ_UPDATE=1
 
@@ -18,7 +17,6 @@ show_help() {
   echo "-h, --help                       show brief help"
   echo "    --db-only                    update only database images"
   echo "    --tools-only                 update only database-tools images"
-  echo "    --operator-only              update only operator image"
   echo "    --exporter-only              update only database-exporter images"
   echo "    --kibana-only                update only kibana images"
   echo "    --yq-only                update only kibana images"
@@ -33,7 +31,6 @@ while test $# -gt 0; do
     --db-only)
       export DB_UPDATE=1
       export TOOLS_UPDATE=0
-      export OPERATOR_UPDATE=0
       export EXPORTER_UPDATE=0
       export KIBANA_UPDATE=0
       export YQ_UPDATE=0
@@ -42,7 +39,6 @@ while test $# -gt 0; do
     --tools-only)
       export DB_UPDATE=0
       export TOOLS_UPDATE=1
-      export OPERATOR_UPDATE=0
       export EXPORTER_UPDATE=0
       export KIBANA_UPDATE=0
       export YQ_UPDATE=0
@@ -52,16 +48,6 @@ while test $# -gt 0; do
       export DB_UPDATE=0
       export TOOLS_UPDATE=0
       export EXPORTER_UPDATE=1
-      export OPERATOR_UPDATE=0
-      export KIBANA_UPDATE=0
-      export YQ_UPDATE=0
-      shift
-      ;;
-    --operator-only)
-      export DB_UPDATE=0
-      export TOOLS_UPDATE=0
-      export EXPORTER_UPDATE=0
-      export OPERATOR_UPDATE=1
       export KIBANA_UPDATE=0
       export YQ_UPDATE=0
       shift
@@ -70,7 +56,6 @@ while test $# -gt 0; do
       export DB_UPDATE=0
       export TOOLS_UPDATE=0
       export EXPORTER_UPDATE=0
-      export OPERATOR_UPDATE=0
       export KIBANA_UPDATE=1
       export YQ_UPDATE=0
       shift
@@ -79,7 +64,6 @@ while test $# -gt 0; do
       export DB_UPDATE=0
       export TOOLS_UPDATE=0
       export EXPORTER_UPDATE=0
-      export OPERATOR_UPDATE=0
       export KIBANA_UPDATE=0
       export YQ_UPDATE=1
       shift

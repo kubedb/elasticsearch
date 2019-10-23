@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	"kubedb.dev/elasticsearch/test/e2e/framework"
+	"kubedb.dev/elasticsearch/test/e2e/matcher"
+
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
@@ -17,10 +22,6 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	exec_util "kmodules.xyz/client-go/tools/exec"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
-	"kubedb.dev/elasticsearch/test/e2e/framework"
-	"kubedb.dev/elasticsearch/test/e2e/matcher"
 	stashV1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	stashV1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )

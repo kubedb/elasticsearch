@@ -5,6 +5,10 @@ import (
 	"os"
 	"time"
 
+	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/elasticsearch/pkg/controller"
+
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/log"
 	. "github.com/onsi/gomega"
@@ -17,9 +21,6 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	googleconsts "kmodules.xyz/constants/google"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/elasticsearch/pkg/controller"
 	"stash.appscode.dev/stash/pkg/restic"
 )
 

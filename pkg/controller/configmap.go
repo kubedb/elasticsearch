@@ -3,14 +3,15 @@ package controller
 import (
 	"fmt"
 
+	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 )
 
 const (

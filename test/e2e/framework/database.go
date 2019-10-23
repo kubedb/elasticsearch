@@ -3,12 +3,13 @@ package framework
 import (
 	"fmt"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"kmodules.xyz/client-go/tools/portforward"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	amc "kubedb.dev/apimachinery/pkg/controller"
 	"kubedb.dev/elasticsearch/pkg/controller"
 	"kubedb.dev/elasticsearch/pkg/util/es"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kmodules.xyz/client-go/tools/portforward"
 )
 
 func (f *Framework) GetClientPodName(elasticsearch *api.Elasticsearch) string {
