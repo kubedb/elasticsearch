@@ -214,7 +214,7 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 	}
 
 	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleClient] = "set"
+	labels[NodeRoleClient] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := clientNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -293,7 +293,7 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 	}
 
 	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleMaster] = "set"
+	labels[NodeRoleMaster] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := masterNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -385,7 +385,7 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 	}
 
 	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleData] = "set"
+	labels[NodeRoleData] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := dataNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -454,9 +454,9 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	statefulSetName := elasticsearch.OffshootName()
 	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleClient] = "set"
-	labels[NodeRoleMaster] = "set"
-	labels[NodeRoleData] = "set"
+	labels[NodeRoleClient] = NodeRoleSet
+	labels[NodeRoleMaster] = NodeRoleSet
+	labels[NodeRoleData] = NodeRoleSet
 
 	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
 	if err != nil {

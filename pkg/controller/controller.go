@@ -20,7 +20,7 @@ import (
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/labels"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -136,7 +136,7 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 
 // StartAndRunControllers starts InformetFactory and runs queue.worker
 func (c *Controller) StartAndRunControllers(stopCh <-chan struct{}) {
-	defer utilruntime.HandleCrash()
+	defer utilRuntime.HandleCrash()
 
 	log.Infoln("Starting KubeDB controller")
 	c.KubeInformerFactory.Start(stopCh)

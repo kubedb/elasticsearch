@@ -37,7 +37,7 @@ func (c *Controller) runElasticsearch(key string) error {
 					log.Errorln(err)
 					return err
 				}
-				elasticsearch, _, err = util.PatchElasticsearch(c.ExtClient.KubedbV1alpha1(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+				_, _, err = util.PatchElasticsearch(c.ExtClient.KubedbV1alpha1(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")
 					return in
 				})

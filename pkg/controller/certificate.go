@@ -284,6 +284,9 @@ func NewSignedCert(cfg cert.Config, key *rsa.PrivateKey, caCert *x509.Certificat
 		},
 	}
 	certTmpl.ExtraExtensions[0].Value, err = marshalSANs(cfg.AltNames.DNSNames, nil, cfg.AltNames.IPs)
+	if err != nil {
+		return nil, err
+	}
 
 	certDERBytes, err := x509.CreateCertificate(cryptorand.Reader, &certTmpl, caCert, key.Public(), caKey)
 	if err != nil {

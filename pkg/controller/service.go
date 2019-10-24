@@ -23,6 +23,7 @@ var (
 	NodeRoleMaster = "node.role.master"
 	NodeRoleClient = "node.role.client"
 	NodeRoleData   = "node.role.data"
+	NodeRoleSet    = "set"
 
 	defaultClientPort = core.ServicePort{
 		Name:       api.ElasticsearchRestPortName,
@@ -118,7 +119,7 @@ func (c *Controller) createService(elasticsearch *api.Elasticsearch) (kutil.Verb
 		in.Annotations = elasticsearch.Spec.ServiceTemplate.Annotations
 
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
-		in.Spec.Selector[NodeRoleClient] = "set"
+		in.Spec.Selector[NodeRoleClient] = NodeRoleSet
 		in.Spec.Ports = ofst.MergeServicePorts(
 			core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{defaultClientPort}),
 			elasticsearch.Spec.ServiceTemplate.Spec.Ports,
@@ -159,7 +160,7 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 		in.Annotations = elasticsearch.Spec.ServiceTemplate.Annotations
 
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
-		in.Spec.Selector[NodeRoleMaster] = "set"
+		in.Spec.Selector[NodeRoleMaster] = NodeRoleSet
 		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{defaultPeerPort})
 		return in
 	})

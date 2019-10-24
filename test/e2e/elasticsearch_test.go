@@ -298,8 +298,7 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("with custom SA Name", func() {
 				BeforeEach(func() {
-					var customSecret *core.Secret
-					customSecret = f.SecretForDatabaseAuthentication(elasticsearch, false)
+					customSecret := f.SecretForDatabaseAuthentication(elasticsearch, false)
 					elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
 						SecretName: customSecret.Name,
 					}
@@ -917,12 +916,15 @@ var _ = Describe("Elasticsearch", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						dbSecret, err := f.KubeClient().CoreV1().Secrets(es.Namespace).Get(es.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+
 						_, _, err = core_util.PatchSecret(f.KubeClient(), dbSecret, func(in *core.Secret) *core.Secret {
 							in.StringData = map[string]string{
 								"ADMIN_PASSWORD": "invalid",
 							}
 							return in
 						})
+						Expect(err).NotTo(HaveOccurred())
 
 						By("Create Snapshot")
 						err = f.CreateSnapshot(snapshot)
