@@ -110,7 +110,7 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 	}
 
 	certPath := fmt.Sprintf("%v/%v", certsDir, rand.Characters(3))
-	if err := os.Mkdir(certPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(certPath, os.ModePerm); err != nil {
 		return nil, err
 	}
 
