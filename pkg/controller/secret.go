@@ -7,15 +7,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+
 	"github.com/appscode/go/crypto/rand"
 	"golang.org/x/crypto/bcrypt"
 	"gomodules.xyz/cert"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 )
 
 const (
@@ -109,7 +110,9 @@ func (c *Controller) createCertSecret(elasticsearch *api.Elasticsearch) (*core.S
 	}
 
 	certPath := fmt.Sprintf("%v/%v", certsDir, rand.Characters(3))
-	os.Mkdir(certPath, os.ModePerm)
+	if err := os.MkdirAll(certPath, os.ModePerm); err != nil {
+		return nil, err
+	}
 
 	caKey, caCert, pass, err := createCaCertificate(certPath)
 	if err != nil {

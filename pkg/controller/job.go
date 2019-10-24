@@ -3,14 +3,15 @@ package controller
 import (
 	"fmt"
 
+	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/analytics"
 	storage "kmodules.xyz/objectstore-api/osm"
-	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 )
 
 func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot *api.Snapshot) (*batch.Job, error) {
@@ -127,7 +128,7 @@ func (c *Controller) createRestoreJob(elasticsearch *api.Elasticsearch, snapshot
 								},
 								{
 									Name:  "AUTH_PLUGIN",
-									Value: fmt.Sprintf("%s", elasticsearch.Spec.AuthPlugin),
+									Value: string(elasticsearch.Spec.AuthPlugin),
 								},
 								{
 									Name:  analytics.Key,
@@ -332,7 +333,7 @@ func (c *Controller) GetSnapshotter(snapshot *api.Snapshot) (*batch.Job, error) 
 								},
 								{
 									Name:  "AUTH_PLUGIN",
-									Value: fmt.Sprintf("%s", elasticsearch.Spec.AuthPlugin),
+									Value: string(elasticsearch.Spec.AuthPlugin),
 								},
 								{
 									Name:  analytics.Key,

@@ -5,6 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/apimachinery/pkg/eventer"
+
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	apps "k8s.io/api/apps/v1"
@@ -18,9 +22,6 @@ import (
 	app_util "kmodules.xyz/client-go/apps/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
-	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/apimachinery/pkg/eventer"
 )
 
 const (
@@ -213,7 +214,7 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 	}
 
 	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleClient] = "set"
+	labels[NodeRoleClient] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := clientNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -292,7 +293,7 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 	}
 
 	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleMaster] = "set"
+	labels[NodeRoleMaster] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := masterNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -384,7 +385,7 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 	}
 
 	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleData] = "set"
+	labels[NodeRoleData] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := dataNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -453,9 +454,9 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	statefulSetName := elasticsearch.OffshootName()
 	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleClient] = "set"
-	labels[NodeRoleMaster] = "set"
-	labels[NodeRoleData] = "set"
+	labels[NodeRoleClient] = NodeRoleSet
+	labels[NodeRoleMaster] = NodeRoleSet
+	labels[NodeRoleData] = NodeRoleSet
 
 	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
 	if err != nil {

@@ -387,7 +387,7 @@ golang.org/x/time/rate
 gomodules.xyz/cert
 # gomodules.xyz/jsonpatch/v2 v2.0.0
 gomodules.xyz/jsonpatch/v2
-# gomodules.xyz/stow v0.2.0
+# gomodules.xyz/stow v0.2.2
 gomodules.xyz/stow
 gomodules.xyz/stow/azure
 gomodules.xyz/stow/google
@@ -520,9 +520,9 @@ k8s.io/apimachinery/pkg/apis/meta/v1
 k8s.io/apimachinery/pkg/runtime
 k8s.io/apimachinery/pkg/runtime/schema
 k8s.io/apimachinery/pkg/util/mergepatch
+k8s.io/apimachinery/pkg/util/runtime
 k8s.io/apimachinery/pkg/labels
 k8s.io/apimachinery/pkg/util/intstr
-k8s.io/apimachinery/pkg/util/runtime
 k8s.io/apimachinery/pkg/util/sets
 k8s.io/apimachinery/pkg/util/wait
 k8s.io/apimachinery/pkg/runtime/serializer
@@ -902,11 +902,11 @@ k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/schemaconv
 # k8s.io/kubernetes v1.14.0
 k8s.io/kubernetes/pkg/util/hash
-# k8s.io/utils v0.0.0-20190506122338-8fab8cb257d5 => k8s.io/utils v0.0.0-20190221042446-c2654d5206da
+# k8s.io/utils v0.0.0-20190506122338-8fab8cb257d5 => k8s.io/utils v0.0.0-20190514214443-0a167cbac756
 k8s.io/utils/buffer
 k8s.io/utils/trace
 k8s.io/utils/integer
-# kmodules.xyz/client-go v0.0.0-20191016085444-3044854ca625
+# kmodules.xyz/client-go v0.0.0-20191023042933-b12d1ccfaf57
 kmodules.xyz/client-go/logs
 kmodules.xyz/client-go
 kmodules.xyz/client-go/core/v1
@@ -926,7 +926,10 @@ kmodules.xyz/client-go/tools/queue
 kmodules.xyz/client-go/apiregistration/v1beta1
 kmodules.xyz/client-go/tools/exec
 # kmodules.xyz/constants v0.0.0-20191009183447-fbd33067b8a6
+kmodules.xyz/constants/aws
+kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
+kmodules.xyz/constants/openstack
 # kmodules.xyz/custom-resources v0.0.0-20190927035424-65fe358bb045
 kmodules.xyz/custom-resources/client/clientset/versioned/scheme
 kmodules.xyz/custom-resources/client/clientset/versioned
@@ -952,12 +955,11 @@ kmodules.xyz/offshoot-api/api/v1
 # kmodules.xyz/webhook-runtime v0.0.0-20190808145328-4186c470d56b
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-# kubedb.dev/apimachinery v0.13.0-rc.1.0.20191019003934-41a05a4884ae
+# kubedb.dev/apimachinery v0.13.0-rc.2
 kubedb.dev/apimachinery/client/clientset/versioned/scheme
 kubedb.dev/apimachinery/apis/kubedb/v1alpha1
 kubedb.dev/apimachinery/client/clientset/versioned
 kubedb.dev/apimachinery/pkg/validator
-kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/client/informers/externalversions
 kubedb.dev/apimachinery/pkg/controller/snapshot
 kubedb.dev/apimachinery/apis/catalog/v1alpha1
@@ -972,6 +974,7 @@ kubedb.dev/apimachinery/pkg/admission/dormantdatabase
 kubedb.dev/apimachinery/pkg/admission/namespace
 kubedb.dev/apimachinery/pkg/admission/snapshot
 kubedb.dev/apimachinery/apis/config/v1alpha1
+kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/kubedb
 kubedb.dev/apimachinery/client/clientset/versioned/typed/catalog/v1alpha1
 kubedb.dev/apimachinery/client/clientset/versioned/typed/config/v1alpha1
@@ -1020,7 +1023,7 @@ sigs.k8s.io/structured-merge-diff/value
 sigs.k8s.io/structured-merge-diff/schema
 # sigs.k8s.io/yaml v1.1.0
 sigs.k8s.io/yaml
-# stash.appscode.dev/stash v0.9.0-rc.1.0.20191018180359-9ef3cfeba2a2
+# stash.appscode.dev/stash v0.9.0-rc.2
 stash.appscode.dev/stash/client/clientset/versioned
 stash.appscode.dev/stash/client/informers/externalversions
 stash.appscode.dev/stash/apis/stash/v1alpha1
