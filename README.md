@@ -1,5 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/kubedb.dev/elasticsearch)](https://goreportcard.com/report/kubedb.dev/elasticsearch)
-[![Build Status](https://travis-ci.org/kubedb/elasticsearch.svg?branch=master)](https://travis-ci.org/kubedb/elasticsearch)
+[![Build Status](https://github.com/kubedb/elasticsearch/workflows/CI/badge.svg)](https://github.com/kubedb/elasticsearch/actions?workflow=CI)
 [![codecov](https://codecov.io/gh/kubedb/elasticsearch/branch/master/graph/badge.svg)](https://codecov.io/gh/kubedb/elasticsearch)
 [![Slack](http://slack.kubernetes.io/badge.svg)](http://slack.kubernetes.io/#kubedb)
 [![mailing list](https://img.shields.io/badge/mailing_list-join-blue.svg)](https://groups.google.com/forum/#!forum/kubedb)

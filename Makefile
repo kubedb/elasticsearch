@@ -84,8 +84,8 @@ BUILD_DIRS  := bin/$(OS)_$(ARCH)     \
                $(HOME)/.kube         \
                $(HOME)/.minikube
 
-DOCKERFILE_PROD  = hack/docker/es-operator/in.Dockerfile
-DOCKERFILE_DBG   = hack/docker/es-operator/dbg.Dockerfile
+DOCKERFILE_PROD  = hack/docker/es-operator/Dockerfile.in
+DOCKERFILE_DBG   = hack/docker/es-operator/Dockerfile.dbg
 
 DOCKER_REPO_ROOT := /go/src/$(GO_PKG)/$(REPO)
 
@@ -366,9 +366,22 @@ verify-gen: gen fmt
 		echo "files are out of date, run make gen fmt"; exit 1; \
 	fi
 
+.PHONY: add-license
+add-license:
+	@echo "Adding license header"
+	@docker run --rm 	                                 \
+		-u $$(id -u):$$(id -g)                           \
+		-v /tmp:/.cache                                  \
+		-v $$(pwd):$(DOCKER_REPO_ROOT)                   \
+		-w $(DOCKER_REPO_ROOT)                           \
+		--env HTTP_PROXY=$(HTTP_PROXY)                   \
+		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
+		$(BUILD_IMAGE)                                   \
+		ltag -t "./hack/license" --excludes "vendor contrib third_party libbuild" -v
+
 .PHONY: check-license
 check-license:
-	@echo "Checking files have proper license header"
+	@echo "Checking files for license header"
 	@docker run --rm 	                                 \
 		-u $$(id -u):$$(id -g)                           \
 		-v /tmp:/.cache                                  \
