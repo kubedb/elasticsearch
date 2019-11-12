@@ -1197,7 +1197,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		FContext("Initialize", func() {
+		Context("Initialize", func() {
 
 			BeforeEach(func() {
 				skipSnapshotDataChecking = false
@@ -1311,7 +1311,6 @@ var _ = Describe("Elasticsearch", func() {
 					elasticsearch = f.DedicatedElasticsearch()
 					snapshot.Spec.DatabaseName = elasticsearch.Name
 				})
-
 				It("should initialize database successfully", shouldInitialize)
 
 				Context("with authPlugin disabled", func() {

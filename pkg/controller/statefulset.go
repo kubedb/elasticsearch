@@ -604,6 +604,13 @@ func upsertEnv(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsearch, 
 				},
 			},
 		})
+	} else if esVersion.Spec.AuthPlugin == catalog.ElasticsearchAuthPluginSearchGuard {
+		// Older versions of Elasticsearch (ie, 5.6.4, 6.2.4, 6.3.0, 6.4.0) requires KEY_PASS to be set.
+		// So set a empty value in KEY_PASS
+		envList = append(envList, core.EnvVar{
+			Name: "KEY_PASS",
+			Value: "",
+		})
 	}
 	if esVersion.Spec.AuthPlugin == catalog.ElasticsearchAuthPluginSearchGuard {
 		envList = append(envList, []core.EnvVar{
