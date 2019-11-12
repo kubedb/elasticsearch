@@ -19,7 +19,6 @@ set -eou pipefail
 GOPATH=$(go env GOPATH)
 REPO_ROOT=${GOPATH}/src/kubedb.dev/elasticsearch
 
-export DB_UPDATE=1
 export TOOLS_UPDATE=1
 export EXPORTER_UPDATE=1
 export KIBANA_UPDATE=1
@@ -43,16 +42,7 @@ while test $# -gt 0; do
       show_help
       exit 0
       ;;
-    --db-only)
-      export DB_UPDATE=1
-      export TOOLS_UPDATE=0
-      export EXPORTER_UPDATE=0
-      export KIBANA_UPDATE=0
-      export YQ_UPDATE=0
-      shift
-      ;;
     --tools-only)
-      export DB_UPDATE=0
       export TOOLS_UPDATE=1
       export EXPORTER_UPDATE=0
       export KIBANA_UPDATE=0
@@ -60,7 +50,6 @@ while test $# -gt 0; do
       shift
       ;;
     --exporter-only)
-      export DB_UPDATE=0
       export TOOLS_UPDATE=0
       export EXPORTER_UPDATE=1
       export KIBANA_UPDATE=0
@@ -68,7 +57,6 @@ while test $# -gt 0; do
       shift
       ;;
     --kibana-only)
-      export DB_UPDATE=0
       export TOOLS_UPDATE=0
       export EXPORTER_UPDATE=0
       export KIBANA_UPDATE=1
@@ -76,7 +64,6 @@ while test $# -gt 0; do
       shift
       ;;
     --yq-only)
-      export DB_UPDATE=0
       export TOOLS_UPDATE=0
       export EXPORTER_UPDATE=0
       export KIBANA_UPDATE=0
@@ -131,14 +118,6 @@ yqimages=(
 echo ""
 env | sort | grep -e DOCKER_REGISTRY -e APPSCODE_ENV || true
 echo ""
-
-if [ "$DB_UPDATE" -eq 1 ]; then
-  cowsay -f tux "Processing database images" || echo "Processing database images"
-  for db in "${dbversions[@]}"; do
-    ${REPO_ROOT}/hack/docker/elasticsearch/${db}/make.sh build
-    ${REPO_ROOT}/hack/docker/elasticsearch/${db}/make.sh push
-  done
-fi
 
 if [ "$TOOLS_UPDATE" -eq 1 ]; then
   cowsay -f tux "Processing database-tools images" || echo "Processing database-tools images"
