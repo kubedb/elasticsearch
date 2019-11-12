@@ -50,7 +50,7 @@ func (i *Invocation) BackupConfiguration(meta metav1.ObjectMeta) *v1beta1.Backup
 			},
 			BackupConfigurationTemplateSpec: v1beta1.BackupConfigurationTemplateSpec{
 				Task: v1beta1.TaskRef{
-					Name: StashESBackupTask,
+					Name: i.getStashESBackupTaskName(),
 				},
 				//Schedule: "*/3 * * * *",
 				Target: &v1beta1.BackupTarget{
@@ -142,7 +142,7 @@ func (i *Invocation) RestoreSession(meta, oldMeta metav1.ObjectMeta) *v1beta1.Re
 		},
 		Spec: v1beta1.RestoreSessionSpec{
 			Task: v1beta1.TaskRef{
-				Name: StashESRestoreTask,
+				Name: i.getStashESRestoreTaskName(),
 			},
 			Repository: core.LocalObjectReference{
 				Name: oldMeta.Name,
@@ -182,4 +182,18 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 		time.Minute*7,
 		time.Second*7,
 	)
+}
+
+func (f *Framework) getStashESBackupTaskName() string {
+	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(DBCatalogName, metav1.GetOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	return "elasticsearch-backup-" + esVersion.Spec.Version
+}
+
+func (f *Framework) getStashESRestoreTaskName() string {
+	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(DBCatalogName, metav1.GetOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	return "elasticsearch-restore-" + esVersion.Spec.Version
 }
