@@ -392,7 +392,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		Context("Snapshot", func() {
+		XContext("Snapshot", func() {
 			BeforeEach(func() {
 				skipSnapshotDataChecking = false
 				snapshot.Spec.DatabaseName = elasticsearch.Name
@@ -1311,6 +1311,7 @@ var _ = Describe("Elasticsearch", func() {
 					elasticsearch = f.DedicatedElasticsearch()
 					snapshot.Spec.DatabaseName = elasticsearch.Name
 				})
+
 				It("should initialize database successfully", shouldInitialize)
 
 				Context("with authPlugin disabled", func() {
@@ -1337,7 +1338,6 @@ var _ = Describe("Elasticsearch", func() {
 			// https://github.com/stashed/elasticsearch
 			Context("With Stash/Restic", func() {
 				var bc *stashV1beta1.BackupConfiguration
-				var bs *stashV1beta1.BackupSession
 				var rs *stashV1beta1.RestoreSession
 				var repo *stashV1alpha1.Repository
 
@@ -1351,10 +1351,6 @@ var _ = Describe("Elasticsearch", func() {
 				AfterEach(func() {
 					By("Deleting BackupConfiguration")
 					err := f.DeleteBackupConfiguration(bc.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Deleting BackupSession")
-					err = f.DeleteBackupSession(bs.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Deleting RestoreSession")
@@ -1391,21 +1387,20 @@ var _ = Describe("Elasticsearch", func() {
 					err = f.CreateSecret(secret)
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Create Repositories")
+					By("Create Stash-Repositories")
 					err = f.CreateRepository(repo)
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Create BackupConfiguration")
+					By("Create Stash-BackupConfiguration")
 					err = f.CreateBackupConfiguration(bc)
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Create BackupSession")
-					err = f.CreateBackupSession(bs)
-					Expect(err).NotTo(HaveOccurred())
+					By("Check for snapshot count in stash-repository")
+					f.EventuallySnapshotInRepository(repo.ObjectMeta).Should(matcher.MoreThan(2))
 
-					// eventually backupsession succeeded
-					By("Check for Succeeded backupsession")
-					f.EventuallyBackupSessionPhase(bs.ObjectMeta).Should(Equal(stashV1beta1.BackupSessionSucceeded))
+					By("Pause BackupConfiguration scheduling")
+					err = f.PauseBackupConfiguration(bc.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 
 					oldElasticsearch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
@@ -1425,7 +1420,7 @@ var _ = Describe("Elasticsearch", func() {
 					// create and wait for running Elasticsearch
 					createAndWaitForInitializing()
 
-					By("Create RestoreSession")
+					By("Create Stash-RestoreSession")
 					err = f.CreateRestoreSession(rs)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -1454,7 +1449,6 @@ var _ = Describe("Elasticsearch", func() {
 						secret = f.SecretForGCSBackend()
 						secret = f.PatchSecretForRestic(secret)
 						bc = f.BackupConfiguration(elasticsearch.ObjectMeta)
-						bs = f.BackupSession(elasticsearch.ObjectMeta)
 						repo = f.Repository(elasticsearch.ObjectMeta, secret.Name)
 
 						repo.Spec.Backend = store.Backend{
@@ -1480,7 +1474,6 @@ var _ = Describe("Elasticsearch", func() {
 						BeforeEach(func() {
 							elasticsearch = f.DedicatedElasticsearch()
 							bc = f.BackupConfiguration(elasticsearch.ObjectMeta)
-							bs = f.BackupSession(elasticsearch.ObjectMeta)
 							repo = f.Repository(elasticsearch.ObjectMeta, secret.Name)
 
 							repo.Spec.Backend = store.Backend{
