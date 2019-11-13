@@ -392,7 +392,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		XContext("Snapshot", func() {
+		Context("Snapshot", func() {
 			BeforeEach(func() {
 				skipSnapshotDataChecking = false
 				snapshot.Spec.DatabaseName = elasticsearch.Name
