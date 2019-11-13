@@ -83,11 +83,11 @@ func (f *Framework) PauseBackupConfiguration(meta metav1.ObjectMeta) error {
 	return err
 }
 
-func (i *Invocation) Repository(meta metav1.ObjectMeta, secretName string) *stashV1alpha1.Repository {
+func (f *Framework) Repository(meta metav1.ObjectMeta, secretName string) *stashV1alpha1.Repository {
 	return &stashV1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      meta.Name,
-			Namespace: i.namespace,
+			Namespace: f.namespace,
 		},
 	}
 }
