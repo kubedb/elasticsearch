@@ -195,10 +195,27 @@ func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) Gomeg
 func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
+			db, err := f.GetElasticsearch(meta)
+			if err != nil {
+				return false
+			}
 			client, err := f.GetElasticClient(meta)
 			if err != nil {
 				return false
 			}
+			url := fmt.Sprintf("%v://127.0.0.1:%d", db.GetConnectionScheme(), f.Tunnel.Local)
+			if _, err := client.Ping(url); err != nil {
+				return false
+			}
+			if db.Spec.Topology != nil {
+				// cluster health status will be green only for dedicated elasicsearch
+				if err := client.WaitForGreenStatus("10s"); err != nil {
+					return false
+				}
+			} else if err := client.WaitForYellowStatus("10s"); err != nil {
+				return false
+			}
+
 			client.Stop()
 			f.Tunnel.Close()
 			return true
