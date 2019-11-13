@@ -77,7 +77,6 @@ func (f *Framework) DeleteBackupConfiguration(meta metav1.ObjectMeta) error {
 
 func (f *Framework) PauseBackupConfiguration(meta metav1.ObjectMeta) error {
 	_, err := v1beta1_util.TryUpdateBackupConfiguration(f.stashClient.StashV1beta1(), meta, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
-		// set workload as owner of this backupConfiguration object
 		in.Spec.Paused = true
 		return in
 	})
