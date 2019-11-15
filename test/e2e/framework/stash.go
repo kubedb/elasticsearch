@@ -89,6 +89,9 @@ func (f *Framework) Repository(meta metav1.ObjectMeta, secretName string) *stash
 			Name:      meta.Name,
 			Namespace: f.namespace,
 		},
+		Spec: stashV1alpha1.RepositorySpec{
+			WipeOut: true,
+		},
 	}
 }
 
@@ -99,7 +102,7 @@ func (f *Framework) CreateRepository(repo *stashV1alpha1.Repository) error {
 }
 
 func (f *Framework) DeleteRepository(meta metav1.ObjectMeta) error {
-	err := f.stashClient.StashV1alpha1().Repositories(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.stashClient.StashV1alpha1().Repositories(meta.Namespace).Delete(meta.Name, deleteInForeground())
 	return err
 }
 
