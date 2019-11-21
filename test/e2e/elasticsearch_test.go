@@ -1335,7 +1335,7 @@ var _ = Describe("Elasticsearch", func() {
 			// To run this test,
 			// 1st: Deploy stash latest operator
 			// https://github.com/stashed/elasticsearch
-			FContext("With Stash/Restic", func() {
+			Context("With Stash/Restic", func() {
 				var bc *stashV1beta1.BackupConfiguration
 				var rs *stashV1beta1.RestoreSession
 				var repo *stashV1alpha1.Repository
