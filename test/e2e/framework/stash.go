@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"fmt"
 	"time"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
@@ -166,6 +167,9 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 	return Eventually(func() v1beta1.RestoreSessionPhase {
 		restoreSession, err := f.stashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
+		if restoreSession.Status.Phase == v1beta1.RestoreSessionFailed {
+			fmt.Println("Restoresession failed. ", restoreSession.Status.Stats)
+		}
 		return restoreSession.Status.Phase
 	},
 		time.Minute*7,
