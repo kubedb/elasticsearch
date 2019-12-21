@@ -26,10 +26,10 @@ const (
 	maxAttempts         = 5
 )
 
-func deleteInBackground() *metav1.DeleteOptions {
-	policy := metav1.DeletePropagationBackground
-	return &metav1.DeleteOptions{PropagationPolicy: &policy}
-}
+//func deleteInBackground() *metav1.DeleteOptions {
+//	policy := metav1.DeletePropagationBackground
+//	return &metav1.DeleteOptions{PropagationPolicy: &policy}
+//}
 
 func deleteInForeground() *metav1.DeleteOptions {
 	policy := metav1.DeletePropagationForeground

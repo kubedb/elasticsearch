@@ -26,7 +26,6 @@ import (
 	"kubedb.dev/elasticsearch/pkg/util/es"
 
 	"github.com/appscode/go/crypto/rand"
-	jtypes "github.com/appscode/go/encoding/json/types"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
@@ -57,7 +56,7 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version:   jtypes.StrYo(DBCatalogName),
+			Version:   DBCatalogName,
 			Replicas:  types.Int32P(1),
 			EnableSSL: true,
 			Storage: &core.PersistentVolumeClaimSpec{
@@ -83,7 +82,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version: jtypes.StrYo(DBCatalogName),
+			Version: DBCatalogName,
 			Topology: &api.ElasticsearchClusterTopology{
 				Master: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
@@ -195,10 +194,27 @@ func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) Gomeg
 func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
+			db, err := f.GetElasticsearch(meta)
+			if err != nil {
+				return false
+			}
 			client, err := f.GetElasticClient(meta)
 			if err != nil {
 				return false
 			}
+			url := fmt.Sprintf("%v://127.0.0.1:%d", db.GetConnectionScheme(), f.Tunnel.Local)
+			if _, err := client.Ping(url); err != nil {
+				return false
+			}
+			if db.Spec.Topology != nil {
+				// cluster health status will be green only for dedicated elasicsearch
+				if err := client.WaitForGreenStatus("10s"); err != nil {
+					return false
+				}
+			} else if err := client.WaitForYellowStatus("10s"); err != nil {
+				return false
+			}
+
 			client.Stop()
 			f.Tunnel.Close()
 			return true

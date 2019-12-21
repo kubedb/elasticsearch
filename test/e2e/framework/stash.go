@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"fmt"
 	"time"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
@@ -28,6 +29,7 @@ import (
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	stashV1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 )
 
 func (f *Framework) FoundStashCRDs() bool {
@@ -48,11 +50,11 @@ func (i *Invocation) BackupConfiguration(meta metav1.ObjectMeta) *v1beta1.Backup
 				KeepLast: 5,
 				Prune:    true,
 			},
+			Schedule: "*/1 * * * *",
 			BackupConfigurationTemplateSpec: v1beta1.BackupConfigurationTemplateSpec{
 				Task: v1beta1.TaskRef{
-					Name: StashESBackupTask,
+					Name: i.getStashESBackupTaskName(),
 				},
-				//Schedule: "*/3 * * * *",
 				Target: &v1beta1.BackupTarget{
 					Ref: v1beta1.TargetRef{
 						APIVersion: v1alpha13.SchemeGroupVersion.String(),
@@ -74,11 +76,22 @@ func (f *Framework) DeleteBackupConfiguration(meta metav1.ObjectMeta) error {
 	return f.stashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }
 
-func (i *Invocation) Repository(meta metav1.ObjectMeta, secretName string) *stashV1alpha1.Repository {
+func (f *Framework) PauseBackupConfiguration(meta metav1.ObjectMeta) error {
+	_, err := v1beta1_util.TryUpdateBackupConfiguration(f.stashClient.StashV1beta1(), meta, func(in *v1beta1.BackupConfiguration) *v1beta1.BackupConfiguration {
+		in.Spec.Paused = true
+		return in
+	})
+	return err
+}
+
+func (f *Framework) Repository(meta metav1.ObjectMeta, secretName string) *stashV1alpha1.Repository {
 	return &stashV1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      meta.Name,
-			Namespace: i.namespace,
+			Namespace: f.namespace,
+		},
+		Spec: stashV1alpha1.RepositorySpec{
+			WipeOut: true,
 		},
 	}
 }
@@ -90,43 +103,20 @@ func (f *Framework) CreateRepository(repo *stashV1alpha1.Repository) error {
 }
 
 func (f *Framework) DeleteRepository(meta metav1.ObjectMeta) error {
-	err := f.stashClient.StashV1alpha1().Repositories(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.stashClient.StashV1alpha1().Repositories(meta.Namespace).Delete(meta.Name, deleteInForeground())
 	return err
 }
 
-func (i *Invocation) BackupSession(meta metav1.ObjectMeta) *v1beta1.BackupSession {
-	return &v1beta1.BackupSession{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      meta.Name,
-			Namespace: i.namespace,
-		},
-		Spec: v1beta1.BackupSessionSpec{
-			Invoker: v1beta1.BackupInvokerRef{
-				APIGroup: v1beta1.SchemeGroupVersion.Group,
-				Kind:     v1beta1.ResourceKindBackupConfiguration,
-				Name:     meta.Name,
-			},
-		},
-	}
-}
-
-func (f *Framework) CreateBackupSession(bc *v1beta1.BackupSession) error {
-	_, err := f.stashClient.StashV1beta1().BackupSessions(bc.Namespace).Create(bc)
-	return err
-}
-
-func (f *Framework) DeleteBackupSession(meta metav1.ObjectMeta) error {
-	err := f.stashClient.StashV1beta1().BackupSessions(meta.Namespace).Delete(meta.Name, deleteInBackground())
-	return err
-}
-
-func (f *Framework) EventuallyBackupSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+func (f *Framework) EventuallySnapshotInRepository(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
-		func() (phase v1beta1.BackupSessionPhase) {
-			bs, err := f.stashClient.StashV1beta1().BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		func() int64 {
+			repository, err := f.stashClient.StashV1alpha1().Repositories(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			return bs.Status.Phase
+
+			return repository.Status.SnapshotCount
 		},
+		time.Minute*10,
+		time.Second*5,
 	)
 }
 
@@ -142,7 +132,7 @@ func (i *Invocation) RestoreSession(meta, oldMeta metav1.ObjectMeta) *v1beta1.Re
 		},
 		Spec: v1beta1.RestoreSessionSpec{
 			Task: v1beta1.TaskRef{
-				Name: StashESRestoreTask,
+				Name: i.getStashESRestoreTaskName(),
 			},
 			Repository: core.LocalObjectReference{
 				Name: oldMeta.Name,
@@ -177,9 +167,26 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 	return Eventually(func() v1beta1.RestoreSessionPhase {
 		restoreSession, err := f.stashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
+		if restoreSession.Status.Phase == v1beta1.RestoreSessionFailed {
+			fmt.Println("Restoresession failed. ", restoreSession.Status.Stats)
+		}
 		return restoreSession.Status.Phase
 	},
 		time.Minute*7,
 		time.Second*7,
 	)
+}
+
+func (f *Framework) getStashESBackupTaskName() string {
+	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(DBCatalogName, metav1.GetOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	return "elasticsearch-backup-" + esVersion.Spec.Version
+}
+
+func (f *Framework) getStashESRestoreTaskName() string {
+	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(DBCatalogName, metav1.GetOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	return "elasticsearch-restore-" + esVersion.Spec.Version
 }
