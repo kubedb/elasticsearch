@@ -26,7 +26,6 @@ import (
 	"kubedb.dev/elasticsearch/pkg/util/es"
 
 	"github.com/appscode/go/crypto/rand"
-	jtypes "github.com/appscode/go/encoding/json/types"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
@@ -57,7 +56,7 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version:   jtypes.StrYo(DBCatalogName),
+			Version:   DBCatalogName,
 			Replicas:  types.Int32P(1),
 			EnableSSL: true,
 			Storage: &core.PersistentVolumeClaimSpec{
@@ -83,7 +82,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 			},
 		},
 		Spec: api.ElasticsearchSpec{
-			Version: jtypes.StrYo(DBCatalogName),
+			Version: DBCatalogName,
 			Topology: &api.ElasticsearchClusterTopology{
 				Master: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
