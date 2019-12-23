@@ -1348,10 +1348,6 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				AfterEach(func() {
-					By("Deleting BackupConfiguration")
-					err := f.DeleteBackupConfiguration(bc.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
 					By("Deleting RestoreSession")
 					err = f.DeleteRestoreSession(rs.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
@@ -1397,8 +1393,8 @@ var _ = Describe("Elasticsearch", func() {
 					By("Check for snapshot count in stash-repository")
 					f.EventuallySnapshotInRepository(repo.ObjectMeta).Should(matcher.MoreThan(2))
 
-					By("Pause BackupConfiguration scheduling")
-					err = f.PauseBackupConfiguration(bc.ObjectMeta)
+					By("Delete BackupConfiguration to stop backup scheduling")
+					err = f.DeleteBackupConfiguration(bc.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
 					oldElasticsearch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
@@ -1408,7 +1404,7 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Create elasticsearch from stash")
 					*elasticsearch = *f.CombinedElasticsearch()
-					rs = f.RestoreSession(elasticsearch.ObjectMeta, oldElasticsearch.ObjectMeta)
+					rs = f.RestoreSession(elasticsearch.ObjectMeta, repo)
 					elasticsearch.Spec.DatabaseSecret = oldElasticsearch.Spec.DatabaseSecret
 					elasticsearch.Spec.Init = &api.InitSpec{
 						StashRestoreSession: &core.LocalObjectReference{
@@ -1447,8 +1443,8 @@ var _ = Describe("Elasticsearch", func() {
 					BeforeEach(func() {
 						secret = f.SecretForGCSBackend()
 						secret = f.PatchSecretForRestic(secret)
-						bc = f.BackupConfiguration(elasticsearch.ObjectMeta)
-						repo = f.Repository(elasticsearch.ObjectMeta, secret.Name)
+						repo = f.Repository(elasticsearch.ObjectMeta)
+						bc = f.BackupConfiguration(elasticsearch.ObjectMeta, repo)
 
 						repo.Spec.Backend = store.Backend{
 							GCS: &store.GCSSpec{
@@ -1472,8 +1468,8 @@ var _ = Describe("Elasticsearch", func() {
 					Context("with Dedicated elasticsearch", func() {
 						BeforeEach(func() {
 							elasticsearch = f.DedicatedElasticsearch()
-							bc = f.BackupConfiguration(elasticsearch.ObjectMeta)
-							repo = f.Repository(elasticsearch.ObjectMeta, secret.Name)
+							repo = f.Repository(elasticsearch.ObjectMeta)
+							bc = f.BackupConfiguration(elasticsearch.ObjectMeta,repo)
 
 							repo.Spec.Backend = store.Backend{
 								GCS: &store.GCSSpec{
