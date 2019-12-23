@@ -1469,7 +1469,7 @@ var _ = Describe("Elasticsearch", func() {
 						BeforeEach(func() {
 							elasticsearch = f.DedicatedElasticsearch()
 							repo = f.Repository(elasticsearch.ObjectMeta)
-							bc = f.BackupConfiguration(elasticsearch.ObjectMeta,repo)
+							bc = f.BackupConfiguration(elasticsearch.ObjectMeta, repo)
 
 							repo.Spec.Backend = store.Backend{
 								GCS: &store.GCSSpec{
