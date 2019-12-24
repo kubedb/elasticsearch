@@ -87,14 +87,14 @@ var _ = Describe("Elasticsearch", func() {
 		By("Check valid AppBinding Specs")
 		err := f.CheckAppBindingSpec(elasticsearch.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
+
+		By("Check for Elastic client")
+		f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 	}
 
 	var createAndInsertData = func() {
 
 		createAndWaitForRunning()
-
-		By("Check for Elastic client")
-		f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 		elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
@@ -531,9 +531,6 @@ var _ = Describe("Elasticsearch", func() {
 
 						// create and wait for running Elasticsearch
 						createAndWaitForRunning()
-
-						By("Check for Elastic client")
-						f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 						elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
@@ -1246,9 +1243,6 @@ var _ = Describe("Elasticsearch", func() {
 				// create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
 				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 				defer elasticClient.Stop()
@@ -1371,6 +1365,9 @@ var _ = Describe("Elasticsearch", func() {
 					By("Check valid AppBinding Specs")
 					err = f.CheckAppBindingSpec(elasticsearch.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 				}
 
 				var shouldInitializeFromStash = func() {
@@ -2152,9 +2149,6 @@ var _ = Describe("Elasticsearch", func() {
 
 				// create elasticsearch
 				createAndWaitForRunning()
-
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
