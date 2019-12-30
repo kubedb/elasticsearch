@@ -111,4 +111,4 @@ jobs:
         echo "GOOGLE_SERVICE_ACCOUNT_JSON_KEY=$(echo $GOOGLE_SERVICE_ACCOUNT_JSON_KEY)" >> hack/config/.env
         make install
         echo
-        make e2e-tests TEST_ARGS="--db-catalog=${{ matrix.db }}"
+        make e2e-tests TEST_ARGS="--db-catalog=${{ matrix.db }}" GINKGO_ARGS="--flakeAttempts=2"
