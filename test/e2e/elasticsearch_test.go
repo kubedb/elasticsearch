@@ -1963,10 +1963,6 @@ var _ = Describe("Elasticsearch", func() {
 					Value: "kubedb-es-e2e-cluster",
 				},
 				{
-					Name:  "NUMBER_OF_MASTERS",
-					Value: "1",
-				},
-				{
 					Name:  "ES_JAVA_OPTS",
 					Value: "-Xms256m -Xmx256m",
 				},
