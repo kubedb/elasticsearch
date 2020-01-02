@@ -93,6 +93,11 @@ func (c *Controller) wipeOutDatabase(meta metav1.ObjectMeta, secrets []string, o
 
 	for _, unusedSecret := range unusedSecrets.List() {
 		secret, err := c.Client.CoreV1().Secrets(meta.Namespace).Get(unusedSecret, metav1.GetOptions{})
+		if kerr.IsNotFound(err) {
+			unusedSecrets.Delete(secret.Name)
+			continue
+		}
+
 		if err != nil {
 			return errors.Wrap(err, "error in getting db secret")
 		}
