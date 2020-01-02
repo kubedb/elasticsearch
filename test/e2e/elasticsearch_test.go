@@ -938,7 +938,9 @@ var _ = Describe("Elasticsearch", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						By("Create Snapshot")
+						// Previous snapshot can be still in deletion. So, use a different snapshot name
+						snapshot.Name = snapshot.Name + "-2"
+						By(fmt.Sprintf("Create Invalid Snapshot: %v", snapshot.Name))
 						err = f.CreateSnapshot(snapshot)
 						Expect(err).NotTo(HaveOccurred())
 

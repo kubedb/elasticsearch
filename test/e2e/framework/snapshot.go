@@ -56,7 +56,7 @@ func (f *Framework) GetSnapshot(meta metav1.ObjectMeta) (*api.Snapshot, error) {
 }
 
 func (f *Framework) DeleteSnapshot(meta metav1.ObjectMeta) error {
-	return f.dbClient.KubedbV1alpha1().Snapshots(meta.Namespace).Delete(meta.Name, nil)
+	return f.dbClient.KubedbV1alpha1().Snapshots(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) EventuallySnapshot(meta metav1.ObjectMeta) GomegaAsyncAssertion {
