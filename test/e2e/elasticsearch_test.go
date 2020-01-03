@@ -191,7 +191,7 @@ var _ = Describe("Elasticsearch", func() {
 		}
 	})
 
-	XDescribe("Test", func() {
+	Describe("Test", func() {
 
 		Context("General", func() {
 
@@ -957,7 +957,7 @@ var _ = Describe("Elasticsearch", func() {
 
 			})
 
-			// As, snapshot is deprecated. This excessive 'test for snapshot Job Volume' is not necessary.
+			// As, snapshot is deprecated. This excessive test for snapshot 'Job Volume' is not necessary.
 			// TODO: delete sooner or later.
 			XContext("Snapshot PodVolume Template - In S3", func() {
 
