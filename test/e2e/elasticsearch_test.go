@@ -282,17 +282,17 @@ var _ = Describe("Elasticsearch", func() {
 						BeforeEach(func() {
 							elasticsearch.Spec.Topology.Client.Resources = core.ResourceRequirements{
 								Requests: core.ResourceList{
-									core.ResourceMemory: resource.MustParse("128Mi"),
+									core.ResourceMemory: resource.MustParse("256Mi"),
 								},
 							}
 							elasticsearch.Spec.Topology.Master.Resources = core.ResourceRequirements{
 								Requests: core.ResourceList{
-									core.ResourceMemory: resource.MustParse("128Mi"),
+									core.ResourceMemory: resource.MustParse("256Mi"),
 								},
 							}
 							elasticsearch.Spec.Topology.Data.Resources = core.ResourceRequirements{
 								Requests: core.ResourceList{
-									core.ResourceMemory: resource.MustParse("128Mi"),
+									core.ResourceMemory: resource.MustParse("256Mi"),
 								},
 							}
 						})
