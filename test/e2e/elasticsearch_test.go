@@ -959,7 +959,7 @@ var _ = Describe("Elasticsearch", func() {
 
 			// As, snapshot is deprecated. This excessive test for snapshot 'Job Volume' is not necessary.
 			// TODO: delete sooner or later.
-			XContext("Snapshot PodVolume Template - In S3", func() {
+			Context("Snapshot PodVolume Template - In S3", func() {
 
 				BeforeEach(func() {
 					secret = f.SecretForS3Backend()
