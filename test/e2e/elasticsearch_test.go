@@ -87,14 +87,14 @@ var _ = Describe("Elasticsearch", func() {
 		By("Check valid AppBinding Specs")
 		err := f.CheckAppBindingSpec(elasticsearch.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
+
+		By("Check for Elastic client")
+		f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 	}
 
 	var createAndInsertData = func() {
 
 		createAndWaitForRunning()
-
-		By("Check for Elastic client")
-		f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 		elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
@@ -282,17 +282,17 @@ var _ = Describe("Elasticsearch", func() {
 						BeforeEach(func() {
 							elasticsearch.Spec.Topology.Client.Resources = core.ResourceRequirements{
 								Requests: core.ResourceList{
-									core.ResourceMemory: resource.MustParse("128Mi"),
+									core.ResourceMemory: resource.MustParse("256Mi"),
 								},
 							}
 							elasticsearch.Spec.Topology.Master.Resources = core.ResourceRequirements{
 								Requests: core.ResourceList{
-									core.ResourceMemory: resource.MustParse("128Mi"),
+									core.ResourceMemory: resource.MustParse("256Mi"),
 								},
 							}
 							elasticsearch.Spec.Topology.Data.Resources = core.ResourceRequirements{
 								Requests: core.ResourceList{
-									core.ResourceMemory: resource.MustParse("128Mi"),
+									core.ResourceMemory: resource.MustParse("256Mi"),
 								},
 							}
 						})
@@ -531,9 +531,6 @@ var _ = Describe("Elasticsearch", func() {
 
 						// create and wait for running Elasticsearch
 						createAndWaitForRunning()
-
-						By("Check for Elastic client")
-						f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 						elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
@@ -941,7 +938,9 @@ var _ = Describe("Elasticsearch", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						By("Create Snapshot")
+						// Previous snapshot can be still in deletion. So, use a different snapshot name
+						snapshot.Name = snapshot.Name + "-2"
+						By(fmt.Sprintf("Create Invalid Snapshot: %v", snapshot.Name))
 						err = f.CreateSnapshot(snapshot)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -958,6 +957,8 @@ var _ = Describe("Elasticsearch", func() {
 
 			})
 
+			// As, snapshot is deprecated. This excessive test for snapshot 'Job Volume' is not necessary.
+			// TODO: delete sooner or later.
 			Context("Snapshot PodVolume Template - In S3", func() {
 
 				BeforeEach(func() {
@@ -1246,9 +1247,6 @@ var _ = Describe("Elasticsearch", func() {
 				// create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
-
 				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 				defer elasticClient.Stop()
@@ -1348,10 +1346,6 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				AfterEach(func() {
-					By("Deleting BackupConfiguration")
-					err := f.DeleteBackupConfiguration(bc.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
 					By("Deleting RestoreSession")
 					err = f.DeleteRestoreSession(rs.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
@@ -1375,6 +1369,9 @@ var _ = Describe("Elasticsearch", func() {
 					By("Check valid AppBinding Specs")
 					err = f.CheckAppBindingSpec(elasticsearch.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
+
+					By("Check for Elastic client")
+					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 				}
 
 				var shouldInitializeFromStash = func() {
@@ -1397,8 +1394,8 @@ var _ = Describe("Elasticsearch", func() {
 					By("Check for snapshot count in stash-repository")
 					f.EventuallySnapshotInRepository(repo.ObjectMeta).Should(matcher.MoreThan(2))
 
-					By("Pause BackupConfiguration scheduling")
-					err = f.PauseBackupConfiguration(bc.ObjectMeta)
+					By("Delete BackupConfiguration to stop backup scheduling")
+					err = f.DeleteBackupConfiguration(bc.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
 					oldElasticsearch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
@@ -1408,7 +1405,7 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("Create elasticsearch from stash")
 					*elasticsearch = *f.CombinedElasticsearch()
-					rs = f.RestoreSession(elasticsearch.ObjectMeta, oldElasticsearch.ObjectMeta)
+					rs = f.RestoreSession(elasticsearch.ObjectMeta, repo)
 					elasticsearch.Spec.DatabaseSecret = oldElasticsearch.Spec.DatabaseSecret
 					elasticsearch.Spec.Init = &api.InitSpec{
 						StashRestoreSession: &core.LocalObjectReference{
@@ -1447,8 +1444,8 @@ var _ = Describe("Elasticsearch", func() {
 					BeforeEach(func() {
 						secret = f.SecretForGCSBackend()
 						secret = f.PatchSecretForRestic(secret)
-						bc = f.BackupConfiguration(elasticsearch.ObjectMeta)
-						repo = f.Repository(elasticsearch.ObjectMeta, secret.Name)
+						repo = f.Repository(elasticsearch.ObjectMeta)
+						bc = f.BackupConfiguration(elasticsearch.ObjectMeta, repo)
 
 						repo.Spec.Backend = store.Backend{
 							GCS: &store.GCSSpec{
@@ -1472,8 +1469,8 @@ var _ = Describe("Elasticsearch", func() {
 					Context("with Dedicated elasticsearch", func() {
 						BeforeEach(func() {
 							elasticsearch = f.DedicatedElasticsearch()
-							bc = f.BackupConfiguration(elasticsearch.ObjectMeta)
-							repo = f.Repository(elasticsearch.ObjectMeta, secret.Name)
+							repo = f.Repository(elasticsearch.ObjectMeta)
+							bc = f.BackupConfiguration(elasticsearch.ObjectMeta, repo)
 
 							repo.Spec.Backend = store.Backend{
 								GCS: &store.GCSSpec{
@@ -1970,10 +1967,6 @@ var _ = Describe("Elasticsearch", func() {
 					Value: "kubedb-es-e2e-cluster",
 				},
 				{
-					Name:  "NUMBER_OF_MASTERS",
-					Value: "1",
-				},
-				{
 					Name:  "ES_JAVA_OPTS",
 					Value: "-Xms256m -Xmx256m",
 				},
@@ -2156,9 +2149,6 @@ var _ = Describe("Elasticsearch", func() {
 
 				// create elasticsearch
 				createAndWaitForRunning()
-
-				By("Check for Elastic client")
-				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())

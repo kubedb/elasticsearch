@@ -36,21 +36,21 @@ func (f *Framework) FoundStashCRDs() bool {
 	return controller.FoundStashCRDs(f.apiExtKubeClient)
 }
 
-func (i *Invocation) BackupConfiguration(meta metav1.ObjectMeta) *v1beta1.BackupConfiguration {
+func (i *Invocation) BackupConfiguration(dbMeta metav1.ObjectMeta, repo *stashV1alpha1.Repository) *v1beta1.BackupConfiguration {
 	return &v1beta1.BackupConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      meta.Name,
+			Name:      dbMeta.Name + "-stash",
 			Namespace: i.namespace,
 		},
 		Spec: v1beta1.BackupConfigurationSpec{
 			Repository: core.LocalObjectReference{
-				Name: meta.Name,
+				Name: repo.Name,
 			},
 			RetentionPolicy: v1alpha1.RetentionPolicy{
 				KeepLast: 5,
 				Prune:    true,
 			},
-			Schedule: "*/1 * * * *",
+			Schedule: "*/2 * * * *",
 			BackupConfigurationTemplateSpec: v1beta1.BackupConfigurationTemplateSpec{
 				Task: v1beta1.TaskRef{
 					Name: i.getStashESBackupTaskName(),
@@ -59,7 +59,7 @@ func (i *Invocation) BackupConfiguration(meta metav1.ObjectMeta) *v1beta1.Backup
 					Ref: v1beta1.TargetRef{
 						APIVersion: v1alpha13.SchemeGroupVersion.String(),
 						Kind:       v1alpha13.ResourceKindApp,
-						Name:       meta.Name,
+						Name:       dbMeta.Name,
 					},
 				},
 			},
@@ -84,10 +84,10 @@ func (f *Framework) PauseBackupConfiguration(meta metav1.ObjectMeta) error {
 	return err
 }
 
-func (f *Framework) Repository(meta metav1.ObjectMeta, secretName string) *stashV1alpha1.Repository {
+func (f *Framework) Repository(dbMeta metav1.ObjectMeta) *stashV1alpha1.Repository {
 	return &stashV1alpha1.Repository{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      meta.Name,
+			Name:      dbMeta.Name + "-stash",
 			Namespace: f.namespace,
 		},
 		Spec: stashV1alpha1.RepositorySpec{
@@ -120,10 +120,10 @@ func (f *Framework) EventuallySnapshotInRepository(meta metav1.ObjectMeta) Gomeg
 	)
 }
 
-func (i *Invocation) RestoreSession(meta, oldMeta metav1.ObjectMeta) *v1beta1.RestoreSession {
+func (i *Invocation) RestoreSession(dbMeta metav1.ObjectMeta, repo *stashV1alpha1.Repository) *v1beta1.RestoreSession {
 	return &v1beta1.RestoreSession{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      meta.Name,
+			Name:      dbMeta.Name + "-stash",
 			Namespace: i.namespace,
 			Labels: map[string]string{
 				"app":                 i.app,
@@ -135,7 +135,7 @@ func (i *Invocation) RestoreSession(meta, oldMeta metav1.ObjectMeta) *v1beta1.Re
 				Name: i.getStashESRestoreTaskName(),
 			},
 			Repository: core.LocalObjectReference{
-				Name: oldMeta.Name,
+				Name: repo.Name,
 			},
 			Rules: []v1beta1.Rule{
 				{
@@ -146,7 +146,7 @@ func (i *Invocation) RestoreSession(meta, oldMeta metav1.ObjectMeta) *v1beta1.Re
 				Ref: v1beta1.TargetRef{
 					APIVersion: v1alpha13.SchemeGroupVersion.String(),
 					Kind:       v1alpha13.ResourceKindApp,
-					Name:       meta.Name,
+					Name:       dbMeta.Name,
 				},
 			},
 		},
