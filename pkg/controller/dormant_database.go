@@ -154,11 +154,10 @@ func (c *Controller) createDormantDatabase(elasticsearch *api.Elasticsearch) (*a
 		Spec: api.DormantDatabaseSpec{
 			Origin: api.Origin{
 				PartialObjectMeta: ofst.PartialObjectMeta{
-					Name:              elasticsearch.Name,
-					Namespace:         elasticsearch.Namespace,
-					Labels:            elasticsearch.Labels,
-					Annotations:       elasticsearch.Annotations,
-					CreationTimestamp: elasticsearch.CreationTimestamp,
+					Name:        elasticsearch.Name,
+					Namespace:   elasticsearch.Namespace,
+					Labels:      elasticsearch.Labels,
+					Annotations: elasticsearch.Annotations,
 				},
 				Spec: api.OriginSpec{
 					Elasticsearch: &(elasticsearch.Spec),
