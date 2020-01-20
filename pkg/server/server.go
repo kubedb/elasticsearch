@@ -21,9 +21,7 @@ import (
 	"strings"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/apimachinery/pkg/admission/dormantdatabase"
 	"kubedb.dev/apimachinery/pkg/admission/namespace"
-	"kubedb.dev/apimachinery/pkg/admission/snapshot"
 	"kubedb.dev/apimachinery/pkg/eventer"
 	esAdmsn "kubedb.dev/elasticsearch/pkg/admission"
 	"kubedb.dev/elasticsearch/pkg/controller"
@@ -135,8 +133,6 @@ func (c completedConfig) New() (*ElasticsearchServer, error) {
 	if c.OperatorConfig.EnableValidatingWebhook {
 		c.ExtraConfig.AdmissionHooks = append(c.ExtraConfig.AdmissionHooks,
 			&esAdmsn.ElasticsearchValidator{},
-			&snapshot.SnapshotValidator{},
-			&dormantdatabase.DormantDatabaseValidator{},
 			&namespace.NamespaceValidator{
 				Resources: []string{api.ResourcePluralElasticsearch},
 			})
