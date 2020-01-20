@@ -88,7 +88,7 @@ func (a *ElasticsearchMutator) Admit(req *admission.AdmissionRequest) *admission
 	if err != nil {
 		return hookapi.StatusBadRequest(err)
 	}
-	mod, err := setDefaultValues(a.extClient, obj.(*api.Elasticsearch).DeepCopy())
+	mod, err := setDefaultValues(obj.(*api.Elasticsearch).DeepCopy())
 	if err != nil {
 		return hookapi.StatusForbidden(err)
 	} else if mod != nil {
@@ -106,7 +106,7 @@ func (a *ElasticsearchMutator) Admit(req *admission.AdmissionRequest) *admission
 }
 
 // setDefaultValues provides the defaulting that is performed in mutating stage of creating/updating a Elasticsearch database
-func setDefaultValues(extClient cs.Interface, elasticsearch *api.Elasticsearch) (runtime.Object, error) {
+func setDefaultValues(elasticsearch *api.Elasticsearch) (runtime.Object, error) {
 	if elasticsearch.Spec.Version == "" {
 		return nil, errors.New(`'spec.version' is missing`)
 	}

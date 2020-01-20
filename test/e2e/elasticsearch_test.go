@@ -39,13 +39,6 @@ import (
 	stashV1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-const (
-	S3_BUCKET_NAME       = "S3_BUCKET_NAME"
-	GCS_BUCKET_NAME      = "GCS_BUCKET_NAME"
-	AZURE_CONTAINER_NAME = "AZURE_CONTAINER_NAME"
-	SWIFT_CONTAINER_NAME = "SWIFT_CONTAINER_NAME"
-)
-
 var _ = Describe("Elasticsearch", func() {
 	var (
 		err                  error
