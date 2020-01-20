@@ -616,6 +616,9 @@ var _ = Describe("Elasticsearch", func() {
 				By("Wait for Running elasticsearch")
 				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
 				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 				defer elasticClient.Stop()
@@ -732,6 +735,7 @@ var _ = Describe("Elasticsearch", func() {
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
 					})
+
 					It("should initialize database successfully", shouldRunWithTerminationPause)
 
 					Context("with SSL disabled", func() {
