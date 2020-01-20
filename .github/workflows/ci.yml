@@ -118,4 +118,4 @@ jobs:
         echo "GOOGLE_SERVICE_ACCOUNT_JSON_KEY=$(echo $GOOGLE_SERVICE_ACCOUNT_JSON_KEY)" >> hack/config/.env
         make install
         echo
-        make e2e-tests TEST_ARGS="--db-catalog=${{ matrix.db }}" GINKGO_ARGS="--flakeAttempts=2"
+        make e2e-tests TEST_ARGS="--db-catalog=${{ matrix.db }}" GINKGO_ARGS="--flakeAttempts=2" || (kubectl describe deployment -n kube-system kubedb; kubectl logs -n kube-system deployment/kubedb; exit 1;)

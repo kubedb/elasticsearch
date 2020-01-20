@@ -135,6 +135,12 @@ var _ = Describe("Elasticsearch", func() {
 		f.EventuallyWipedOut(elasticsearch.ObjectMeta).Should(Succeed())
 	}
 
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			f.PrintDebugHelpers()
+		}
+	})
+
 	AfterEach(func() {
 		// Delete test resource
 		deleteTestResource()
@@ -691,8 +697,29 @@ var _ = Describe("Elasticsearch", func() {
 			})
 
 			Context("with TerminationPolicyHalt ", func() {
+
 				var shouldRunWithTerminationPause = func() {
 					shouldRunAndPause()
+
+					By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
+					_, err := f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = true
+						return in
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for halted/paused elasticsearch")
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhasePaused))
+
+					By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
+					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = false
+						return in
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Delete elasticsearch")
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
@@ -732,6 +759,7 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				Context("with Dedicated elasticsearch", func() {
+
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
 					})
@@ -749,6 +777,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 
 			Context("with TerminationPolicyDelete", func() {
+
 				BeforeEach(func() {
 					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDelete
 				})

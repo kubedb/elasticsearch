@@ -111,6 +111,13 @@ func setDefaultValues(elasticsearch *api.Elasticsearch) (runtime.Object, error) 
 		return nil, errors.New(`'spec.version' is missing`)
 	}
 
+	if elasticsearch.Spec.Halted {
+		if elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyDoNotTerminate {
+			return nil, errors.New(`'spec.halted'' can not be true. If you want to halt the database, Unset terminationPolicy to 'DoNotTerminate' `)
+		}
+		elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyHalt
+	}
+
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
 		if topology.Client.Replicas == nil {

@@ -220,7 +220,7 @@ func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (
 
 func (c *Controller) halt(db *api.Elasticsearch) error {
 	if db.Spec.Halted && db.Spec.TerminationPolicy != api.TerminationPolicyHalt {
-		return errors.New("can't halt db. 'spec.terminationPolicy' is not 'Pause'")
+		return errors.New("can't halt db. 'spec.terminationPolicy' is not 'Halt'")
 	}
 	log.Infof("Halting Elasticsearch %v/%v", db.Namespace, db.Name)
 	if err := c.pauseDatabase(db); err != nil {

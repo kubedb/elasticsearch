@@ -176,19 +176,6 @@ func (c *Controller) pauseDatabase(db *api.Elasticsearch) error {
 		); err != nil {
 		return err
 	}
-
-	// delete deployment collection offshoot labels
-	log.Infof("deleting Deployments of Elasticsearch %v/%v.", db.Namespace, db.Name)
-	if err := c.Client.
-		AppsV1().
-		Deployments(db.Namespace).
-		DeleteCollection(
-			&metav1.DeleteOptions{PropagationPolicy: &policy},
-			metav1.ListOptions{LabelSelector: labelSelector},
-		); err != nil {
-		return err
-	}
-
 	// delete rbacs: rolebinding, roles, serviceaccounts
 	log.Infof("deleting RoleBindings of Elasticsearch %v/%v.", db.Namespace, db.Name)
 	if err := c.Client.
