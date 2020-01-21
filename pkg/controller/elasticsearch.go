@@ -73,9 +73,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// create Governing Service
-	governingService := c.GoverningService
-	if err := c.CreateGoverningService(governingService, elasticsearch.Namespace); err != nil {
-		return fmt.Errorf(`failed to create Service: "%v/%v". Reason: %v`, elasticsearch.Namespace, governingService, err)
+	if err := c.ensureElasticGvrSvc(elasticsearch); err != nil {
+		return fmt.Errorf(`failed to create governing Service for "%v/%v". Reason: %v`, elasticsearch.Namespace, elasticsearch.Name, err)
 	}
 
 	// ensure database Service
