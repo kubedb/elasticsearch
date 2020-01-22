@@ -94,7 +94,7 @@ func (c *Controller) ensureStatefulSet(
 
 		in.Spec.Replicas = types.Int32P(replicas)
 
-		in.Spec.ServiceName = c.GoverningService
+		in.Spec.ServiceName = elasticsearch.GvrSvcName()
 		in.Spec.Selector = &metav1.LabelSelector{
 			MatchLabels: core_util.UpsertMap(labels, elasticsearch.OffshootSelectors()),
 		}
