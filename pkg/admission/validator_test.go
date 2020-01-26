@@ -212,7 +212,7 @@ var cases = []struct {
 		"foo",
 		"default",
 		admission.Update,
-		pauseDatabase(sampleElasticsearch()),
+		haltDatabase(sampleElasticsearch()),
 		sampleElasticsearch(),
 		false,
 		true,
@@ -227,12 +227,12 @@ var cases = []struct {
 		true,
 		false,
 	},
-	{"Delete Elasticsearch when Spec.TerminationPolicy=Pause",
+	{"Delete Elasticsearch when Spec.TerminationPolicy=Halt",
 		requestKind,
 		"foo",
 		"default",
 		admission.Delete,
-		pauseDatabase(sampleElasticsearch()),
+		haltDatabase(sampleElasticsearch()),
 		api.Elasticsearch{},
 		true,
 		true,
@@ -348,7 +348,7 @@ func editSpecInvalidMonitor(old api.Elasticsearch) api.Elasticsearch {
 	return old
 }
 
-func pauseDatabase(old api.Elasticsearch) api.Elasticsearch {
-	old.Spec.TerminationPolicy = api.TerminationPolicyPause
+func haltDatabase(old api.Elasticsearch) api.Elasticsearch {
+	old.Spec.TerminationPolicy = api.TerminationPolicyHalt
 	return old
 }
