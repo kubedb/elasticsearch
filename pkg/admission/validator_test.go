@@ -332,7 +332,9 @@ func editSpecMonitor(old api.Elasticsearch) api.Elasticsearch {
 	old.Spec.Monitor = &mona.AgentSpec{
 		Agent: mona.AgentPrometheusBuiltin,
 		Prometheus: &mona.PrometheusSpec{
-			Port: 1289,
+			Exporter: &mona.PrometheusExporterSpec{
+				Port: 1289,
+			},
 		},
 	}
 	return old
@@ -341,7 +343,7 @@ func editSpecMonitor(old api.Elasticsearch) api.Elasticsearch {
 // should be failed because more fields required for COreOS Monitoring
 func editSpecInvalidMonitor(old api.Elasticsearch) api.Elasticsearch {
 	old.Spec.Monitor = &mona.AgentSpec{
-		Agent: mona.AgentCoreOSPrometheus,
+		Agent: mona.AgentPrometheusOperator,
 	}
 	return old
 }

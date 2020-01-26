@@ -147,14 +147,17 @@ func setDefaultValues(elasticsearch *api.Elasticsearch) (runtime.Object, error) 
 
 // Assign Default Monitoring Port if MonitoringSpec Exists
 // and the AgentVendor is Prometheus.
-func setMonitoringPort(elasticsearch *api.Elasticsearch) {
-	if elasticsearch.Spec.Monitor != nil &&
-		elasticsearch.GetMonitoringVendor() == mona.VendorPrometheus {
-		if elasticsearch.Spec.Monitor.Prometheus == nil {
-			elasticsearch.Spec.Monitor.Prometheus = &mona.PrometheusSpec{}
+func setMonitoringPort(db *api.Elasticsearch) {
+	if db.Spec.Monitor != nil &&
+		db.GetMonitoringVendor() == mona.VendorPrometheus {
+		if db.Spec.Monitor.Prometheus == nil {
+			db.Spec.Monitor.Prometheus = &mona.PrometheusSpec{}
 		}
-		if elasticsearch.Spec.Monitor.Prometheus.Port == 0 {
-			elasticsearch.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
+		if db.Spec.Monitor.Prometheus.Exporter == nil {
+			db.Spec.Monitor.Prometheus.Exporter = &mona.PrometheusExporterSpec{}
+		}
+		if db.Spec.Monitor.Prometheus.Exporter.Port == 0 {
+			db.Spec.Monitor.Prometheus.Exporter.Port = api.PrometheusExporterPortNumber
 		}
 	}
 }
