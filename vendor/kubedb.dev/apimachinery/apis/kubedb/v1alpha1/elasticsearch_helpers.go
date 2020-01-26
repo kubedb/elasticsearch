@@ -82,6 +82,11 @@ func (e *Elasticsearch) MasterServiceName() string {
 	return fmt.Sprintf("%v-master", e.ServiceName())
 }
 
+// Governing Service Name
+func (e Elasticsearch) GvrSvcName() string {
+	return e.OffshootName() + "-gvr"
+}
+
 // Snapshot service account name.
 func (e Elasticsearch) SnapshotSAName() string {
 	return fmt.Sprintf("%v-snapshot", e.OffshootName())
