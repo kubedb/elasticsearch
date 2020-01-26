@@ -113,7 +113,7 @@ func setDefaultValues(elasticsearch *api.Elasticsearch) (runtime.Object, error) 
 
 	if elasticsearch.Spec.Halted {
 		if elasticsearch.Spec.TerminationPolicy == api.TerminationPolicyDoNotTerminate {
-			return nil, errors.New(`'spec.halted'' can not be true. If you want to halt the database, Unset terminationPolicy to 'DoNotTerminate' `)
+			return nil, errors.New(`Can't halt, since termination policy is 'DoNotTerminate'`)
 		}
 		elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyHalt
 	}

@@ -98,7 +98,8 @@ var _ = BeforeSuite(func() {
 	stashClient := scs.NewForConfigOrDie(config)
 
 	// Framework
-	root = framework.New(config, kubeClient, aPIExtKubeClient, dbClient, kaClient, appCatalogClient, stashClient, storageClass)
+	root, err = framework.New(config, kubeClient, aPIExtKubeClient, dbClient, kaClient, appCatalogClient, stashClient, storageClass)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Create namespace
 	By("Using namespace " + root.Namespace())

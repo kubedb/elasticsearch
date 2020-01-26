@@ -179,7 +179,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for halted/paused elasticsearch")
-					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhasePaused))
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
 
 					By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
 					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -545,7 +545,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Wait for halted/paused elasticsearch")
-				f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhasePaused))
+				f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
 
 				By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
 				_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -598,7 +598,7 @@ var _ = Describe("Elasticsearch", func() {
 
 		Context("Termination Policy", func() {
 
-			var shouldRunAndPause = func() {
+			var shouldRunAndHalt = func() {
 				// create elasticsearch and insert data
 				createAndInsertData()
 
@@ -610,7 +610,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Wait for halted/paused elasticsearch")
-				f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhasePaused))
+				f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
 
 				By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
 				_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -682,7 +682,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for halted/paused elasticsearch")
-					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhasePaused))
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
 
 					By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
 					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -698,8 +698,8 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("with TerminationPolicyHalt ", func() {
 
-				var shouldRunWithTerminationPause = func() {
-					shouldRunAndPause()
+				var shouldRunWithTerminationHalt = func() {
+					shouldRunAndHalt()
 
 					By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
 					_, err := f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -709,7 +709,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for halted/paused elasticsearch")
-					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhasePaused))
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
 
 					By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
 					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -748,14 +748,14 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 				}
 
-				It("should create dormantdatabase successfully", shouldRunWithTerminationPause)
+				It("should create dormantdatabase successfully", shouldRunWithTerminationHalt)
 
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
 						elasticsearch.Spec.EnableSSL = false
 					})
 
-					It("should create dormantdatabase successfully", shouldRunWithTerminationPause)
+					It("should create dormantdatabase successfully", shouldRunWithTerminationHalt)
 				})
 
 				Context("with Dedicated elasticsearch", func() {
@@ -764,14 +764,14 @@ var _ = Describe("Elasticsearch", func() {
 						elasticsearch = f.DedicatedElasticsearch()
 					})
 
-					It("should initialize database successfully", shouldRunWithTerminationPause)
+					It("should initialize database successfully", shouldRunWithTerminationHalt)
 
 					Context("with SSL disabled", func() {
 						BeforeEach(func() {
 							elasticsearch.Spec.EnableSSL = false
 						})
 
-						It("should initialize database successfully", shouldRunWithTerminationPause)
+						It("should initialize database successfully", shouldRunWithTerminationHalt)
 					})
 				})
 			})
@@ -801,7 +801,7 @@ var _ = Describe("Elasticsearch", func() {
 
 				It("should run with TerminationPolicyDelete", shouldRunWithTerminationDelete)
 
-				It("should pause with TerminationPolicyDelete", shouldRunAndPause)
+				It("should pause with TerminationPolicyDelete", shouldRunAndHalt)
 
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
@@ -809,7 +809,7 @@ var _ = Describe("Elasticsearch", func() {
 					})
 					It("should run with TerminationPolicyDelete", shouldRunWithTerminationDelete)
 
-					It("should pause with TerminationPolicyDelete", shouldRunAndPause)
+					It("should pause with TerminationPolicyDelete", shouldRunAndHalt)
 				})
 
 				Context("with Dedicated elasticsearch", func() {
@@ -819,7 +819,7 @@ var _ = Describe("Elasticsearch", func() {
 					})
 					It("should initialize database successfully", shouldRunWithTerminationDelete)
 
-					It("should pause with TerminationPolicyDelete", shouldRunAndPause)
+					It("should pause with TerminationPolicyDelete", shouldRunAndHalt)
 
 					Context("with SSL disabled", func() {
 						BeforeEach(func() {
@@ -828,7 +828,7 @@ var _ = Describe("Elasticsearch", func() {
 
 						It("should initialize database successfully", shouldRunWithTerminationDelete)
 
-						It("should pause with TerminationPolicyDelete", shouldRunAndPause)
+						It("should pause with TerminationPolicyDelete", shouldRunAndHalt)
 					})
 				})
 			})
@@ -858,7 +858,7 @@ var _ = Describe("Elasticsearch", func() {
 
 				It("should run with TerminationPolicyWipeOut", shouldRunWithTerminationWipeOut)
 
-				It("should pause with TerminationPolicyWipeOut", shouldRunAndPause)
+				It("should pause with TerminationPolicyWipeOut", shouldRunAndHalt)
 
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
@@ -866,7 +866,7 @@ var _ = Describe("Elasticsearch", func() {
 					})
 					It("should run with TerminationPolicyDelete", shouldRunWithTerminationWipeOut)
 
-					It("should pause with TerminationPolicyWipeOut", shouldRunAndPause)
+					It("should pause with TerminationPolicyWipeOut", shouldRunAndHalt)
 				})
 
 				Context("with Dedicated elasticsearch", func() {
@@ -876,7 +876,7 @@ var _ = Describe("Elasticsearch", func() {
 					})
 					It("should initialize database successfully", shouldRunWithTerminationWipeOut)
 
-					It("should pause with TerminationPolicyWipeOut", shouldRunAndPause)
+					It("should pause with TerminationPolicyWipeOut", shouldRunAndHalt)
 
 					Context("with SSL disabled", func() {
 						BeforeEach(func() {
@@ -885,7 +885,7 @@ var _ = Describe("Elasticsearch", func() {
 
 						It("should initialize database successfully", shouldRunWithTerminationWipeOut)
 
-						It("should pause with TerminationPolicyWipeOut", shouldRunAndPause)
+						It("should pause with TerminationPolicyWipeOut", shouldRunAndHalt)
 					})
 				})
 			})
