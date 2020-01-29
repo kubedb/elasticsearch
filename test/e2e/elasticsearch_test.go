@@ -29,48 +29,34 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
-	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	core_util "kmodules.xyz/client-go/core/v1"
 	exec_util "kmodules.xyz/client-go/tools/exec"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	stashV1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	stashV1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-const (
-	S3_BUCKET_NAME       = "S3_BUCKET_NAME"
-	GCS_BUCKET_NAME      = "GCS_BUCKET_NAME"
-	AZURE_CONTAINER_NAME = "AZURE_CONTAINER_NAME"
-	SWIFT_CONTAINER_NAME = "SWIFT_CONTAINER_NAME"
-)
-
 var _ = Describe("Elasticsearch", func() {
 	var (
-		err                      error
-		f                        *framework.Invocation
-		elasticsearch            *api.Elasticsearch
-		garbageElasticsearch     *api.ElasticsearchList
-		snapshot                 *api.Snapshot
-		snapshotPVC              *core.PersistentVolumeClaim
-		secret                   *core.Secret
-		skipMessage              string
-		indicesCount             int
-		skipSnapshotDataChecking bool
+		err                  error
+		f                    *framework.Invocation
+		elasticsearch        *api.Elasticsearch
+		garbageElasticsearch *api.ElasticsearchList
+		secret               *core.Secret
+		skipMessage          string
+		indicesCount         int
 	)
 
 	BeforeEach(func() {
 		f = root.Invoke()
 		elasticsearch = f.CombinedElasticsearch()
 		garbageElasticsearch = new(api.ElasticsearchList)
-		snapshot = f.Snapshot()
 		indicesCount = 0
 		secret = nil
 		skipMessage = ""
-		skipSnapshotDataChecking = true
 	})
 
 	var createAndWaitForRunning = func() {
@@ -98,6 +84,8 @@ var _ = Describe("Elasticsearch", func() {
 
 		elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
+		defer elasticClient.Stop()
+		defer f.Tunnel.Close()
 
 		By("Creating new indices")
 		err = elasticClient.CreateIndex(2)
@@ -106,9 +94,6 @@ var _ = Describe("Elasticsearch", func() {
 
 		By("Checking new indices")
 		f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
-
-		elasticClient.Stop()
-		f.Tunnel.Close()
 	}
 
 	var deleteTestResource = func() {
@@ -126,6 +111,13 @@ var _ = Describe("Elasticsearch", func() {
 			Expect(err).NotTo(HaveOccurred())
 		}
 
+		By("Update elasticsearch to set spec.terminationPolicy = WipeOut")
+		_, err = f.PatchElasticsearch(es.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+			in.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+			return in
+		})
+		Expect(err).NotTo(HaveOccurred())
+
 		By("Delete elasticsearch: " + elasticsearch.Name)
 		err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 		if err != nil {
@@ -136,25 +128,18 @@ var _ = Describe("Elasticsearch", func() {
 			Expect(err).NotTo(HaveOccurred())
 		}
 
-		if es.Spec.TerminationPolicy == api.TerminationPolicyPause {
-			By("Wait for elasticsearch to be paused")
-			f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
-
-			By("Set DormantDatabase Spec.WipeOut to true")
-			_, err = f.PatchDormantDatabase(elasticsearch.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
-				in.Spec.WipeOut = true
-				return in
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Delete Dormant Database")
-			err = f.DeleteDormantDatabase(elasticsearch.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-		}
+		By("Wait for elasticsearch to be deleted")
+		f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
 		By("Wait for elasticsearch resources to be wipedOut")
 		f.EventuallyWipedOut(elasticsearch.ObjectMeta).Should(Succeed())
 	}
+
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			f.PrintDebugHelpers()
+		}
+	})
 
 	AfterEach(func() {
 		// Delete test resource
@@ -166,28 +151,9 @@ var _ = Describe("Elasticsearch", func() {
 			deleteTestResource()
 		}
 
-		if !skipSnapshotDataChecking {
-			By("Check for snapshot data")
-			f.EventuallySnapshotDataFound(snapshot).Should(BeFalse())
-		}
-
 		if secret != nil {
 			err := f.DeleteSecret(secret.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-		}
-
-		if snapshotPVC != nil {
-			err := f.DeletePersistentVolumeClaim(snapshotPVC.ObjectMeta)
-			if err != nil && !kerr.IsNotFound(err) {
-				Expect(err).NotTo(HaveOccurred())
-			}
-		}
-	})
-
-	// if secret is empty (no .env file) then skip
-	JustBeforeEach(func() {
-		if secret != nil && len(secret.Data) == 0 && (snapshot != nil && snapshot.Spec.Local == nil) {
-			Skip("Missing repository credential")
 		}
 	})
 
@@ -205,20 +171,22 @@ var _ = Describe("Elasticsearch", func() {
 					// create elasticsearch and insert data
 					createAndInsertData()
 
-					By("Delete elasticsearch")
-					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+					By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
+					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = true
+						return in
+					})
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Wait for elasticsearch to be paused")
-					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+					By("Wait for halted/paused elasticsearch")
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
 
-					// create elasticsearch object again to resume it
-					By("Create Elasticsearch: " + elasticsearch.Name)
-					err = f.CreateElasticsearch(elasticsearch)
+					By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
+					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = false
+						return in
+					})
 					Expect(err).NotTo(HaveOccurred())
-
-					By("Wait for DormantDatabase to be deleted")
-					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
 
 					By("Wait for Running elasticsearch")
 					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -320,7 +288,7 @@ var _ = Describe("Elasticsearch", func() {
 					err := f.CreateSecret(customSecret)
 					Expect(err).NotTo(HaveOccurred())
 					elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = "my-custom-sa"
-					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyPause
+					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyHalt
 				})
 
 				It("should start and resume successfully", func() {
@@ -329,11 +297,11 @@ var _ = Describe("Elasticsearch", func() {
 					if elasticsearch == nil {
 						Skip("Skipping")
 					}
-					By("Check if Postgres " + elasticsearch.Name + " exists.")
+					By("Check if Elasticsearch " + elasticsearch.Name + " exists.")
 					_, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
 					if err != nil {
 						if kerr.IsNotFound(err) {
-							// Postgres was not created. Hence, rest of cleanup is not necessary.
+							// Elasticsearch was not created. Hence, rest of cleanup is not necessary.
 							return
 						}
 						Expect(err).NotTo(HaveOccurred())
@@ -343,15 +311,15 @@ var _ = Describe("Elasticsearch", func() {
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 					if err != nil {
 						if kerr.IsNotFound(err) {
-							// Postgres was not created. Hence, rest of cleanup is not necessary.
-							log.Infof("Skipping rest of cleanup. Reason: Postgres %s is not found.", elasticsearch.Name)
+							// Elasticsearch was not created. Hence, rest of cleanup is not necessary.
+							log.Infof("Skipping rest of cleanup. Reason: Elasticsearch %s is not found.", elasticsearch.Name)
 							return
 						}
 						Expect(err).NotTo(HaveOccurred())
 					}
 
-					By("Wait for elasticsearch to be paused")
-					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+					By("wait until elasticsearch is deleted")
+					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
 					By("Resume DB")
 					createAndWaitForRunning()
@@ -392,943 +360,7 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		Context("Snapshot", func() {
-			BeforeEach(func() {
-				skipSnapshotDataChecking = false
-				snapshot.Spec.DatabaseName = elasticsearch.Name
-			})
-
-			var shouldTakeSnapshot = func() {
-				// create elasticsearch and insert data
-				createAndInsertData()
-
-				By("Create Secret")
-				err = f.CreateSecret(secret)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Create Snapshot")
-				err = f.CreateSnapshot(snapshot)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Check for succeeded snapshot")
-				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-				if !skipSnapshotDataChecking {
-					By("Check for snapshot data")
-					f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-				}
-			}
-
-			Context("For Custom Resources", func() {
-
-				BeforeEach(func() {
-					secret = f.SecretForGCSBackend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.GCS = &store.GCSSpec{
-						Bucket: os.Getenv(GCS_BUCKET_NAME),
-					}
-				})
-
-				Context("with custom SA", func() {
-					var customSAForDB *core.ServiceAccount
-					var customRoleForDB *rbac.Role
-					var customRoleBindingForDB *rbac.RoleBinding
-					var customSAForSnapshot *core.ServiceAccount
-					var customRoleForSnapshot *rbac.Role
-					var customRoleBindingForSnapshot *rbac.RoleBinding
-
-					BeforeEach(func() {
-						skipSnapshotDataChecking = false
-						snapshot.Spec.StorageSecretName = secret.Name
-						snapshot.Spec.DatabaseName = elasticsearch.Name
-						//Get custom resources
-						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
-						customSAForDB = f.ServiceAccount()
-						elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = customSAForDB.Name
-						customRoleForDB = f.RoleForElasticsearch(elasticsearch.ObjectMeta)
-						customRoleBindingForDB = f.RoleBinding(customSAForDB.Name, customRoleForDB.Name)
-
-						customSAForSnapshot = f.ServiceAccount()
-						snapshot.Spec.PodTemplate.Spec.ServiceAccountName = customSAForSnapshot.Name
-						customRoleForSnapshot = f.RoleForSnapshot(elasticsearch.ObjectMeta)
-						customRoleBindingForSnapshot = f.RoleBinding(customSAForSnapshot.Name, customRoleForSnapshot.Name)
-
-						//Create custom resources
-						By("Create Database SA")
-						err = f.CreateServiceAccount(customSAForDB)
-						Expect(err).NotTo(HaveOccurred())
-						By("Create Database Role")
-						err = f.CreateRole(customRoleForDB)
-						Expect(err).NotTo(HaveOccurred())
-						By("Create Database RoleBinding")
-						err = f.CreateRoleBinding(customRoleBindingForDB)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Create Snapshot SA")
-						err = f.CreateServiceAccount(customSAForSnapshot)
-						Expect(err).NotTo(HaveOccurred())
-						By("Create Snapshot Role")
-						err = f.CreateRole(customRoleForSnapshot)
-						Expect(err).NotTo(HaveOccurred())
-						By("Create Snapshot RoleBinding")
-						err = f.CreateRoleBinding(customRoleBindingForSnapshot)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("should take snapshot to GCS successfully", func() {
-						shouldTakeSnapshot()
-					})
-
-					It("should init from GCS snapshot successfully", func() {
-						By("Start initializing From Snapshot")
-						// create elasticsearch and insert data
-						createAndInsertData()
-
-						By("Create Secret")
-						err := f.CreateSecret(secret)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Create Snapshot")
-						err = f.CreateSnapshot(snapshot)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Check for succeeded snapshot")
-						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-						if !skipSnapshotDataChecking {
-							By("Check for snapshot data")
-							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-						}
-						By("Getting old ES")
-						oldElasticsearch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						garbageElasticsearch.Items = append(garbageElasticsearch.Items, *oldElasticsearch)
-
-						By("Create elasticsearch from snapshot")
-						*elasticsearch = *f.CombinedElasticsearch()
-						elasticsearch.Spec.Init = &api.InitSpec{
-							SnapshotSource: &api.SnapshotSourceSpec{
-								Namespace: snapshot.Namespace,
-								Name:      snapshot.Name,
-							},
-						}
-
-						By("Creating new role and bind with existing SA")
-						By("Get new Role and RB")
-						customRoleForReplayDB := f.RoleForElasticsearch(elasticsearch.ObjectMeta)
-						customRoleBindingForReplayDB := f.RoleBinding(customSAForDB.Name, customRoleForReplayDB.Name)
-
-						By("Create Database Role")
-						err = f.CreateRole(customRoleForReplayDB)
-						Expect(err).NotTo(HaveOccurred())
-						By("Create Database RoleBinding")
-						err = f.CreateRoleBinding(customRoleBindingForReplayDB)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Setting SA name in ES")
-						elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = customSAForDB.Name
-
-						// create and wait for running Elasticsearch
-						createAndWaitForRunning()
-
-						elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-						defer elasticClient.Stop()
-						defer f.Tunnel.Close()
-
-						By("Checking indices")
-						f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
-					})
-				})
-
-				Context("with custom Secret", func() {
-					var kubedbSecret *core.Secret
-					var customSecret *core.Secret
-
-					BeforeEach(func() {
-						customSecret = f.SecretForDatabaseAuthentication(elasticsearch, false)
-						elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
-							SecretName: customSecret.Name,
-						}
-					})
-
-					It("should keep secret after taking snapshot to GCS  successfully", func() {
-						By("Create Database Secret")
-						err := f.CreateSecret(customSecret)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Take snapshot")
-						shouldTakeSnapshot()
-						By("Delete test resources")
-						deleteTestResource()
-						By("Check if custom secret exists")
-						err = f.CheckSecret(customSecret)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("should remove secret after taking snapshot to GCS successfully", func() {
-						kubedbSecret = f.SecretForDatabaseAuthentication(elasticsearch, true)
-						elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
-							SecretName: kubedbSecret.Name,
-						}
-						By("Create Database Secret")
-						err = f.CreateSecret(kubedbSecret)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Take snapshot")
-						shouldTakeSnapshot()
-						By("Check if custom secret id deleted")
-						deleteTestResource()
-						err = f.CheckSecret(kubedbSecret)
-						Expect(err).To(HaveOccurred())
-					})
-				})
-			})
-
-			Context("In Local", func() {
-				BeforeEach(func() {
-					skipSnapshotDataChecking = true
-					secret = f.SecretForLocalBackend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.Local = &store.LocalSpec{
-						MountPath: "/repo",
-						VolumeSource: core.VolumeSource{
-							EmptyDir: &core.EmptyDirVolumeSource{},
-						},
-					}
-				})
-
-				Context("With EmptyDir as Snapshot's backend", func() {
-
-					It("should take Snapshot successfully", shouldTakeSnapshot)
-				})
-
-				Context("With PVC as Snapshot's backend", func() {
-
-					BeforeEach(func() {
-						snapshotPVC = f.GetPersistentVolumeClaim()
-						By("Creating PVC for local backend snapshot")
-						err := f.CreatePersistentVolumeClaim(snapshotPVC)
-						Expect(err).NotTo(HaveOccurred())
-
-						snapshot.Spec.Local = &store.LocalSpec{
-							MountPath: "/repo",
-							VolumeSource: core.VolumeSource{
-								PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-									ClaimName: snapshotPVC.Name,
-								},
-							},
-						}
-					})
-
-					It("should delete Snapshot successfully", func() {
-						shouldTakeSnapshot()
-
-						By("Deleting Snapshot")
-						err := f.DeleteSnapshot(snapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Waiting Snapshot to be deleted")
-						f.EventuallySnapshot(snapshot.ObjectMeta).Should(BeFalse())
-					})
-				})
-
-				Context("with SSL disabled", func() {
-					BeforeEach(func() {
-						elasticsearch.Spec.EnableSSL = false
-					})
-
-					It("should take Snapshot successfully", shouldTakeSnapshot)
-				})
-
-				Context("with Dedicated elasticsearch", func() {
-					BeforeEach(func() {
-						elasticsearch = f.DedicatedElasticsearch()
-						snapshot.Spec.DatabaseName = elasticsearch.Name
-					})
-
-					It("should take Snapshot successfully", shouldTakeSnapshot)
-
-					Context("with SSL disabled", func() {
-						BeforeEach(func() {
-							elasticsearch.Spec.EnableSSL = false
-						})
-
-						It("should take Snapshot successfully", shouldTakeSnapshot)
-					})
-				})
-			})
-
-			Context("In S3", func() {
-				BeforeEach(func() {
-					secret = f.SecretForS3Backend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.S3 = &store.S3Spec{
-						Bucket: os.Getenv(S3_BUCKET_NAME),
-					}
-				})
-
-				It("should take Snapshot successfully", shouldTakeSnapshot)
-
-				Context("with SSL disabled", func() {
-					BeforeEach(func() {
-						elasticsearch.Spec.EnableSSL = false
-					})
-
-					It("should take Snapshot successfully", shouldTakeSnapshot)
-				})
-
-				Context("with Dedicated elasticsearch", func() {
-					BeforeEach(func() {
-						elasticsearch = f.DedicatedElasticsearch()
-						snapshot.Spec.DatabaseName = elasticsearch.Name
-					})
-					It("should take Snapshot successfully", shouldTakeSnapshot)
-
-					Context("with SSL disabled", func() {
-						BeforeEach(func() {
-							elasticsearch.Spec.EnableSSL = false
-						})
-
-						It("should take Snapshot successfully", shouldTakeSnapshot)
-					})
-				})
-
-				Context("Delete One Snapshot keeping others", func() {
-
-					It("Delete One Snapshot keeping others", func() {
-						// create and wait for running elasticsearch
-						shouldTakeSnapshot()
-
-						oldSnapshot := snapshot.DeepCopy()
-
-						// New snapshot that has old snapshot's name in prefix
-						snapshot.Name += "-2"
-
-						By(fmt.Sprintf("Create Snapshot %v", snapshot.Name))
-						err = f.CreateSnapshot(snapshot)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Check for Succeeded snapshot")
-						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-						if !skipSnapshotDataChecking {
-							By("Check for snapshot data")
-							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-						}
-
-						// delete old snapshot
-						By(fmt.Sprintf("Delete old Snapshot %v", oldSnapshot.Name))
-						err = f.DeleteSnapshot(oldSnapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Waiting for old Snapshot to be deleted")
-						f.EventuallySnapshot(oldSnapshot.ObjectMeta).Should(BeFalse())
-						if !skipSnapshotDataChecking {
-							By(fmt.Sprintf("Check data for old snapshot %v", oldSnapshot.Name))
-							f.EventuallySnapshotDataFound(oldSnapshot).Should(BeFalse())
-						}
-
-						// check remaining snapshot
-						By(fmt.Sprintf("Checking another Snapshot %v still exists", snapshot.Name))
-						_, err = f.GetSnapshot(snapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						if !skipSnapshotDataChecking {
-							By(fmt.Sprintf("Check data for remaining snapshot %v", snapshot.Name))
-							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-						}
-					})
-				})
-			})
-
-			Context("In GCS", func() {
-				BeforeEach(func() {
-					secret = f.SecretForGCSBackend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.GCS = &store.GCSSpec{
-						Bucket: os.Getenv(GCS_BUCKET_NAME),
-					}
-				})
-
-				It("should take Snapshot successfully", shouldTakeSnapshot)
-
-				Context("faulty snapshot", func() {
-					BeforeEach(func() {
-						skipSnapshotDataChecking = true
-						snapshot.Spec.StorageSecretName = secret.Name
-						snapshot.Spec.GCS = &store.GCSSpec{
-							Bucket: "nonexisting",
-						}
-					})
-					It("snapshot should fail", func() {
-						// create and wait for running Elasticsearch
-						createAndWaitForRunning()
-
-						By("Create Secret")
-						err := f.CreateSecret(secret)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Create Snapshot")
-						err = f.CreateSnapshot(snapshot)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Check for failed snapshot")
-						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseFailed))
-					})
-				})
-
-				Context("Delete One Snapshot keeping others", func() {
-
-					It("Delete One Snapshot keeping others", func() {
-						// create and wait for running elasticsearch
-						shouldTakeSnapshot()
-
-						oldSnapshot := snapshot.DeepCopy()
-
-						// New snapshot that has old snapshot's name in prefix
-						snapshot.Name += "-2"
-
-						By(fmt.Sprintf("Create Snapshot %v", snapshot.Name))
-						err = f.CreateSnapshot(snapshot)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Check for Succeeded snapshot")
-						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-						if !skipSnapshotDataChecking {
-							By("Check for snapshot data")
-							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-						}
-
-						// delete old snapshot
-						By(fmt.Sprintf("Delete old Snapshot %v", oldSnapshot.Name))
-						err = f.DeleteSnapshot(oldSnapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Waiting for old Snapshot to be deleted")
-						f.EventuallySnapshot(oldSnapshot.ObjectMeta).Should(BeFalse())
-						if !skipSnapshotDataChecking {
-							By(fmt.Sprintf("Check data for old snapshot %v", oldSnapshot.Name))
-							f.EventuallySnapshotDataFound(oldSnapshot).Should(BeFalse())
-						}
-
-						// check remaining snapshot
-						By(fmt.Sprintf("Checking another Snapshot %v still exists", snapshot.Name))
-						_, err = f.GetSnapshot(snapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						if !skipSnapshotDataChecking {
-							By(fmt.Sprintf("Check data for remaining snapshot %v", snapshot.Name))
-							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-						}
-					})
-				})
-			})
-
-			Context("In Azure", func() {
-				BeforeEach(func() {
-					secret = f.SecretForAzureBackend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.Azure = &store.AzureSpec{
-						Container: os.Getenv(AZURE_CONTAINER_NAME),
-					}
-				})
-
-				It("should take Snapshot successfully", shouldTakeSnapshot)
-
-				Context("Delete One Snapshot keeping others", func() {
-
-					It("Delete One Snapshot keeping others", func() {
-						// create and wait for running elasticsearch
-						shouldTakeSnapshot()
-
-						oldSnapshot := snapshot.DeepCopy()
-
-						// New snapshot that has old snapshot's name in prefix
-						snapshot.Name += "-2"
-
-						By(fmt.Sprintf("Create Snapshot %v", snapshot.Name))
-						err = f.CreateSnapshot(snapshot)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Check for Succeeded snapshot")
-						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-						if !skipSnapshotDataChecking {
-							By("Check for snapshot data")
-							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-						}
-
-						// delete old snapshot
-						By(fmt.Sprintf("Delete old Snapshot %v", oldSnapshot.Name))
-						err = f.DeleteSnapshot(oldSnapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Waiting for old Snapshot to be deleted")
-						f.EventuallySnapshot(oldSnapshot.ObjectMeta).Should(BeFalse())
-						if !skipSnapshotDataChecking {
-							By(fmt.Sprintf("Check data for old snapshot %v", oldSnapshot.Name))
-							f.EventuallySnapshotDataFound(oldSnapshot).Should(BeFalse())
-						}
-
-						// check remaining snapshot
-						By(fmt.Sprintf("Checking another Snapshot %v still exists", snapshot.Name))
-						_, err = f.GetSnapshot(snapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						if !skipSnapshotDataChecking {
-							By(fmt.Sprintf("Check data for remaining snapshot %v", snapshot.Name))
-							f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-						}
-					})
-				})
-			})
-
-			Context("In Swift", func() {
-				BeforeEach(func() {
-					secret = f.SecretForSwiftBackend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.Swift = &store.SwiftSpec{
-						Container: os.Getenv(SWIFT_CONTAINER_NAME),
-					}
-				})
-
-				It("should take Snapshot successfully", shouldTakeSnapshot)
-			})
-
-			Context("Invalid Database Secret", func() {
-
-				BeforeEach(func() {
-					skipSnapshotDataChecking = true
-					secret = f.SecretForLocalBackend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.Local = &store.LocalSpec{
-						MountPath: "/repo",
-						VolumeSource: core.VolumeSource{
-							EmptyDir: &core.EmptyDirVolumeSource{},
-						},
-					}
-				})
-
-				Context("In Local Backend", func() {
-
-					It("should fail to take Snapshot", func() {
-
-						By("Checking Snapshot succeed with valid database secret")
-						shouldTakeSnapshot()
-
-						By("Deleting succeeded snapshot")
-						err := f.DeleteSnapshot(snapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Patching Database Secret to invalid one")
-						es, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						dbSecret, err := f.KubeClient().CoreV1().Secrets(es.Namespace).Get(es.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
-						Expect(err).NotTo(HaveOccurred())
-
-						_, _, err = core_util.PatchSecret(f.KubeClient(), dbSecret, func(in *core.Secret) *core.Secret {
-							in.StringData = map[string]string{
-								"ADMIN_PASSWORD": "invalid",
-							}
-							return in
-						})
-						Expect(err).NotTo(HaveOccurred())
-
-						// Previous snapshot can be still in deletion. So, use a different snapshot name
-						snapshot.Name = snapshot.Name + "-2"
-						By(fmt.Sprintf("Create Invalid Snapshot: %v", snapshot.Name))
-						err = f.CreateSnapshot(snapshot)
-						Expect(err).NotTo(HaveOccurred())
-
-						By("Check for failed snapshot")
-						f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseFailed))
-
-						By("Check for failure reason: Unauthorized")
-						snap, err := f.GetSnapshot(snapshot.ObjectMeta)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(snap.Status.Reason).Should(ContainSubstring("Unauthorized"))
-					})
-				})
-
-			})
-
-			// As, snapshot is deprecated. This excessive test for snapshot 'Job Volume' is not necessary.
-			// TODO: delete sooner or later.
-			Context("Snapshot PodVolume Template - In S3", func() {
-
-				BeforeEach(func() {
-					secret = f.SecretForS3Backend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.S3 = &store.S3Spec{
-						Bucket: os.Getenv(S3_BUCKET_NAME),
-					}
-				})
-
-				var shouldHandleJobVolumeSuccessfully = func() {
-					// create elasticsearch and insert data
-					createAndInsertData()
-
-					By("Get Elasticsearch")
-					es, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-					elasticsearch.Spec = es.Spec
-
-					By("Create Secret")
-					err = f.CreateSecret(secret)
-					Expect(err).NotTo(HaveOccurred())
-
-					// determine pvcSpec and storageType for job
-					// start
-					pvcSpec := snapshot.Spec.PodVolumeClaimSpec
-					if pvcSpec == nil {
-						if elasticsearch.Spec.Topology != nil {
-							pvcSpec = elasticsearch.Spec.Topology.Data.Storage
-						} else {
-							pvcSpec = elasticsearch.Spec.Storage
-						}
-					}
-					st := snapshot.Spec.StorageType
-					if st == nil {
-						st = &elasticsearch.Spec.StorageType
-					}
-					Expect(st).NotTo(BeNil())
-					// end
-
-					By("Create Snapshot")
-					err = f.CreateSnapshot(snapshot)
-					if *st == api.StorageTypeDurable && pvcSpec == nil {
-						By("Create Snapshot should have failed")
-						Expect(err).Should(HaveOccurred())
-						return
-					} else {
-						Expect(err).NotTo(HaveOccurred())
-					}
-
-					By("Get Snapshot")
-					snap, err := f.GetSnapshot(snapshot.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-					snapshot.Spec = snap.Spec
-
-					if *st == api.StorageTypeEphemeral {
-						storageSize := "0"
-						if pvcSpec != nil {
-							if sz, found := pvcSpec.Resources.Requests[core.ResourceStorage]; found {
-								storageSize = sz.String()
-							}
-						}
-						By(fmt.Sprintf("Check for Job Empty volume size: %v", storageSize))
-						f.EventuallyJobVolumeEmptyDirSize(snapshot.ObjectMeta).Should(Equal(storageSize))
-					} else if *st == api.StorageTypeDurable {
-						sz, found := pvcSpec.Resources.Requests[core.ResourceStorage]
-						Expect(found).NotTo(BeFalse())
-
-						By("Check for Job PVC Volume size from snapshot")
-						f.EventuallyJobPVCSize(snapshot.ObjectMeta).Should(Equal(sz.String()))
-					}
-
-					By("Check for succeeded snapshot")
-					f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-					if !skipSnapshotDataChecking {
-						By("Check for snapshot data")
-						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-					}
-				}
-
-				// db StorageType Scenarios
-				// ==============> Start
-				var dbStorageTypeScenarios = func() {
-					Context("DBStorageType - Durable", func() {
-						BeforeEach(func() {
-							elasticsearch.Spec.StorageType = api.StorageTypeDurable
-							storage := core.PersistentVolumeClaimSpec{
-								Resources: core.ResourceRequirements{
-									Requests: core.ResourceList{
-										core.ResourceStorage: resource.MustParse(framework.DBPvcStorageSize),
-									},
-								},
-								StorageClassName: types.StringP(root.StorageClass),
-							}
-							if elasticsearch.Spec.Topology != nil {
-								elasticsearch.Spec.Topology.Client.Storage = &storage
-								elasticsearch.Spec.Topology.Data.Storage = &storage
-								elasticsearch.Spec.Topology.Master.Storage = &storage
-							} else {
-								elasticsearch.Spec.Storage = &storage
-							}
-						})
-
-						It("should Handle Job Volume Successfully", shouldHandleJobVolumeSuccessfully)
-					})
-
-					Context("DBStorageType - Ephemeral", func() {
-						BeforeEach(func() {
-							elasticsearch.Spec.StorageType = api.StorageTypeEphemeral
-							elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
-						})
-
-						Context("DBPvcSpec is nil", func() {
-							BeforeEach(func() {
-								elasticsearch.Spec.Storage = nil
-								if elasticsearch.Spec.Topology != nil {
-									elasticsearch.Spec.Topology.Client.Storage = nil
-									elasticsearch.Spec.Topology.Data.Storage = nil
-									elasticsearch.Spec.Topology.Master.Storage = nil
-								} else {
-									elasticsearch.Spec.Storage = nil
-								}
-							})
-
-							It("should Handle Job Volume Successfully", shouldHandleJobVolumeSuccessfully)
-						})
-
-						Context("DBPvcSpec is given [not nil]", func() {
-							BeforeEach(func() {
-								storage := core.PersistentVolumeClaimSpec{
-									Resources: core.ResourceRequirements{
-										Requests: core.ResourceList{
-											core.ResourceStorage: resource.MustParse(framework.DBPvcStorageSize),
-										},
-									},
-									StorageClassName: types.StringP(root.StorageClass),
-								}
-								if elasticsearch.Spec.Topology != nil {
-									elasticsearch.Spec.Topology.Client.Storage = &storage
-									elasticsearch.Spec.Topology.Data.Storage = &storage
-									elasticsearch.Spec.Topology.Master.Storage = &storage
-								} else {
-									elasticsearch.Spec.Storage = &storage
-								}
-							})
-
-							It("should Handle Job Volume Successfully", shouldHandleJobVolumeSuccessfully)
-						})
-					})
-				}
-				// End <==============
-
-				// Snapshot PVC Scenarios
-				// ==============> Start
-				var snapshotPvcScenarios = func() {
-					Context("Snapshot PVC is given [not nil]", func() {
-						BeforeEach(func() {
-							snapshot.Spec.PodVolumeClaimSpec = &core.PersistentVolumeClaimSpec{
-								Resources: core.ResourceRequirements{
-									Requests: core.ResourceList{
-										core.ResourceStorage: resource.MustParse(framework.JobPvcStorageSize),
-									},
-								},
-								StorageClassName: types.StringP(root.StorageClass),
-							}
-						})
-
-						dbStorageTypeScenarios()
-					})
-
-					Context("Snapshot PVC is nil", func() {
-						BeforeEach(func() {
-							snapshot.Spec.PodVolumeClaimSpec = nil
-						})
-
-						dbStorageTypeScenarios()
-					})
-				}
-				// End <==============
-
-				Context("Snapshot StorageType is nil", func() {
-					BeforeEach(func() {
-						snapshot.Spec.StorageType = nil
-					})
-
-					Context("-", func() {
-						snapshotPvcScenarios()
-					})
-
-					Context("with Dedicated elasticsearch", func() {
-						BeforeEach(func() {
-							elasticsearch = f.DedicatedElasticsearch()
-							snapshot.Spec.DatabaseName = elasticsearch.Name
-						})
-						snapshotPvcScenarios()
-					})
-				})
-
-				Context("Snapshot StorageType is Ephemeral", func() {
-					BeforeEach(func() {
-						ephemeral := api.StorageTypeEphemeral
-						snapshot.Spec.StorageType = &ephemeral
-					})
-
-					Context("-", func() {
-						snapshotPvcScenarios()
-					})
-
-					Context("with Dedicated elasticsearch", func() {
-						BeforeEach(func() {
-							elasticsearch = f.DedicatedElasticsearch()
-							snapshot.Spec.DatabaseName = elasticsearch.Name
-						})
-						snapshotPvcScenarios()
-					})
-				})
-
-				Context("Snapshot StorageType is Durable", func() {
-					BeforeEach(func() {
-						durable := api.StorageTypeDurable
-						snapshot.Spec.StorageType = &durable
-					})
-
-					Context("-", func() {
-						snapshotPvcScenarios()
-					})
-
-					Context("with Dedicated elasticsearch", func() {
-						BeforeEach(func() {
-							elasticsearch = f.DedicatedElasticsearch()
-							snapshot.Spec.DatabaseName = elasticsearch.Name
-						})
-						snapshotPvcScenarios()
-					})
-				})
-			})
-		})
-
 		Context("Initialize", func() {
-
-			BeforeEach(func() {
-				skipSnapshotDataChecking = false
-				secret = f.SecretForS3Backend()
-				snapshot.Spec.StorageSecretName = secret.Name
-				snapshot.Spec.S3 = &store.S3Spec{
-					Bucket: os.Getenv(S3_BUCKET_NAME),
-				}
-				snapshot.Spec.DatabaseName = elasticsearch.Name
-			})
-
-			var shouldInitialize = func() {
-				// create and wait for running Elasticsearch
-				createAndInsertData()
-
-				By("Create Secret")
-				err := f.CreateSecret(secret)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Create Snapshot")
-				err = f.CreateSnapshot(snapshot)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Check for succeeded snapshot")
-				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
-
-				if !skipSnapshotDataChecking {
-					By("Check for snapshot data")
-					f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-				}
-
-				oldElasticsearch, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
-				garbageElasticsearch.Items = append(garbageElasticsearch.Items, *oldElasticsearch)
-
-				By("Create elasticsearch from snapshot")
-				*elasticsearch = *f.CombinedElasticsearch()
-				elasticsearch.Spec.Init = &api.InitSpec{
-					SnapshotSource: &api.SnapshotSourceSpec{
-						Namespace: snapshot.Namespace,
-						Name:      snapshot.Name,
-					},
-				}
-
-				// create and wait for running Elasticsearch
-				createAndWaitForRunning()
-
-				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-				defer elasticClient.Stop()
-				defer f.Tunnel.Close()
-
-				By("Checking indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
-			}
-
-			Context("-", func() {
-				It("should initialize database successfully", shouldInitialize)
-			})
-
-			Context("with local volume", func() {
-
-				BeforeEach(func() {
-					snapshotPVC = f.GetPersistentVolumeClaim()
-					By("Creating PVC for local backend snapshot")
-					err := f.CreatePersistentVolumeClaim(snapshotPVC)
-					Expect(err).NotTo(HaveOccurred())
-
-					skipSnapshotDataChecking = true
-					secret = f.SecretForLocalBackend()
-					snapshot.Spec.StorageSecretName = secret.Name
-					snapshot.Spec.Backend = store.Backend{
-						Local: &store.LocalSpec{
-							MountPath: "/repo",
-							VolumeSource: core.VolumeSource{
-								PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-									ClaimName: snapshotPVC.Name,
-								},
-							},
-						},
-					}
-				})
-
-				It("should initialize database successfully", shouldInitialize)
-
-			})
-
-			Context("with authPlugin disabled", func() {
-				BeforeEach(func() {
-					elasticsearch.Spec.EnableSSL = false
-					elasticsearch.Spec.DisableSecurity = true
-				})
-
-				It("should run successfully", shouldInitialize)
-			})
-
-			Context("with SSL disabled", func() {
-				BeforeEach(func() {
-					elasticsearch.Spec.EnableSSL = false
-				})
-
-				It("should initialize database successfully", shouldInitialize)
-			})
-
-			Context("with Dedicated elasticsearch", func() {
-				BeforeEach(func() {
-					elasticsearch = f.DedicatedElasticsearch()
-					snapshot.Spec.DatabaseName = elasticsearch.Name
-				})
-
-				It("should initialize database successfully", shouldInitialize)
-
-				Context("with authPlugin disabled", func() {
-					BeforeEach(func() {
-						elasticsearch.Spec.EnableSSL = false
-						elasticsearch.Spec.DisableSecurity = true
-					})
-
-					It("should run successfully", shouldInitialize)
-				})
-
-				Context("with SSL disabled", func() {
-					BeforeEach(func() {
-						elasticsearch.Spec.EnableSSL = false
-					})
-
-					It("should initialize database successfully", shouldInitialize)
-				})
-			})
 
 			// To run this test,
 			// 1st: Deploy stash latest operator
@@ -1339,7 +371,6 @@ var _ = Describe("Elasticsearch", func() {
 				var repo *stashV1alpha1.Repository
 
 				BeforeEach(func() {
-					skipSnapshotDataChecking = true
 					if !f.FoundStashCRDs() {
 						Skip("Skipping tests for stash integration. reason: stash operator is not running.")
 					}
@@ -1506,20 +537,22 @@ var _ = Describe("Elasticsearch", func() {
 				// create and wait for running Elasticsearch
 				createAndWaitForRunning()
 
-				By("Delete elasticsearch")
-				err := f.DeleteElasticsearch(elasticsearch.ObjectMeta)
+				By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
+				_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+					in.Spec.Halted = true
+					return in
+				})
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Wait for elasticsearch to be paused")
-				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+				By("Wait for halted/paused elasticsearch")
+				f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
 
-				// create elasticsearch object again to resume it
-				By("Create Elasticsearch: " + elasticsearch.Name)
-				err = f.CreateElasticsearch(elasticsearch)
+				By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
+				_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+					in.Spec.Halted = false
+					return in
+				})
 				Expect(err).NotTo(HaveOccurred())
-
-				By("Wait for DormantDatabase to be deleted")
-				f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
 
 				By("Wait for Running elasticsearch")
 				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -1549,7 +582,6 @@ var _ = Describe("Elasticsearch", func() {
 			Context("with Dedicated elasticsearch", func() {
 				BeforeEach(func() {
 					elasticsearch = f.DedicatedElasticsearch()
-					snapshot.Spec.DatabaseName = elasticsearch.Name
 				})
 
 				It("should initialize database successfully", shouldResumeSuccessfully)
@@ -1564,172 +596,47 @@ var _ = Describe("Elasticsearch", func() {
 			})
 		})
 
-		Context("SnapshotScheduler", func() {
-			AfterEach(func() {
-				err := f.DeleteSecret(secret.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			BeforeEach(func() {
-				secret = f.SecretForLocalBackend()
-				snapshot = nil
-			})
-
-			Context("With Startup", func() {
-				BeforeEach(func() {
-					elasticsearch.Spec.BackupSchedule = &api.BackupScheduleSpec{
-						CronExpression: "@every 1m",
-						Backend: store.Backend{
-							StorageSecretName: secret.Name,
-							Local: &store.LocalSpec{
-								MountPath: "/repo",
-								VolumeSource: core.VolumeSource{
-									EmptyDir: &core.EmptyDirVolumeSource{},
-								},
-							},
-						},
-					}
-				})
-
-				var shouldStartupSchedular = func() {
-					// create and wait for running Elasticsearch
-					createAndWaitForRunning()
-
-					By("Create Secret")
-					err := f.CreateSecret(secret)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Count multiple Snapshot")
-					f.EventuallySnapshotCount(elasticsearch.ObjectMeta).Should(matcher.MoreThan(3))
-				}
-
-				Context("-", func() {
-					It("should run schedular successfully", shouldStartupSchedular)
-				})
-
-				Context("with SSL disabled", func() {
-					BeforeEach(func() {
-						elasticsearch.Spec.EnableSSL = false
-					})
-
-					It("should run schedular successfully", shouldStartupSchedular)
-				})
-
-				Context("with Dedicated elasticsearch", func() {
-					BeforeEach(func() {
-						elasticsearch = f.DedicatedElasticsearch()
-						elasticsearch.Spec.BackupSchedule = &api.BackupScheduleSpec{
-							CronExpression: "@every 1m",
-							Backend: store.Backend{
-								StorageSecretName: secret.Name,
-								Local: &store.LocalSpec{
-									MountPath: "/repo",
-									VolumeSource: core.VolumeSource{
-										EmptyDir: &core.EmptyDirVolumeSource{},
-									},
-								},
-							},
-						}
-					})
-					It("should run schedular successfully", shouldStartupSchedular)
-
-					Context("with SSL disabled", func() {
-						BeforeEach(func() {
-							elasticsearch.Spec.EnableSSL = false
-						})
-
-						It("should run schedular successfully", shouldStartupSchedular)
-					})
-				})
-			})
-
-			Context("With Update", func() {
-				var shouldScheduleWithUpdate = func() {
-					// create and wait for running Elasticsearch
-					createAndWaitForRunning()
-
-					By("Create Secret")
-					err := f.CreateSecret(secret)
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Update elasticsearch")
-					_, err = f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
-						in.Spec.BackupSchedule = &api.BackupScheduleSpec{
-							CronExpression: "@every 1m",
-							Backend: store.Backend{
-								StorageSecretName: secret.Name,
-								Local: &store.LocalSpec{
-									MountPath: "/repo",
-									VolumeSource: core.VolumeSource{
-										EmptyDir: &core.EmptyDirVolumeSource{},
-									},
-								},
-							},
-						}
-
-						return in
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					By("Count multiple Snapshot")
-					f.EventuallySnapshotCount(elasticsearch.ObjectMeta).Should(matcher.MoreThan(3))
-				}
-				Context("-", func() {
-					It("should run schedular successfully", shouldScheduleWithUpdate)
-				})
-			})
-		})
-
 		Context("Termination Policy", func() {
-			BeforeEach(func() {
-				skipSnapshotDataChecking = false
-				secret = f.SecretForS3Backend()
-				snapshot.Spec.StorageSecretName = secret.Name
-				snapshot.Spec.S3 = &store.S3Spec{
-					Bucket: os.Getenv(S3_BUCKET_NAME),
-				}
-				snapshot.Spec.DatabaseName = elasticsearch.Name
-			})
 
-			AfterEach(func() {
-				if snapshot != nil {
-					By("Delete Existing snapshot")
-					err := f.DeleteSnapshot(snapshot.ObjectMeta)
-					if err != nil {
-						if kerr.IsNotFound(err) {
-							// Elasticsearch was not created. Hence, rest of cleanup is not necessary.
-							return
-						}
-						Expect(err).NotTo(HaveOccurred())
-					}
-				}
-			})
-
-			var shouldRunWithSnapshot = func() {
+			var shouldRunAndHalt = func() {
 				// create elasticsearch and insert data
 				createAndInsertData()
 
-				By("Create Secret")
-				err := f.CreateSecret(secret)
+				By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
+				_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+					in.Spec.Halted = true
+					return in
+				})
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Create Snapshot")
-				err = f.CreateSnapshot(snapshot)
+				By("Wait for halted/paused elasticsearch")
+				f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
+
+				By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
+				_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+					in.Spec.Halted = false
+					return in
+				})
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Check for succeeded snapshot")
-				f.EventuallySnapshotPhase(snapshot.ObjectMeta).Should(Equal(api.SnapshotPhaseSucceeded))
+				By("Wait for Running elasticsearch")
+				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
-				if !skipSnapshotDataChecking {
-					By("Check for snapshot data")
-					f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-				}
+				By("Check for Elastic client")
+				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
+
+				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				defer elasticClient.Stop()
+				defer f.Tunnel.Close()
+
+				By("Checking existing indices")
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 			}
 
 			Context("with TerminationPolicyDoNotTerminate", func() {
 
 				BeforeEach(func() {
-					skipSnapshotDataChecking = true
 					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDoNotTerminate
 				})
 
@@ -1741,49 +648,90 @@ var _ = Describe("Elasticsearch", func() {
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 					Expect(err).Should(HaveOccurred())
 
+					By("Elasticsearch is not deleted. Check for elasticsearch")
+					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					By("Check for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+
+					By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
+					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = true
+						return in
+					})
+					Expect(err).To(HaveOccurred())
+
 					By("Elasticsearch is not paused. Check for elasticsearch")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Check for Running elasticsearch")
 					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
-					By("Update elasticsearch to set spec.terminationPolicy = Pause")
-					_, err := f.TryPatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
-						in.Spec.TerminationPolicy = api.TerminationPolicyPause
+					By("Update elasticsearch to set spec.terminationPolicy = halt")
+					_, err := f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.TerminationPolicy = api.TerminationPolicyHalt
 						return in
 					})
 					Expect(err).NotTo(HaveOccurred())
+
+					By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
+					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = true
+						return in
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for halted/paused elasticsearch")
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
+
+					By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
+					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = false
+						return in
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 				})
 			})
 
-			Context("with TerminationPolicyPause (default)", func() {
-				var shouldRunWithTerminationPause = func() {
-					shouldRunWithSnapshot()
+			Context("with TerminationPolicyHalt ", func() {
+
+				var shouldRunWithTerminationHalt = func() {
+					shouldRunAndHalt()
+
+					By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
+					_, err := f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = true
+						return in
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for halted/paused elasticsearch")
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
+
+					By("Resume Elasticsearch: Update elasticsearch to set spec.halted = false")
+					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
+						in.Spec.Halted = false
+						return in
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for Running elasticsearch")
+					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Delete elasticsearch")
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
-					// DormantDatabase.Status= paused, means elasticsearch object is deleted
-					By("Wait for elasticsearch to be paused")
-					f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
-
-					By("Check for intact snapshot")
-					_, err := f.GetSnapshot(snapshot.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					if !skipSnapshotDataChecking {
-						By("Check for snapshot data")
-						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-					}
+					By("wait until elasticsearch is deleted")
+					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
 					// create elasticsearch object again to resume it
 					By("Create (pause) Elasticsearch: " + elasticsearch.Name)
 					err = f.CreateElasticsearch(elasticsearch)
 					Expect(err).NotTo(HaveOccurred())
-
-					By("Wait for DormantDatabase to be deleted")
-					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
 
 					By("Wait for Running elasticsearch")
 					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -1796,44 +744,46 @@ var _ = Describe("Elasticsearch", func() {
 					defer elasticClient.Stop()
 					defer f.Tunnel.Close()
 
-					By("Checking new indices")
+					By("Checking existing indices")
 					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
 				}
 
-				It("should create dormantdatabase successfully", shouldRunWithTerminationPause)
+				It("should create dormantdatabase successfully", shouldRunWithTerminationHalt)
 
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
 						elasticsearch.Spec.EnableSSL = false
 					})
 
-					It("should create dormantdatabase successfully", shouldRunWithTerminationPause)
+					It("should create dormantdatabase successfully", shouldRunWithTerminationHalt)
 				})
 
 				Context("with Dedicated elasticsearch", func() {
+
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
-						snapshot.Spec.DatabaseName = elasticsearch.Name
 					})
-					It("should initialize database successfully", shouldRunWithTerminationPause)
+
+					It("should initialize database successfully", shouldRunWithTerminationHalt)
 
 					Context("with SSL disabled", func() {
 						BeforeEach(func() {
 							elasticsearch.Spec.EnableSSL = false
 						})
 
-						It("should initialize database successfully", shouldRunWithTerminationPause)
+						It("should initialize database successfully", shouldRunWithTerminationHalt)
 					})
 				})
 			})
 
 			Context("with TerminationPolicyDelete", func() {
+
 				BeforeEach(func() {
 					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDelete
 				})
 
 				var shouldRunWithTerminationDelete = func() {
-					shouldRunWithSnapshot()
+					createAndInsertData()
 
 					By("Delete elasticsearch")
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
@@ -1842,50 +792,34 @@ var _ = Describe("Elasticsearch", func() {
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
-					By("Checking DormantDatabase is not created")
-					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
-
 					By("Check for deleted PVCs")
 					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
 
 					By("Check for intact Secrets")
 					f.EventuallyDBSecretCount(elasticsearch.ObjectMeta).ShouldNot(Equal(0))
-
-					By("Check for intact snapshot")
-					_, err := f.GetSnapshot(snapshot.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					if !skipSnapshotDataChecking {
-						By("Check for intact snapshot data")
-						f.EventuallySnapshotDataFound(snapshot).Should(BeTrue())
-					}
-
-					By("Delete snapshot")
-					err = f.DeleteSnapshot(snapshot.ObjectMeta)
-					Expect(err).NotTo(HaveOccurred())
-
-					if !skipSnapshotDataChecking {
-						By("Check for deleted snapshot data")
-						f.EventuallySnapshotDataFound(snapshot).Should(BeFalse())
-					}
 				}
 
 				It("should run with TerminationPolicyDelete", shouldRunWithTerminationDelete)
+
+				It("should pause with TerminationPolicyDelete", shouldRunAndHalt)
 
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
 						elasticsearch.Spec.EnableSSL = false
 					})
 					It("should run with TerminationPolicyDelete", shouldRunWithTerminationDelete)
+
+					It("should pause with TerminationPolicyDelete", shouldRunAndHalt)
 				})
 
 				Context("with Dedicated elasticsearch", func() {
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
 						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyDelete
-						snapshot.Spec.DatabaseName = elasticsearch.Name
 					})
 					It("should initialize database successfully", shouldRunWithTerminationDelete)
+
+					It("should pause with TerminationPolicyDelete", shouldRunAndHalt)
 
 					Context("with SSL disabled", func() {
 						BeforeEach(func() {
@@ -1893,6 +827,8 @@ var _ = Describe("Elasticsearch", func() {
 						})
 
 						It("should initialize database successfully", shouldRunWithTerminationDelete)
+
+						It("should pause with TerminationPolicyDelete", shouldRunAndHalt)
 					})
 				})
 			})
@@ -1904,7 +840,7 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				var shouldRunWithTerminationWipeOut = func() {
-					shouldRunWithSnapshot()
+					createAndInsertData()
 
 					By("Delete elasticsearch")
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
@@ -1913,40 +849,34 @@ var _ = Describe("Elasticsearch", func() {
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
-					By("Checking DormantDatabase is not created")
-					f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
-
 					By("Check for deleted PVCs")
 					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
 
 					By("Check for deleted Secrets")
 					f.EventuallyDBSecretCount(elasticsearch.ObjectMeta).Should(Equal(0))
-
-					By("Check for deleted Snapshots")
-					f.EventuallySnapshotCount(snapshot.ObjectMeta).Should(Equal(0))
-
-					if !skipSnapshotDataChecking {
-						By("Check for deleted snapshot data")
-						f.EventuallySnapshotDataFound(snapshot).Should(BeFalse())
-					}
 				}
 
 				It("should run with TerminationPolicyWipeOut", shouldRunWithTerminationWipeOut)
+
+				It("should pause with TerminationPolicyWipeOut", shouldRunAndHalt)
 
 				Context("with SSL disabled", func() {
 					BeforeEach(func() {
 						elasticsearch.Spec.EnableSSL = false
 					})
 					It("should run with TerminationPolicyDelete", shouldRunWithTerminationWipeOut)
+
+					It("should pause with TerminationPolicyWipeOut", shouldRunAndHalt)
 				})
 
 				Context("with Dedicated elasticsearch", func() {
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
-						snapshot.Spec.DatabaseName = elasticsearch.Name
 						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 					})
 					It("should initialize database successfully", shouldRunWithTerminationWipeOut)
+
+					It("should pause with TerminationPolicyWipeOut", shouldRunAndHalt)
 
 					Context("with SSL disabled", func() {
 						BeforeEach(func() {
@@ -1954,6 +884,8 @@ var _ = Describe("Elasticsearch", func() {
 						})
 
 						It("should initialize database successfully", shouldRunWithTerminationWipeOut)
+
+						It("should pause with TerminationPolicyWipeOut", shouldRunAndHalt)
 					})
 				})
 			})
@@ -2011,16 +943,13 @@ var _ = Describe("Elasticsearch", func() {
 				err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Wait for elasticsearch to be paused")
-				f.EventuallyDormantDatabaseStatus(elasticsearch.ObjectMeta).Should(matcher.HavePaused())
+				By("wait until elasticsearch is deleted")
+				f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
 				// create elasticsearch object again to resume it
 				By("Create Elasticsearch: " + elasticsearch.Name)
 				err = f.CreateElasticsearch(elasticsearch)
 				Expect(err).NotTo(HaveOccurred())
-
-				By("Wait for DormantDatabase to be deleted")
-				f.EventuallyDormantDatabase(elasticsearch.ObjectMeta).Should(BeFalse())
 
 				By("Wait for Running elasticsearch")
 				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -2071,7 +1000,6 @@ var _ = Describe("Elasticsearch", func() {
 				Context("with Dedicated elasticsearch", func() {
 					BeforeEach(func() {
 						elasticsearch = f.DedicatedElasticsearch()
-						snapshot.Spec.DatabaseName = elasticsearch.Name
 					})
 
 					It("should run successfully with given envs", shouldRunWithAllowedEnvs)
@@ -2152,6 +1080,8 @@ var _ = Describe("Elasticsearch", func() {
 
 				elasticClient, err := f.GetElasticClient(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
+				defer elasticClient.Stop()
+				defer f.Tunnel.Close()
 
 				By("Reading Nodes information")
 				settings, err := elasticClient.GetAllNodesInfo()
@@ -2159,9 +1089,6 @@ var _ = Describe("Elasticsearch", func() {
 
 				By("Checking nodes are using provided config")
 				Expect(f.IsUsingProvidedConfig(elasticsearch, settings)).Should(BeTrue())
-
-				elasticClient.Stop()
-				f.Tunnel.Close()
 			}
 
 			Context("With Topology", func() {
@@ -2249,12 +1176,12 @@ var _ = Describe("Elasticsearch", func() {
 					It("should run successfully", shouldRunSuccessfully)
 				})
 
-				Context("With TerminationPolicyPause", func() {
+				Context("With TerminationPolicyHalt", func() {
 
 					BeforeEach(func() {
 						elasticsearch.Spec.StorageType = api.StorageTypeEphemeral
 						elasticsearch.Spec.Storage = nil
-						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyPause
+						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyHalt
 					})
 
 					It("should reject to create Elasticsearch object", func() {

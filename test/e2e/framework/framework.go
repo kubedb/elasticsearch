@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
+	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/portforward"
 	appcat_cs "kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1"
 	scs "stash.appscode.dev/stash/client/clientset/versioned"
@@ -45,6 +46,7 @@ type Framework struct {
 	namespace        string
 	name             string
 	StorageClass     string
+	topology         *core_util.Topology
 }
 
 func New(
@@ -56,7 +58,11 @@ func New(
 	appCatalogClient appcat_cs.AppcatalogV1alpha1Interface,
 	stashClient scs.Interface,
 	storageClass string,
-) *Framework {
+) (*Framework, error) {
+	topology, err := core_util.DetectTopology(kubeClient)
+	if err != nil {
+		return nil, err
+	}
 	return &Framework{
 		restConfig:       restConfig,
 		kubeClient:       kubeClient,
@@ -68,7 +74,8 @@ func New(
 		name:             "elasticsearch-operator",
 		namespace:        rand.WithUniqSuffix("elasticsearch"),
 		StorageClass:     storageClass,
-	}
+		topology:         topology,
+	}, nil
 }
 
 func (f *Framework) Invoke() *Invocation {

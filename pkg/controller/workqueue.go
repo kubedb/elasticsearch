@@ -71,10 +71,18 @@ func (c *Controller) runElasticsearch(key string) error {
 				return nil
 			}
 
-			if err := c.create(elasticsearch); err != nil {
-				log.Errorln(err)
-				c.pushFailureEvent(elasticsearch, err.Error())
-				return err
+			if elasticsearch.Spec.Halted {
+				if err := c.halt(elasticsearch); err != nil {
+					log.Errorln(err)
+					c.pushFailureEvent(elasticsearch, err.Error())
+					return err
+				}
+			} else {
+				if err := c.create(elasticsearch); err != nil {
+					log.Errorln(err)
+					c.pushFailureEvent(elasticsearch, err.Error())
+					return err
+				}
 			}
 		}
 	}

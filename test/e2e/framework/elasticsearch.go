@@ -67,7 +67,7 @@ func (i *Invocation) CombinedElasticsearch() *api.Elasticsearch {
 				},
 				StorageClassName: types.StringP(i.StorageClass),
 			},
-			TerminationPolicy: api.TerminationPolicyPause,
+			TerminationPolicy: api.TerminationPolicyHalt,
 		},
 	}
 }
@@ -122,7 +122,7 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 				},
 			},
 			EnableSSL:         true,
-			TerminationPolicy: api.TerminationPolicyPause,
+			TerminationPolicy: api.TerminationPolicyHalt,
 		},
 	}
 }
@@ -136,7 +136,7 @@ func (f *Framework) GetElasticsearch(meta metav1.ObjectMeta) (*api.Elasticsearch
 	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 }
 
-func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func(*api.Elasticsearch) *api.Elasticsearch) (*api.Elasticsearch, error) {
+func (f *Framework) PatchElasticsearch(meta metav1.ObjectMeta, transform func(*api.Elasticsearch) *api.Elasticsearch) (*api.Elasticsearch, error) {
 	elasticsearch, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func (f *Framework) TryPatchElasticsearch(meta metav1.ObjectMeta, transform func
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
-	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(meta.Name, nil)
+	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -202,6 +202,9 @@ func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) G
 			if err != nil {
 				return false
 			}
+			defer client.Stop()
+			defer f.Tunnel.Close()
+
 			url := fmt.Sprintf("%v://127.0.0.1:%d", db.GetConnectionScheme(), f.Tunnel.Local)
 			if _, err := client.Ping(url); err != nil {
 				return false
@@ -215,8 +218,6 @@ func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) G
 				return false
 			}
 
-			client.Stop()
-			f.Tunnel.Close()
 			return true
 		},
 		time.Minute*15,

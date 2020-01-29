@@ -65,7 +65,7 @@ jobs:
       id: kind
       uses: engineerd/setup-kind@v0.1.0
       with:
-        version: v0.6.1
+        version: v0.7.0
         config: hack/kubernetes/kind.yaml
         image: kindest/node:${{ matrix.cluster }}
 
@@ -82,7 +82,7 @@ jobs:
         echo
         echo "installing local-path provisioner ..."
         kubectl delete storageclass --all
-        kubectl apply -f https://github.com/kmodules/local-path-provisioner/raw/k-1.11/deploy/local-path-storage.yaml
+        kubectl apply -f https://github.com/rancher/local-path-provisioner/raw/v0.0.12/deploy/local-path-storage.yaml
         kubectl wait --for=condition=Ready pods -n local-path-storage --all --timeout=5m
         kubectl apply -f hack/kubernetes/storageclass/standard.yaml
         echo
@@ -118,4 +118,4 @@ jobs:
         echo "GOOGLE_SERVICE_ACCOUNT_JSON_KEY=$(echo $GOOGLE_SERVICE_ACCOUNT_JSON_KEY)" >> hack/config/.env
         make install
         echo
-        make e2e-tests TEST_ARGS="--db-catalog=${{ matrix.db }}" GINKGO_ARGS="--flakeAttempts=2"
+        make e2e-tests TEST_ARGS="--db-catalog=${{ matrix.db }}" GINKGO_ARGS="--flakeAttempts=2" || (kubectl describe deployment -n kube-system kubedb; kubectl logs -n kube-system deployment/kubedb; exit 1;)

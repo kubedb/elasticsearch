@@ -87,11 +87,6 @@ func (e Elasticsearch) GvrSvcName() string {
 	return e.OffshootName() + "-gvr"
 }
 
-// Snapshot service account name.
-func (e Elasticsearch) SnapshotSAName() string {
-	return fmt.Sprintf("%v-snapshot", e.OffshootName())
-}
-
 func (e *Elasticsearch) GetConnectionScheme() string {
 	scheme := "http"
 	if e.Spec.EnableSSL {
@@ -165,34 +160,27 @@ func (e *Elasticsearch) SetDefaults() {
 	if e == nil {
 		return
 	}
-	e.Spec.SetDefaults()
+	if !e.Spec.DisableSecurity && e.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginNone {
+		e.Spec.DisableSecurity = true
+	}
+	e.Spec.AuthPlugin = ""
+	if e.Spec.StorageType == "" {
+		e.Spec.StorageType = StorageTypeDurable
+	}
+	if e.Spec.UpdateStrategy.Type == "" {
+		e.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
+	}
+	if e.Spec.TerminationPolicy == "" {
+		e.Spec.TerminationPolicy = TerminationPolicyDelete
+	} else if e.Spec.TerminationPolicy == TerminationPolicyPause {
+		e.Spec.TerminationPolicy = TerminationPolicyHalt
+	}
 
 	if e.Spec.PodTemplate.Spec.ServiceAccountName == "" {
 		e.Spec.PodTemplate.Spec.ServiceAccountName = e.OffshootName()
 	}
-}
 
-func (e *ElasticsearchSpec) SetDefaults() {
-	if e == nil {
-		return
-	}
-
-	// perform defaulting
-	e.BackupSchedule.SetDefaults()
-
-	if !e.DisableSecurity && e.AuthPlugin == v1alpha1.ElasticsearchAuthPluginNone {
-		e.DisableSecurity = true
-	}
-	e.AuthPlugin = ""
-	if e.StorageType == "" {
-		e.StorageType = StorageTypeDurable
-	}
-	if e.UpdateStrategy.Type == "" {
-		e.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
-	}
-	if e.TerminationPolicy == "" {
-		e.TerminationPolicy = TerminationPolicyDelete
-	}
+	e.Spec.Monitor.SetDefaults()
 }
 
 func (e *ElasticsearchSpec) GetSecrets() []string {
