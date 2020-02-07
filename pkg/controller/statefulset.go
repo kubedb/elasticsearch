@@ -126,7 +126,7 @@ func (c *Controller) ensureStatefulSet(
 			})
 		in = upsertEnv(in, elasticsearch, esVersion, envList)
 		in = upsertUserEnv(in, elasticsearch)
-		in = upsertPort(in, isClient)
+		in = upsertPorts(in)
 		in = upsertCustomConfig(in, elasticsearch, esVersion)
 
 		in.Spec.Template.Spec.NodeSelector = elasticsearch.Spec.PodTemplate.Spec.NodeSelector
@@ -726,7 +726,7 @@ func upsertUserEnv(statefulSet *apps.StatefulSet, elasticsearch *api.Elasticsear
 	return statefulSet
 }
 
-func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet {
+func upsertPorts(statefulSet *apps.StatefulSet) *apps.StatefulSet {
 
 	getPorts := func() []core.ContainerPort {
 		portList := []core.ContainerPort{
@@ -736,13 +736,12 @@ func upsertPort(statefulSet *apps.StatefulSet, isClient bool) *apps.StatefulSet 
 				Protocol:      core.ProtocolTCP,
 			},
 		}
-		if isClient {
-			portList = append(portList, core.ContainerPort{
-				Name:          api.ElasticsearchRestPortName,
-				ContainerPort: api.ElasticsearchRestPort,
-				Protocol:      core.ProtocolTCP,
-			})
-		}
+
+		portList = append(portList, core.ContainerPort{
+			Name:          api.ElasticsearchRestPortName,
+			ContainerPort: api.ElasticsearchRestPort,
+			Protocol:      core.ProtocolTCP,
+		})
 
 		return portList
 	}
