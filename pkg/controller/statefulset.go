@@ -71,6 +71,16 @@ func (c *Controller) ensureStatefulSet(
 
 	owner := metav1.NewControllerRef(elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
 
+	// Make a new map "labelSelector", so that it remains
+	// unchanged even if the "labels" changes.
+	// It contains:
+	//	-	kubedb.com/kind: ResourceKindElasticsearch
+	//	-	kubedb.com/name: elasticsearch.Name
+	//	-	node.role.<master/data/client>: set
+	labelSelector := make(map[string]string)
+	labelSelector = core_util.UpsertMap(labelSelector, labels)
+	labelSelector = core_util.UpsertMap(labelSelector, elasticsearch.OffshootSelectors())
+
 	initContainers := []core.Container{
 		{
 			Name:            "init-sysctl",
@@ -96,9 +106,9 @@ func (c *Controller) ensureStatefulSet(
 
 		in.Spec.ServiceName = elasticsearch.GvrSvcName()
 		in.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: core_util.UpsertMap(labels, elasticsearch.OffshootSelectors()),
+			MatchLabels: labelSelector,
 		}
-		in.Spec.Template.Labels = core_util.UpsertMap(labels, elasticsearch.OffshootSelectors())
+		in.Spec.Template.Labels = labelSelector
 		in.Spec.Template.Annotations = elasticsearch.Spec.PodTemplate.Annotations
 		in.Spec.Template.Spec.InitContainers = core_util.UpsertContainers(
 			in.Spec.Template.Spec.InitContainers,
@@ -220,7 +230,7 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 		statefulSetName = fmt.Sprintf("%v-%v", clientNode.Prefix, statefulSetName)
 	}
 
-	labels := elasticsearch.OffshootLabels()
+	labels := make(map[string]string)
 	labels[NodeRoleClient] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
@@ -228,7 +238,7 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 		heapSize = getHeapSizeForNode(request.Value())
 	}
 
-	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
+	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -294,12 +304,12 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		statefulSetName = fmt.Sprintf("%v-%v", masterNode.Prefix, statefulSetName)
 	}
 
-	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
+	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
 
-	labels := elasticsearch.OffshootLabels()
+	labels := make(map[string]string)
 	labels[NodeRoleMaster] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
@@ -391,7 +401,7 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		statefulSetName = fmt.Sprintf("%v-%v", dataNode.Prefix, statefulSetName)
 	}
 
-	labels := elasticsearch.OffshootLabels()
+	labels := make(map[string]string)
 	labels[NodeRoleData] = NodeRoleSet
 
 	heapSize := int64(134217728) // 128mb
@@ -399,7 +409,7 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		heapSize = getHeapSizeForNode(request.Value())
 	}
 
-	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
+	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -460,12 +470,13 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 
 func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	statefulSetName := elasticsearch.OffshootName()
-	labels := elasticsearch.OffshootLabels()
+
+	labels := make(map[string]string)
 	labels[NodeRoleClient] = NodeRoleSet
 	labels[NodeRoleMaster] = NodeRoleSet
 	labels[NodeRoleData] = NodeRoleSet
 
-	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
+	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
