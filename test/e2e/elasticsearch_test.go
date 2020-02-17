@@ -35,8 +35,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	exec_util "kmodules.xyz/client-go/tools/exec"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	stashV1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	stashV1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	stashV1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
+	stashV1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
 )
 
 var _ = Describe("Elasticsearch", func() {
