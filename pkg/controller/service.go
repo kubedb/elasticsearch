@@ -200,9 +200,11 @@ func (c *Controller) createMasterService(elasticsearch *api.Elasticsearch) (kuti
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		in.Labels = elasticsearch.OffshootLabels()
 		in.Annotations = elasticsearch.Spec.ServiceTemplate.Annotations
-
 		in.Spec.Selector = elasticsearch.OffshootSelectors()
 		in.Spec.Selector[NodeRoleMaster] = NodeRoleSet
+
+		in.Spec.Type = core.ServiceTypeClusterIP
+		in.Spec.ClusterIP = core.ClusterIPNone
 		in.Spec.Ports = core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{defaultPeerPort})
 		return in
 	})
