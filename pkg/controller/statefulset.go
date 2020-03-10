@@ -77,9 +77,8 @@ func (c *Controller) ensureStatefulSet(
 	//	-	kubedb.com/kind: ResourceKindElasticsearch
 	//	-	kubedb.com/name: elasticsearch.Name
 	//	-	node.role.<master/data/client>: set
-	labelSelector := make(map[string]string)
+	labelSelector := elasticsearch.OffshootSelectors()
 	labelSelector = core_util.UpsertMap(labelSelector, labels)
-	labelSelector = core_util.UpsertMap(labelSelector, elasticsearch.OffshootSelectors())
 
 	initContainers := []core.Container{
 		{
@@ -230,8 +229,9 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 		statefulSetName = fmt.Sprintf("%v-%v", clientNode.Prefix, statefulSetName)
 	}
 
-	labels := make(map[string]string)
-	labels[NodeRoleClient] = NodeRoleSet
+	labels := map[string]string{
+		NodeRoleClient: NodeRoleSet,
+	}
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := clientNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -309,8 +309,9 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		return kutil.VerbUnchanged, err
 	}
 
-	labels := make(map[string]string)
-	labels[NodeRoleMaster] = NodeRoleSet
+	labels := map[string]string{
+		NodeRoleMaster: NodeRoleSet,
+	}
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := masterNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -401,8 +402,9 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		statefulSetName = fmt.Sprintf("%v-%v", dataNode.Prefix, statefulSetName)
 	}
 
-	labels := make(map[string]string)
-	labels[NodeRoleData] = NodeRoleSet
+	labels := map[string]string{
+		NodeRoleData: NodeRoleSet,
+	}
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := dataNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -471,10 +473,11 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	statefulSetName := elasticsearch.OffshootName()
 
-	labels := make(map[string]string)
-	labels[NodeRoleClient] = NodeRoleSet
-	labels[NodeRoleMaster] = NodeRoleSet
-	labels[NodeRoleData] = NodeRoleSet
+	labels := map[string]string{
+		NodeRoleClient: NodeRoleSet,
+		NodeRoleMaster: NodeRoleSet,
+		NodeRoleData:   NodeRoleSet,
+	}
 
 	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
