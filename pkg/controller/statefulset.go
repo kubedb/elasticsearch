@@ -71,6 +71,15 @@ func (c *Controller) ensureStatefulSet(
 
 	owner := metav1.NewControllerRef(elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
 
+	// Make a new map "labelSelector", so that it remains
+	// unchanged even if the "labels" changes.
+	// It contains:
+	//	-	kubedb.com/kind: ResourceKindElasticsearch
+	//	-	kubedb.com/name: elasticsearch.Name
+	//	-	node.role.<master/data/client>: set
+	labelSelector := elasticsearch.OffshootSelectors()
+	labelSelector = core_util.UpsertMap(labelSelector, labels)
+
 	initContainers := []core.Container{
 		{
 			Name:            "init-sysctl",
@@ -96,9 +105,9 @@ func (c *Controller) ensureStatefulSet(
 
 		in.Spec.ServiceName = elasticsearch.GvrSvcName()
 		in.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: core_util.UpsertMap(labels, elasticsearch.OffshootSelectors()),
+			MatchLabels: labelSelector,
 		}
-		in.Spec.Template.Labels = core_util.UpsertMap(labels, elasticsearch.OffshootSelectors())
+		in.Spec.Template.Labels = labelSelector
 		in.Spec.Template.Annotations = elasticsearch.Spec.PodTemplate.Annotations
 		in.Spec.Template.Spec.InitContainers = core_util.UpsertContainers(
 			in.Spec.Template.Spec.InitContainers,
@@ -220,15 +229,16 @@ func (c *Controller) ensureClientNode(elasticsearch *api.Elasticsearch) (kutil.V
 		statefulSetName = fmt.Sprintf("%v-%v", clientNode.Prefix, statefulSetName)
 	}
 
-	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleClient] = NodeRoleSet
+	labels := map[string]string{
+		NodeRoleClient: NodeRoleSet,
+	}
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := clientNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
 		heapSize = getHeapSizeForNode(request.Value())
 	}
 
-	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
+	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -294,13 +304,14 @@ func (c *Controller) ensureMasterNode(elasticsearch *api.Elasticsearch) (kutil.V
 		statefulSetName = fmt.Sprintf("%v-%v", masterNode.Prefix, statefulSetName)
 	}
 
-	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
+	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
 
-	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleMaster] = NodeRoleSet
+	labels := map[string]string{
+		NodeRoleMaster: NodeRoleSet,
+	}
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := masterNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
@@ -391,15 +402,16 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 		statefulSetName = fmt.Sprintf("%v-%v", dataNode.Prefix, statefulSetName)
 	}
 
-	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleData] = NodeRoleSet
+	labels := map[string]string{
+		NodeRoleData: NodeRoleSet,
+	}
 
 	heapSize := int64(134217728) // 128mb
 	if request, found := dataNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
 		heapSize = getHeapSizeForNode(request.Value())
 	}
 
-	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
+	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -460,12 +472,14 @@ func (c *Controller) ensureDataNode(elasticsearch *api.Elasticsearch) (kutil.Ver
 
 func (c *Controller) ensureCombinedNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
 	statefulSetName := elasticsearch.OffshootName()
-	labels := elasticsearch.OffshootLabels()
-	labels[NodeRoleClient] = NodeRoleSet
-	labels[NodeRoleMaster] = NodeRoleSet
-	labels[NodeRoleData] = NodeRoleSet
 
-	esVersion, err := c.esVersionLister.Get(string(elasticsearch.Spec.Version))
+	labels := map[string]string{
+		NodeRoleClient: NodeRoleSet,
+		NodeRoleMaster: NodeRoleSet,
+		NodeRoleData:   NodeRoleSet,
+	}
+
+	esVersion, err := c.esVersionLister.Get(elasticsearch.Spec.Version)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
