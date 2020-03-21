@@ -1,5 +1,46 @@
 # Change Log
 
+## [Unreleased](https://github.com/kubedb/elasticsearch/tree/HEAD)
+
+[Full Changelog](https://github.com/kubedb/elasticsearch/compare/v0.13.0-rc.1...HEAD)
+
+**Merged pull requests:**
+
+- Use stash.appscode.dev/apimachinery@v0.9.0-rc.6 [\#301](https://github.com/kubedb/elasticsearch/pull/301) ([tamalsaha](https://github.com/tamalsaha))
+- Update labelSelector for statefulsets [\#300](https://github.com/kubedb/elasticsearch/pull/300) ([kamolhasan](https://github.com/kamolhasan))
+- Make master service headless & add rest-port to all db nodes [\#299](https://github.com/kubedb/elasticsearch/pull/299) ([kamolhasan](https://github.com/kamolhasan))
+- Use stash@v0.9.0-rc.4 release [\#298](https://github.com/kubedb/elasticsearch/pull/298) ([tamalsaha](https://github.com/tamalsaha))
+- Add spec.selector fields to the governing service [\#297](https://github.com/kubedb/elasticsearch/pull/297) ([kamolhasan](https://github.com/kamolhasan))
+- Introduce spec.halted and removed dormant and snapshot crd [\#296](https://github.com/kubedb/elasticsearch/pull/296) ([the-redback](https://github.com/the-redback))
+- Add `Pause` feature [\#295](https://github.com/kubedb/elasticsearch/pull/295) ([kamolhasan](https://github.com/kamolhasan))
+- Refactor CI pipeline to build once [\#294](https://github.com/kubedb/elasticsearch/pull/294) ([tamalsaha](https://github.com/tamalsaha))
+- Wipeout if custom databaseSecret has been deleted [\#293](https://github.com/kubedb/elasticsearch/pull/293) ([Teingi](https://github.com/Teingi))
+- Fix e2e tests on GitHub actions [\#292](https://github.com/kubedb/elasticsearch/pull/292) ([the-redback](https://github.com/the-redback))
+- Use Go 1.13 in CI [\#291](https://github.com/kubedb/elasticsearch/pull/291) ([tamalsaha](https://github.com/tamalsaha))
+- Use charts to install operator [\#290](https://github.com/kubedb/elasticsearch/pull/290) ([tamalsaha](https://github.com/tamalsaha))
+- Take out elasticsearch docker images and Matrix test  [\#289](https://github.com/kubedb/elasticsearch/pull/289) ([the-redback](https://github.com/the-redback))
+- Add license header to files [\#288](https://github.com/kubedb/elasticsearch/pull/288) ([tamalsaha](https://github.com/tamalsaha))
+- Enable make ci [\#287](https://github.com/kubedb/elasticsearch/pull/287) ([tamalsaha](https://github.com/tamalsaha))
+- Remove EnableStatusSubresource [\#286](https://github.com/kubedb/elasticsearch/pull/286) ([tamalsaha](https://github.com/tamalsaha))
+- Fix E2E tests in github action [\#285](https://github.com/kubedb/elasticsearch/pull/285) ([the-redback](https://github.com/the-redback))
+
+## [v0.13.0-rc.1](https://github.com/kubedb/elasticsearch/tree/v0.13.0-rc.1) (2019-10-07)
+[Full Changelog](https://github.com/kubedb/elasticsearch/compare/v0.13.0-rc.0...v0.13.0-rc.1)
+
+**Merged pull requests:**
+
+- Prepare v0.13.0-rc.1 release [\#284](https://github.com/kubedb/elasticsearch/pull/284) ([tamalsaha](https://github.com/tamalsaha))
+- Run e2e tests using GitHub actions [\#283](https://github.com/kubedb/elasticsearch/pull/283) ([tamalsaha](https://github.com/tamalsaha))
+- Validate DBVersionSpecs and fixed broken build [\#282](https://github.com/kubedb/elasticsearch/pull/282) ([the-redback](https://github.com/the-redback))
+- Update elasticdump version for es7.3, 7.2 and 6.8 [\#281](https://github.com/kubedb/elasticsearch/pull/281) ([the-redback](https://github.com/the-redback))
+- Added Es7.3 support [\#280](https://github.com/kubedb/elasticsearch/pull/280) ([the-redback](https://github.com/the-redback))
+- Run e2e tests using GitHub actions [\#279](https://github.com/kubedb/elasticsearch/pull/279) ([tamalsaha](https://github.com/tamalsaha))
+- Added support for Xpack in es6.8 and es7.2 [\#278](https://github.com/kubedb/elasticsearch/pull/278) ([the-redback](https://github.com/the-redback))
+-  Fixed snapshot for 6.8.0 [\#276](https://github.com/kubedb/elasticsearch/pull/276) ([the-redback](https://github.com/the-redback))
+- Support configuration options for exporter sidecar [\#275](https://github.com/kubedb/elasticsearch/pull/275) ([paweloczadly](https://github.com/paweloczadly))
+- Add support for 7.2.0 [\#268](https://github.com/kubedb/elasticsearch/pull/268) ([codezomb](https://github.com/codezomb))
+- Add support for Elasticsearch 6.8.0 [\#265](https://github.com/kubedb/elasticsearch/pull/265) ([seanmcrw](https://github.com/seanmcrw))
+
 ## [v0.13.0-rc.0](https://github.com/kubedb/elasticsearch/tree/v0.13.0-rc.0) (2019-08-22)
 [Full Changelog](https://github.com/kubedb/elasticsearch/compare/0.12.0...v0.13.0-rc.0)
 
