@@ -690,6 +690,8 @@ golang.org/x/tools v0.0.0-20190621195816-6e04913cbbac/go.mod h1:/rFqwRUd4F7ZHNgw
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gomodules.xyz/cert v1.0.2 h1:xmlM1H5/aMBnt7gQBjnsULK7FzfgHnXUUp0i4tevejo=
 gomodules.xyz/cert v1.0.2/go.mod h1:Sg8RWgr+w5FV7IhfQcGQnIApNiGdryamxQqiwkRFQl8=
+gomodules.xyz/envsubst v0.1.0 h1:xvS0A4NeRwa8y3qW/+jgc13nT3rW1nlcuePDJujHzBM=
+gomodules.xyz/envsubst v0.1.0/go.mod h1:2o5f7bd13XIITbE2ZKieE05YkqB2KDoZkqKccGebduA=
 gomodules.xyz/jsonpatch/v2 v2.0.1 h1:xyiBuvkD2g5n7cYzx6u2sxQvsAy4QJsZFCzGVdzOXZ0=
 gomodules.xyz/jsonpatch/v2 v2.0.1/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
 gomodules.xyz/stow v0.2.3/go.mod h1:S9/zV1kNAWAvqmdum0oByA4+aNdTdoK9hKb1bObf1BI=
@@ -820,8 +822,8 @@ kmodules.xyz/prober v0.0.0-20191216013129-7c91e2b0edb2 h1:wxHidC0FZfaHTRG8ADG9qd
 kmodules.xyz/prober v0.0.0-20191216013129-7c91e2b0edb2/go.mod h1:YdapXw+AMO1U/yYZloDA0dTiha89Rv1iqK05Jh7qQQY=
 kmodules.xyz/webhook-runtime v0.0.0-20191127075323-d4bfdee6974d h1:qLWf0Xk2sAWT9qWBcodkinrzt0jkYTKhuHCsbwpXutE=
 kmodules.xyz/webhook-runtime v0.0.0-20191127075323-d4bfdee6974d/go.mod h1:aaaxyAmKOpw0ey3LrpBkqWq0LTl35f9PW6mhwVDBMow=
-kubedb.dev/apimachinery v0.13.0-rc.4 h1:NgFdT8nsKUmx0ez4lpFdqRL43bYEwN/iMTQQrflNJvU=
-kubedb.dev/apimachinery v0.13.0-rc.4/go.mod h1:YYIkCWfehcb/qR/oHz6nRo7t8nOiGgjel1df4t/6qgI=
+kubedb.dev/apimachinery v0.13.0-rc.4.0.20200309213307-ddb1f266d4dc h1:ClSzDBN17x8aJa5JTZjnBjCWbQeo8X3DUXXixZdITxo=
+kubedb.dev/apimachinery v0.13.0-rc.4.0.20200309213307-ddb1f266d4dc/go.mod h1:YYIkCWfehcb/qR/oHz6nRo7t8nOiGgjel1df4t/6qgI=
 launchpad.net/gocheck v0.0.0-20140225173054-000000000087/go.mod h1:hj7XX3B/0A+80Vse0e+BUHsHMTEhd0O4cpUHr/e/BUM=
 modernc.org/cc v1.0.0/go.mod h1:1Sk4//wdnYJiUIxnW8ddKpaOJCF37yAdqYnkxUpaYxw=
 modernc.org/golex v1.0.0/go.mod h1:b/QX9oBD/LhixY6NDh+IdGv17hgB+51fET1i2kPSmvk=

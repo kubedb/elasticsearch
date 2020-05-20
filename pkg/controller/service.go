@@ -32,12 +32,14 @@ import (
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-var (
+const (
 	NodeRoleMaster = "node.role.master"
 	NodeRoleClient = "node.role.client"
 	NodeRoleData   = "node.role.data"
 	NodeRoleSet    = "set"
+)
 
+var (
 	defaultClientPort = core.ServicePort{
 		Name:       api.ElasticsearchRestPortName,
 		Port:       api.ElasticsearchRestPort,

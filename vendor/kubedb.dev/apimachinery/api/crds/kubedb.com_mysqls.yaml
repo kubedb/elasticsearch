@@ -6936,6 +6936,10 @@ spec:
                 (see ref: https://dev.mysql.com/doc/refman/5.7/en/group-replication-frequently-asked-questions.html)'
               format: int32
               type: integer
+            requireSSL:
+              description: Indicates that the database server need to be encrypted
+                connections(ssl)
+              type: boolean
             serviceTemplate:
               description: ServiceTemplate is an optional configuration for service
                 used to expose database

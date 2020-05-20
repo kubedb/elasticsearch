@@ -125,22 +125,26 @@ func (c completedConfig) New() (*ElasticsearchServer, error) {
 		return nil, err
 	}
 
+	ctrl, err := c.OperatorConfig.New()
+	if err != nil {
+		return nil, err
+	}
+
 	if c.OperatorConfig.EnableMutatingWebhook {
 		c.ExtraConfig.AdmissionHooks = []hooks.AdmissionHook{
-			&esAdmsn.ElasticsearchMutator{},
+			&esAdmsn.ElasticsearchMutator{
+				ClusterTopology: ctrl.ClusterTopology,
+			},
 		}
 	}
 	if c.OperatorConfig.EnableValidatingWebhook {
 		c.ExtraConfig.AdmissionHooks = append(c.ExtraConfig.AdmissionHooks,
-			&esAdmsn.ElasticsearchValidator{},
+			&esAdmsn.ElasticsearchValidator{
+				ClusterTopology: ctrl.ClusterTopology,
+			},
 			&namespace.NamespaceValidator{
 				Resources: []string{api.ResourcePluralElasticsearch},
 			})
-	}
-
-	ctrl, err := c.OperatorConfig.New()
-	if err != nil {
-		return nil, err
 	}
 
 	s := &ElasticsearchServer{

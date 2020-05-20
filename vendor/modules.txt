@@ -411,6 +411,10 @@ golang.org/x/text/width
 golang.org/x/time/rate
 # gomodules.xyz/cert v1.0.2
 gomodules.xyz/cert
+# gomodules.xyz/envsubst v0.1.0
+gomodules.xyz/envsubst
+gomodules.xyz/envsubst/parse
+gomodules.xyz/envsubst/path
 # gomodules.xyz/jsonpatch/v2 v2.0.1
 gomodules.xyz/jsonpatch/v2
 # gomodules.xyz/stow v0.2.4
@@ -1019,7 +1023,7 @@ kmodules.xyz/prober/api/v1
 # kmodules.xyz/webhook-runtime v0.0.0-20191127075323-d4bfdee6974d
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-# kubedb.dev/apimachinery v0.13.0-rc.4
+# kubedb.dev/apimachinery v0.13.0-rc.4.0.20200309213307-ddb1f266d4dc
 kubedb.dev/apimachinery/api/crds
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/catalog

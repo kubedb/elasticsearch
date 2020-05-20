@@ -19272,6 +19272,18 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MongoDBSpec(ref common.ReferenceCa
 							Ref:         ref("k8s.io/api/apps/v1.StatefulSetUpdateStrategy"),
 						},
 					},
+					"tls": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TLS contains tls configurations for client and server.",
+							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.TLSConfig"),
+						},
+					},
+					"keyFile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Secret for KeyFile. Contains keyfile `key.txt` if spec.clusterAuthMode == keyFile || sendKeyFile",
+							Ref:         ref("k8s.io/api/core/v1.SecretVolumeSource"),
+						},
+					},
 					"paused": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Indicates that the database is paused and controller will not sync any changes made to this spec.",
@@ -19284,18 +19296,6 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MongoDBSpec(ref common.ReferenceCa
 							Description: "Indicates that the database is halted and all offshoot Kubernetes resources except PVCs are deleted.",
 							Type:        []string{"boolean"},
 							Format:      "",
-						},
-					},
-					"tls": {
-						SchemaProps: spec.SchemaProps{
-							Description: "TLS contains tls configurations for client and server.",
-							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.TLSConfig"),
-						},
-					},
-					"keyFile": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Secret for KeyFile. Contains keyfile `key.txt` if spec.clusterAuthMode == keyFile || sendKeyFile",
-							Ref:         ref("k8s.io/api/core/v1.SecretVolumeSource"),
 						},
 					},
 					"terminationPolicy": {
@@ -19575,6 +19575,19 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MySQLSpec(ref common.ReferenceCall
 							Ref:         ref("k8s.io/api/apps/v1.StatefulSetUpdateStrategy"),
 						},
 					},
+					"requireSSL": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Indicates that the database server need to be encrypted connections(ssl)",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"tls": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TLS contains tls configurations for client and server.",
+							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.TLSConfig"),
+						},
+					},
 					"paused": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Indicates that the database is paused and controller will not sync any changes made to this spec.",
@@ -19587,12 +19600,6 @@ func schema_apimachinery_apis_kubedb_v1alpha1_MySQLSpec(ref common.ReferenceCall
 							Description: "Indicates that the database is halted and all offshoot Kubernetes resources except PVCs are deleted.",
 							Type:        []string{"boolean"},
 							Format:      "",
-						},
-					},
-					"tls": {
-						SchemaProps: spec.SchemaProps{
-							Description: "TLS contains tls configurations for client and server.",
-							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.TLSConfig"),
 						},
 					},
 					"terminationPolicy": {

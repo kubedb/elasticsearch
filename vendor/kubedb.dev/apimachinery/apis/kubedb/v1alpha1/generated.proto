@@ -701,20 +701,20 @@ message MongoDBSpec {
   // Template.
   optional k8s.io.api.apps.v1.StatefulSetUpdateStrategy updateStrategy = 15;
 
+  // TLS contains tls configurations for client and server.
+  // +optional
+  optional TLSConfig tls = 16;
+
+  // Secret for KeyFile. Contains keyfile `key.txt` if spec.clusterAuthMode == keyFile || sendKeyFile
+  optional k8s.io.api.core.v1.SecretVolumeSource keyFile = 17;
+
   // Indicates that the database is paused and controller will not sync any changes made to this spec.
   // +optional
-  optional bool paused = 16;
+  optional bool paused = 18;
 
   // Indicates that the database is halted and all offshoot Kubernetes resources except PVCs are deleted.
   // +optional
-  optional bool halted = 17;
-
-  // TLS contains tls configurations for client and server.
-  // +optional
-  optional TLSConfig tls = 18;
-
-  // Secret for KeyFile. Contains keyfile `key.txt` if spec.clusterAuthMode == keyFile || sendKeyFile
-  optional k8s.io.api.core.v1.SecretVolumeSource keyFile = 19;
+  optional bool halted = 19;
 
   // TerminationPolicy controls the delete operation for database
   // +optional
@@ -827,21 +827,25 @@ message MySQLSpec {
   // Template.
   optional k8s.io.api.apps.v1.StatefulSetUpdateStrategy updateStrategy = 13;
 
-  // Indicates that the database is paused and controller will not sync any changes made to this spec.
+  // Indicates that the database server need to be encrypted connections(ssl)
   // +optional
-  optional bool paused = 14;
-
-  // Indicates that the database is halted and all offshoot Kubernetes resources except PVCs are deleted.
-  // +optional
-  optional bool halted = 15;
+  optional bool requireSSL = 14;
 
   // TLS contains tls configurations for client and server.
   // +optional
-  optional TLSConfig tls = 16;
+  optional TLSConfig tls = 15;
+
+  // Indicates that the database is paused and controller will not sync any changes made to this spec.
+  // +optional
+  optional bool paused = 16;
+
+  // Indicates that the database is halted and all offshoot Kubernetes resources except PVCs are deleted.
+  // +optional
+  optional bool halted = 17;
 
   // TerminationPolicy controls the delete operation for database
   // +optional
-  optional string terminationPolicy = 17;
+  optional string terminationPolicy = 18;
 }
 
 message MySQLStatus {

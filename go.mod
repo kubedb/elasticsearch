@@ -16,6 +16,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
 	gomodules.xyz/cert v1.0.2
+	gomodules.xyz/envsubst v0.1.0
 	gopkg.in/olivere/elastic.v5 v5.0.83
 	gopkg.in/olivere/elastic.v6 v6.2.26
 	k8s.io/api v0.0.0-20191122220107-b5267f2975e0
@@ -31,7 +32,7 @@ require (
 	kmodules.xyz/objectstore-api v0.0.0-20200214040336-fe8f39a4210d
 	kmodules.xyz/offshoot-api v0.0.0-20200216080509-45ee6418d1c1
 	kmodules.xyz/webhook-runtime v0.0.0-20191127075323-d4bfdee6974d
-	kubedb.dev/apimachinery v0.13.0-rc.4
+	kubedb.dev/apimachinery v0.13.0-rc.4.0.20200309213307-ddb1f266d4dc
 	sigs.k8s.io/yaml v1.1.0
 	stash.appscode.dev/apimachinery v0.9.0-rc.6
 )

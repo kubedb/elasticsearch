@@ -37,6 +37,7 @@ import (
 	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
+	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -55,7 +56,9 @@ var requestKind = metaV1.GroupVersionKind{
 func TestElasticsearchValidator_Admit(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.testName, func(t *testing.T) {
-			validator := ElasticsearchValidator{}
+			validator := ElasticsearchValidator{
+				ClusterTopology: &core_util.Topology{},
+			}
 
 			validator.initialized = true
 			validator.client = fake.NewSimpleClientset()
