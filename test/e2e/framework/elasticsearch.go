@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -128,31 +129,31 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 }
 
 func (f *Framework) CreateElasticsearch(obj *api.Elasticsearch) error {
-	_, err := f.dbClient.KubedbV1alpha1().Elasticsearches(obj.Namespace).Create(obj)
+	_, err := f.dbClient.KubedbV1alpha1().Elasticsearches(obj.Namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 	return err
 }
 
 func (f *Framework) GetElasticsearch(meta metav1.ObjectMeta) (*api.Elasticsearch, error) {
-	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 }
 
 func (f *Framework) PatchElasticsearch(meta metav1.ObjectMeta, transform func(*api.Elasticsearch) *api.Elasticsearch) (*api.Elasticsearch, error) {
-	elasticsearch, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	elasticsearch, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	elasticsearch, _, err = util.PatchElasticsearch(f.dbClient.KubedbV1alpha1(), elasticsearch, transform)
+	elasticsearch, _, err = util.PatchElasticsearch(context.TODO(), f.dbClient.KubedbV1alpha1(), elasticsearch, transform, metav1.PatchOptions{})
 	return elasticsearch, err
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
-	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
 }
 
 func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			_, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			if err != nil {
 				if kerr.IsNotFound(err) {
 					return false
@@ -170,7 +171,7 @@ func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncA
 func (f *Framework) EventuallyElasticsearchPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() api.DatabasePhase {
-			db, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			db, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return db.Status.Phase
 		},
@@ -182,7 +183,7 @@ func (f *Framework) EventuallyElasticsearchPhase(meta metav1.ObjectMeta) GomegaA
 func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			elasticsearch, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			elasticsearch, err := f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return elasticsearch.Status.Phase == api.DatabasePhaseRunning
 		},
@@ -240,20 +241,20 @@ func (f *Framework) EventuallyElasticsearchIndicesCount(client es.ESClient) Gome
 }
 
 func (f *Framework) CleanElasticsearch() {
-	elasticsearchList, err := f.dbClient.KubedbV1alpha1().Elasticsearches(f.namespace).List(metav1.ListOptions{})
+	elasticsearchList, err := f.dbClient.KubedbV1alpha1().Elasticsearches(f.namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return
 	}
 	for _, e := range elasticsearchList.Items {
-		if _, _, err := util.PatchElasticsearch(f.dbClient.KubedbV1alpha1(), &e, func(in *api.Elasticsearch) *api.Elasticsearch {
+		if _, _, err := util.PatchElasticsearch(context.TODO(), f.dbClient.KubedbV1alpha1(), &e, func(in *api.Elasticsearch) *api.Elasticsearch {
 			in.ObjectMeta.Finalizers = nil
 			in.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 			return in
-		}); err != nil {
+		}, metav1.PatchOptions{}); err != nil {
 			fmt.Printf("error Patching Elasticsearch. error: %v", err)
 		}
 	}
-	if err := f.dbClient.KubedbV1alpha1().Elasticsearches(f.namespace).DeleteCollection(deleteInForeground(), metav1.ListOptions{}); err != nil {
+	if err := f.dbClient.KubedbV1alpha1().Elasticsearches(f.namespace).DeleteCollection(context.TODO(), meta_util.DeleteInForeground(), metav1.ListOptions{}); err != nil {
 		fmt.Printf("error in deletion of Elasticsearch. Error: %v", err)
 	}
 }
@@ -266,14 +267,14 @@ func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 		api.LabelDatabaseName:       meta.GetName(),
 	}
 	// get sts in the namespace
-	stsList, err := f.kubeClient.AppsV1().StatefulSets(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
+	stsList, err := f.kubeClient.AppsV1().StatefulSets(meta.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector.String()})
 	if err != nil {
 		return err
 	}
 	for _, sts := range stsList.Items {
 		// if PDB is not found, send error
 		var pdb *policy.PodDisruptionBudget
-		pdb, err = f.kubeClient.PolicyV1beta1().PodDisruptionBudgets(sts.Namespace).Get(sts.Name, metav1.GetOptions{})
+		pdb, err = f.kubeClient.PolicyV1beta1().PodDisruptionBudgets(sts.Namespace).Get(context.TODO(), sts.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -298,7 +299,7 @@ func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 		for i := 0; i < maxUnavailable; i++ {
 			eviction.Name = sts.Name + "-" + strconv.Itoa(i)
 
-			err := f.kubeClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(eviction)
+			err := f.kubeClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(context.TODO(), eviction)
 			if err != nil {
 				return err
 			}
@@ -306,7 +307,7 @@ func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 
 		// try to evict one extra pod. TooManyRequests err should occur
 		eviction.Name = sts.Name + "-" + strconv.Itoa(maxUnavailable)
-		err = f.kubeClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(eviction)
+		err = f.kubeClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(context.TODO(), eviction)
 		if kerr.IsTooManyRequests(err) {
 			err = nil
 		} else if err != nil {
@@ -319,7 +320,7 @@ func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) IndicesCount(obj *api.Elasticsearch, indicesCount int) int {
-	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(obj.Spec.Version), metav1.GetOptions{})
+	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), string(obj.Spec.Version), metav1.GetOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	es, err := f.GetElasticsearch(obj.ObjectMeta)

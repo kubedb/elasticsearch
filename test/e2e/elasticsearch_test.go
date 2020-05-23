@@ -16,6 +16,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -975,7 +976,7 @@ var _ = Describe("Elasticsearch", func() {
 					podName := f.GetClientPodName(elasticsearch)
 
 					By("Checking pod started with given envs")
-					pod, err := f.KubeClient().CoreV1().Pods(elasticsearch.Namespace).Get(podName, metav1.GetOptions{})
+					pod, err := f.KubeClient().CoreV1().Pods(elasticsearch.Namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
 					out, err := exec_util.ExecIntoPod(f.RestConfig(), pod, exec_util.Command("env"))
@@ -1037,7 +1038,7 @@ var _ = Describe("Elasticsearch", func() {
 					shouldRunSuccessfully()
 
 					By("Updating Envs")
-					_, _, err := util.PatchElasticsearch(f.ExtClient().KubedbV1alpha1(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+					_, _, err := util.PatchElasticsearch(context.TODO(), f.ExtClient().KubedbV1alpha1(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "CLUSTER_NAME",
@@ -1045,7 +1046,7 @@ var _ = Describe("Elasticsearch", func() {
 							},
 						}
 						return in
-					})
+					}, metav1.PatchOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})

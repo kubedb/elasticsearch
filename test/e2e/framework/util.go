@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -31,16 +32,6 @@ const (
 	updateRetryInterval = 10 * 1000 * 1000 * time.Nanosecond
 	maxAttempts         = 5
 )
-
-//func deleteInBackground() *metav1.DeleteOptions {
-//	policy := metav1.DeletePropagationBackground
-//	return &metav1.DeleteOptions{PropagationPolicy: &policy}
-//}
-
-func deleteInForeground() *metav1.DeleteOptions {
-	policy := metav1.DeletePropagationForeground
-	return &metav1.DeleteOptions{PropagationPolicy: &policy}
-}
 
 func (f *Framework) PrintDebugHelpers() {
 	sh := shell.NewSession()
@@ -86,6 +77,7 @@ func (f *Framework) EventuallyWipedOut(meta metav1.ObjectMeta) GomegaAsyncAssert
 
 			// check if pvcs is wiped out
 			pvcList, err := f.kubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).List(
+				context.TODO(),
 				metav1.ListOptions{
 					LabelSelector: labelSelector.String(),
 				},
@@ -100,6 +92,7 @@ func (f *Framework) EventuallyWipedOut(meta metav1.ObjectMeta) GomegaAsyncAssert
 
 			// check if secrets are wiped out
 			secretList, err := f.kubeClient.CoreV1().Secrets(meta.Namespace).List(
+				context.TODO(),
 				metav1.ListOptions{
 					LabelSelector: labelSelector.String(),
 				},
@@ -114,6 +107,7 @@ func (f *Framework) EventuallyWipedOut(meta metav1.ObjectMeta) GomegaAsyncAssert
 
 			// check if appbinds are wiped out
 			appBindingList, err := f.appCatalogClient.AppBindings(meta.Namespace).List(
+				context.TODO(),
 				metav1.ListOptions{
 					LabelSelector: labelSelector.String(),
 				},

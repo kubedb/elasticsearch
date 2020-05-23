@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 
@@ -28,11 +29,12 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	"sigs.k8s.io/yaml"
 )
 
 func (f *Invocation) getDataPath(elasticsearch *v1alpha12.Elasticsearch) string {
-	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(elasticsearch.Spec.Version), metav1.GetOptions{})
+	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), string(elasticsearch.Spec.Version), metav1.GetOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	path := "/data"
@@ -149,12 +151,12 @@ func (f *Invocation) IsUsingProvidedConfig(elasticsearch *v1alpha12.Elasticsearc
 }
 
 func (f *Invocation) CreateConfigMap(obj *core.ConfigMap) error {
-	_, err := f.kubeClient.CoreV1().ConfigMaps(obj.Namespace).Create(obj)
+	_, err := f.kubeClient.CoreV1().ConfigMaps(obj.Namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 	return err
 }
 
 func (f *Invocation) DeleteConfigMap(meta metav1.ObjectMeta) error {
-	err := f.kubeClient.CoreV1().ConfigMaps(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.kubeClient.CoreV1().ConfigMaps(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
