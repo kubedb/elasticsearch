@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -143,19 +144,19 @@ func (i *Invocation) PatchSecretForRestic(secret *core.Secret) *core.Secret {
 
 // TODO: Add more methods for Swift, Backblaze B2, Rest server backend.
 func (f *Framework) CreateSecret(obj *core.Secret) error {
-	_, err := f.kubeClient.CoreV1().Secrets(obj.Namespace).Create(obj)
+	_, err := f.kubeClient.CoreV1().Secrets(obj.Namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 	return err
 }
 
 func (f *Framework) UpdateSecret(meta metav1.ObjectMeta, transformer func(core.Secret) core.Secret) error {
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		cur, err := f.kubeClient.CoreV1().Secrets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, err := f.kubeClient.CoreV1().Secrets(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
 			return nil
 		} else if err == nil {
 			modified := transformer(*cur)
-			_, err = f.kubeClient.CoreV1().Secrets(cur.Namespace).Update(&modified)
+			_, err = f.kubeClient.CoreV1().Secrets(cur.Namespace).Update(context.TODO(), &modified, metav1.UpdateOptions{})
 			if err == nil {
 				return nil
 			}
@@ -167,7 +168,7 @@ func (f *Framework) UpdateSecret(meta metav1.ObjectMeta, transformer func(core.S
 }
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {
-	err := f.kubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.kubeClient.CoreV1().Secrets(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
 	if !kerr.IsNotFound(err) {
 		return err
 	}
@@ -184,6 +185,7 @@ func (f *Framework) EventuallyDBSecretCount(meta metav1.ObjectMeta) GomegaAsyncA
 	return Eventually(
 		func() int {
 			secretList, err := f.kubeClient.CoreV1().Secrets(meta.Namespace).List(
+				context.TODO(),
 				metav1.ListOptions{
 					LabelSelector: labelSelector.String(),
 				},
@@ -198,12 +200,12 @@ func (f *Framework) EventuallyDBSecretCount(meta metav1.ObjectMeta) GomegaAsyncA
 }
 
 func (f *Framework) CheckSecret(secret *core.Secret) error {
-	_, err := f.kubeClient.CoreV1().Secrets(f.namespace).Get(secret.Name, metav1.GetOptions{})
+	_, err := f.kubeClient.CoreV1().Secrets(f.namespace).Get(context.TODO(), secret.Name, metav1.GetOptions{})
 	return err
 }
 
 func (i *Invocation) SecretForDatabaseAuthentication(es *api.Elasticsearch, mangedByKubeDB bool) *core.Secret {
-	esVersion, err := i.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(string(es.Spec.Version), metav1.GetOptions{})
+	esVersion, err := i.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), string(es.Spec.Version), metav1.GetOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	//mangedByKubeDB mimics a secret created and manged by kubedb and not user.

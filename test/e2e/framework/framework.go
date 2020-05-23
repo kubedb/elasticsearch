@@ -16,6 +16,8 @@ limitations under the License.
 package framework
 
 import (
+	"context"
+
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 
 	"github.com/appscode/go/crypto/rand"
@@ -59,7 +61,7 @@ func New(
 	stashClient scs.Interface,
 	storageClass string,
 ) (*Framework, error) {
-	topology, err := core_util.DetectTopology(kubeClient)
+	topology, err := core_util.DetectTopology(context.TODO(), kubeClient)
 	if err != nil {
 		return nil, err
 	}
