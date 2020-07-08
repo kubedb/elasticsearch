@@ -31,7 +31,7 @@ import (
 	"time"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/elasticsearch/pkg/keytool"
+	"kubedb.dev/elasticsearch/pkg/lib/keytool"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/ioutil"
