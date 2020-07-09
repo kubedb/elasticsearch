@@ -332,8 +332,8 @@ $(BUILD_DIRS):
 	@mkdir -p $@
 
 REGISTRY_SECRET ?=
-ENTERPRISE_TAG  ?= v0.1.0-alpha.3
-KUBE_NAMESPACE  ?= kube-system
+ENTERPRISE_TAG  ?=
+KUBE_NAMESPACE  ?=
 
 ifeq ($(strip $(REGISTRY_SECRET)),)
 	IMAGE_PULL_SECRETS =
