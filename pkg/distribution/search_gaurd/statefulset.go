@@ -114,7 +114,7 @@ func (es *Elasticsearch) ensureStatefulSet(
 		return kutil.VerbUnchanged, errors.Wrap(err, "failed to get containers")
 	}
 
-	volumes, pvc, err := es.getVolumes(esNode, nodeRole)
+	volumes, pvc, err := es.getVolumes(esNode)
 	if err != nil {
 		return kutil.VerbUnchanged, errors.Wrap(err, "failed to get volumes")
 	}
@@ -187,7 +187,7 @@ func (es *Elasticsearch) ensureStatefulSet(
 	return vt, nil
 }
 
-func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole string) ([]corev1.Volume, *corev1.PersistentVolumeClaim, error) {
+func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode) ([]corev1.Volume, *corev1.PersistentVolumeClaim, error) {
 	if esNode == nil {
 		return nil, nil, errors.New("elasticsearchNode is empty")
 	}
@@ -195,17 +195,16 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 	var volumes []corev1.Volume
 	var pvc *corev1.PersistentVolumeClaim
 
-	if nodeRole == NodeRoleClient {
-		volumes = core_util.UpsertVolume(volumes, corev1.Volume{
-			Name: "sgconfig",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: es.elasticsearch.Spec.DatabaseSecret.SecretName,
-				},
+	volumes = core_util.UpsertVolume(volumes, corev1.Volume{
+		Name: "sgconfig",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: es.elasticsearch.Spec.DatabaseSecret.SecretName,
 			},
 		},
-		)
-	}
+	},
+	)
+
 	//// Upsert Volume for configuration directory
 	//volumes = core_util.UpsertVolume(volumes, corev1.Volume{
 	//	Name: "esconfig",
@@ -308,15 +307,16 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 								Path: certlib.ClientKeyStore,
 							},
 						}
+
 						// TODO:
 						// 	- check for other distribution
 						//  - whether they are only for client nodes
-						if nodeRole == NodeRoleClient {
-							kp = append(kp, corev1.KeyToPath{
-								Key:  certlib.SGAdminKeyStore,
-								Path: certlib.SGAdminKeyStore,
-							})
-						}
+
+						kp = append(kp, corev1.KeyToPath{
+							Key:  certlib.SGAdminKeyStore,
+							Path: certlib.SGAdminKeyStore,
+						})
+
 						return kp
 					}(),
 				},
@@ -363,17 +363,19 @@ func (es *Elasticsearch) getContainers(esNode *api.ElasticsearchNode, nodeRole s
 	volumeMount := []corev1.VolumeMount{
 		{
 			Name:      "data",
-			MountPath: DataDir,
+			MountPath: "/data",
 		},
 		{
 			Name:      "temp",
 			MountPath: "/tmp",
 		},
-		{
-			Name:      "sgconfig",
-			MountPath: fmt.Sprintf("/elasticsearch/plugins/search-guard-%v/sgconfig", es.esVersion.Spec.Version[0]),
-		},
 	}
+
+	volumeMount = core_util.UpsertVolumeMount(volumeMount, corev1.VolumeMount{
+		Name:      "sgconfig",
+		MountPath: fmt.Sprintf("/elasticsearch/plugins/search-guard-%v/sgconfig", string(es.esVersion.Spec.Version[0])),
+	})
+
 	// TODO:
 	//  	- change the directory
 	if !es.elasticsearch.Spec.DisableSecurity {
@@ -447,10 +449,6 @@ func (es *Elasticsearch) upsertContainerEnv(envList []corev1.EnvVar) []corev1.En
 		{
 			Name:  "SSL_ENABLE",
 			Value: fmt.Sprintf("%v", es.elasticsearch.Spec.EnableSSL),
-		},
-		{
-			Name:  "HTTP_ENABLE",
-			Value: "false",
 		},
 	}...)
 

@@ -23,6 +23,7 @@ import (
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 
 	"github.com/appscode/go/types"
+	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	kutil "kmodules.xyz/client-go"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -43,6 +44,8 @@ const (
 )
 
 func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
+	glog.Infof("Ensuring master nodes for Elasticsearch: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Name)
+
 	statefulSetName := es.elasticsearch.OffshootName()
 	masterNode := es.elasticsearch.Spec.Topology.Master
 
@@ -135,6 +138,8 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 }
 
 func (es *Elasticsearch) EnsureClientNodes() (kutil.VerbType, error) {
+	glog.Infof("Ensuring client nodes for Elasticsearch: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Name)
+
 	statefulSetName := es.elasticsearch.OffshootName()
 	clientNode := es.elasticsearch.Spec.Topology.Client
 
@@ -215,6 +220,8 @@ func (es *Elasticsearch) EnsureClientNodes() (kutil.VerbType, error) {
 }
 
 func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
+	glog.Infof("Ensuring data nodes for Elasticsearch: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Name)
+
 	statefulSetName := es.elasticsearch.OffshootName()
 	dataNode := es.elasticsearch.Spec.Topology.Data
 
@@ -291,6 +298,8 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 }
 
 func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
+	glog.Infof("Ensuring combined nodes for Elasticsearch: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Name)
+
 	statefulSetName := es.elasticsearch.OffshootName()
 	combinedNode := es.getCombinedNode()
 
