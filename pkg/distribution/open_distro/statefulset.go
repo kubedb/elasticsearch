@@ -533,6 +533,10 @@ func (es *Elasticsearch) upsertContainerEnv(envList []corev1.EnvVar) []corev1.En
 			Name:  "network.host",
 			Value: "0.0.0.0",
 		},
+		{
+			Name:  "SSL_ENABLE",
+			Value: fmt.Sprintf("%v", es.elasticsearch.Spec.EnableSSL),
+		},
 	}...)
 
 	if strings.HasPrefix(es.esVersion.Spec.Version, "1.") {

@@ -76,7 +76,7 @@ opendistro_security.ssl.transport.pemkey_filepath: certs/node-key.pem
 opendistro_security.ssl.transport.pemtrustedcas_filepath: certs/root-ca.pem
 opendistro_security.ssl.transport.enforce_hostname_verification: false
 
-opendistro_security.ssl.http.enabled: true
+opendistro_security.ssl.http.enabled: ${SSL_ENABLE}
 opendistro_security.ssl.http.pemcert_filepath: certs/client.pem
 opendistro_security.ssl.http.pemkey_filepath: certs/client-key.pem
 opendistro_security.ssl.http.pemtrustedcas_filepath: certs/root-ca.pem

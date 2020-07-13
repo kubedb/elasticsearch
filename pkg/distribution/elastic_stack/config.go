@@ -45,6 +45,7 @@ xpack.security.transport.ssl.keystore.password: ${KEY_PASS}
 xpack.security.transport.ssl.truststore.path: /usr/share/elasticsearch/config/certs/root.jks
 xpack.security.transport.ssl.truststore.password: ${KEY_PASS}
 
+xpack.security.http.ssl.enabled: ${SSL_ENABLE}
 xpack.security.http.ssl.keystore.path: /usr/share/elasticsearch/config/certs/client.jks
 xpack.security.http.ssl.keystore.password: ${KEY_PASS}
 xpack.security.http.ssl.truststore.path: /usr/share/elasticsearch/config/certs/root.jks
