@@ -84,7 +84,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// ensure database StatefulSet
-	elasticsearch, vt2, err := c.ensureElasticsearchNodeVersion2(elasticsearch)
+	elasticsearch, vt2, err := c.ensureElasticsearchNode(elasticsearch)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	return nil
 }
 
-func (c *Controller) ensureElasticsearchNodeVersion2(es *api.Elasticsearch) (*api.Elasticsearch, kutil.VerbType, error) {
+func (c *Controller) ensureElasticsearchNode(es *api.Elasticsearch) (*api.Elasticsearch, kutil.VerbType, error) {
 	if es == nil {
 		return nil, kutil.VerbUnchanged, errors.New("Elasticsearch object is empty")
 	}
@@ -244,59 +244,6 @@ func (c *Controller) ensureElasticsearchNodeVersion2(es *api.Elasticsearch) (*ap
 	time.Sleep(time.Second * 30)
 
 	return elastic.UpdatedElasticsearch(), vt, nil
-}
-
-func (c *Controller) ensureElasticsearchNode(elasticsearch *api.Elasticsearch) (kutil.VerbType, error) {
-	var err error
-
-	if err = c.ensureCertSecret(elasticsearch); err != nil {
-		return kutil.VerbUnchanged, err
-	}
-	if err = c.ensureDatabaseSecret(elasticsearch); err != nil {
-		return kutil.VerbUnchanged, err
-	}
-	if err = c.ensureDatabaseConfigForXPack(elasticsearch); err != nil {
-		return kutil.VerbUnchanged, err
-	}
-
-	// Ensure Service account, role, rolebinding, and PSP for database statefulsets
-	if err := c.ensureDatabaseRBAC(elasticsearch); err != nil {
-		return kutil.VerbUnchanged, err
-	}
-
-	vt := kutil.VerbUnchanged
-	topology := elasticsearch.Spec.Topology
-	if topology != nil {
-		vt1, err := c.ensureClientNode(elasticsearch)
-		if err != nil {
-			return kutil.VerbUnchanged, err
-		}
-		vt2, err := c.ensureMasterNode(elasticsearch)
-		if err != nil {
-			return kutil.VerbUnchanged, err
-		}
-		vt3, err := c.ensureDataNode(elasticsearch)
-		if err != nil {
-			return kutil.VerbUnchanged, err
-		}
-
-		if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated && vt3 == kutil.VerbCreated {
-			vt = kutil.VerbCreated
-		} else if vt1 == kutil.VerbPatched || vt2 == kutil.VerbPatched || vt3 == kutil.VerbPatched {
-			vt = kutil.VerbPatched
-		}
-	} else {
-		vt, err = c.ensureCombinedNode(elasticsearch)
-		if err != nil {
-			return kutil.VerbUnchanged, err
-		}
-	}
-
-	// Need some time to build elasticsearch cluster. Nodes will communicate with each other
-	// TODO: find better way
-	time.Sleep(time.Second * 30)
-
-	return vt, nil
 }
 
 func (c *Controller) halt(db *api.Elasticsearch) error {
