@@ -35,8 +35,6 @@ import (
 )
 
 func (es *Elasticsearch) EnsureCertSecret() error {
-	// TODO:
-	// 	- check here
 	if es.elasticsearch.Spec.DisableSecurity {
 		return nil
 	}

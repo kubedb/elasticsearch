@@ -35,7 +35,7 @@ const (
 	ConfigFileName              = "elasticsearch.yml"
 	ConfigFileMountPath         = "/usr/share/elasticsearch/config"
 	TempConfigFileMountPath     = "/elasticsearch/temp-config"
-	DatabaseConfigMapSuffix     = "config"
+	DatabaseConfigSecretSuffix  = "config"
 	SecurityConfigFileMountPath = "/usr/share/elasticsearch/plugins/opendistro_security/securityconfig"
 	InternalUserFileName        = "internal_users.yml"
 )
@@ -111,7 +111,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 	}
 
 	secretMeta := metav1.ObjectMeta{
-		Name:      fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigMapSuffix),
+		Name:      fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix),
 		Namespace: es.elasticsearch.Namespace,
 	}
 
@@ -171,9 +171,9 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 }
 
 func (es *Elasticsearch) findDefaultConfig() error {
-	cmName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigMapSuffix)
+	sName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix)
 
-	configMap, err := es.kClient.CoreV1().ConfigMaps(es.elasticsearch.Namespace).Get(context.TODO(), cmName, metav1.GetOptions{})
+	secret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), sName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
@@ -182,9 +182,9 @@ func (es *Elasticsearch) findDefaultConfig() error {
 		}
 	}
 
-	if configMap.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch &&
-		configMap.Labels[api.LabelDatabaseName] != es.elasticsearch.Name {
-		return fmt.Errorf(`intended configMap "%v/%v" already exists`, es.elasticsearch.Namespace, cmName)
+	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch &&
+		secret.Labels[api.LabelDatabaseName] != es.elasticsearch.Name {
+		return fmt.Errorf(`intended k8s secret: "%v/%v" already exists`, es.elasticsearch.Namespace, sName)
 	}
 
 	return nil

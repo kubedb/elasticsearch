@@ -218,7 +218,7 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 
 	// Default configuration files, will be stored in a temporary directory.
 	// i.e. "/elasticsearch/temp-config"
-	secretName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigMapSuffix)
+	secretName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix)
 	volumes = core_util.UpsertVolume(volumes, corev1.Volume{
 		Name: "temp-esconfig",
 		VolumeSource: corev1.VolumeSource{

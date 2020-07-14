@@ -216,19 +216,17 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 	// This configuration will also be copied as default elasticsearch configuration (i.e. elasticsearch.yaml)
 	// from config-merger initContainer.
 	if !es.elasticsearch.Spec.DisableSecurity {
-		cmName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigMapSuffix)
-		_, err := es.kClient.CoreV1().ConfigMaps(es.elasticsearch.GetNamespace()).Get(context.TODO(), cmName, metav1.GetOptions{})
+		sName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix)
+		_, err := es.kClient.CoreV1().Secrets(es.elasticsearch.GetNamespace()).Get(context.TODO(), sName, metav1.GetOptions{})
 		if err != nil {
-			return nil, nil, errors.Wrap(err, fmt.Sprintf("failed to get configmap: %s/%s", es.elasticsearch.GetNamespace(), cmName))
+			return nil, nil, errors.Wrap(err, fmt.Sprintf("failed to get secret: %s/%s", es.elasticsearch.GetNamespace(), sName))
 		}
 
 		volumes = core_util.UpsertVolume(volumes, corev1.Volume{
 			Name: "temp-esconfig",
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cmName,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: sName,
 				},
 			},
 		})

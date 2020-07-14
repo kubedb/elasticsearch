@@ -29,10 +29,10 @@ import (
 )
 
 const (
-	ConfigFileName          = "elasticsearch.yml"
-	ConfigFileMountPath     = "/usr/share/elasticsearch/config"
-	TempConfigFileMountPath = "/elasticsearch/temp-config"
-	DatabaseConfigMapSuffix = "config"
+	ConfigFileName             = "elasticsearch.yml"
+	ConfigFileMountPath        = "/usr/share/elasticsearch/config"
+	TempConfigFileMountPath    = "/elasticsearch/temp-config"
+	DatabaseConfigSecretSuffix = "config"
 )
 
 var xpack_config = `
@@ -58,17 +58,17 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 			return err
 		}
 
-		cmMeta := metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigMapSuffix),
+		secretMeta := metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix),
 			Namespace: es.elasticsearch.Namespace,
 		}
 		owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
 
-		if _, _, err := core_util.CreateOrPatchConfigMap(context.TODO(), es.kClient, cmMeta, func(in *corev1.ConfigMap) *corev1.ConfigMap {
+		if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *corev1.Secret) *corev1.Secret {
 			in.Labels = core_util.UpsertMap(in.Labels, es.elasticsearch.OffshootLabels())
 			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
-			in.Data = map[string]string{
-				ConfigFileName: xpack_config,
+			in.Data = map[string][]byte{
+				ConfigFileName: []byte(xpack_config),
 			}
 			return in
 		}, metav1.PatchOptions{}); err != nil {
@@ -79,9 +79,9 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 }
 
 func (es *Elasticsearch) findDefaultConfig() error {
-	cmName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigMapSuffix)
+	sName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix)
 
-	configMap, err := es.kClient.CoreV1().ConfigMaps(es.elasticsearch.Namespace).Get(context.TODO(), cmName, metav1.GetOptions{})
+	secret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), sName, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
@@ -90,9 +90,9 @@ func (es *Elasticsearch) findDefaultConfig() error {
 		}
 	}
 
-	if configMap.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch &&
-		configMap.Labels[api.LabelDatabaseName] != es.elasticsearch.Name {
-		return fmt.Errorf(`intended configMap "%v/%v" already exists`, es.elasticsearch.Namespace, cmName)
+	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch &&
+		secret.Labels[api.LabelDatabaseName] != es.elasticsearch.Name {
+		return fmt.Errorf(`intended k8s secret: "%v/%v" already exists`, es.elasticsearch.Namespace, sName)
 	}
 
 	return nil
