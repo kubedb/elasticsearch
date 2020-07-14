@@ -29,18 +29,14 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	kutil "kmodules.xyz/client-go"
 	core_util "kmodules.xyz/client-go/core/v1"
 	dynamic_util "kmodules.xyz/client-go/dynamic"
 	meta_util "kmodules.xyz/client-go/meta"
-	policy_util "kmodules.xyz/client-go/policy/v1beta1"
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
@@ -389,34 +385,5 @@ func (c *Controller) UpsertDatabaseAnnotation(meta metav1.ObjectMeta, annotation
 		in.Annotations = core_util.UpsertMap(in.Annotations, annotation)
 		return in
 	}, metav1.PatchOptions{})
-	return err
-}
-
-func (c *Controller) createPodDisruptionBudget(sts *appsv1.StatefulSet, maxUnavailable *intstr.IntOrString) error {
-	owner := metav1.NewControllerRef(sts, appsv1.SchemeGroupVersion.WithKind("StatefulSet"))
-
-	m := metav1.ObjectMeta{
-		Name:      sts.Name,
-		Namespace: sts.Namespace,
-	}
-	_, _, err := policy_util.CreateOrPatchPodDisruptionBudget(
-		context.TODO(),
-		c.Client,
-		m,
-		func(in *policyv1beta1.PodDisruptionBudget) *policyv1beta1.PodDisruptionBudget {
-			in.Labels = sts.Labels
-			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
-
-			in.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: sts.Spec.Template.Labels,
-			}
-
-			in.Spec.MaxUnavailable = maxUnavailable
-
-			in.Spec.MinAvailable = nil
-			return in
-		},
-		metav1.PatchOptions{},
-	)
 	return err
 }

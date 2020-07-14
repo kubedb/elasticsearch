@@ -116,12 +116,12 @@ func (es *Elasticsearch) ensureStatefulSet(
 
 	// Get elasticsearch container.
 	// Also get monitoring sidecar if any.
-	containers, err := es.getContainers(esNode, envList)
+	containers, err := es.getContainers(esNode, nodeRole, envList)
 	if err != nil {
 		return kutil.VerbUnchanged, errors.Wrap(err, "failed to get containers")
 	}
 
-	volumes, pvc, err := es.getVolumes(esNode)
+	volumes, pvc, err := es.getVolumes(esNode, nodeRole)
 	if err != nil {
 		return kutil.VerbUnchanged, errors.Wrap(err, "failed to get volumes")
 	}
@@ -200,7 +200,7 @@ func (es *Elasticsearch) ensureStatefulSet(
 	return vt, nil
 }
 
-func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode) ([]corev1.Volume, *corev1.PersistentVolumeClaim, error) {
+func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole string) ([]corev1.Volume, *corev1.PersistentVolumeClaim, error) {
 	if esNode == nil {
 		return nil, nil, errors.New("elasticsearchNode is empty")
 	}
@@ -230,7 +230,7 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode) ([]corev1.Vol
 
 	// Default security-config files will be merged
 	// with user provided security-config files(if any) from "config-merger" init container
-	// and later those files will be mounted on this shared volume so that elaticsearch container
+	// and later those files will be mounted on this shared volume so that elasticsearch container
 	// can use them.
 	if !es.elasticsearch.Spec.DisableSecurity {
 		volumes = core_util.UpsertVolume(volumes, corev1.Volume{
@@ -334,8 +334,11 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode) ([]corev1.Vol
 		})
 	}
 
-	// Upsert Volume for monitoring sidecar
-	if es.elasticsearch.GetMonitoringVendor() == mona.VendorPrometheus && es.elasticsearch.Spec.EnableSSL {
+	// Upsert Volume for monitoring sidecar.
+	// This volume is only used for client nodes.
+	if es.elasticsearch.GetMonitoringVendor() == mona.VendorPrometheus &&
+		es.elasticsearch.Spec.EnableSSL &&
+		nodeRole == NodeRoleClient {
 		volumes = core_util.UpsertVolume(volumes, corev1.Volume{
 			Name: "exporter-certs",
 			VolumeSource: corev1.VolumeSource{
@@ -343,8 +346,8 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode) ([]corev1.Vol
 					SecretName: es.elasticsearch.Spec.CertificateSecret.SecretName,
 					Items: []corev1.KeyToPath{
 						{
-							Key:  "root.pem",
-							Path: "root.pem",
+							Key:  certlib.RootCert,
+							Path: certlib.RootCert,
 						},
 					},
 				},
@@ -352,12 +355,10 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode) ([]corev1.Vol
 		})
 	}
 
-	// Upsert temp Volume
-
 	return volumes, pvc, nil
 }
 
-func (es *Elasticsearch) getContainers(esNode *api.ElasticsearchNode, envList []corev1.EnvVar) ([]corev1.Container, error) {
+func (es *Elasticsearch) getContainers(esNode *api.ElasticsearchNode, nodeRole string, envList []corev1.EnvVar) ([]corev1.Container, error) {
 	if esNode == nil {
 		return nil, errors.New("ElasticsearchNode is empty")
 	}
@@ -418,9 +419,10 @@ func (es *Elasticsearch) getContainers(esNode *api.ElasticsearchNode, envList []
 		},
 	}
 
-	// upsert metrics exporter sidecar for monitoring purpose
+	// upsert metrics exporter sidecar for monitoring purpose.
+	// add monitoring sidecar only for client nodes.
 	var err error
-	if es.elasticsearch.Spec.Monitor != nil {
+	if es.elasticsearch.Spec.Monitor != nil && nodeRole == NodeRoleClient {
 		containers, err = es.upsertMonitoringContainer(containers)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get monitoring container")

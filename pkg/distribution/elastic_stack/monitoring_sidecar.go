@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
 
 	corev1 "k8s.io/api/core/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -58,31 +59,33 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []corev1.Container
 			SecurityContext: es.elasticsearch.Spec.Monitor.Prometheus.Exporter.SecurityContext,
 		}
 
-		envList := []corev1.EnvVar{
-			{
-				Name: "DB_USER",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
+		if !es.elasticsearch.Spec.DisableSecurity {
+			envList := []corev1.EnvVar{
+				{
+					Name: "DB_USER",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
+							},
+							Key: KeyAdminUserName,
 						},
-						Key: KeyAdminUserName,
 					},
 				},
-			},
-			{
-				Name: "DB_PASSWORD",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
+				{
+					Name: "DB_PASSWORD",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
+							},
+							Key: KeyAdminPassword,
 						},
-						Key: KeyAdminPassword,
 					},
 				},
-			},
+			}
+			container.Env = core_util.UpsertEnvVars(container.Env, envList...)
 		}
-		container.Env = core_util.UpsertEnvVars(container.Env, envList...)
 
 		if es.elasticsearch.Spec.EnableSSL {
 			certVolumeMount := corev1.VolumeMount{
@@ -90,8 +93,8 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []corev1.Container
 				MountPath: ExporterCertDir,
 			}
 			container.VolumeMounts = core_util.UpsertVolumeMount(container.VolumeMounts, certVolumeMount)
-			// TODO: check here
-			esCaFlag := "--es.ca=" + filepath.Join(ExporterCertDir, "root.pem")
+
+			esCaFlag := "--es.ca=" + filepath.Join(ExporterCertDir, certlib.RootCert)
 
 			// upsert container Args
 			func() {
