@@ -26,7 +26,7 @@ import (
 	distapi "kubedb.dev/elasticsearch/pkg/distribution/api"
 	"kubedb.dev/elasticsearch/pkg/distribution/elastic_stack"
 	"kubedb.dev/elasticsearch/pkg/distribution/open_distro"
-	"kubedb.dev/elasticsearch/pkg/distribution/search_gaurd"
+	"kubedb.dev/elasticsearch/pkg/distribution/search_guard"
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +55,7 @@ func NewElasticsearch(kc kubernetes.Interface, extClient cs.Interface, es *api.E
 	} else if esVersion.Spec.AuthPlugin == catalog.ElasticsearchAuthPluginOpenDistro {
 		return open_distro.New(kc, extClient, es, esVersion), nil
 	} else if esVersion.Spec.AuthPlugin == catalog.ElasticsearchAuthPluginSearchGuard {
-		return search_gaurd.New(kc, extClient, es, esVersion), nil
+		return search_guard.New(kc, extClient, es, esVersion), nil
 	} else {
 		return nil, errors.New("Unknown elasticsearch auth plugin")
 	}

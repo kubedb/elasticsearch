@@ -22,6 +22,7 @@ import (
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/pkg/eventer"
+	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
 
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
@@ -49,7 +50,8 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 		if err != nil {
 			return kutil.VerbUnchanged, errors.Wrapf(err, "failed to read certificate secret for Elasticsearch %s/%s", db.Namespace, db.Name)
 		}
-		if v, ok := certSecret.Data["root.pem"]; !ok {
+
+		if v, ok := certSecret.Data[certlib.RootCert]; !ok {
 			return kutil.VerbUnchanged, errors.Errorf("root.pem is missing in certificate secret for Elasticsearch %s/%s", db.Namespace, db.Name)
 		} else {
 			caBundle = v

@@ -14,31 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package search_gaurd
+package search_guard
 
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 
 	"github.com/appscode/go/crypto/rand"
-	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	AdminUser          = "admin"
-	KeyAdminUserName   = "ADMIN_USERNAME"
-	KeyAdminPassword   = "ADMIN_PASSWORD"
-	ReadAllUser        = "readall"
-	KeyReadAllUserName = "READALL_USERNAME"
-	KeyReadAllPassword = "READALL_PASSWORD"
+	AdminUser               = "admin"
+	KibanaserverUser        = "kibanaserver"
+	KeyAdminUserName        = "ADMIN_USERNAME"
+	KeyAdminPassword        = "ADMIN_PASSWORD"
+	KeyKibanaServerUserName = "KIBANASERVER_USERNAME"
+	KeyKibanaServerPassword = "KIBANASERVER_PASSWORD"
 )
 
 func (es *Elasticsearch) EnsureDatabaseSecret() error {
@@ -72,9 +69,13 @@ func (es *Elasticsearch) createDatabaseSecret() (*corev1.SecretVolumeSource, err
 		}, nil
 	}
 
-	data, err := getSecretDataForSG(es.esVersion)
-	if err != nil {
-		return nil, err
+	adminPassword := rand.Characters(8)
+	kibanaPassword := rand.Characters(8)
+	var data = map[string][]byte{
+		KeyAdminUserName:        []byte(AdminUser),
+		KeyAdminPassword:        []byte(adminPassword),
+		KeyKibanaServerUserName: []byte(KibanaserverUser),
+		KeyKibanaServerPassword: []byte(kibanaPassword),
 	}
 
 	name := fmt.Sprintf("%v-auth", es.elasticsearch.OffshootName())
@@ -86,6 +87,7 @@ func (es *Elasticsearch) createDatabaseSecret() (*corev1.SecretVolumeSource, err
 		Type: corev1.SecretTypeOpaque,
 		Data: data,
 	}
+
 	if _, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Create(context.TODO(), secret, metav1.CreateOptions{}); err != nil {
 		return nil, err
 	}
@@ -95,45 +97,8 @@ func (es *Elasticsearch) createDatabaseSecret() (*corev1.SecretVolumeSource, err
 	}, nil
 }
 
-func getSecretDataForSG(esVersion *v1alpha1.ElasticsearchVersion) (map[string][]byte, error) {
-	adminPassword := rand.Characters(8)
-	hashedAdminPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	readallPassword := rand.Characters(8)
-	hashedReadallPassword, err := bcrypt.GenerateFromPassword([]byte(readallPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	data := map[string][]byte{
-		KeyAdminUserName:        []byte(AdminUser),
-		KeyAdminPassword:        []byte(adminPassword),
-		KeyReadAllUserName:      []byte(ReadAllUser),
-		KeyReadAllPassword:      []byte(readallPassword),
-		"sg_action_groups.yml":  []byte(action_group),
-		"sg_config.yml":         []byte(config),
-		"sg_internal_users.yml": []byte(fmt.Sprintf(internal_user, hashedAdminPassword, hashedReadallPassword)),
-		"sg_roles.yml":          []byte(roles),
-		"sg_roles_mapping.yml":  []byte(roles_mapping),
-	}
-	if strings.HasPrefix(esVersion.Spec.Version, "7.") {
-		data["sg_action_groups.yml"] = []byte(action_group_es7)
-		data["sg_config.yml"] = []byte(config_es7)
-		data["sg_internal_users.yml"] = []byte(fmt.Sprintf(internal_user_es7, hashedAdminPassword, hashedReadallPassword))
-		data["sg_roles.yml"] = []byte(roles_es7)
-		data["sg_roles_mapping.yml"] = []byte(roles_mapping_es7)
-		data["sg_tenants.yml"] = []byte(tenants)
-	}
-
-	return data, nil
-}
-
 func (es *Elasticsearch) findDatabaseSecret() (*corev1.Secret, error) {
 	name := fmt.Sprintf("%v-auth", es.elasticsearch.OffshootName())
-
 	secret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package search_gaurd
+package search_guard
 
 import (
 	"fmt"
@@ -23,7 +23,6 @@ import (
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 
 	"github.com/appscode/go/types"
-	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	kutil "kmodules.xyz/client-go"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -44,8 +43,6 @@ const (
 )
 
 func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
-	glog.Infof("Ensuring master nodes for Elasticsearch: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Name)
-
 	statefulSetName := es.elasticsearch.OffshootName()
 	masterNode := es.elasticsearch.Spec.Topology.Master
 
@@ -79,20 +76,16 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
 		{
-			Name:  "NODE_INGEST",
+			Name:  "node.ingest",
 			Value: "false",
 		},
 		{
-			Name:  "NODE_MASTER",
+			Name:  "node.master",
 			Value: "true",
 		},
 		{
-			Name:  "NODE_DATA",
+			Name:  "node.data",
 			Value: "false",
-		},
-		{
-			Name:  "NUMBER_OF_MASTERS",
-			Value: fmt.Sprintf("%v", (*replicas/2)+1),
 		},
 	}
 
@@ -101,8 +94,13 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 	// soon as the cluster is up and running.
 	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, corev1.EnvVar{
-			Name:  "INITIAL_MASTER_NODES",
+			Name:  "cluster.initial_master_nodes",
 			Value: es.getInitialMasterNodes(),
+		})
+	} else {
+		envList = core_util.UpsertEnvVars(envList, corev1.EnvVar{
+			Name:  "discovery.zen.minimum_master_nodes",
+			Value: fmt.Sprintf("%v", (*replicas/2)+1),
 		})
 	}
 
@@ -134,94 +132,9 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 	}
 
 	return es.ensureStatefulSet(&masterNode, statefulSetName, labels, replicas, NodeRoleMaster, envList, initEnvList)
-
-}
-
-func (es *Elasticsearch) EnsureClientNodes() (kutil.VerbType, error) {
-	glog.Infof("Ensuring client nodes for Elasticsearch: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Name)
-
-	statefulSetName := es.elasticsearch.OffshootName()
-	clientNode := es.elasticsearch.Spec.Topology.Client
-
-	if clientNode.Prefix != "" {
-		statefulSetName = fmt.Sprintf("%v-%v", clientNode.Prefix, statefulSetName)
-	} else {
-		statefulSetName = fmt.Sprintf("%v-%v", DefaultClientNodePrefix, statefulSetName)
-	}
-
-	labels := map[string]string{
-		NodeRoleClient: NodeRoleSet,
-	}
-
-	heapSize := int64(134217728) // 128mb
-	if request, found := clientNode.Resources.Requests[corev1.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = getHeapSizeForNode(request.Value())
-	}
-
-	// Environment variable list for main container.
-	// These are node specific, i.e. changes depending on node type.
-	// Following are for Client node:
-	envList := []corev1.EnvVar{
-		{
-			Name:  "ES_JAVA_OPTS",
-			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
-		},
-		{
-			Name:  "MODE",
-			Value: "client",
-		},
-		{
-			Name:  "NODE_MASTER",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_DATA",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_INGEST",
-			Value: "true",
-		},
-	}
-	// Upsert common environment variables.
-	// These are same for all type of node.
-	envList = es.upsertContainerEnv(envList)
-
-	// add/overwrite user provided env; these are provided via crd spec
-	envList = core_util.UpsertEnvVars(envList, es.elasticsearch.Spec.PodTemplate.Spec.Env...)
-
-	// Environment variables for init container (i.e. config-merger)
-	initEnvList := []corev1.EnvVar{
-		{
-			Name:  "NODE_MASTER",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_DATA",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_INGEST",
-			Value: "true",
-		},
-		{
-			Name:  "AUTH_PLUGIN",
-			Value: string(es.esVersion.Spec.AuthPlugin),
-		},
-	}
-
-	replicas := types.Int32P(1)
-	if clientNode.Replicas != nil {
-		replicas = clientNode.Replicas
-	}
-
-	return es.ensureStatefulSet(&clientNode, statefulSetName, labels, replicas, NodeRoleClient, envList, initEnvList)
-
 }
 
 func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
-	glog.Infof("Ensuring data nodes for Elasticsearch: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Name)
-
 	statefulSetName := es.elasticsearch.OffshootName()
 	dataNode := es.elasticsearch.Spec.Topology.Data
 
@@ -249,16 +162,16 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
 		{
-			Name:  "NODE_MASTER",
+			Name:  "node.ingest",
 			Value: "false",
 		},
 		{
-			Name:  "NODE_DATA",
+			Name:  "node.master",
+			Value: "false",
+		},
+		{
+			Name:  "node.data",
 			Value: "true",
-		},
-		{
-			Name:  "NODE_INGEST",
-			Value: "false",
 		},
 	}
 	// Upsert common environment variables.
@@ -297,9 +210,82 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 
 }
 
-func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
-	glog.Infof("Ensuring combined nodes for Elasticsearch: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Name)
+func (es *Elasticsearch) EnsureClientNodes() (kutil.VerbType, error) {
+	statefulSetName := es.elasticsearch.OffshootName()
+	clientNode := es.elasticsearch.Spec.Topology.Client
 
+	if clientNode.Prefix != "" {
+		statefulSetName = fmt.Sprintf("%v-%v", clientNode.Prefix, statefulSetName)
+	} else {
+		statefulSetName = fmt.Sprintf("%v-%v", DefaultClientNodePrefix, statefulSetName)
+	}
+
+	labels := map[string]string{
+		NodeRoleClient: NodeRoleSet,
+	}
+
+	heapSize := int64(134217728) // 128mb
+	if request, found := clientNode.Resources.Requests[corev1.ResourceMemory]; found && request.Value() > 0 {
+		heapSize = getHeapSizeForNode(request.Value())
+	}
+
+	// Environment variable list for main container.
+	// These are node specific, i.e. changes depending on node type.
+	// Following are for Client node:
+	envList := []corev1.EnvVar{
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
+		},
+		{
+			Name:  "node.ingest",
+			Value: "true",
+		},
+		{
+			Name:  "node.master",
+			Value: "false",
+		},
+		{
+			Name:  "node.data",
+			Value: "false",
+		},
+	}
+	// Upsert common environment variables.
+	// These are same for all type of node.
+	envList = es.upsertContainerEnv(envList)
+
+	// add/overwrite user provided env; these are provided via crd spec
+	envList = core_util.UpsertEnvVars(envList, es.elasticsearch.Spec.PodTemplate.Spec.Env...)
+
+	// Environment variables for init container (i.e. config-merger)
+	initEnvList := []corev1.EnvVar{
+		{
+			Name:  "NODE_MASTER",
+			Value: "false",
+		},
+		{
+			Name:  "NODE_DATA",
+			Value: "false",
+		},
+		{
+			Name:  "NODE_INGEST",
+			Value: "true",
+		},
+		{
+			Name:  "AUTH_PLUGIN",
+			Value: string(es.esVersion.Spec.AuthPlugin),
+		},
+	}
+
+	replicas := types.Int32P(1)
+	if clientNode.Replicas != nil {
+		replicas = clientNode.Replicas
+	}
+
+	return es.ensureStatefulSet(&clientNode, statefulSetName, labels, replicas, NodeRoleClient, envList, initEnvList)
+}
+
+func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 	statefulSetName := es.elasticsearch.OffshootName()
 	combinedNode := es.getCombinedNode()
 
@@ -330,20 +316,20 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
 		},
 		{
-			Name:  "NODE_INGEST",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_MASTER",
+			Name:  "node.ingest",
 			Value: "true",
 		},
 		{
-			Name:  "NODE_DATA",
-			Value: "false",
+			Name:  "node.master",
+			Value: "true",
 		},
 		{
-			Name:  "NUMBER_OF_MASTERS",
-			Value: fmt.Sprintf("%v", (*replicas/2)+1),
+			Name:  "node.data",
+			Value: "true",
+		},
+		{
+			Name:  "AUTH_PLUGIN",
+			Value: string(es.esVersion.Spec.AuthPlugin),
 		},
 	}
 
@@ -352,8 +338,13 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 	// soon as the cluster is up and running.
 	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, corev1.EnvVar{
-			Name:  "INITIAL_MASTER_NODES",
+			Name:  "cluster.initial_master_nodes",
 			Value: es.getInitialMasterNodes(),
+		})
+	} else {
+		envList = core_util.UpsertEnvVars(envList, corev1.EnvVar{
+			Name:  "discovery.zen.minimum_master_nodes",
+			Value: fmt.Sprintf("%v", (*replicas/2)+1),
 		})
 	}
 
@@ -378,10 +369,6 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 			Name:  "NODE_INGEST",
 			Value: "true",
 		},
-		{
-			Name:  "AUTH_PLUGIN",
-			Value: string(es.esVersion.Spec.AuthPlugin),
-		},
 	}
 
 	// For affinity, NodeRoleClient is used.
@@ -402,8 +389,8 @@ func (es *Elasticsearch) getCombinedNode() *api.ElasticsearchNode {
 
 // Ref:
 //	- https://www.elastic.co/guide/en/elasticsearch/reference/7.6/heap-size.html#heap-size
-//	- no more than 50% of your physical RAM
-//	- no more than 32GB that the JVM uses for compressed object pointers (compressed oops)
+//  - no more than 50% of your physical RAM
+//  - no more than 32GB that the JVM uses for compressed object pointers (compressed oops)
 // 	- no more than 26GB for zero-based compressed oops;
 func getHeapSizeForNode(val int64) int64 {
 	// no more than 50% of main memory (RAM)

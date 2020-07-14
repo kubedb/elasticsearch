@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package search_gaurd
+package search_guard
 
 import (
 	"errors"
@@ -90,7 +90,7 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []corev1.Container
 				MountPath: ExporterCertDir,
 			}
 			container.VolumeMounts = core_util.UpsertVolumeMount(container.VolumeMounts, certVolumeMount)
-			// TODO: check here
+
 			esCaFlag := "--es.ca=" + filepath.Join(ExporterCertDir, "root.pem")
 
 			// upsert container Args
