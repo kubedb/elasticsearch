@@ -349,7 +349,7 @@ install:
 		--set operator.registry=$(REGISTRY) \
 		--set operator.repository=es-operator \
 		--set operator.tag=$(TAG) \
-		--set imagePullPolicy=IfNotPresent \
+		--set imagePullPolicy=Always \
 		$(IMAGE_PULL_SECRETS); \
 	kubectl wait --for=condition=Available apiservice -l 'app.kubernetes.io/name=kubedb,app.kubernetes.io/instance=kubedb' --timeout=5m; \
 	until kubectl get crds elasticsearchversions.catalog.kubedb.com -o=jsonpath='{.items[0].metadata.name}' &> /dev/null; do sleep 1; done; \
