@@ -119,7 +119,6 @@ spec:
             - exporter
             - initContainer
             - podSecurityPolicies
-            - tools
             - version
             type: object
         type: object

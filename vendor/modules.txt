@@ -1128,9 +1128,13 @@ kmodules.xyz/prober/api/v1
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
 <<<<<<< HEAD
+<<<<<<< HEAD
 # kubedb.dev/apimachinery v0.14.0-beta.1
 =======
 # kubedb.dev/apimachinery v0.14.0-beta.0.0.20200708210729-5663e08f9b2d
+=======
+# kubedb.dev/apimachinery v0.14.0-beta.1.0.20200722084427-0c5a1e9b0f24
+>>>>>>> Add various fixes
 ## explicit
 >>>>>>> Remove comments
 kubedb.dev/apimachinery/apis

@@ -71,11 +71,6 @@ snapshotrestore:
 `
 
 var searchguard_security_enabled = `######## Start Search Guard Configuration ########
-# disable x-pack
-xpack.security.enabled: false
-xpack.ml.enabled: false
-xpack.watcher.enabled: false
-xpack.monitoring.collection.enabled: true
 
 searchguard.enterprise_modules_enabled: false
 
