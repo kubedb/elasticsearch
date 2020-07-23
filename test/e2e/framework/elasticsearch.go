@@ -148,7 +148,7 @@ func (f *Framework) PatchElasticsearch(meta metav1.ObjectMeta, transform func(*a
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
-	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
+	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 }
 
 func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncAssertion {

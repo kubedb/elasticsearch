@@ -1061,12 +1061,8 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-<<<<<<< HEAD
 # kmodules.xyz/client-go v0.0.0-20200723053948-317b6023eb5d
-=======
-# kmodules.xyz/client-go v0.0.0-20200714060506-0b57b4060595
 ## explicit
->>>>>>> Remove comments
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/api/v1
@@ -1127,16 +1123,8 @@ kmodules.xyz/prober/api/v1
 ## explicit
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-<<<<<<< HEAD
-<<<<<<< HEAD
-# kubedb.dev/apimachinery v0.14.0-beta.1
-=======
-# kubedb.dev/apimachinery v0.14.0-beta.0.0.20200708210729-5663e08f9b2d
-=======
 # kubedb.dev/apimachinery v0.14.0-beta.1.0.20200722084427-0c5a1e9b0f24
->>>>>>> Add various fixes
 ## explicit
->>>>>>> Remove comments
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/catalog
 kubedb.dev/apimachinery/apis/catalog/v1alpha1
@@ -1211,10 +1199,7 @@ sigs.k8s.io/structured-merge-diff/v3/value
 ## explicit
 sigs.k8s.io/yaml
 # stash.appscode.dev/apimachinery v0.10.0-beta.1
-<<<<<<< HEAD
-=======
 ## explicit
->>>>>>> Remove comments
 stash.appscode.dev/apimachinery/apis
 stash.appscode.dev/apimachinery/apis/repositories
 stash.appscode.dev/apimachinery/apis/repositories/v1alpha1
