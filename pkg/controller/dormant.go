@@ -231,7 +231,7 @@ func (c *Controller) haltDatabase(db *api.Elasticsearch) error {
 		if err := c.Client.
 			CoreV1().
 			Services(db.Namespace).
-			Delete(context.TODO(), svc.Name, meta_util.DeleteInForeground()); err != nil {
+			Delete(context.TODO(), svc.Name, meta_util.DeleteInBackground()); err != nil {
 			return err
 		}
 	}
