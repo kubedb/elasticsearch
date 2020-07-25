@@ -271,10 +271,6 @@ func (es *Elasticsearch) EnsureClientNodes() (kutil.VerbType, error) {
 			Name:  "NODE_INGEST",
 			Value: "true",
 		},
-		{
-			Name:  "AUTH_PLUGIN",
-			Value: string(es.esVersion.Spec.AuthPlugin),
-		},
 	}
 
 	replicas := types.Int32P(1)

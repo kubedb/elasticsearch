@@ -327,16 +327,12 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 			Name:  "node.data",
 			Value: "true",
 		},
-		{
-			Name:  "AUTH_PLUGIN",
-			Value: string(es.esVersion.Spec.AuthPlugin),
-		},
 	}
 
 	// These Env are only required for master nodes to bootstrap
 	// for the vary first time. Need to remove from EnvList as
 	// soon as the cluster is up and running.
-	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
+	if strings.HasPrefix(es.esVersion.Spec.Version, "1.") {
 		envList = core_util.UpsertEnvVars(envList, corev1.EnvVar{
 			Name:  "cluster.initial_master_nodes",
 			Value: es.getInitialMasterNodes(),

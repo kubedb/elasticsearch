@@ -195,10 +195,6 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 			Name:  "NODE_INGEST",
 			Value: "false",
 		},
-		{
-			Name:  "AUTH_PLUGIN",
-			Value: string(es.esVersion.Spec.AuthPlugin),
-		},
 	}
 
 	replicas := types.Int32P(1)
