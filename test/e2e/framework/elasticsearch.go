@@ -327,7 +327,7 @@ func (f *Framework) IndicesCount(obj *api.Elasticsearch, indicesCount int) int {
 	es, err := f.GetElasticsearch(obj.ObjectMeta)
 	Expect(err).NotTo(HaveOccurred())
 
-	if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginSearchGuard &&
+	if (esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginSearchGuard || esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginOpenDistro) &&
 		!es.Spec.DisableSecurity {
 		return indicesCount + 1
 	}

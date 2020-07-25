@@ -29,7 +29,6 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/log"
 	. "github.com/onsi/gomega"
-	"golang.org/x/crypto/bcrypt"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -212,18 +211,6 @@ func (i *Invocation) SecretForDatabaseAuthentication(es *api.Elasticsearch, mang
 	//mangedByKubeDB mimics a secret created and manged by kubedb and not user.
 	// It should get deleted during wipeout
 	adminPassword := rand.Characters(8)
-	hashedAdminPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
-	if err != nil {
-		log.Errorln("error Generating hashedAdminPassword. Err = ", err)
-		return nil
-	}
-
-	readallPassword := rand.Characters(8)
-	hashedReadallPassword, err := bcrypt.GenerateFromPassword([]byte(readallPassword), bcrypt.DefaultCost)
-	if err != nil {
-		log.Errorln("error Generating hashedReadallPassword. Err = ", err)
-		return nil
-	}
 
 	var dbObjectMeta = metav1.ObjectMeta{
 		Name:      fmt.Sprintf("kubedb-%v-%v", es.Name, CustomSecretSuffix),
@@ -237,17 +224,10 @@ func (i *Invocation) SecretForDatabaseAuthentication(es *api.Elasticsearch, mang
 
 	var data map[string][]byte
 
-	if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginSearchGuard {
+	if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginSearchGuard || esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginOpenDistro {
 		data = map[string][]byte{
-			KeyAdminUserName:        []byte(AdminUser),
-			KeyAdminPassword:        []byte(adminPassword),
-			KeyReadAllUserName:      []byte(ReadAllUser),
-			KeyReadAllPassword:      []byte(readallPassword),
-			"sg_action_groups.yml":  []byte(action_group),
-			"sg_config.yml":         []byte(config),
-			"sg_internal_users.yml": []byte(fmt.Sprintf(internal_user, hashedAdminPassword, hashedReadallPassword)),
-			"sg_roles.yml":          []byte(roles),
-			"sg_roles_mapping.yml":  []byte(roles_mapping),
+			KeyAdminUserName: []byte(AdminUser),
+			KeyAdminPassword: []byte(adminPassword),
 		}
 	} else if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginXpack {
 		data = map[string][]byte{
