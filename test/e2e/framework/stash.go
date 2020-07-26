@@ -125,8 +125,8 @@ func (f *Framework) EventuallySnapshotInRepository(meta metav1.ObjectMeta) Gomeg
 
 			return repository.Status.SnapshotCount
 		},
-		time.Minute*10,
-		time.Second*5,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
 }
 

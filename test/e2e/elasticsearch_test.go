@@ -89,13 +89,16 @@ var _ = Describe("Elasticsearch", func() {
 		defer elasticClient.Stop()
 		defer f.Tunnel.Close()
 
+		indicesCount, err = f.ElasticsearchIndicesCount(elasticClient)
+		Expect(err).NotTo(HaveOccurred())
+
 		By("Creating new indices")
 		err = elasticClient.CreateIndex(2)
 		Expect(err).NotTo(HaveOccurred())
 		indicesCount += 2
 
 		By("Checking new indices")
-		f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+		f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 	}
 
 	var deleteTestResource = func() {
@@ -202,7 +205,7 @@ var _ = Describe("Elasticsearch", func() {
 					defer f.Tunnel.Close()
 
 					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 				}
 
 				Context("with Default Resource", func() {
@@ -469,7 +472,7 @@ var _ = Describe("Elasticsearch", func() {
 					defer f.Tunnel.Close()
 
 					By("Checking indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 				}
 
 				Context("From GCS backend", func() {
@@ -633,7 +636,7 @@ var _ = Describe("Elasticsearch", func() {
 				defer f.Tunnel.Close()
 
 				By("Checking existing indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 			}
 
 			Context("with TerminationPolicyDoNotTerminate", func() {
@@ -747,7 +750,7 @@ var _ = Describe("Elasticsearch", func() {
 					defer f.Tunnel.Close()
 
 					By("Checking existing indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 				}
 
 				It("should create dormantdatabase successfully", shouldRunWithTerminationHalt)
@@ -965,7 +968,7 @@ var _ = Describe("Elasticsearch", func() {
 				defer f.Tunnel.Close()
 
 				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 			}
 
 			Context("With allowed Envs", func() {
@@ -1059,10 +1062,10 @@ var _ = Describe("Elasticsearch", func() {
 
 			var shouldRunWithCustomConfig = func() {
 				userConfig.Data = map[string]string{
-					"common-config.yaml": f.GetCommonConfig(elasticsearch),
-					"master-config.yaml": f.GetMasterConfig(elasticsearch),
-					"client-config.yaml": f.GetClientConfig(elasticsearch),
-					"data-config.yaml":   f.GetDataConfig(elasticsearch),
+					"common-elasticsearch.yml": f.GetCommonConfig(elasticsearch),
+					"master-elasticsearch.yml": f.GetMasterConfig(elasticsearch),
+					"client-elasticsearch.yml": f.GetClientConfig(elasticsearch),
+					"data-elasticsearch.yml":   f.GetDataConfig(elasticsearch),
 				}
 
 				By("Creating configMap: " + userConfig.Name)

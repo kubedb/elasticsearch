@@ -20,6 +20,7 @@ import (
 	"context"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	v1alpha12 "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
@@ -32,6 +33,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"sigs.k8s.io/yaml"
+)
+
+var (
+	WaitLoopTimeout  = 10 * time.Minute
+	WaitLoopInterval = 5 * time.Second
 )
 
 func (f *Invocation) getDataPath(elasticsearch *v1alpha12.Elasticsearch) string {
