@@ -366,7 +366,6 @@ var _ = Describe("Elasticsearch", func() {
 		})
 
 		Context("Initialize", func() {
-
 			// To run this test,
 			// 1st: Deploy stash latest operator
 			// https://github.com/stashed/elasticsearch
@@ -376,6 +375,10 @@ var _ = Describe("Elasticsearch", func() {
 				var repo *stashV1alpha1.Repository
 
 				BeforeEach(func() {
+					// TODO:
+					//  - skipping these tests for now, until the stash is updated
+					Skip("Skipping these tests: Stash isn't updated")
+
 					if !f.FoundStashCRDs() {
 						Skip("Skipping tests for stash integration. reason: stash operator is not running.")
 					}
