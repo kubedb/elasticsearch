@@ -900,38 +900,26 @@ var _ = Describe("Elasticsearch", func() {
 
 			allowedEnvList := []core.EnvVar{
 				{
-					Name:  "CLUSTER_NAME",
+					Name:  "cluster.name",
 					Value: "kubedb-es-e2e-cluster",
 				},
 				{
 					Name:  "ES_JAVA_OPTS",
 					Value: "-Xms256m -Xmx256m",
 				},
-				{
-					Name:  "REPO_LOCATIONS",
-					Value: "/backup",
-				},
-				{
-					Name:  "MEMORY_LOCK",
-					Value: "true",
-				},
-				{
-					Name:  "HTTP_ENABLE",
-					Value: "true",
-				},
 			}
 
 			forbiddenEnvList := []core.EnvVar{
 				{
-					Name:  "NODE_NAME",
+					Name:  "node.name",
 					Value: "kubedb-es-e2e-node",
 				},
 				{
-					Name:  "NODE_MASTER",
+					Name:  "node.master",
 					Value: "true",
 				},
 				{
-					Name:  "NODE_DATA",
+					Name:  "node.data",
 					Value: "true",
 				},
 			}
@@ -1045,7 +1033,7 @@ var _ = Describe("Elasticsearch", func() {
 					_, _, err := util.PatchElasticsearch(context.TODO(), f.ExtClient().KubedbV1alpha1(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
-								Name:  "CLUSTER_NAME",
+								Name:  "cluster.name",
 								Value: "kubedb-es-e2e-cluster-patched",
 							},
 						}
@@ -1062,10 +1050,10 @@ var _ = Describe("Elasticsearch", func() {
 
 			var shouldRunWithCustomConfig = func() {
 				userConfig.Data = map[string]string{
-					"common-elasticsearch.yml": f.GetCommonConfig(elasticsearch),
-					"master-elasticsearch.yml": f.GetMasterConfig(elasticsearch),
-					"client-elasticsearch.yml": f.GetClientConfig(elasticsearch),
-					"data-elasticsearch.yml":   f.GetDataConfig(elasticsearch),
+					"common-elasticsearch.yml": f.GetCommonConfig(),
+					"master-elasticsearch.yml": f.GetMasterConfig(),
+					"client-elasticsearch.yml": f.GetClientConfig(),
+					"data-elasticsearch.yml":   f.GetDataConfig(),
 				}
 
 				By("Creating configMap: " + userConfig.Name)

@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	v1alpha12 "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/elasticsearch/pkg/util/es"
 
@@ -40,20 +39,12 @@ var (
 	WaitLoopInterval = 5 * time.Second
 )
 
-func (f *Invocation) getDataPath(elasticsearch *v1alpha12.Elasticsearch) string {
-	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), string(elasticsearch.Spec.Version), metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-
-	path := "/data"
-	if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginXpack {
-		path = "/usr/share/elasticsearch/data"
-	}
-
-	return path
+func (f *Invocation) getDataPath() string {
+	return "/usr/share/elasticsearch/data"
 }
 
-func (f *Invocation) GetCommonConfig(elasticsearch *v1alpha12.Elasticsearch) string {
-	dataPath := f.getDataPath(elasticsearch)
+func (f *Invocation) GetCommonConfig() string {
+	dataPath := f.getDataPath()
 
 	commonSetting := es.Setting{
 		Path: &es.PathSetting{
@@ -65,8 +56,8 @@ func (f *Invocation) GetCommonConfig(elasticsearch *v1alpha12.Elasticsearch) str
 	return string(data)
 }
 
-func (f *Invocation) GetMasterConfig(elasticsearch *v1alpha12.Elasticsearch) string {
-	dataPath := f.getDataPath(elasticsearch)
+func (f *Invocation) GetMasterConfig() string {
+	dataPath := f.getDataPath()
 
 	masterSetting := es.Setting{
 		Path: &es.PathSetting{
@@ -78,8 +69,8 @@ func (f *Invocation) GetMasterConfig(elasticsearch *v1alpha12.Elasticsearch) str
 	return string(data)
 }
 
-func (f *Invocation) GetClientConfig(elasticsearch *v1alpha12.Elasticsearch) string {
-	dataPath := f.getDataPath(elasticsearch)
+func (f *Invocation) GetClientConfig() string {
+	dataPath := f.getDataPath()
 	clientSetting := es.Setting{
 		Path: &es.PathSetting{
 			Data: []string{filepath.Join(dataPath, "/elasticsearch/client-datadir")},
@@ -90,8 +81,8 @@ func (f *Invocation) GetClientConfig(elasticsearch *v1alpha12.Elasticsearch) str
 	return string(data)
 }
 
-func (f *Invocation) GetDataConfig(elasticsearch *v1alpha12.Elasticsearch) string {
-	dataPath := f.getDataPath(elasticsearch)
+func (f *Invocation) GetDataConfig() string {
+	dataPath := f.getDataPath()
 	dataSetting := es.Setting{
 		Path: &es.PathSetting{
 			Data: []string{filepath.Join(dataPath, "/elasticsearch/data-datadir")},
@@ -116,7 +107,7 @@ func (f *Invocation) IsUsingProvidedConfig(elasticsearch *v1alpha12.Elasticsearc
 	for _, node := range nodeInfo {
 		if string_util.Contains(node.Roles, "master") || strings.HasSuffix(node.Name, "master") {
 			masterConfig := &es.Setting{}
-			err := yaml.Unmarshal([]byte(f.GetMasterConfig(elasticsearch)), masterConfig)
+			err := yaml.Unmarshal([]byte(f.GetMasterConfig()), masterConfig)
 			Expect(err).NotTo(HaveOccurred())
 
 			if !string_util.EqualSlice(node.Settings.Path.Data, masterConfig.Path.Data) {
@@ -128,7 +119,7 @@ func (f *Invocation) IsUsingProvidedConfig(elasticsearch *v1alpha12.Elasticsearc
 			strings.HasSuffix(node.Name, "client") { // master config has higher precedence
 
 			clientConfig := &es.Setting{}
-			err := yaml.Unmarshal([]byte(f.GetClientConfig(elasticsearch)), clientConfig)
+			err := yaml.Unmarshal([]byte(f.GetClientConfig()), clientConfig)
 			Expect(err).NotTo(HaveOccurred())
 
 			if !string_util.EqualSlice(node.Settings.Path.Data, clientConfig.Path.Data) {
@@ -139,7 +130,7 @@ func (f *Invocation) IsUsingProvidedConfig(elasticsearch *v1alpha12.Elasticsearc
 			!(string_util.Contains(node.Roles, "master") || string_util.Contains(node.Roles, "ingest"))) ||
 			strings.HasSuffix(node.Name, "data") { //master and ingest config has higher precedence
 			dataConfig := &es.Setting{}
-			err := yaml.Unmarshal([]byte(f.GetDataConfig(elasticsearch)), dataConfig)
+			err := yaml.Unmarshal([]byte(f.GetDataConfig()), dataConfig)
 			Expect(err).NotTo(HaveOccurred())
 			if !string_util.EqualSlice(node.Settings.Path.Data, dataConfig.Path.Data) {
 				return false
@@ -148,7 +139,7 @@ func (f *Invocation) IsUsingProvidedConfig(elasticsearch *v1alpha12.Elasticsearc
 
 		// check for common config
 		commonConfig := &es.Setting{}
-		err := yaml.Unmarshal([]byte(f.GetCommonConfig(elasticsearch)), commonConfig)
+		err := yaml.Unmarshal([]byte(f.GetCommonConfig()), commonConfig)
 		Expect(err).NotTo(HaveOccurred())
 		if node.Settings.Path.Logs != commonConfig.Path.Logs {
 			return false

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
@@ -164,8 +163,8 @@ func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncA
 			}
 			return true
 		},
-		time.Minute*5,
-		time.Second*5,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
 }
 
@@ -176,8 +175,8 @@ func (f *Framework) EventuallyElasticsearchPhase(meta metav1.ObjectMeta) GomegaA
 			Expect(err).NotTo(HaveOccurred())
 			return db.Status.Phase
 		},
-		time.Minute*5,
-		time.Second*5,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
 }
 
