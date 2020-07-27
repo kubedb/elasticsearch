@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	WaitLoopTimeout  = 10 * time.Minute
+	WaitLoopTimeout  = 5 * time.Minute
 	WaitLoopInterval = 5 * time.Second
 )
 
