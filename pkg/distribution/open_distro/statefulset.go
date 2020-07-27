@@ -162,7 +162,10 @@ func (es *Elasticsearch) ensureStatefulSet(
 		in.Spec.Template.Spec.ServiceAccountName = es.elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName
 
 		// Upsert volumeClaimTemplates if any
-		in.Spec.VolumeClaimTemplates = core_util.UpsertVolumeClaim(in.Spec.VolumeClaimTemplates, *pvc)
+		if pvc != nil {
+			in.Spec.VolumeClaimTemplates = core_util.UpsertVolumeClaim(in.Spec.VolumeClaimTemplates, *pvc)
+		}
+
 		// Upsert volumes
 		in.Spec.Template.Spec.Volumes = core_util.UpsertVolume(in.Spec.Template.Spec.Volumes, volumes...)
 
