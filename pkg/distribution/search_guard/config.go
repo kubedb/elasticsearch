@@ -103,12 +103,6 @@ searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_all_access"]
 
 var searchguard_security_disabled = `######## Start Search Guard Configuration ########
 
-# disable x-pack
-xpack.security.enabled: false
-xpack.ml.enabled: false
-xpack.watcher.enabled: false
-xpack.monitoring.collection.enabled: true
-
 searchguard.disabled: true
 
 ######## End Search Guard Demo Configuration ########
