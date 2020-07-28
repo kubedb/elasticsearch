@@ -150,6 +150,23 @@ func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
 	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
 }
 
+func (f *Framework) EventuallyServices(es *api.Elasticsearch) error {
+	sel, err := metav1.LabelSelectorAsSelector(metav1.SetAsLabelSelector(es.OffshootSelectors()))
+	if err != nil {
+		return err
+	}
+
+	return wait.PollImmediate(WaitLoopInterval, WaitLoopTimeout, func() (bool, error) {
+		svcList, err := f.kubeClient.CoreV1().Services(es.Namespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: sel.String(),
+		})
+		if err != nil {
+			return false, nil
+		}
+		return len(svcList.Items) == 0, nil
+	})
+}
+
 func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {

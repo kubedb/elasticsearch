@@ -136,6 +136,10 @@ var _ = Describe("Elasticsearch", func() {
 		By("Wait for elasticsearch to be deleted")
 		f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
+		By("Wait for elasticsearch services to be deleted")
+		err = f.EventuallyServices(elasticsearch)
+		Expect(err).NotTo(HaveOccurred())
+
 		By("Wait for elasticsearch resources to be wipedOut")
 		f.EventuallyWipedOut(elasticsearch.ObjectMeta).Should(Succeed())
 	}
@@ -325,6 +329,10 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Wait for elasticsearch services to be deleted")
+					err = f.EventuallyServices(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
 
 					By("Resume DB")
 					createAndWaitForRunning()
@@ -736,6 +744,10 @@ var _ = Describe("Elasticsearch", func() {
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
+					By("Wait for elasticsearch services to be deleted")
+					err = f.EventuallyServices(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
+
 					// create elasticsearch object again to resume it
 					By("Create (pause) Elasticsearch: " + elasticsearch.Name)
 					err = f.CreateElasticsearch(elasticsearch)
@@ -800,6 +812,10 @@ var _ = Describe("Elasticsearch", func() {
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
+					By("Wait for elasticsearch services to be deleted")
+					err = f.EventuallyServices(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
+
 					By("Check for deleted PVCs")
 					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
 
@@ -856,6 +872,10 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Wait for elasticsearch services to be deleted")
+					err = f.EventuallyServices(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
 
 					By("Check for deleted PVCs")
 					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
@@ -941,6 +961,10 @@ var _ = Describe("Elasticsearch", func() {
 
 				By("wait until elasticsearch is deleted")
 				f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
+
+				By("Wait for elasticsearch services to be deleted")
+				err = f.EventuallyServices(elasticsearch)
+				Expect(err).NotTo(HaveOccurred())
 
 				// create elasticsearch object again to resume it
 				By("Create Elasticsearch: " + elasticsearch.Name)
