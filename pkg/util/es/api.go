@@ -92,6 +92,7 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
 						InsecureSkipVerify: true,
+						MaxVersion:         tls.VersionTLS12,
 					},
 				},
 			}),
@@ -119,6 +120,7 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
 						InsecureSkipVerify: true,
+						MaxVersion:         tls.VersionTLS12,
 					},
 				},
 			}),
@@ -146,6 +148,7 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
 						InsecureSkipVerify: true,
+						MaxVersion:         tls.VersionTLS12,
 					},
 				},
 			}),
