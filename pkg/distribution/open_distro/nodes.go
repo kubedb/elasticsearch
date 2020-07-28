@@ -125,10 +125,6 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 			Name:  "NODE_INGEST",
 			Value: "false",
 		},
-		{
-			Name:  "AUTH_PLUGIN",
-			Value: string(es.esVersion.Spec.AuthPlugin),
-		},
 	}
 
 	return es.ensureStatefulSet(&masterNode, statefulSetName, labels, replicas, NodeRoleMaster, envList, initEnvList)
@@ -194,10 +190,6 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 		{
 			Name:  "NODE_INGEST",
 			Value: "false",
-		},
-		{
-			Name:  "AUTH_PLUGIN",
-			Value: string(es.esVersion.Spec.AuthPlugin),
 		},
 	}
 
@@ -270,10 +262,6 @@ func (es *Elasticsearch) EnsureClientNodes() (kutil.VerbType, error) {
 		{
 			Name:  "NODE_INGEST",
 			Value: "true",
-		},
-		{
-			Name:  "AUTH_PLUGIN",
-			Value: string(es.esVersion.Spec.AuthPlugin),
 		},
 	}
 
