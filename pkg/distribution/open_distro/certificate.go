@@ -34,7 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (es *Elasticsearch) EnsureCertSecret() error {
+func (es *Elasticsearch) EnsureCertSecrets() error {
 	if es.elasticsearch.Spec.DisableSecurity {
 		return nil
 	}

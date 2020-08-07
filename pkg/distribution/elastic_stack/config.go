@@ -18,12 +18,11 @@ package elastic_stack
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 )
@@ -35,64 +34,97 @@ const (
 	DatabaseConfigSecretSuffix = "config"
 )
 
-var xpack_config = `
+var xpack_security_enabled = `
 xpack.security.enabled: true
 
 xpack.security.transport.ssl.enabled: true
 xpack.security.transport.ssl.verification_mode: certificate
-xpack.security.transport.ssl.keystore.path: /usr/share/elasticsearch/config/certs/node.jks
-xpack.security.transport.ssl.keystore.password: ${KEY_PASS}
-xpack.security.transport.ssl.truststore.path: /usr/share/elasticsearch/config/certs/root.jks
-xpack.security.transport.ssl.truststore.password: ${KEY_PASS}
+xpack.security.transport.ssl.key: certs/transport/node-key.pem
+xpack.security.transport.ssl.certificate: certs/transport/node.pem 
+xpack.security.transport.ssl.certificate_authorities: [ "certs/transport/root-ca.pem" ]
+`
 
-xpack.security.http.ssl.enabled: ${SSL_ENABLE}
-xpack.security.http.ssl.keystore.path: /usr/share/elasticsearch/config/certs/client.jks
-xpack.security.http.ssl.keystore.password: ${KEY_PASS}
-xpack.security.http.ssl.truststore.path: /usr/share/elasticsearch/config/certs/root.jks
-xpack.security.http.ssl.truststore.password: ${KEY_PASS}
+var xpack_security_disabled = `
+xpack.security.enabled: false
+`
+
+var https_enabled = `
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.key:  certs/http/client-key.pem
+xpack.security.http.ssl.certificate: certs/http/client.pem
+xpack.security.http.ssl.certificate_authorities: [ "certs/http/root-ca.pem" ]
+`
+
+var https_disabled = `
+xpack.security.http.ssl.enabled: false
 `
 
 func (es *Elasticsearch) EnsureDefaultConfig() error {
-	if !es.elasticsearch.Spec.DisableSecurity {
-		if err := es.findDefaultConfig(); err != nil {
-			return err
-		}
-
-		secretMeta := metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix),
-			Namespace: es.elasticsearch.Namespace,
-		}
-		owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
-
-		if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *corev1.Secret) *corev1.Secret {
-			in.Labels = core_util.UpsertMap(in.Labels, es.elasticsearch.OffshootLabels())
-			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
-			in.Data = map[string][]byte{
-				ConfigFileName: []byte(xpack_config),
-			}
-			return in
-		}, metav1.PatchOptions{}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (es *Elasticsearch) findDefaultConfig() error {
-	sName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix)
-
-	secret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), sName, metav1.GetOptions{})
+	secret, err := es.findSecret(es.elasticsearch.ConfigSecretName())
 	if err != nil {
-		if kerr.IsNotFound(err) {
-			return nil
-		} else {
-			return err
-		}
+		return err
 	}
 
-	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch &&
-		secret.Labels[api.LabelDatabaseName] != es.elasticsearch.Name {
-		return fmt.Errorf(`intended k8s secret: "%v/%v" already exists`, es.elasticsearch.Namespace, sName)
+	if secret != nil {
+		// If the secret already exists,
+		// check whether it contains "elasticsearch.yml" file or not.
+		if value, ok := secret.Data[ConfigFileName]; !ok || len(value) == 0 {
+			return errors.New("elasticsearch.yml is missing")
+		}
+
+		// If secret is owned by the elasticsearch object,
+		// update the labels.
+		// Labels hold information like elasticsearch version,
+		// should be synced.
+		ctrl := metav1.GetControllerOf(secret)
+		if ctrl != nil &&
+			ctrl.Kind == api.ResourceKindElasticsearch && ctrl.Name == es.elasticsearch.Name {
+
+			// sync labels
+			if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secret.ObjectMeta, func(in *corev1.Secret) *corev1.Secret {
+				in.Labels = core_util.UpsertMap(in.Labels, es.elasticsearch.OffshootLabels())
+				return in
+			}, metav1.PatchOptions{}); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	// config secret isn't created yet.
+	// let's create it.
+	owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
+	secretMeta := metav1.ObjectMeta{
+		Name:      es.elasticsearch.ConfigSecretName(),
+		Namespace: es.elasticsearch.Namespace,
+	}
+
+	var config string
+
+	if !es.elasticsearch.Spec.DisableSecurity {
+		config = xpack_security_enabled
+
+		// If rest layer is secured with certs
+		if es.elasticsearch.Spec.EnableSSL {
+			config += https_enabled
+		} else {
+			config += https_disabled
+		}
+
+	} else {
+		config = xpack_security_disabled
+	}
+
+	if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *corev1.Secret) *corev1.Secret {
+		in.Labels = core_util.UpsertMap(in.Labels, es.elasticsearch.OffshootLabels())
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+		in.Data = map[string][]byte{
+			ConfigFileName: []byte(config),
+		}
+		return in
+	}, metav1.PatchOptions{}); err != nil {
+		return err
 	}
 
 	return nil

@@ -191,7 +191,7 @@ func (c *Controller) ensureElasticsearchNode(es *api.Elasticsearch) (*api.Elasti
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to get elasticsearch distribution")
 	}
 
-	if err = elastic.EnsureCertSecret(); err != nil {
+	if err = elastic.EnsureCertSecrets(); err != nil {
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to ensure certificates secret")
 	}
 

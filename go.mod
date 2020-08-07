@@ -12,27 +12,27 @@ require (
 	github.com/onsi/gomega v1.8.1
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79
 	gomodules.xyz/cert v1.0.4-0.20200612042655-54e341f911ab
 	gomodules.xyz/envsubst v0.1.0
 	gopkg.in/olivere/elastic.v5 v5.0.85
 	gopkg.in/olivere/elastic.v6 v6.2.31
-	k8s.io/api v0.18.3
-	k8s.io/apiextensions-apiserver v0.18.3
-	k8s.io/apimachinery v0.18.3
-	k8s.io/apiserver v0.18.3
+	k8s.io/api v0.18.5
+	k8s.io/apiextensions-apiserver v0.18.5
+	k8s.io/apimachinery v0.18.5
+	k8s.io/apiserver v0.18.5
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/kube-aggregator v0.18.3
-	kmodules.xyz/client-go v0.0.0-20200723053948-317b6023eb5d
+	k8s.io/kube-aggregator v0.18.5
+	kmodules.xyz/client-go v0.0.0-20200807081749-430fad8cd86b
 	kmodules.xyz/constants v0.0.0-20200506032633-a21e58ceec72
 	kmodules.xyz/custom-resources v0.0.0-20200604135349-9e9f5c4fdba9
 	kmodules.xyz/monitoring-agent-api v0.0.0-20200525002655-2aa50cb10ce9
 	kmodules.xyz/objectstore-api v0.0.0-20200521103120-92080446e04d
 	kmodules.xyz/offshoot-api v0.0.0-20200521035628-e135bf07b226
 	kmodules.xyz/webhook-runtime v0.0.0-20200522123600-ca70a7e28ed0
-	kubedb.dev/apimachinery v0.14.0-beta.1.0.20200722084427-0c5a1e9b0f24
+	kubedb.dev/apimachinery v0.14.0-beta.1.0.20200807112456-393d003e2ac8
 	sigs.k8s.io/yaml v1.2.0
 	stash.appscode.dev/apimachinery v0.10.0-beta.1
 )

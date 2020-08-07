@@ -24,7 +24,7 @@ import (
 
 type ElasticsearchInterface interface {
 	UpdatedElasticsearch() *api.Elasticsearch
-	EnsureCertSecret() error
+	EnsureCertSecrets() error
 	EnsureDatabaseSecret() error
 	EnsureDefaultConfig() error
 	EnsureMasterNodes() (kutil.VerbType, error)

@@ -53,12 +53,12 @@ func CreateCaCertificatePEM(certPath string) (*rsa.PrivateKey, *x509.Certificate
 		return nil, nil, errors.New("failed to generate CA certificate")
 	}
 
-	nodeKeyByte, err := cert.EncodePKCS8PrivateKeyPEM(caKey)
+	caKeyByte, err := cert.EncodePKCS8PrivateKeyPEM(caKey)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to encode private key")
 	}
 
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.RootKey), string(nodeKeyByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.RootKey), string(caKeyByte)) {
 		return nil, nil, errors.New("failed to write key for CA certificate")
 	}
 

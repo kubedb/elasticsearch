@@ -30,6 +30,9 @@ const (
 	Duration365d = time.Hour * 24 * 365
 	CertsDir     = "/tmp/certs/certs"
 
+	KeyEncodingPKCS8  = "pkcs8"
+	KeyEncodingPKCS12 = "pkcs12"
+
 	RootKey      = "root-key.pem"
 	RootCert     = "root-ca.pem"
 	RootKeyStore = "root.jks"
