@@ -349,14 +349,22 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 		es.elasticsearch.Spec.EnableSSL &&
 		nodeRole == NodeRoleClient {
 		volumes = core_util.UpsertVolume(volumes, corev1.Volume{
-			Name: "exporter-certs",
+			Name: es.elasticsearch.CertSecretVolumeName(api.ElasticsearchMetricsExporterCert),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: es.elasticsearch.Spec.CertificateSecret.SecretName,
+					SecretName: es.elasticsearch.MustCertSecretName(api.ElasticsearchMetricsExporterCert),
 					Items: []corev1.KeyToPath{
 						{
-							Key:  certlib.RootCert,
-							Path: certlib.RootCert,
+							Key:  certlib.CACert,
+							Path: certlib.CACert,
+						},
+						{
+							Key:  certlib.TLSCert,
+							Path: certlib.TLSCert,
+						},
+						{
+							Key:  certlib.TLSKey,
+							Path: certlib.TLSKey,
 						},
 					},
 				},

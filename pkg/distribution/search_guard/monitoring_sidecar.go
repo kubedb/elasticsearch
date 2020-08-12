@@ -26,6 +26,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 )
 
@@ -89,22 +90,19 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []corev1.Container
 
 		if es.elasticsearch.Spec.EnableSSL {
 			certVolumeMount := corev1.VolumeMount{
-				Name:      "exporter-certs",
+				Name:      es.elasticsearch.CertSecretVolumeName(api.ElasticsearchMetricsExporterCert),
 				MountPath: ExporterCertDir,
 			}
 			container.VolumeMounts = core_util.UpsertVolumeMount(container.VolumeMounts, certVolumeMount)
 
-			esCaFlag := "--es.ca=" + filepath.Join(ExporterCertDir, certlib.RootCert)
+			esCaFlags := []string{
+				"--es.ca=" + filepath.Join(ExporterCertDir, certlib.CACert),
+				"--es.client-cert=" + filepath.Join(ExporterCertDir, certlib.TLSCert),
+				"--es.client-private-key=" + filepath.Join(ExporterCertDir, certlib.TLSKey),
+			}
 
 			// upsert container Args
-			func() {
-				for _, v := range container.Args {
-					if v == esCaFlag {
-						return
-					}
-				}
-				container.Args = append(container.Args, esCaFlag)
-			}()
+			container.Args = meta_util.UpsertArgumentList(container.Args, esCaFlags)
 		}
 		containers = core_util.UpsertContainer(containers, container)
 	} else {
