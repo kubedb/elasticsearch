@@ -7640,8 +7640,6 @@ spec:
                     - kind
                     - name
                     type: object
-                required:
-                - issuerRef
                 type: object
               topology:
                 description: Elasticsearch topology for node specification

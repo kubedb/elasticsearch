@@ -37,7 +37,11 @@ import (
 	"gomodules.xyz/cert"
 )
 
-func CreateCaCertificatePEM(certPath string) (*rsa.PrivateKey, *x509.Certificate, error) {
+// Creates pkcs8 encoded certificates in pem format.
+// Generated secret contains:
+// 	- tls.crt: root-ca.crt (CA: true)
+//	- tls.key: root-ca.key
+func CreateCaCertificate(certPath string) (*rsa.PrivateKey, *x509.Certificate, error) {
 	cfg := cert.Config{
 		CommonName:   "KubeDB Com. Root CA",
 		Organization: []string{"Elasticsearch Operator"},
@@ -58,19 +62,24 @@ func CreateCaCertificatePEM(certPath string) (*rsa.PrivateKey, *x509.Certificate
 		return nil, nil, errors.Wrap(err, "failed to encode private key")
 	}
 
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.RootKey), string(caKeyByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.RootCAKey), string(caKeyByte)) {
 		return nil, nil, errors.New("failed to write key for CA certificate")
 	}
 
 	caCertByte := cert.EncodeCertPEM(caCert)
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.RootCert), string(caCertByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.RootCACert), string(caCertByte)) {
 		return nil, nil, errors.New("failed to write CA certificate")
 	}
 
 	return caKey, caCert, nil
 }
 
-func CreateNodeCertificatePEM(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
+// Creates pkcs8 encoded certificates in pem format singed by given CA ( ca.crt, ca.key )
+// Generated secret contains:
+//	- ca.crt : ca.crt
+//	- tls.crt: transport-layer.crt ( signed by ca.crt)
+// 	- tls.key: transport-layer.key
+func CreateTransportCertificate(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
 	cfg := cert.Config{
 		CommonName:   elasticsearch.OffshootName(),
 		Organization: []string{"Elasticsearch Operator"},
@@ -95,62 +104,24 @@ func CreateNodeCertificatePEM(certPath string, elasticsearch *api.Elasticsearch,
 		return errors.Wrap(err, "failed to encode node private key")
 	}
 
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.NodeKey), string(nodeKeyByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.TLSKey), string(nodeKeyByte)) {
 		return errors.New("failed to write key for node certificate")
 	}
 
 	nodeCertByte := cert.EncodeCertPEM(nodeCertificate)
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.NodeCert), string(nodeCertByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.TLSCert), string(nodeCertByte)) {
 		return errors.New("failed to write node certificate")
 	}
 
 	return nil
 }
 
-func CreateAdminCertificatePEM(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
-	cfg := cert.Config{
-		CommonName:   elasticsearch.OffshootName() + "-admin",
-		Organization: []string{"Elasticsearch Operator"},
-		AltNames: cert.AltNames{
-			DNSNames: []string{
-				"localhost",
-				fmt.Sprintf("%v.%v.svc", elasticsearch.OffshootName(), elasticsearch.Namespace),
-			},
-		},
-		Usages: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageServerAuth,
-			x509.ExtKeyUsageClientAuth,
-		},
-	}
-
-	clientPrivateKey, err := cert.NewPrivateKey()
-	if err != nil {
-		return errors.New("failed to generate key for admin certificate")
-	}
-
-	clientCertificate, err := cert.NewSignedCert(cfg, clientPrivateKey, caCert, caKey)
-	if err != nil {
-		return errors.New("failed to sign admin certificate")
-	}
-
-	adminKeyByte, err := cert.EncodePKCS8PrivateKeyPEM(clientPrivateKey)
-	if err != nil {
-		return errors.Wrap(err, "failed to encode admin private key")
-	}
-
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.AdminKey), string(adminKeyByte)) {
-		return errors.New("failed to write key for admin certificate")
-	}
-
-	adminCertByte := cert.EncodeCertPEM(clientCertificate)
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.AdminCert), string(adminCertByte)) {
-		return errors.New("failed to write admin certificate")
-	}
-
-	return nil
-}
-
-func CreateClientCertificatePEM(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
+// Creates pkcs8 encoded certificates in pem format singed by given CA ( ca.crt, ca.key )
+// Generated secret contains:
+//	- ca.crt : ca.crt
+//	- tls.crt: http-layer.crt ( signed by ca.crt)
+// 	- tls.key: http-layer.key
+func CreateHTTPCertificate(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
 	cfg := cert.Config{
 		CommonName:   elasticsearch.OffshootName() + "-client",
 		Organization: []string{"Elasticsearch Operator"},
@@ -181,13 +152,55 @@ func CreateClientCertificatePEM(certPath string, elasticsearch *api.Elasticsearc
 		return errors.Wrap(err, "failed to encode client private key")
 	}
 
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.ClientKey), string(adminKeyByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.TLSKey), string(adminKeyByte)) {
 		return errors.New("failed to write key for client certificate")
 	}
 
 	adminCertByte := cert.EncodeCertPEM(clientCertificate)
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.ClientCert), string(adminCertByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.TLSCert), string(adminCertByte)) {
 		return errors.New("failed to write client certificate")
+	}
+
+	return nil
+}
+
+// Creates pkcs8 encoded certificates in pem format singed by given CA ( ca.crt, ca.key )
+// Generated secret contains:
+//	- ca.crt : ca.crt
+//	- tls.crt: client.crt ( signed by ca.crt)
+// 	- tls.key: client.key
+func CreateClientCertificate(alias string, certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
+	cfg := cert.Config{
+		CommonName:   elasticsearch.OffshootName() + "-" + alias,
+		Organization: []string{"Elasticsearch Operator"},
+		Usages: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageServerAuth,
+			x509.ExtKeyUsageClientAuth,
+		},
+	}
+
+	clientPrivateKey, err := cert.NewPrivateKey()
+	if err != nil {
+		return errors.New(fmt.Sprintf("failed to generate privateKey for: %s", alias))
+	}
+
+	clientCertificate, err := cert.NewSignedCert(cfg, clientPrivateKey, caCert, caKey)
+	if err != nil {
+		return errors.New(fmt.Sprintf("failed to sign certificate for: %s", alias))
+	}
+
+	keyByte, err := cert.EncodePKCS8PrivateKeyPEM(clientPrivateKey)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to encode private key for: %s", alias))
+	}
+
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.TLSKey), string(keyByte)) {
+		return errors.New(fmt.Sprintf("failed to write tls.key for: %s", alias))
+	}
+
+	certByte := cert.EncodeCertPEM(clientCertificate)
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.TLSCert), string(certByte)) {
+		return errors.New(fmt.Sprintf("failed to write tls.crt for: %s", alias))
 	}
 
 	return nil

@@ -7411,8 +7411,6 @@ spec:
                   - kind
                   - name
                   type: object
-              required:
-              - issuerRef
               type: object
             topology:
               description: MySQL cluster topology

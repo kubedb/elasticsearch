@@ -39,9 +39,9 @@ xpack.security.enabled: true
 
 xpack.security.transport.ssl.enabled: true
 xpack.security.transport.ssl.verification_mode: certificate
-xpack.security.transport.ssl.key: certs/transport/node-key.pem
-xpack.security.transport.ssl.certificate: certs/transport/node.pem 
-xpack.security.transport.ssl.certificate_authorities: [ "certs/transport/root-ca.pem" ]
+xpack.security.transport.ssl.key: certs/transport/tls.key
+xpack.security.transport.ssl.certificate: certs/transport/tls.crt 
+xpack.security.transport.ssl.certificate_authorities: [ "certs/transport/ca.crt" ]
 `
 
 var xpack_security_disabled = `
@@ -50,9 +50,9 @@ xpack.security.enabled: false
 
 var https_enabled = `
 xpack.security.http.ssl.enabled: true
-xpack.security.http.ssl.key:  certs/http/client-key.pem
-xpack.security.http.ssl.certificate: certs/http/client.pem
-xpack.security.http.ssl.certificate_authorities: [ "certs/http/root-ca.pem" ]
+xpack.security.http.ssl.key:  certs/http/tls.key
+xpack.security.http.ssl.certificate: certs/http/tls.crt
+xpack.security.http.ssl.certificate_authorities: [ "certs/http/ca.crt" ]
 `
 
 var https_disabled = `

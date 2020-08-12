@@ -5990,8 +5990,6 @@ spec:
                     - kind
                     - name
                     type: object
-                required:
-                - issuerRef
                 type: object
               version:
                 description: Version of Memcached to be deployed.

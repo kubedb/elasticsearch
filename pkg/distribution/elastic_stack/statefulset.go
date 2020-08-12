@@ -283,8 +283,8 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 	}
 
 	// Upsert Volume for certificates
-	if es.elasticsearch.Spec.CertificateSecret == nil && !es.elasticsearch.Spec.DisableSecurity {
-		return nil, nil, errors.New("Certificate secret is missing")
+	if es.elasticsearch.Spec.TLS == nil && !es.elasticsearch.Spec.DisableSecurity {
+		return nil, nil, errors.New("Certificate secrets are missing")
 	}
 	if !es.elasticsearch.Spec.DisableSecurity {
 		// transport layer is always secured
@@ -295,16 +295,16 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 					SecretName: es.elasticsearch.MustCertSecretName(api.ElasticsearchTransportCert),
 					Items: []corev1.KeyToPath{
 						{
-							Key:  certlib.RootCert,
-							Path: certlib.RootCert,
+							Key:  certlib.CACert,
+							Path: certlib.CACert,
 						},
 						{
-							Key:  certlib.NodeCert,
-							Path: certlib.NodeCert,
+							Key:  certlib.TLSCert,
+							Path: certlib.TLSCert,
 						},
 						{
-							Key:  certlib.NodeKey,
-							Path: certlib.NodeKey,
+							Key:  certlib.TLSKey,
+							Path: certlib.TLSKey,
 						},
 					},
 				},
@@ -320,16 +320,16 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 						SecretName: es.elasticsearch.MustCertSecretName(api.ElasticsearchHTTPCert),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  certlib.RootCert,
-								Path: certlib.RootCert,
+								Key:  certlib.CACert,
+								Path: certlib.CACert,
 							},
 							{
-								Key:  certlib.ClientCert,
-								Path: certlib.ClientCert,
+								Key:  certlib.TLSCert,
+								Path: certlib.TLSCert,
 							},
 							{
-								Key:  certlib.ClientKey,
-								Path: certlib.ClientKey,
+								Key:  certlib.TLSKey,
+								Path: certlib.TLSKey,
 							},
 						},
 					},
@@ -570,31 +570,7 @@ func (es *Elasticsearch) upsertContainerEnv(envList []corev1.EnvVar) []corev1.En
 				},
 			},
 		},
-		{
-			Name:  "SSL_ENABLE",
-			Value: fmt.Sprintf("%v", es.elasticsearch.Spec.EnableSSL),
-		},
 	}...)
-
-	if !es.elasticsearch.Spec.DisableSecurity {
-		envList = core_util.UpsertEnvVars(envList, []corev1.EnvVar{
-			{
-				Name: "KEY_PASS",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: es.elasticsearch.Spec.CertificateSecret.SecretName,
-						},
-						Key: "key_pass",
-					},
-				},
-			},
-			{
-				Name:  "xpack.security.http.ssl.enabled",
-				Value: fmt.Sprintf("%v", es.elasticsearch.Spec.EnableSSL),
-			},
-		}...)
-	}
 
 	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, corev1.EnvVar{

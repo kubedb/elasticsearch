@@ -62,21 +62,30 @@ func (es *Elasticsearch) EnsureCertSecrets() error {
 
 	caKey, caCert, err := es.createRootCertSecret(certPath)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create/sync root-cert secret")
 	}
 
 	err = es.createNodeCertSecret(caKey, caCert, certPath)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create/sync transport-cert secret")
 	}
 
 	if es.elasticsearch.Spec.EnableSSL {
 		// When SSL is enabled, create certificates for HTTP layer
-		err = es.createClientCertSecret(caKey, caCert, certPath)
+		err = es.createHTTPCertSecret(caKey, caCert, certPath)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create/sync http-cert secret")
 		}
 
+		err = es.createExporterCertSecret(caKey, caCert, certPath)
+		if err != nil {
+			return errors.Wrap(err, "failed to create/sync metrics-exporter-cert secret")
+		}
+
+		err = es.createArchiverCertSecret(caKey, caCert, certPath)
+		if err != nil {
+			return errors.Wrap(err, "failed to create/sync archiver-cert secret")
+		}
 	}
 
 	return nil
@@ -90,22 +99,22 @@ func (es *Elasticsearch) createRootCertSecret(cPath string) (*rsa.PrivateKey, *x
 
 	if rSecret == nil {
 		// create certs here
-		caKey, caCert, err := pkcs8.CreateCaCertificatePEM(cPath)
+		caKey, caCert, err := pkcs8.CreateCaCertificate(cPath)
 		if err != nil {
 			return nil, nil, err
 		}
-		rootCa, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCert))
+		rootCa, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
 		if err != nil {
 			return nil, nil, err
 		}
-		rootKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootKey))
+		rootKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCAKey))
 		if err != nil {
 			return nil, nil, err
 		}
 
 		data := map[string][]byte{
-			certlib.RootCert: rootCa,
-			certlib.RootKey:  rootKey,
+			certlib.TLSCert: rootCa,
+			certlib.TLSKey:  rootKey,
 		}
 
 		owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
@@ -132,28 +141,28 @@ func (es *Elasticsearch) createRootCertSecret(cPath string) (*rsa.PrivateKey, *x
 	var caKey *rsa.PrivateKey
 	var caCert []*x509.Certificate
 
-	if value, ok := data[certlib.RootCert]; ok {
+	if value, ok := data[certlib.TLSCert]; ok {
 		caCert, err = cert.ParseCertsPEM(value)
 		if err != nil || len(caCert) == 0 {
-			return nil, nil, errors.Wrap(err, "failed to parse root-ca.pem")
+			return nil, nil, errors.Wrap(err, "failed to parse tls.crt")
 		}
 	} else {
-		return nil, nil, errors.New("root-ca.pem is missing")
+		return nil, nil, errors.New("tls.crt is missing")
 	}
 
-	if value, ok := data[certlib.RootKey]; ok {
+	if value, ok := data[certlib.TLSKey]; ok {
 		key, err := cert.ParsePrivateKeyPEM(value)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to parse root-key.pem")
+			return nil, nil, errors.Wrap(err, "failed to parse tls.key")
 		}
 
 		caKey, ok = key.(*rsa.PrivateKey)
 		if !ok {
-			return nil, nil, errors.New("failed to typecast the root-key.pem")
+			return nil, nil, errors.New("failed to typecast the tls.key")
 		}
 
 	} else {
-		return nil, nil, errors.New("root-key.pem is missing")
+		return nil, nil, errors.New("tls.key is missing")
 	}
 
 	return caKey, caCert[0], nil
@@ -167,30 +176,30 @@ func (es *Elasticsearch) createNodeCertSecret(caKey *rsa.PrivateKey, caCert *x50
 
 	if nSecret == nil {
 		// create certs here
-		err := pkcs8.CreateNodeCertificatePEM(cPath, es.elasticsearch, caKey, caCert)
+		err := pkcs8.CreateTransportCertificate(cPath, es.elasticsearch, caKey, caCert)
 		if err != nil {
 			return err
 		}
 
-		rootCa, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCert))
+		rootCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
 		if err != nil {
 			return err
 		}
 
-		nodeCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.NodeCert))
+		nodeCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.TLSCert))
 		if err != nil {
 			return err
 		}
 
-		nodeKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.NodeKey))
+		nodeKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.TLSKey))
 		if err != nil {
 			return err
 		}
 
 		data := map[string][]byte{
-			certlib.RootCert: rootCa,
-			certlib.NodeKey:  nodeKey,
-			certlib.NodeCert: nodeCert,
+			certlib.CACert:  rootCert,
+			certlib.TLSKey:  nodeKey,
+			certlib.TLSCert: nodeCert,
 		}
 
 		owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
@@ -215,58 +224,52 @@ func (es *Elasticsearch) createNodeCertSecret(caKey *rsa.PrivateKey, caCert *x50
 
 	// If the secret already exists,
 	// check whether the keys exist too.
-	if value, ok := nSecret.Data[certlib.RootCert]; !ok || len(value) == 0 {
-		return errors.New("root-ca.pem is missing")
+	if value, ok := nSecret.Data[certlib.CACert]; !ok || len(value) == 0 {
+		return errors.New("ca.crt is missing")
 	}
 
-	if value, ok := nSecret.Data[certlib.NodeKey]; !ok || len(value) == 0 {
-		return errors.New("node-key.pem is missing")
+	if value, ok := nSecret.Data[certlib.TLSKey]; !ok || len(value) == 0 {
+		return errors.New("tls.key is missing")
 	}
 
-	if value, ok := nSecret.Data[certlib.NodeCert]; !ok || len(value) == 0 {
-		return errors.New("node.pem is missing")
+	if value, ok := nSecret.Data[certlib.TLSCert]; !ok || len(value) == 0 {
+		return errors.New("tls.crt is missing")
 	}
 
 	return nil
 }
 
-func (es *Elasticsearch) createClientCertSecret(caKey *rsa.PrivateKey, caCert *x509.Certificate, cPath string) error {
+func (es *Elasticsearch) createHTTPCertSecret(caKey *rsa.PrivateKey, caCert *x509.Certificate, cPath string) error {
 	cSecret, err := es.findSecret(es.elasticsearch.MustCertSecretName(api.ElasticsearchHTTPCert))
 	if err != nil {
 		return err
 	}
 
 	if cSecret == nil {
-		// If issuerRef is set, the certificates are handled by the enterprise operator.
-		// Not ready yet, wait for enterprise operator to make the certificate available.
-		if es.elasticsearch.Spec.TLS.IssuerRef != nil {
-			return nil
-		}
-
 		// create certs here
-		if err := pkcs8.CreateClientCertificatePEM(cPath, es.elasticsearch, caKey, caCert); err != nil {
+		if err := pkcs8.CreateHTTPCertificate(cPath, es.elasticsearch, caKey, caCert); err != nil {
 			return err
 		}
 
-		rootCa, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCert))
+		rootCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
 		if err != nil {
 			return err
 		}
 
-		clientCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.ClientCert))
+		clientCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.TLSCert))
 		if err != nil {
 			return err
 		}
 
-		clientKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.ClientKey))
+		clientKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.TLSKey))
 		if err != nil {
 			return err
 		}
 
 		data := map[string][]byte{
-			certlib.RootCert:   rootCa,
-			certlib.ClientKey:  clientKey,
-			certlib.ClientCert: clientCert,
+			certlib.CACert:  rootCert,
+			certlib.TLSKey:  clientKey,
+			certlib.TLSCert: clientCert,
 		}
 
 		owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
@@ -291,16 +294,156 @@ func (es *Elasticsearch) createClientCertSecret(caKey *rsa.PrivateKey, caCert *x
 
 	// If the secret already exists,
 	// check whether the keys exist too.
-	if value, ok := cSecret.Data[certlib.RootCert]; !ok || len(value) == 0 {
-		return errors.New("root-ca.pem is missing")
+	if value, ok := cSecret.Data[certlib.CACert]; !ok || len(value) == 0 {
+		return errors.New("ca.crt is missing")
 	}
 
-	if value, ok := cSecret.Data[certlib.ClientKey]; !ok || len(value) == 0 {
-		return errors.New("client-key.pem is missing")
+	if value, ok := cSecret.Data[certlib.TLSKey]; !ok || len(value) == 0 {
+		return errors.New("tls.key is missing")
 	}
 
-	if value, ok := cSecret.Data[certlib.ClientCert]; !ok || len(value) == 0 {
-		return errors.New("client.pem is missing")
+	if value, ok := cSecret.Data[certlib.TLSCert]; !ok || len(value) == 0 {
+		return errors.New("tls.crt is missing")
+	}
+
+	return nil
+}
+
+func (es *Elasticsearch) createExporterCertSecret(caKey *rsa.PrivateKey, caCert *x509.Certificate, cPath string) error {
+	cSecret, err := es.findSecret(es.elasticsearch.MustCertSecretName(api.ElasticsearchMetricsExporterCert))
+	if err != nil {
+		return err
+	}
+
+	if cSecret == nil {
+		// create certs here
+		if err := pkcs8.CreateClientCertificate(string(api.ElasticsearchMetricsExporterCert), cPath, es.elasticsearch, caKey, caCert); err != nil {
+			return err
+		}
+
+		rootCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
+		if err != nil {
+			return err
+		}
+
+		clientCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.TLSCert))
+		if err != nil {
+			return err
+		}
+
+		clientKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.TLSKey))
+		if err != nil {
+			return err
+		}
+
+		data := map[string][]byte{
+			certlib.CACert:  rootCert,
+			certlib.TLSKey:  clientKey,
+			certlib.TLSCert: clientCert,
+		}
+
+		owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
+
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   es.elasticsearch.MustCertSecretName(api.ElasticsearchMetricsExporterCert),
+				Labels: es.elasticsearch.OffshootLabels(),
+			},
+			Type: corev1.SecretTypeTLS,
+			Data: data,
+		}
+		core_util.EnsureOwnerReference(&secret.ObjectMeta, owner)
+
+		_, err = es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// If the secret already exists,
+	// check whether the keys exist too.
+	if value, ok := cSecret.Data[certlib.CACert]; !ok || len(value) == 0 {
+		return errors.New("ca.crt is missing")
+	}
+
+	if value, ok := cSecret.Data[certlib.TLSKey]; !ok || len(value) == 0 {
+		return errors.New("tls.key is missing")
+	}
+
+	if value, ok := cSecret.Data[certlib.TLSCert]; !ok || len(value) == 0 {
+		return errors.New("tls.crt is missing")
+	}
+
+	return nil
+}
+
+func (es *Elasticsearch) createArchiverCertSecret(caKey *rsa.PrivateKey, caCert *x509.Certificate, cPath string) error {
+	cSecret, err := es.findSecret(es.elasticsearch.MustCertSecretName(api.ElasticsearchArchiverCert))
+	if err != nil {
+		return err
+	}
+
+	if cSecret == nil {
+		// create certs here
+		if err := pkcs8.CreateClientCertificate(string(api.ElasticsearchArchiverCert), cPath, es.elasticsearch, caKey, caCert); err != nil {
+			return err
+		}
+
+		rootCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
+		if err != nil {
+			return err
+		}
+
+		clientCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.TLSCert))
+		if err != nil {
+			return err
+		}
+
+		clientKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.TLSKey))
+		if err != nil {
+			return err
+		}
+
+		data := map[string][]byte{
+			certlib.CACert:  rootCert,
+			certlib.TLSKey:  clientKey,
+			certlib.TLSCert: clientCert,
+		}
+
+		owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
+
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   es.elasticsearch.MustCertSecretName(api.ElasticsearchArchiverCert),
+				Labels: es.elasticsearch.OffshootLabels(),
+			},
+			Type: corev1.SecretTypeTLS,
+			Data: data,
+		}
+		core_util.EnsureOwnerReference(&secret.ObjectMeta, owner)
+
+		_, err = es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// If the secret already exists,
+	// check whether the keys exist too.
+	if value, ok := cSecret.Data[certlib.CACert]; !ok || len(value) == 0 {
+		return errors.New("ca.crt is missing")
+	}
+
+	if value, ok := cSecret.Data[certlib.TLSKey]; !ok || len(value) == 0 {
+		return errors.New("tls.key is missing")
+	}
+
+	if value, ok := cSecret.Data[certlib.TLSCert]; !ok || len(value) == 0 {
+		return errors.New("tls.crt is missing")
 	}
 
 	return nil

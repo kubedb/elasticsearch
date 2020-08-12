@@ -19990,8 +19990,6 @@ spec:
                   - kind
                   - name
                   type: object
-              required:
-              - issuerRef
               type: object
             updateStrategy:
               description: updateStrategy indicates the StatefulSetUpdateStrategy

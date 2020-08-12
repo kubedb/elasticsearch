@@ -3685,8 +3685,6 @@ spec:
                     - kind
                     - name
                     type: object
-                required:
-                - issuerRef
                 type: object
               userListSecretRef:
                 description: UserListSecretRef is a secret with a list of PgBouncer

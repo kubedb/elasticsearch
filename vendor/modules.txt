@@ -1071,7 +1071,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20200807081749-430fad8cd86b
+# kmodules.xyz/client-go v0.0.0-20200807163543-64a96054c515
 ## explicit
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
@@ -1133,7 +1133,7 @@ kmodules.xyz/prober/api/v1
 ## explicit
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-# kubedb.dev/apimachinery v0.14.0-beta.1.0.20200807112456-393d003e2ac8
+# kubedb.dev/apimachinery v0.14.0-beta.1.0.20200807171606-eb4e388b7e54
 ## explicit
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/catalog

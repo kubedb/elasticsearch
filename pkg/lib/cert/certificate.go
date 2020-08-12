@@ -33,6 +33,14 @@ const (
 	KeyEncodingPKCS8  = "pkcs8"
 	KeyEncodingPKCS12 = "pkcs12"
 
+	AdminCACert = "admin-ca.crt"
+	AdminCAKey  = "admin-ca.key"
+	RootCACert  = "root-ca.crt"
+	RootCAKey   = "root-ca.key"
+	CACert      = "ca.crt"
+	TLSCert     = "tls.crt"
+	TLSKey      = "tls.key"
+
 	RootKey      = "root-key.pem"
 	RootCert     = "root-ca.pem"
 	RootKeyStore = "root.jks"

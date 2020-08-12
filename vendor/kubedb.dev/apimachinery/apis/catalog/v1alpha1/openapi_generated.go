@@ -15821,7 +15821,6 @@ func schema_kmodulesxyz_client_go_api_v1_TLSConfig(ref common.ReferenceCallback)
 						},
 					},
 				},
-				Required: []string{"issuerRef"},
 			},
 		},
 		Dependencies: []string{
