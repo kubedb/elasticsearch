@@ -233,6 +233,24 @@ func (e *Elasticsearch) SetDefaults(topology *core_util.Topology) {
 		e.Spec.PodTemplate.Spec.ServiceAccountName = e.OffshootName()
 	}
 
+	// Set default values for internal admin user
+	if e.Spec.InternalUsers != nil {
+		var userSpec ElasticsearchUserSpec
+
+		// load values
+		if value, exist := e.Spec.InternalUsers[string(ElasticsearchInternalUserAdmin)]; exist {
+			userSpec = value
+		}
+
+		// set defaults
+		userSpec.Reserved = true
+		userSpec.BackendRoles = []string{"admin"}
+
+		// overwrite values
+		e.Spec.InternalUsers[string(ElasticsearchInternalUserAdmin)] = userSpec
+
+	}
+
 	e.setDefaultAffinity(&e.Spec.PodTemplate, e.OffshootSelectors(), topology)
 	e.setDefaultTLSConfig()
 	e.Spec.Monitor.SetDefaults()

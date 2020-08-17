@@ -563,7 +563,7 @@ func (es *Elasticsearch) upsertContainerEnv(envList []corev1.EnvVar) []corev1.En
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
 					},
-					Key: KeyAdminUserName,
+					Key: corev1.BasicAuthUsernameKey,
 				},
 			},
 		},
@@ -574,7 +574,7 @@ func (es *Elasticsearch) upsertContainerEnv(envList []corev1.EnvVar) []corev1.En
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
 					},
-					Key: KeyAdminPassword,
+					Key: corev1.BasicAuthPasswordKey,
 				},
 			},
 		},

@@ -22,7 +22,6 @@ import (
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/pkg/eventer"
-	"kubedb.dev/elasticsearch/pkg/distribution/elastic_stack"
 	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
 
 	"github.com/pkg/errors"
@@ -95,20 +94,6 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 
 			in.Spec.Secret = &core.LocalObjectReference{
 				Name: db.Spec.DatabaseSecret.SecretName,
-			}
-			in.Spec.SecretTransforms = []appcat.SecretTransform{
-				{
-					RenameKey: &appcat.RenameKeyTransform{
-						From: elastic_stack.KeyAdminUserName,
-						To:   appcat.KeyUsername,
-					},
-				},
-				{
-					RenameKey: &appcat.RenameKeyTransform{
-						From: elastic_stack.KeyAdminPassword,
-						To:   appcat.KeyPassword,
-					},
-				},
 			}
 
 			return in

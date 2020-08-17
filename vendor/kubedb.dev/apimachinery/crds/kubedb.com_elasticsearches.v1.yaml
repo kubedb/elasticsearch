@@ -3939,8 +3939,12 @@ spec:
                     type: object
                 type: object
               internalUsers:
-                description: InternalUsers contains internal user configurations
-                items:
+                additionalProperties:
+                  description: Specifies the security plugin internal user structure.
+                    Both 'json' and 'yaml' tags are used in structure metadata. The
+                    `json` tags (camel case) are used while taking input from users.
+                    The `yaml` tags (snake case) are used by the operator to generate
+                    internal_users.yml file.
                   properties:
                     attributes:
                       additionalProperties:
@@ -3963,24 +3967,28 @@ spec:
                         this set to true are not returned by the REST API and not
                         visible in Kibana. Default to "false".
                       type: boolean
-                    name:
-                      description: Specifies the name of the user
-                      type: string
+                    opendistroSecurityRoles:
+                      description: Specifies a list of opendistro security plugin
+                        roles assigned to this user.
+                      items:
+                        type: string
+                      type: array
                     reserved:
                       description: Specifies the reserved status. Resources that have
                         this set to true can’t be changed using the REST API or Kibana.
                         Default to "false".
                       type: boolean
-                    securityRoles:
-                      description: Specifies a list of security plugin (i.e. opendistro,
-                        searchguard) roles assigned to this user.
+                    searchGuardRoles:
+                      description: Specifies a list of searchguard security plugin
+                        roles assigned to this user.
                       items:
                         type: string
                       type: array
-                  required:
-                  - name
                   type: object
-                type: array
+                description: "InternalUsers contains internal user configurations
+                  Expected Input format: internalUsers:   <username1>: \t\t...   <username2>:
+                  \t\t..."
+                type: object
               maxUnavailable:
                 anyOf:
                 - type: integer

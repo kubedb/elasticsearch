@@ -379,7 +379,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchNode":              schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchNode(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchSpec":              schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchStatus":            schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchStatus(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchUser":              schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchUser(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchUserSpec":          schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchUserSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.Etcd":                           schema_apimachinery_apis_kubedb_v1alpha1_Etcd(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.EtcdList":                       schema_apimachinery_apis_kubedb_v1alpha1_EtcdList(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha1.EtcdSpec":                       schema_apimachinery_apis_kubedb_v1alpha1_EtcdSpec(ref),
@@ -18320,12 +18320,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchSpec(ref common.Refer
 					},
 					"internalUsers": {
 						SchemaProps: spec.SchemaProps{
-							Description: "InternalUsers contains internal user configurations",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
+							Description: "InternalUsers contains internal user configurations Expected Input format: internalUsers:\n  <username1>:\n\t\t...\n  <username2>:\n\t\t...",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchUser"),
+										Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchUserSpec"),
 									},
 								},
 							},
@@ -18357,7 +18358,7 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchSpec(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/apps/v1.StatefulSetUpdateStrategy", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.VolumeSource", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchClusterTopology", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchUser", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.InitSpec"},
+			"k8s.io/api/apps/v1.StatefulSetUpdateStrategy", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.VolumeSource", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchClusterTopology", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.ElasticsearchUserSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha1.InitSpec"},
 	}
 }
 
@@ -18392,19 +18393,13 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchStatus(ref common.Ref
 	}
 }
 
-func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchUser(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchUserSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Specifies the security plugin internal user structure. Both 'json' and 'yaml' tags are used in structure metadata. The `json` tags (camel case) are used while taking input from users. The `yaml` tags (snake case) are used by the operator to generate internal_users.yml file.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Specifies the name of the user",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"reserved": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies the reserved status. Resources that have this set to true can’t be changed using the REST API or Kibana. Default to \"false\".",
@@ -18433,9 +18428,23 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchUser(ref common.Refer
 							},
 						},
 					},
-					"securityRoles": {
+					"searchGuardRoles": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specifies a list of security plugin (i.e. opendistro, searchguard) roles assigned to this user.",
+							Description: "Specifies a list of searchguard security plugin roles assigned to this user.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"opendistroSecurityRoles": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specifies a list of opendistro security plugin roles assigned to this user.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -18470,7 +18479,6 @@ func schema_apimachinery_apis_kubedb_v1alpha1_ElasticsearchUser(ref common.Refer
 						},
 					},
 				},
-				Required: []string{"name"},
 			},
 		},
 	}

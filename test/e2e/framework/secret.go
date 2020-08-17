@@ -24,7 +24,6 @@ import (
 
 	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/elasticsearch/pkg/distribution/elastic_stack"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/log"
@@ -231,7 +230,7 @@ func (i *Invocation) SecretForDatabaseAuthentication(es *api.Elasticsearch, mang
 		}
 	} else if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginXpack {
 		data = map[string][]byte{
-			KeyAdminUserName: []byte(elastic_stack.ElasticUser),
+			KeyAdminUserName: []byte(api.ElasticsearchInternalUserElastic),
 			KeyAdminPassword: []byte(adminPassword),
 		}
 	}

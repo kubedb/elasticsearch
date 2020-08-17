@@ -235,8 +235,14 @@ message ElasticsearchSpec {
   optional kmodules.xyz.client_go.api.v1.TLSConfig tls = 18;
 
   // InternalUsers contains internal user configurations
+  // Expected Input format:
+  // internalUsers:
+  //   <username1>:
+  // 		...
+  //   <username2>:
+  // 		...
   // +optional
-  repeated ElasticsearchUser internalUsers = 19;
+  map<string, ElasticsearchUserSpec> internalUsers = 19;
 
   // Indicates that the database is paused and controller will not sync any changes made to this spec.
   // +optional
@@ -262,9 +268,14 @@ message ElasticsearchStatus {
   optional int64 observedGeneration = 3;
 }
 
-message ElasticsearchUser {
-  // Specifies the name of the user
-  optional string name = 1;
+// Specifies the security plugin internal user structure.
+// Both 'json' and 'yaml' tags are used in structure metadata.
+// The `json` tags (camel case) are used while taking input from users.
+// The `yaml` tags (snake case) are used by the operator to generate internal_users.yml file.
+message ElasticsearchUserSpec {
+  // Specifies the hash of the password.
+  // +optional
+  optional string hash = 1;
 
   // Specifies the reserved status.
   // Resources that have this set to true can’t be changed using the REST API or Kibana.
@@ -285,18 +296,22 @@ message ElasticsearchUser {
   // +optional
   repeated string backendRoles = 4;
 
-  // Specifies a list of security plugin (i.e. opendistro, searchguard) roles assigned to this user.
+  // Specifies a list of searchguard security plugin roles assigned to this user.
   // +optional
-  repeated string securityRoles = 5;
+  repeated string searchGuardRoles = 5;
+
+  // Specifies a list of opendistro security plugin roles assigned to this user.
+  // +optional
+  repeated string opendistroSecurityRoles = 6;
 
   // Specifies one or more custom attributes,
   // which can be used in index names and DLS queries.
   // +optional
-  map<string, string> attributes = 6;
+  map<string, string> attributes = 7;
 
   // Specifies the description of the user
   // +optional
-  optional string description = 7;
+  optional string description = 8;
 }
 
 // +kubebuilder:object:root=true

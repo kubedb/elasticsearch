@@ -126,8 +126,14 @@ type ElasticsearchSpec struct {
 	TLS *kmapi.TLSConfig `json:"tls,omitempty" protobuf:"bytes,18,opt,name=tls"`
 
 	// InternalUsers contains internal user configurations
+	// Expected Input format:
+	// internalUsers:
+	//   <username1>:
+	//		...
+	//   <username2>:
+	//		...
 	// +optional
-	InternalUsers []ElasticsearchUser `json:"internalUsers,omitempty" protobuf:"bytes,19,rep,name=internalUsers"`
+	InternalUsers map[string]ElasticsearchUserSpec `json:"internalUsers,omitempty" protobuf:"bytes,19,rep,name=internalUsers"`
 
 	// Indicates that the database is paused and controller will not sync any changes made to this spec.
 	// +optional
@@ -176,50 +182,62 @@ const (
 	ElasticsearchMetricsExporterCert ElasticsearchCertificateAlias = "metrics-exporter"
 )
 
+type ElasticsearchInternalUser string
+
 const (
-	InternalElasticsearchUserAdmin           string = "admin"
-	InternalElasticsearchUserKibanaserver    string = "kibanaserver"
-	InternalElasticsearchUserKibanaro        string = "kibanaro"
-	InternalElasticsearchUserLogstash        string = "logstash"
-	InternalElasticsearchUserReadall         string = "readall"
-	InternalElasticsearchUserSnapshotrestore string = "snapshotrestore"
+	ElasticsearchInternalUserElastic         ElasticsearchInternalUser = "elastic"
+	ElasticsearchInternalUserAdmin           ElasticsearchInternalUser = "admin"
+	ElasticsearchInternalUserKibanaserver    ElasticsearchInternalUser = "kibanaserver"
+	ElasticsearchInternalUserKibanaro        ElasticsearchInternalUser = "kibanaro"
+	ElasticsearchInternalUserLogstash        ElasticsearchInternalUser = "logstash"
+	ElasticsearchInternalUserReadall         ElasticsearchInternalUser = "readall"
+	ElasticsearchInternalUserSnapshotrestore ElasticsearchInternalUser = "snapshotrestore"
 )
 
-type ElasticsearchUser struct {
-	// Specifies the name of the user
-	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+// Specifies the security plugin internal user structure.
+// Both 'json' and 'yaml' tags are used in structure metadata.
+// The `json` tags (camel case) are used while taking input from users.
+// The `yaml` tags (snake case) are used by the operator to generate internal_users.yml file.
+type ElasticsearchUserSpec struct {
+	// Specifies the hash of the password.
+	// +optional
+	Hash string `json:"-" yaml:"hash,omitempty" protobuf:"bytes,1,opt,name=hash"`
 
 	// Specifies the reserved status.
 	// Resources that have this set to true can’t be changed using the REST API or Kibana.
 	// Default to "false".
 	// +optional
-	Reserved bool `json:"reserved,omitempty" protobuf:"bytes,2,opt,name=reserved"`
+	Reserved bool `json:"reserved,omitempty" yaml:"reserved,omitempty" protobuf:"bytes,2,opt,name=reserved"`
 
 	// Specifies the hidden status.
 	// Resources that have this set to true are not returned by the REST API
 	// and not visible in Kibana.
 	// Default to "false".
 	// +optional
-	Hidden bool `json:"hidden,omitempty" protobuf:"bytes,3,opt,name=hidden"`
+	Hidden bool `json:"hidden,omitempty" yaml:"hidden,omitempty" protobuf:"bytes,3,opt,name=hidden"`
 
 	// Specifies a list of backend roles assigned to this user.
 	// Backend roles can come from the internal user database,
 	// LDAP groups, JSON web token claims or SAML assertions.
 	// +optional
-	BackendRoles []string `json:"backendRoles,omitempty" protobuf:"bytes,4,opt,name=backendRoles"`
+	BackendRoles []string `json:"backendRoles,omitempty" yaml:"backend_roles,omitempty" protobuf:"bytes,4,opt,name=backendRoles"`
 
-	// Specifies a list of security plugin (i.e. opendistro, searchguard) roles assigned to this user.
+	// Specifies a list of searchguard security plugin roles assigned to this user.
 	// +optional
-	SecurityRoles []string `json:"securityRoles,omitempty" protobuf:"bytes,5,opt,name=securityRoles"`
+	SearchGuardRoles []string `json:"searchGuardRoles,omitempty" yaml:"search_guard_roles,omitempty" protobuf:"bytes,5,opt,name=searchGuardRoles"`
+
+	// Specifies a list of opendistro security plugin roles assigned to this user.
+	// +optional
+	OpendistroSecurityRoles []string `json:"opendistroSecurityRoles,omitempty" yaml:"opendistro_security_roles,omitempty" protobuf:"bytes,6,opt,name=opendistroSecurityRoles"`
 
 	// Specifies one or more custom attributes,
 	// which can be used in index names and DLS queries.
 	// +optional
-	Attributes map[string]string `json:"attributes,omitempty" protobuf:"bytes,6,opt,name=attributes"`
+	Attributes map[string]string `json:"attributes,omitempty" yaml:"attributes,omitempty" protobuf:"bytes,7,opt,name=attributes"`
 
 	// Specifies the description of the user
 	// +optional
-	Description string `json:"description,omitempty" protobuf:"bytes,7,opt,name=description"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty" protobuf:"bytes,8,opt,name=description"`
 }
 
 type ElasticsearchStatus struct {
