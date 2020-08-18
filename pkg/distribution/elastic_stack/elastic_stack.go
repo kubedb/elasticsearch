@@ -46,3 +46,7 @@ func New(kc kubernetes.Interface, extClient cs.Interface, es *api.Elasticsearch,
 func (es *Elasticsearch) UpdatedElasticsearch() *api.Elasticsearch {
 	return es.elasticsearch
 }
+
+func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
+	return true
+}

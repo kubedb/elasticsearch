@@ -136,7 +136,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 	if !es.elasticsearch.Spec.DisableSecurity {
 		config = opendistro_security_enabled
 
-		// password for default users: admin, kibanaserver
+		// password for default users: admin, kibanaserver, etc.
 		inUserConfig, err = es.getInternalUserConfig()
 		if err != nil {
 			return errors.Wrap(err, "failed to generate default internal user config")

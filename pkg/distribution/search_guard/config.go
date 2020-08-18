@@ -22,11 +22,11 @@ import (
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
+	"kubedb.dev/elasticsearch/pkg/lib/user"
 
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	api_util "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -155,7 +155,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 	if !es.elasticsearch.Spec.DisableSecurity {
 		config = searchguard_security_enabled
 
-		// password for default users: admin, kibanaserver
+		// password for default users: admin, kibanaserver, etc.
 		inUserConfig, err = es.getInternalUserConfig()
 		if err != nil {
 			return errors.Wrap(err, "failed to generate default internal user config")
@@ -188,7 +188,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 				nodesDN = fmt.Sprintf(nodesDNTemplate, subj.String())
 			}
 
-			// Get opendistro admin cert secret.
+			// Get searchguard admin cert secret.
 			// Parse the tls.cert to extract the adminDNs.
 			sName, exist = api_util.GetCertificateSecretName(es.elasticsearch.Spec.TLS.Certificates, string(api.ElasticsearchAdminCert))
 			if !exist {
@@ -233,92 +233,52 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 	return nil
 }
 
-func (es *Elasticsearch) findDefaultConfig() error {
-	sName := fmt.Sprintf("%v-%v", es.elasticsearch.OffshootName(), DatabaseConfigSecretSuffix)
+func (es *Elasticsearch) getInternalUserConfig() (string, error) {
+	userList := es.elasticsearch.Spec.InternalUsers
+	if userList == nil {
+		return "", errors.New("spec.internalUsers is empty")
+	}
 
+	for username := range userList {
+		var pass string
+		var err error
+
+		if username == string(api.ElasticsearchInternalUserAdmin) {
+			pass, err = es.getPasswordFromSecret(es.elasticsearch.Spec.DatabaseSecret.SecretName)
+			if err != nil {
+				return "", errors.Wrap(err, fmt.Sprintf("failed to get password from secret: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Spec.DatabaseSecret.SecretName))
+			}
+		} else {
+			pass, err = es.getPasswordFromSecret(es.elasticsearch.UserCredSecretName(username))
+			if err != nil {
+				return "", errors.Wrap(err, fmt.Sprintf("failed to get password from secret: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.UserCredSecretName(username)))
+			}
+		}
+
+		err = user.SetPasswordHashForUser(userList, username, pass)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to generate the password hash")
+		}
+	}
+
+	byt, err := yaml.Marshal(userList)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal the internal user list")
+	}
+	fmt.Println(string(byt))
+
+	return string(byt), nil
+}
+
+func (es *Elasticsearch) getPasswordFromSecret(sName string) (string, error) {
 	secret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), sName, metav1.GetOptions{})
 	if err != nil {
-		if kerr.IsNotFound(err) {
-			return nil
-		} else {
-			return err
-		}
-	}
-
-	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch &&
-		secret.Labels[api.LabelDatabaseName] != es.elasticsearch.Name {
-		return fmt.Errorf(`intended k8s secret: "%v/%v" already exists`, es.elasticsearch.Namespace, sName)
-	}
-
-	return nil
-}
-
-func (es *Elasticsearch) getInternalUserConfig() (string, error) {
-	dbSecret := es.elasticsearch.Spec.DatabaseSecret
-	if dbSecret == nil {
-		return "", errors.New("database secret is empty")
-	}
-
-	secret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.GetNamespace()).Get(context.TODO(), dbSecret.SecretName, metav1.GetOptions{})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get database secret")
-	}
-
-	adminPH, err := generatePasswordHash("admin")
-	if err != nil {
 		return "", err
 	}
-	if value, ok := secret.Data[KeyAdminPassword]; ok {
-		adminPH, err = generatePasswordHash(string(value))
-		if err != nil {
-			return "", err
-		}
+
+	if value, exist := secret.Data[corev1.BasicAuthPasswordKey]; exist && len(value) != 0 {
+		return string(value), nil
 	}
 
-	kibanaserverPH, err := generatePasswordHash("kibanaserver")
-	if err != nil {
-		return "", err
-	}
-	if value, ok := secret.Data[KeyKibanaServerPassword]; ok {
-		kibanaserverPH, err = generatePasswordHash(string(value))
-		if err != nil {
-			return "", err
-		}
-	}
-
-	kibanaroPH, err := generatePasswordHash("kibanaro")
-	if err != nil {
-		return "", nil
-	}
-
-	logstashPH, err := generatePasswordHash("logstash")
-	if err != nil {
-		return "", nil
-	}
-
-	readallPH, err := generatePasswordHash("readall")
-	if err != nil {
-		return "", nil
-	}
-
-	snapshotrestorePH, err := generatePasswordHash("snapshotrestore")
-	if err != nil {
-		return "", nil
-	}
-
-	return fmt.Sprintf(internalUserConfigFile,
-		adminPH,
-		kibanaserverPH,
-		kibanaroPH,
-		logstashPH,
-		readallPH,
-		snapshotrestorePH), nil
-}
-
-func generatePasswordHash(password string) (string, error) {
-	pHash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
-	if err != nil {
-		return "", err
-	}
-	return string(pHash), nil
+	return "", errors.New(fmt.Sprintf("password is missing in secret: %s/%s", es.elasticsearch.Namespace, sName))
 }

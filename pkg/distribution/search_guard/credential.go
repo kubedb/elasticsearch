@@ -22,71 +22,117 @@ import (
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	"kubedb.dev/elasticsearch/pkg/lib/user"
 
 	"github.com/appscode/go/crypto/rand"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	AdminUser               = "admin"
-	KibanaserverUser        = "kibanaserver"
-	KeyAdminUserName        = "ADMIN_USERNAME"
-	KeyAdminPassword        = "ADMIN_PASSWORD"
-	KeyKibanaServerUserName = "KIBANASERVER_USERNAME"
-	KeyKibanaServerPassword = "KIBANASERVER_PASSWORD"
+	core_util "kmodules.xyz/client-go/core/v1"
 )
 
 func (es *Elasticsearch) EnsureDatabaseSecret() error {
-	databaseSecretVolume := es.elasticsearch.Spec.DatabaseSecret
-	if databaseSecretVolume == nil {
+
+	err := es.setMissingUsers()
+	if err != nil {
+		return errors.Wrap(err, "failed to set missing internal users")
+	}
+
+	// For admin user
+	dbSecretVolume := es.elasticsearch.Spec.DatabaseSecret
+	if dbSecretVolume == nil {
+		// create admin credential secret.
+		// If the secret already exists in the same name,
+		// validate it (ie. it contains username, password as keys).
 		var err error
-		if databaseSecretVolume, err = es.createDatabaseSecret(); err != nil {
+		pass := rand.Characters(8)
+		if dbSecretVolume, err = es.createOrSyncUserCredSecret(string(api.ElasticsearchInternalUserAdmin), pass); err != nil {
 			return err
 		}
+
+		// update the ES object,
+		// Add admin credential secret name to Spec.DatabaseSecret.
 		newES, _, err := util.PatchElasticsearch(context.TODO(), es.extClient.KubedbV1alpha1(), es.elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-			in.Spec.DatabaseSecret = databaseSecretVolume
+			in.Spec.DatabaseSecret = dbSecretVolume
 			return in
 		}, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
+
 		es.elasticsearch = newES
 		return nil
+	} else {
+		// Get the secret and validate it.
+		dbSecret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), dbSecretVolume.SecretName, metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to get credential secret: %s/%s", es.elasticsearch.Namespace, dbSecretVolume.SecretName))
+		}
+
+		err = es.validateAndSyncLabels(dbSecret)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to validate/sync secret: %s/%s", dbSecret.Namespace, dbSecret.Name))
+		}
+	}
+
+	// For all internal users
+	for username := range es.elasticsearch.Spec.InternalUsers {
+		// secret for admin user is handled separately
+		if username == string(api.ElasticsearchInternalUserAdmin) {
+			continue
+		}
+
+		pass := rand.Characters(8)
+		_, err := es.createOrSyncUserCredSecret(username, pass)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to create credential secret for user: %s", username))
+		}
 	}
 	return nil
 }
 
-func (es *Elasticsearch) createDatabaseSecret() (*corev1.SecretVolumeSource, error) {
-	databaseSecret, err := es.findDatabaseSecret()
+func (es *Elasticsearch) createOrSyncUserCredSecret(username, password string) (*corev1.SecretVolumeSource, error) {
+
+	dbSecret, err := es.findSecret(es.elasticsearch.UserCredSecretName(username))
 	if err != nil {
 		return nil, err
 	}
-	if databaseSecret != nil {
+
+	// if a secret already exist with the given name.
+	// Validate it, whether it contains the following keys:
+	//	- username
+	// 	- password
+	// If the secret is owned by this object, sync the labels.
+	// Return secretName.
+	if dbSecret != nil {
+		err = es.validateAndSyncLabels(dbSecret)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to validate/sync secret: %s/%s", dbSecret.Namespace, dbSecret.Name))
+		}
+
 		return &corev1.SecretVolumeSource{
-			SecretName: databaseSecret.Name,
+			SecretName: dbSecret.Name,
 		}, nil
 	}
 
-	adminPassword := rand.Characters(8)
-	kibanaPassword := rand.Characters(8)
+	// Create the secret
 	var data = map[string][]byte{
-		KeyAdminUserName:        []byte(AdminUser),
-		KeyAdminPassword:        []byte(adminPassword),
-		KeyKibanaServerUserName: []byte(KibanaserverUser),
-		KeyKibanaServerPassword: []byte(kibanaPassword),
+		corev1.BasicAuthUsernameKey: []byte(api.ElasticsearchInternalUserAdmin),
+		corev1.BasicAuthPasswordKey: []byte(password),
 	}
 
-	name := fmt.Sprintf("%v-auth", es.elasticsearch.OffshootName())
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
+			Name:   es.elasticsearch.UserCredSecretName(username),
 			Labels: es.elasticsearch.OffshootLabels(),
 		},
-		Type: corev1.SecretTypeOpaque,
+		Type: corev1.SecretTypeBasicAuth,
 		Data: data,
 	}
+
+	// add owner reference
+	owner := metav1.NewControllerRef(es.elasticsearch, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
+	core_util.EnsureOwnerReference(&secret.ObjectMeta, owner)
 
 	if _, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Create(context.TODO(), secret, metav1.CreateOptions{}); err != nil {
 		return nil, err
@@ -97,21 +143,59 @@ func (es *Elasticsearch) createDatabaseSecret() (*corev1.SecretVolumeSource, err
 	}, nil
 }
 
-func (es *Elasticsearch) findDatabaseSecret() (*corev1.Secret, error) {
-	name := fmt.Sprintf("%v-auth", es.elasticsearch.OffshootName())
-	secret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
-	if err != nil {
-		if kerr.IsNotFound(err) {
-			return nil, nil
-		} else {
-			return nil, err
+func (es *Elasticsearch) validateAndSyncLabels(secret *corev1.Secret) error {
+	if secret == nil {
+		return errors.New("secret is empty")
+	}
+
+	if value, exist := secret.Data[corev1.BasicAuthUsernameKey]; !exist || len(value) == 0 {
+		return errors.New("username is missing")
+	}
+
+	if value, exist := secret.Data[corev1.BasicAuthPasswordKey]; !exist || len(value) == 0 {
+		return errors.New("password is missing")
+	}
+
+	// If secret is owned by this elasticsearch object,
+	// update the labels.
+	// Labels hold information like elasticsearch version,
+	// should be synced.
+	ctrl := metav1.GetControllerOf(secret)
+	if ctrl != nil &&
+		ctrl.Kind == api.ResourceKindElasticsearch && ctrl.Name == es.elasticsearch.Name {
+
+		// sync labels
+		if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secret.ObjectMeta, func(in *corev1.Secret) *corev1.Secret {
+			in.Labels = core_util.UpsertMap(in.Labels, es.elasticsearch.OffshootLabels())
+			return in
+		}, metav1.PatchOptions{}); err != nil {
+			return err
 		}
 	}
 
-	if secret.Labels[api.LabelDatabaseKind] != api.ResourceKindElasticsearch ||
-		secret.Labels[api.LabelDatabaseName] != es.elasticsearch.Name {
-		return nil, fmt.Errorf(`intended secret "%v/%v" already exists`, es.elasticsearch.Namespace, name)
+	return nil
+}
+
+func (es *Elasticsearch) setMissingUsers() error {
+	userList := make(map[string]api.ElasticsearchUserSpec)
+	if es.elasticsearch.Spec.InternalUsers != nil {
+		userList = es.elasticsearch.Spec.InternalUsers
 	}
 
-	return secret, nil
+	user.SetMissingUser(userList, api.ElasticsearchInternalUserAdmin, api.ElasticsearchUserSpec{Reserved: true})
+	user.SetMissingUser(userList, api.ElasticsearchInternalUserKibanaserver, api.ElasticsearchUserSpec{Reserved: true})
+	user.SetMissingUser(userList, api.ElasticsearchInternalUserKibanaro, api.ElasticsearchUserSpec{Reserved: false})
+	user.SetMissingUser(userList, api.ElasticsearchInternalUserLogstash, api.ElasticsearchUserSpec{Reserved: false})
+	user.SetMissingUser(userList, api.ElasticsearchInternalUserReadall, api.ElasticsearchUserSpec{Reserved: false})
+	user.SetMissingUser(userList, api.ElasticsearchInternalUserSnapshotrestore, api.ElasticsearchUserSpec{Reserved: false})
+
+	newES, _, err := util.PatchElasticsearch(context.TODO(), es.extClient.KubedbV1alpha1(), es.elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+		in.Spec.InternalUsers = userList
+		return in
+	}, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+	es.elasticsearch = newES
+	return nil
 }

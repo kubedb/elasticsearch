@@ -31,4 +31,5 @@ type ElasticsearchInterface interface {
 	EnsureClientNodes() (kutil.VerbType, error)
 	EnsureDataNodes() (kutil.VerbType, error)
 	EnsureCombinedNode() (kutil.VerbType, error)
+	IsAllRequiredSecretAvailable() bool
 }

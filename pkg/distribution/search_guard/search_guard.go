@@ -17,12 +17,17 @@ limitations under the License.
 package search_guard
 
 import (
+	"context"
+
 	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 	distapi "kubedb.dev/elasticsearch/pkg/distribution/api"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	api_util "kmodules.xyz/client-go/api/v1"
 )
 
 type Elasticsearch struct {
@@ -45,4 +50,74 @@ func New(kc kubernetes.Interface, extClient cs.Interface, es *api.Elasticsearch,
 
 func (es *Elasticsearch) UpdatedElasticsearch() *api.Elasticsearch {
 	return es.elasticsearch
+}
+
+func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
+	if !es.elasticsearch.Spec.DisableSecurity {
+		tls := es.elasticsearch.Spec.TLS
+
+		// check transport layer cert
+		idx, _ := api_util.GetCertificate(tls.Certificates, string(api.ElasticsearchTransportCert))
+		if idx != -1 {
+			_, err := es.getSecret(tls.Certificates[idx].SecretName, es.elasticsearch.Namespace)
+			if err != nil {
+				return false
+			}
+		} else {
+			return false
+		}
+
+		if es.elasticsearch.Spec.EnableSSL {
+			// check http layer cert
+			idx, _ := api_util.GetCertificate(tls.Certificates, string(api.ElasticsearchHTTPCert))
+			if idx != -1 {
+				_, err := es.getSecret(tls.Certificates[idx].SecretName, es.elasticsearch.Namespace)
+				if err != nil {
+					return false
+				}
+			} else {
+				return false
+			}
+
+			// check admin cert
+			idx, _ = api_util.GetCertificate(tls.Certificates, string(api.ElasticsearchAdminCert))
+			if idx != -1 {
+				_, err := es.getSecret(tls.Certificates[idx].SecretName, es.elasticsearch.Namespace)
+				if err != nil {
+					return false
+				}
+			} else {
+				return false
+			}
+
+		}
+
+		// check user credentials secret
+		// admin credentials
+		_, err := es.getSecret(es.elasticsearch.Spec.DatabaseSecret.SecretName, es.elasticsearch.Namespace)
+		if err != nil {
+			return false
+		}
+
+		// other credentials secrets
+		userList := es.elasticsearch.Spec.InternalUsers
+		for username := range userList {
+			if username == string(api.ElasticsearchInternalUserAdmin) {
+				continue
+			}
+
+			_, err := es.getSecret(es.elasticsearch.UserCredSecretName(username), es.elasticsearch.Namespace)
+			if err != nil {
+				return false
+			}
+		}
+
+	}
+
+	return true
+}
+
+func (es *Elasticsearch) getSecret(name, namespace string) (*corev1.Secret, error) {
+	secret, err := es.kClient.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	return secret, err
 }

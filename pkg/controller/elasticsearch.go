@@ -37,6 +37,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	dynamic_util "kmodules.xyz/client-go/dynamic"
 	meta_util "kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/tools/queue"
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
@@ -83,6 +84,12 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	elasticsearch, vt2, err := c.ensureElasticsearchNode(elasticsearch)
 	if err != nil {
 		return err
+	}
+
+	// If both err==nil & elasticsearch == nil,
+	// the object was dropped from the queue, to process later.
+	if elasticsearch == nil {
+		return nil
 	}
 
 	if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated {
@@ -197,6 +204,12 @@ func (c *Controller) ensureElasticsearchNode(es *api.Elasticsearch) (*api.Elasti
 
 	if err = elastic.EnsureDatabaseSecret(); err != nil {
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to ensure database credential secret")
+	}
+
+	if !elastic.IsAllRequiredSecretAvailable() {
+		log.Warningf("Required secrets for Elasticsearch: %s/%s are not ready yet", es.Namespace, es.Name)
+		queue.EnqueueAfter(c.esQueue.GetQueue(), elastic.UpdatedElasticsearch(), 5*time.Second)
+		return nil, kutil.VerbUnchanged, nil
 	}
 
 	if err = elastic.EnsureDefaultConfig(); err != nil {

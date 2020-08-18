@@ -69,7 +69,7 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []corev1.Container
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
 							},
-							Key: KeyAdminUserName,
+							Key: corev1.BasicAuthUsernameKey,
 						},
 					},
 				},
@@ -80,7 +80,7 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []corev1.Container
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
 							},
-							Key: KeyAdminPassword,
+							Key: corev1.BasicAuthPasswordKey,
 						},
 					},
 				},
