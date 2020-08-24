@@ -19,6 +19,7 @@ require (
 	gomodules.xyz/envsubst v0.1.0
 	gopkg.in/olivere/elastic.v5 v5.0.85
 	gopkg.in/olivere/elastic.v6 v6.2.31
+	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.18.5
 	k8s.io/apiextensions-apiserver v0.18.5
 	k8s.io/apimachinery v0.18.5
@@ -32,7 +33,7 @@ require (
 	kmodules.xyz/objectstore-api v0.0.0-20200521103120-92080446e04d
 	kmodules.xyz/offshoot-api v0.0.0-20200521035628-e135bf07b226
 	kmodules.xyz/webhook-runtime v0.0.0-20200522123600-ca70a7e28ed0
-	kubedb.dev/apimachinery v0.14.0-beta.1.0.20200817073700-acc62c2e690a
+	kubedb.dev/apimachinery v0.14.0-beta.1.0.20200824054752-4378a98bacbd
 	sigs.k8s.io/yaml v1.2.0
 	stash.appscode.dev/apimachinery v0.10.0-beta.1
 )

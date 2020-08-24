@@ -557,6 +557,7 @@ gopkg.in/olivere/elastic.v6
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 gopkg.in/tomb.v1
 # gopkg.in/yaml.v2 v2.2.8
+## explicit
 gopkg.in/yaml.v2
 # k8s.io/api v0.18.5 => github.com/kmodules/api v0.18.4-0.20200524125823-c8bc107809b9
 ## explicit
@@ -1133,7 +1134,7 @@ kmodules.xyz/prober/api/v1
 ## explicit
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-# kubedb.dev/apimachinery v0.14.0-beta.1.0.20200817073700-acc62c2e690a
+# kubedb.dev/apimachinery v0.14.0-beta.1.0.20200824054752-4378a98bacbd
 ## explicit
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/catalog

@@ -39,6 +39,7 @@ const (
 	DatabaseConfigSecretSuffix  = "config"
 	SecurityConfigFileMountPath = "/usr/share/elasticsearch/plugins/opendistro_security/securityconfig"
 	InternalUserFileName        = "internal_users.yml"
+	RolesMappingFileName        = "roles_mapping.yml"
 )
 
 var adminDNTemplate = `
@@ -88,6 +89,14 @@ opendistro_security.allow_default_init_securityindex: true
 
 var https_disabled = `
 opendistro_security.ssl.http.enabled: false
+`
+
+var roles_mapping = `
+readall_and_monitor:
+  reserved: false
+  hidden: false
+  users:
+  - "readall_monitor"
 `
 
 func (es *Elasticsearch) EnsureDefaultConfig() error {
@@ -205,6 +214,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		in.Data = map[string][]byte{
 			ConfigFileName:       []byte(config),
 			InternalUserFileName: []byte(inUserConfig),
+			RolesMappingFileName: []byte(roles_mapping),
 		}
 		return in
 	}, metav1.PatchOptions{}); err != nil {
@@ -246,7 +256,6 @@ func (es *Elasticsearch) getInternalUserConfig() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal the internal user list")
 	}
-	fmt.Println(string(byt))
 
 	return string(byt), nil
 }

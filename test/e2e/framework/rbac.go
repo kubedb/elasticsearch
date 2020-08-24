@@ -41,15 +41,6 @@ const (
 
 var (
 	CustomSecretSuffix = "custom-secret"
-	CustomUsername     = "username1234567890"
-	CustomPassword     = "password0987654321"
-	AdminUser          = "admin"
-	KeyAdminUserName   = "ADMIN_USERNAME"
-	KeyAdminPassword   = "ADMIN_PASSWORD"
-	ReadAllUser        = "readall"
-	KeyReadAllUserName = "READALL_USERNAME"
-	KeyReadAllPassword = "READALL_PASSWORD"
-	ExporterSecretPath = "/var/run/secrets/kubedb.com/"
 )
 
 func (i *Invocation) ServiceAccount() *core.ServiceAccount {

@@ -213,7 +213,7 @@ var _ = Describe("Elasticsearch", func() {
 				}
 
 				Context("with Default Resource", func() {
-					FIt("should run successfully", shouldRunSuccessfully)
+					It("should run successfully", shouldRunSuccessfully)
 				})
 
 				Context("Custom Resource", func() {
@@ -252,7 +252,7 @@ var _ = Describe("Elasticsearch", func() {
 
 					Context("with Default Resource", func() {
 
-						FIt("should run successfully", shouldRunSuccessfully)
+						It("should run successfully", shouldRunSuccessfully)
 					})
 
 					Context("Custom Resource", func() {

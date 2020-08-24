@@ -87,7 +87,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 
 	// If both err==nil & elasticsearch == nil,
-	// the object was dropped from the queue, to process later.
+	// the object was dropped from the work-queue, to process later.
+	// return nil.
 	if elasticsearch == nil {
 		return nil
 	}

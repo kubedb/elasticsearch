@@ -17,13 +17,13 @@ limitations under the License.
 package open_distro
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -61,13 +61,19 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []corev1.Container
 		}
 
 		if !es.elasticsearch.Spec.DisableSecurity {
+			sName := es.elasticsearch.UserCredSecretName(string(api.ElasticsearchInternalUserMetricsExporter))
+			_, err := es.getSecret(sName, es.elasticsearch.Namespace)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get metrics-exporter-cred secret")
+			}
+
 			envList := []corev1.EnvVar{
 				{
 					Name: "DB_USER",
 					ValueFrom: &corev1.EnvVarSource{
 						SecretKeyRef: &corev1.SecretKeySelector{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
+								Name: sName,
 							},
 							Key: corev1.BasicAuthUsernameKey,
 						},
@@ -78,7 +84,7 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []corev1.Container
 					ValueFrom: &corev1.EnvVarSource{
 						SecretKeyRef: &corev1.SecretKeySelector{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
+								Name: sName,
 							},
 							Key: corev1.BasicAuthPasswordKey,
 						},

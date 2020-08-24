@@ -57,9 +57,9 @@ func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
 		tls := es.elasticsearch.Spec.TLS
 
 		// check transport layer cert
-		idx, _ := api_util.GetCertificate(tls.Certificates, string(api.ElasticsearchTransportCert))
-		if idx != -1 {
-			_, err := es.getSecret(tls.Certificates[idx].SecretName, es.elasticsearch.Namespace)
+		sName, exist := api_util.GetCertificateSecretName(tls.Certificates, string(api.ElasticsearchTransportCert))
+		if exist {
+			_, err := es.getSecret(sName, es.elasticsearch.Namespace)
 			if err != nil {
 				return false
 			}
@@ -69,9 +69,9 @@ func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
 
 		if es.elasticsearch.Spec.EnableSSL {
 			// check http layer cert
-			idx, _ := api_util.GetCertificate(tls.Certificates, string(api.ElasticsearchHTTPCert))
-			if idx != -1 {
-				_, err := es.getSecret(tls.Certificates[idx].SecretName, es.elasticsearch.Namespace)
+			sName, exist := api_util.GetCertificateSecretName(tls.Certificates, string(api.ElasticsearchHTTPCert))
+			if exist {
+				_, err := es.getSecret(sName, es.elasticsearch.Namespace)
 				if err != nil {
 					return false
 				}
@@ -80,9 +80,9 @@ func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
 			}
 
 			// check admin cert
-			idx, _ = api_util.GetCertificate(tls.Certificates, string(api.ElasticsearchAdminCert))
-			if idx != -1 {
-				_, err := es.getSecret(tls.Certificates[idx].SecretName, es.elasticsearch.Namespace)
+			sName, exist = api_util.GetCertificateSecretName(tls.Certificates, string(api.ElasticsearchAdminCert))
+			if exist {
+				_, err := es.getSecret(sName, es.elasticsearch.Namespace)
 				if err != nil {
 					return false
 				}

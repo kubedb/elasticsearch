@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"kubedb.dev/apimachinery/apis"
 	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
@@ -130,8 +131,10 @@ func (e *Elasticsearch) CertSecretVolumeMountPath(configDir string, alias Elasti
 }
 
 // returns the secret name for the  user credentials (ie. username, password)
+// If username contains underscore (_), it will be replaced by hyphen (‐) for
+// the Kubernetes naming convention.
 func (e *Elasticsearch) UserCredSecretName(userName string) string {
-	return meta_util.NameWithSuffix(e.Name, fmt.Sprintf("%s-cred", userName))
+	return meta_util.NameWithSuffix(e.Name, strings.ReplaceAll(fmt.Sprintf("%s-cred", userName), "_", "-"))
 }
 
 // returns the secret name for the default elasticsearch configuration

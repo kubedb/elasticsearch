@@ -39,6 +39,7 @@ const (
 	DatabaseConfigSecretSuffix  = "config"
 	SecurityConfigFileMountPath = "/usr/share/elasticsearch/plugins/search-guard-%v/sgconfig"
 	InternalUserFileName        = "sg_internal_users.yml"
+	RolesMappingFileName        = "sg_roles_mapping.yml"
 )
 
 var adminDNTemplate = `
@@ -107,6 +108,22 @@ searchguard.ssl.http.pemtrustedcas_filepath: certs/http/ca.crt
 
 var https_disabled = `
 searchguard.ssl.http.enabled: false
+`
+
+var roles_mapping_v6 = `
+sg_readall_and_monitor:
+  reserved: false
+  hidden: false
+  users:
+  - "readall_monitor"
+`
+
+var roles_mapping_v7 = `
+SGS_READALL_AND_MONITOR:
+  reserved: false
+  hidden: false
+  users:
+  - "readall_monitor"
 `
 
 func (es *Elasticsearch) EnsureDefaultConfig() error {
@@ -218,13 +235,23 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		config = searchguard_security_disabled
 	}
 
+	data := map[string][]byte{
+		ConfigFileName:       []byte(config),
+		InternalUserFileName: []byte(inUserConfig),
+	}
+
+	if es.elasticsearch.Spec.Monitor != nil {
+		if string(es.esVersion.Spec.Version[0]) == "6" {
+			data[RolesMappingFileName] = []byte(roles_mapping_v6)
+		} else {
+			data[RolesMappingFileName] = []byte(roles_mapping_v7)
+		}
+	}
+
 	if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *corev1.Secret) *corev1.Secret {
 		in.Labels = core_util.UpsertMap(in.Labels, es.elasticsearch.OffshootLabels())
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
-		in.Data = map[string][]byte{
-			ConfigFileName:       []byte(config),
-			InternalUserFileName: []byte(inUserConfig),
-		}
+		in.Data = data
 		return in
 	}, metav1.PatchOptions{}); err != nil {
 		return err
@@ -265,7 +292,6 @@ func (es *Elasticsearch) getInternalUserConfig() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal the internal user list")
 	}
-	fmt.Println(string(byt))
 
 	return string(byt), nil
 }

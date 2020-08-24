@@ -117,7 +117,7 @@ func (es *Elasticsearch) createOrSyncUserCredSecret(username, password string) (
 
 	// Create the secret
 	var data = map[string][]byte{
-		corev1.BasicAuthUsernameKey: []byte(api.ElasticsearchInternalUserAdmin),
+		corev1.BasicAuthUsernameKey: []byte(username),
 		corev1.BasicAuthPasswordKey: []byte(password),
 	}
 
@@ -188,6 +188,13 @@ func (es *Elasticsearch) setMissingUsers() error {
 	user.SetMissingUser(userList, api.ElasticsearchInternalUserLogstash, api.ElasticsearchUserSpec{Reserved: false})
 	user.SetMissingUser(userList, api.ElasticsearchInternalUserReadall, api.ElasticsearchUserSpec{Reserved: false})
 	user.SetMissingUser(userList, api.ElasticsearchInternalUserSnapshotrestore, api.ElasticsearchUserSpec{Reserved: false})
+
+	// Set user for metrics-exporter sidecar, if monitoring is enabled.
+	if es.elasticsearch.Spec.Monitor != nil {
+		user.SetMissingUser(userList, api.ElasticsearchInternalUserMetricsExporter, api.ElasticsearchUserSpec{
+			Reserved: false,
+		})
+	}
 
 	newES, _, err := util.PatchElasticsearch(context.TODO(), es.extClient.KubedbV1alpha1(), es.elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Spec.InternalUsers = userList
