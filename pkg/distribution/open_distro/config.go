@@ -58,6 +58,7 @@ opendistro_security.ssl.transport.pemkey_filepath: certs/transport/tls.key
 opendistro_security.ssl.transport.pemtrustedcas_filepath: certs/transport/ca.crt
 opendistro_security.ssl.transport.enforce_hostname_verification: false
 
+opendistro_security.allow_default_init_securityindex: true
 opendistro_security.audit.type: internal_elasticsearch
 opendistro_security.enable_snapshot_restore_privilege: true
 opendistro_security.check_snapshot_restore_write_privileges: true
@@ -78,7 +79,6 @@ opendistro_security.ssl.http.enabled: true
 opendistro_security.ssl.http.pemcert_filepath: certs/http/tls.crt
 opendistro_security.ssl.http.pemkey_filepath: certs/http/tls.key
 opendistro_security.ssl.http.pemtrustedcas_filepath: certs/http/ca.crt
-opendistro_security.allow_default_init_securityindex: true
 
 # opendistro_security.authcz.admin_dn:
 %s
