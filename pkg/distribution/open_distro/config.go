@@ -96,7 +96,7 @@ readall_and_monitor:
   reserved: false
   hidden: false
   users:
-  - "readall_monitor"
+  - "metrics_exporter"
 `
 
 func (es *Elasticsearch) EnsureDefaultConfig() error {

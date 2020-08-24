@@ -115,7 +115,7 @@ sg_readall_and_monitor:
   reserved: false
   hidden: false
   users:
-  - "readall_monitor"
+  - "metrics_exporter"
 `
 
 var roles_mapping_v7 = `
@@ -123,7 +123,7 @@ SGS_READALL_AND_MONITOR:
   reserved: false
   hidden: false
   users:
-  - "readall_monitor"
+  - "metrics_exporter"
 `
 
 func (es *Elasticsearch) EnsureDefaultConfig() error {
