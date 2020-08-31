@@ -170,7 +170,7 @@ var _ = Describe("Elasticsearch", func() {
 
 		Context("General", func() {
 
-			FContext("-", func() {
+			Context("-", func() {
 
 				var shouldRunSuccessfully = func() {
 					if skipMessage != "" {
