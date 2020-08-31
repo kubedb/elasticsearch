@@ -40,6 +40,8 @@ const (
 	SecurityConfigFileMountPath = "/usr/share/elasticsearch/plugins/search-guard-%v/sgconfig"
 	InternalUserFileName        = "sg_internal_users.yml"
 	RolesMappingFileName        = "sg_roles_mapping.yml"
+	ReadallMonitorRoleV7        = "SGS_READALL_AND_MONITOR"
+	ReadallMonitorRoleV6        = "sg_readall_and_monitor"
 )
 
 var adminDNTemplate = `
@@ -50,26 +52,6 @@ searchguard.authcz.admin_dn:
 var nodesDNTemplate = `
 searchguard.nodes_dn:
 - "%s"
-`
-
-var internalUserConfigFile = `
-admin:
-  hash: "%s"
-
-kibanaserver:
-  hash: "%s"
-
-kibanaro:
-  hash: "%s"
-
-logstash:
-  hash: "%s"
-
-readall:
-  hash: "%s"
-
-snapshotrestore:
-  hash: "%s"
 `
 
 var searchguard_security_enabled = `
@@ -108,22 +90,6 @@ searchguard.ssl.http.pemtrustedcas_filepath: certs/http/ca.crt
 
 var https_disabled = `
 searchguard.ssl.http.enabled: false
-`
-
-var roles_mapping_v6 = `
-sg_readall_and_monitor:
-  reserved: false
-  hidden: false
-  users:
-  - "metrics_exporter"
-`
-
-var roles_mapping_v7 = `
-SGS_READALL_AND_MONITOR:
-  reserved: false
-  hidden: false
-  users:
-  - "metrics_exporter"
 `
 
 func (es *Elasticsearch) EnsureDefaultConfig() error {
@@ -167,7 +133,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		Namespace: es.elasticsearch.Namespace,
 	}
 
-	var config, inUserConfig string
+	var config, inUserConfig, rolesMapping string
 
 	if !es.elasticsearch.Spec.DisableSecurity {
 		config = searchguard_security_enabled
@@ -176,6 +142,11 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		inUserConfig, err = es.getInternalUserConfig()
 		if err != nil {
 			return errors.Wrap(err, "failed to generate default internal user config")
+		}
+
+		rolesMapping, err = es.getRolesMapping()
+		if err != nil {
+			return errors.Wrap(err, "failed to generate default roles_mapping.yml")
 		}
 
 		// If rest layer is secured with certs
@@ -238,14 +209,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 	data := map[string][]byte{
 		ConfigFileName:       []byte(config),
 		InternalUserFileName: []byte(inUserConfig),
-	}
-
-	if es.elasticsearch.Spec.Monitor != nil {
-		if string(es.esVersion.Spec.Version[0]) == "6" {
-			data[RolesMappingFileName] = []byte(roles_mapping_v6)
-		} else {
-			data[RolesMappingFileName] = []byte(roles_mapping_v7)
-		}
+		RolesMappingFileName: []byte(rolesMapping),
 	}
 
 	if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *corev1.Secret) *corev1.Secret {
@@ -291,6 +255,17 @@ func (es *Elasticsearch) getInternalUserConfig() (string, error) {
 	byt, err := yaml.Marshal(userList)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal the internal user list")
+	}
+
+	return string(byt), nil
+}
+
+func (es *Elasticsearch) getRolesMapping() (string, error) {
+	rolesMapping := es.elasticsearch.Spec.RolesMapping
+
+	byt, err := yaml.Marshal(rolesMapping)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal the roles mapping")
 	}
 
 	return string(byt), nil

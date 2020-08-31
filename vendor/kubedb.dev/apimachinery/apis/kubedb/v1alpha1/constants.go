@@ -64,8 +64,6 @@ const (
 	MongoDBCertificateCN          = "root"
 
 	MySQLMetricsExporterConfigSecretSuffix = "metrics-exporter-config"
-	MySQLUserKey                           = "username"
-	MySQLPasswordKey                       = "password"
 	MySQLNodePort                          = 3306
 	MySQLGroupComPort                      = 33060
 	MySQLMaxGroupMembers                   = 9

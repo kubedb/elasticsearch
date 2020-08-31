@@ -33,9 +33,9 @@ import (
 
 func (es *Elasticsearch) EnsureDatabaseSecret() error {
 
-	err := es.setMissingUsers()
+	err := es.setMissingUsersAndRolesMapping()
 	if err != nil {
-		return errors.Wrap(err, "failed to set missing internal users")
+		return errors.Wrap(err, "failed to set missing internal users or roles mapping")
 	}
 
 	// For admin user
@@ -176,7 +176,9 @@ func (es *Elasticsearch) validateAndSyncLabels(secret *corev1.Secret) error {
 	return nil
 }
 
-func (es *Elasticsearch) setMissingUsers() error {
+func (es *Elasticsearch) setMissingUsersAndRolesMapping() error {
+
+	// Users
 	userList := make(map[string]api.ElasticsearchUserSpec)
 	if es.elasticsearch.Spec.InternalUsers != nil {
 		userList = es.elasticsearch.Spec.InternalUsers
@@ -196,8 +198,29 @@ func (es *Elasticsearch) setMissingUsers() error {
 		})
 	}
 
+	// RolesMapping
+	rolesMapping := make(map[string]api.ElasticsearchRoleMapSpec)
+	if es.elasticsearch.Spec.RolesMapping != nil {
+		rolesMapping = es.elasticsearch.Spec.RolesMapping
+	}
+
+	// Add permission for metrics-exporter sidecar, if monitoring is enabled.
+	if es.elasticsearch.Spec.Monitor != nil {
+		// The metrics_exporter user will need to have access to
+		// readall_and_monitor role.
+		// Create rolesMapping if not exists.
+		if value, check := rolesMapping[ReadallMonitorRole]; check {
+			value.Users = upsertStringSlice(value.Users, string(api.ElasticsearchInternalUserMetricsExporter))
+		} else {
+			rolesMapping[ReadallMonitorRole] = api.ElasticsearchRoleMapSpec{
+				Users: []string{string(api.ElasticsearchInternalUserMetricsExporter)},
+			}
+		}
+	}
+
 	newES, _, err := util.PatchElasticsearch(context.TODO(), es.extClient.KubedbV1alpha1(), es.elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 		in.Spec.InternalUsers = userList
+		in.Spec.RolesMapping = rolesMapping
 		return in
 	}, metav1.PatchOptions{})
 	if err != nil {
@@ -205,4 +228,20 @@ func (es *Elasticsearch) setMissingUsers() error {
 	}
 	es.elasticsearch = newES
 	return nil
+}
+
+func upsertStringSlice(inSlice []string, values ...string) []string {
+	upsert := func(m string) {
+		for _, v := range inSlice {
+			if v == m {
+				return
+			}
+		}
+		inSlice = append(inSlice, m)
+	}
+
+	for _, value := range values {
+		upsert(value)
+	}
+	return inSlice
 }

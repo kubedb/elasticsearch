@@ -141,22 +141,12 @@ func (i *Invocation) RestoreSession(dbMeta metav1.ObjectMeta, repo *stashV1alpha
 			},
 		},
 		Spec: stashv1beta1.RestoreSessionSpec{
-			Task: stashv1beta1.TaskRef{
-				Name: i.getStashESRestoreTaskName(),
-			},
 			Repository: core.LocalObjectReference{
 				Name: repo.Name,
 			},
 			Rules: []stashv1beta1.Rule{
 				{
 					Snapshots: []string{"latest"},
-				},
-			},
-			Target: &stashv1beta1.RestoreTarget{
-				Ref: stashv1beta1.TargetRef{
-					APIVersion: v1alpha13.SchemeGroupVersion.String(),
-					Kind:       v1alpha13.ResourceKindApp,
-					Name:       dbMeta.Name,
 				},
 			},
 		},
@@ -174,10 +164,10 @@ func (f Framework) DeleteRestoreSession(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() stashv1beta1.RestoreSessionPhase {
+	return Eventually(func() stashv1beta1.RestorePhase {
 		restoreSession, err := f.stashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
-		if restoreSession.Status.Phase == stashv1beta1.RestoreSessionFailed {
+		if restoreSession.Status.Phase == stashv1beta1.RestoreFailed {
 			fmt.Println("Restoresession failed. ", restoreSession.Status.Stats)
 		}
 		return restoreSession.Status.Phase

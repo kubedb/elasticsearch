@@ -26,7 +26,6 @@ import (
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
-	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -183,7 +182,11 @@ func (e elasticsearchStatsService) ServiceName() string {
 }
 
 func (e elasticsearchStatsService) ServiceMonitorName() string {
-	return fmt.Sprintf("kubedb-%s-%s", e.Namespace, e.Name)
+	return e.ServiceName()
+}
+
+func (e elasticsearchStatsService) ServiceMonitorAdditionalLabels() map[string]string {
+	return e.OffshootLabels()
 }
 
 func (e elasticsearchStatsService) Path() string {
@@ -222,9 +225,6 @@ func (e *Elasticsearch) SetDefaults(topology *core_util.Topology) {
 	if e.Spec.StorageType == "" {
 		e.Spec.StorageType = StorageTypeDurable
 	}
-
-	// set updateStrategy to "OnDelete"
-	e.Spec.UpdateStrategy = apps.StatefulSetUpdateStrategy{Type: apps.OnDeleteStatefulSetStrategyType}
 
 	if e.Spec.TerminationPolicy == "" {
 		e.Spec.TerminationPolicy = TerminationPolicyDelete

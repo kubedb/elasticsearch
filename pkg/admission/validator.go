@@ -259,10 +259,6 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 		}
 	}
 
-	if elasticsearch.Spec.UpdateStrategy.Type == "" {
-		return fmt.Errorf(`'spec.updateStrategy.type' is missing`)
-	}
-
 	if elasticsearch.Spec.TerminationPolicy == "" {
 		return fmt.Errorf(`'spec.terminationPolicy' is missing`)
 	}

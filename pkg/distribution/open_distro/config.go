@@ -40,6 +40,7 @@ const (
 	SecurityConfigFileMountPath = "/usr/share/elasticsearch/plugins/opendistro_security/securityconfig"
 	InternalUserFileName        = "internal_users.yml"
 	RolesMappingFileName        = "roles_mapping.yml"
+	ReadallMonitorRole          = "readall_and_monitor"
 )
 
 var adminDNTemplate = `
@@ -91,14 +92,6 @@ var https_disabled = `
 opendistro_security.ssl.http.enabled: false
 `
 
-var roles_mapping = `
-readall_and_monitor:
-  reserved: false
-  hidden: false
-  users:
-  - "metrics_exporter"
-`
-
 func (es *Elasticsearch) EnsureDefaultConfig() error {
 	secret, err := es.findSecret(es.elasticsearch.ConfigSecretName())
 	if err != nil {
@@ -140,7 +133,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		Namespace: es.elasticsearch.Namespace,
 	}
 
-	var config, inUserConfig string
+	var config, inUserConfig, rolesMapping string
 
 	if !es.elasticsearch.Spec.DisableSecurity {
 		config = opendistro_security_enabled
@@ -148,7 +141,12 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		// password for default users: admin, kibanaserver, etc.
 		inUserConfig, err = es.getInternalUserConfig()
 		if err != nil {
-			return errors.Wrap(err, "failed to generate default internal user config")
+			return errors.Wrap(err, "failed to generate default internal_users.yml")
+		}
+
+		rolesMapping, err = es.getRolesMapping()
+		if err != nil {
+			return errors.Wrap(err, "failed to generate default roles_mapping.yml")
 		}
 
 		// If rest layer is secured with certs
@@ -214,7 +212,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		in.Data = map[string][]byte{
 			ConfigFileName:       []byte(config),
 			InternalUserFileName: []byte(inUserConfig),
-			RolesMappingFileName: []byte(roles_mapping),
+			RolesMappingFileName: []byte(rolesMapping),
 		}
 		return in
 	}, metav1.PatchOptions{}); err != nil {
@@ -255,6 +253,17 @@ func (es *Elasticsearch) getInternalUserConfig() (string, error) {
 	byt, err := yaml.Marshal(userList)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal the internal user list")
+	}
+
+	return string(byt), nil
+}
+
+func (es *Elasticsearch) getRolesMapping() (string, error) {
+	rolesMapping := es.elasticsearch.Spec.RolesMapping
+
+	byt, err := yaml.Marshal(rolesMapping)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal the roles mapping")
 	}
 
 	return string(byt), nil

@@ -19,7 +19,6 @@ package v1alpha1
 import (
 	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 
-	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -115,17 +114,11 @@ type ElasticsearchSpec struct {
 	// +optional
 	MaxUnavailable *intstr.IntOrString `json:"maxUnavailable,omitempty" protobuf:"bytes,16,opt,name=maxUnavailable"`
 
-	// updateStrategy indicates the StatefulSetUpdateStrategy that will be
-	// employed to update Pods in the StatefulSet when a revision is made to
-	// Template.
-	// Deprecated: UpdateStrategy is default to "OnDelete"
-	UpdateStrategy apps.StatefulSetUpdateStrategy `json:"updateStrategy,omitempty" protobuf:"bytes,17,opt,name=updateStrategy"`
-
 	// TLS contains tls configurations
 	// +optional
-	TLS *kmapi.TLSConfig `json:"tls,omitempty" protobuf:"bytes,18,opt,name=tls"`
+	TLS *kmapi.TLSConfig `json:"tls,omitempty" protobuf:"bytes,17,opt,name=tls"`
 
-	// InternalUsers contains internal user configurations
+	// InternalUsers contains internal user configurations.
 	// Expected Input format:
 	// internalUsers:
 	//   <username1>:
@@ -133,7 +126,17 @@ type ElasticsearchSpec struct {
 	//   <username2>:
 	//		...
 	// +optional
-	InternalUsers map[string]ElasticsearchUserSpec `json:"internalUsers,omitempty" protobuf:"bytes,19,rep,name=internalUsers"`
+	InternalUsers map[string]ElasticsearchUserSpec `json:"internalUsers,omitempty" protobuf:"bytes,18,rep,name=internalUsers"`
+
+	// RolesMapping contains roles mapping configurations.
+	// Expected Input format:
+	// rolesMapping:
+	//   <role1>:
+	//		...
+	//   <role2>:
+	//		...
+	// +optional
+	RolesMapping map[string]ElasticsearchRoleMapSpec `json:"rolesMapping,omitempty" protobuf:"bytes,19,rep,name=rolesMapping"`
 
 	// Indicates that the database is paused and controller will not sync any changes made to this spec.
 	// +optional
@@ -239,6 +242,42 @@ type ElasticsearchUserSpec struct {
 	// Specifies the description of the user
 	// +optional
 	Description string `json:"description,omitempty" yaml:"description,omitempty" protobuf:"bytes,8,opt,name=description"`
+}
+
+// Specifies the role mapping structure.
+// Both 'json' and 'yaml' tags are used in structure metadata.
+// The `json` tags (camel case) are used while taking input from users.
+// The `yaml` tags (snake case) are used by the operator to generate roles_mapping.yml file.
+type ElasticsearchRoleMapSpec struct {
+	// Specifies the reserved status.
+	// Resources that have this set to true can’t be changed using the REST API or Kibana.
+	// Default to "false".
+	// +optional
+	Reserved bool `json:"reserved,omitempty" yaml:"reserved,omitempty" protobuf:"bytes,1,opt,name=reserved"`
+
+	// Specifies the hidden status.
+	// Resources that have this set to true are not returned by the REST API
+	// and not visible in Kibana.
+	// Default to "false".
+	// +optional
+	Hidden bool `json:"hidden,omitempty" yaml:"hidden,omitempty" protobuf:"bytes,2,opt,name=hidden"`
+
+	// Specifies a list of backend roles assigned to this role.
+	// Backend roles can come from the internal user database,
+	// LDAP groups, JSON web token claims or SAML assertions.
+	// +optional
+	BackendRoles []string `json:"backendRoles,omitempty" yaml:"backend_roles,omitempty" protobuf:"bytes,3,opt,name=backendRoles"`
+
+	// Specifies a list of hosts assigned to this role.
+	// +optional
+	Hosts []string `json:"hosts,omitempty" yaml:"hosts,omitempty" protobuf:"bytes,4,opt,name=hosts"`
+
+	// Specifies a list of users assigned to this role.
+	// +optional
+	Users []string `json:"users,omitempty" yaml:"users,omitempty" protobuf:"bytes,5,opt,name=users"`
+
+	// Specifies a list of backend roles (migrated from ES-version6) assigned to this role.
+	AndBackendRoles []string `json:"andBackendRoles,omitempty" yaml:"and_backend_roles,omitempty" protobuf:"bytes,6,opt,name=andBackendRoles"`
 }
 
 type ElasticsearchStatus struct {

@@ -170,7 +170,7 @@ var _ = Describe("Elasticsearch", func() {
 
 		Context("General", func() {
 
-			Context("-", func() {
+			FContext("-", func() {
 
 				var shouldRunSuccessfully = func() {
 					if skipMessage != "" {
@@ -469,7 +469,7 @@ var _ = Describe("Elasticsearch", func() {
 
 					// eventually backupsession succeeded
 					By("Check for Succeeded restoreSession")
-					f.EventuallyRestoreSessionPhase(rs.ObjectMeta).Should(Equal(stashV1beta1.RestoreSessionSucceeded))
+					f.EventuallyRestoreSessionPhase(rs.ObjectMeta).Should(Equal(stashV1beta1.RestoreSucceeded))
 
 					By("Wait for Running elasticsearch")
 					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
