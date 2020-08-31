@@ -260,6 +260,12 @@ func (es *Elasticsearch) getInternalUserConfig() (string, error) {
 
 func (es *Elasticsearch) getRolesMapping() (string, error) {
 	rolesMapping := es.elasticsearch.Spec.RolesMapping
+	// if rolesMapping is nil, return empty string
+	// no need to  perform yaml.Marshal().
+	// coz it will generate ( `{}` ).
+	if rolesMapping == nil {
+		return "", nil
+	}
 
 	byt, err := yaml.Marshal(rolesMapping)
 	if err != nil {
