@@ -55,13 +55,11 @@ const (
 	ElasticsearchMetricsPort     = 9600
 	ElasticsearchMetricsPortName = "metrics"
 
-	MongoDBShardPort              = 27017
-	MongoDBConfigdbPort           = 27017
-	MongoDBMongosPort             = 27017
-	MongoDBKeyFileSecretSuffix    = "key"
-	MongoDBPEMSecretSuffix        = "pem"
-	MongoDBClientCertOrganization = DatabaseNamePrefix + ":client"
-	MongoDBCertificateCN          = "root"
+	MongoDBShardPort           = 27017
+	MongoDBConfigdbPort        = 27017
+	MongoDBMongosPort          = 27017
+	MongoDBKeyFileSecretSuffix = "key"
+	MongoDBRootUsername        = "root"
 
 	MySQLMetricsExporterConfigSecretSuffix = "metrics-exporter-config"
 	MySQLNodePort                          = 3306

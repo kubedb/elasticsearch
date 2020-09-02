@@ -144,9 +144,13 @@ func (i *Invocation) RestoreSession(dbMeta metav1.ObjectMeta, repo *stashV1alpha
 			Repository: core.LocalObjectReference{
 				Name: repo.Name,
 			},
-			Rules: []stashv1beta1.Rule{
-				{
-					Snapshots: []string{"latest"},
+			RestoreTargetSpec: stashv1beta1.RestoreTargetSpec{
+				Target: &stashv1beta1.RestoreTarget{
+					Rules: []stashv1beta1.Rule{
+						{
+							Snapshots: []string{"latest"},
+						},
+					},
 				},
 			},
 		},
@@ -182,11 +186,4 @@ func (f *Framework) getStashESBackupTaskName() string {
 	Expect(err).NotTo(HaveOccurred())
 
 	return "elasticsearch-backup-" + esVersion.Spec.Version
-}
-
-func (f *Framework) getStashESRestoreTaskName() string {
-	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), DBCatalogName, metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-
-	return "elasticsearch-restore-" + esVersion.Spec.Version
 }
