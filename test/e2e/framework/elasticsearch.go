@@ -20,9 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
-	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"kubedb.dev/elasticsearch/pkg/util/es"
@@ -36,12 +34,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/wait"
 	meta_util "kmodules.xyz/client-go/meta"
 )
 
 var (
-	JobPvcStorageSize = "2Gi"
-	DBPvcStorageSize  = "1Gi"
+	JobPvcStorageSize = "200Mi"
+	DBPvcStorageSize  = "100Mi"
 )
 
 const (
@@ -148,7 +147,24 @@ func (f *Framework) PatchElasticsearch(meta metav1.ObjectMeta, transform func(*a
 }
 
 func (f *Framework) DeleteElasticsearch(meta metav1.ObjectMeta) error {
-	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
+	return f.dbClient.KubedbV1alpha1().Elasticsearches(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInBackground())
+}
+
+func (f *Framework) EventuallyServices(es *api.Elasticsearch) error {
+	sel, err := metav1.LabelSelectorAsSelector(metav1.SetAsLabelSelector(es.OffshootSelectors()))
+	if err != nil {
+		return err
+	}
+
+	return wait.PollImmediate(WaitLoopInterval, WaitLoopTimeout, func() (bool, error) {
+		svcList, err := f.kubeClient.CoreV1().Services(es.Namespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: sel.String(),
+		})
+		if err != nil {
+			return false, nil
+		}
+		return len(svcList.Items) == 0, nil
+	})
 }
 
 func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -164,8 +180,8 @@ func (f *Framework) EventuallyElasticsearch(meta metav1.ObjectMeta) GomegaAsyncA
 			}
 			return true
 		},
-		time.Minute*5,
-		time.Second*5,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
 }
 
@@ -176,8 +192,8 @@ func (f *Framework) EventuallyElasticsearchPhase(meta metav1.ObjectMeta) GomegaA
 			Expect(err).NotTo(HaveOccurred())
 			return db.Status.Phase
 		},
-		time.Minute*5,
-		time.Second*5,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
 }
 
@@ -188,8 +204,8 @@ func (f *Framework) EventuallyElasticsearchRunning(meta metav1.ObjectMeta) Gomeg
 			Expect(err).NotTo(HaveOccurred())
 			return elasticsearch.Status.Phase == api.DatabasePhaseRunning
 		},
-		time.Minute*15,
-		time.Second*10,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
 }
 
@@ -222,9 +238,23 @@ func (f *Framework) EventuallyElasticsearchClientReady(meta metav1.ObjectMeta) G
 
 			return true
 		},
-		time.Minute*15,
-		time.Second*5,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
+}
+
+func (f *Framework) ElasticsearchIndicesCount(client es.ESClient) (int, error) {
+	var count int
+	var err error
+	err = wait.PollImmediate(WaitLoopInterval, WaitLoopTimeout, func() (bool, error) {
+		count, err = client.CountIndex()
+		if err != nil {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	return count, err
 }
 
 func (f *Framework) EventuallyElasticsearchIndicesCount(client es.ESClient) GomegaAsyncAssertion {
@@ -236,8 +266,8 @@ func (f *Framework) EventuallyElasticsearchIndicesCount(client es.ESClient) Gome
 			}
 			return count
 		},
-		time.Minute*10,
-		time.Second*5,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
 }
 
@@ -318,18 +348,4 @@ func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 		}
 	}
 	return err
-}
-
-func (f *Framework) IndicesCount(obj *api.Elasticsearch, indicesCount int) int {
-	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), string(obj.Spec.Version), metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-
-	es, err := f.GetElasticsearch(obj.ObjectMeta)
-	Expect(err).NotTo(HaveOccurred())
-
-	if esVersion.Spec.AuthPlugin == v1alpha1.ElasticsearchAuthPluginSearchGuard &&
-		!es.Spec.DisableSecurity {
-		return indicesCount + 1
-	}
-	return indicesCount
 }

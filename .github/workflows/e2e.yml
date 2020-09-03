@@ -31,7 +31,7 @@ jobs:
         name: Generate test matrix
         run: |
           k8s=(v1.12.10 v1.14.10 v1.16.9 v1.18.4)
-          db=(7.3.2 7.2.0 6.8.0 6.5.3 6.4.0 6.3.0-v1 6.2.4-v1 5.6.4-v1)
+          db=(1.0.2-opendistro 1.1.0-opendistro 1.2.1-opendistro 1.3.0-opendistro 1.4.0-opendistro 1.6.0-opendistro 1.7.0-opendistro 1.8.0-opendistro 1.9.0-opendistro 6.8.1-searchguard 6.8.10-xpack 7.0.1-searchguard 7.0.1-xpack 7.1.1-searchguard 7.1.1-xpack 7.2.1-xpack 7.3.2-xpack 7.4.2-xpack 7.5.2-searchguard 7.5.2-xpack 7.6.2-xpack 7.7.1-xpack 7.8.0-xpack)
 
           IFS=' '
           read -ra COMMENT <<< "${{ github.event.comment.body }}"

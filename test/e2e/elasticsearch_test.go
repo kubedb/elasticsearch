@@ -89,13 +89,16 @@ var _ = Describe("Elasticsearch", func() {
 		defer elasticClient.Stop()
 		defer f.Tunnel.Close()
 
+		indicesCount, err = f.ElasticsearchIndicesCount(elasticClient)
+		Expect(err).NotTo(HaveOccurred())
+
 		By("Creating new indices")
 		err = elasticClient.CreateIndex(2)
 		Expect(err).NotTo(HaveOccurred())
 		indicesCount += 2
 
 		By("Checking new indices")
-		f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+		f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 	}
 
 	var deleteTestResource = func() {
@@ -132,6 +135,10 @@ var _ = Describe("Elasticsearch", func() {
 
 		By("Wait for elasticsearch to be deleted")
 		f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
+
+		By("Wait for elasticsearch services to be deleted")
+		err = f.EventuallyServices(elasticsearch)
+		Expect(err).NotTo(HaveOccurred())
 
 		By("Wait for elasticsearch resources to be wipedOut")
 		f.EventuallyWipedOut(elasticsearch.ObjectMeta).Should(Succeed())
@@ -202,7 +209,7 @@ var _ = Describe("Elasticsearch", func() {
 					defer f.Tunnel.Close()
 
 					By("Checking new indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 				}
 
 				Context("with Default Resource", func() {
@@ -323,6 +330,10 @@ var _ = Describe("Elasticsearch", func() {
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
+					By("Wait for elasticsearch services to be deleted")
+					err = f.EventuallyServices(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
+
 					By("Resume DB")
 					createAndWaitForRunning()
 				})
@@ -363,7 +374,6 @@ var _ = Describe("Elasticsearch", func() {
 		})
 
 		Context("Initialize", func() {
-
 			// To run this test,
 			// 1st: Deploy stash latest operator
 			// https://github.com/stashed/elasticsearch
@@ -373,6 +383,10 @@ var _ = Describe("Elasticsearch", func() {
 				var repo *stashV1alpha1.Repository
 
 				BeforeEach(func() {
+					// TODO:
+					//  - skipping these tests for now, until the stash is updated
+					Skip("Skipping these tests: Stash isn't updated")
+
 					if !f.FoundStashCRDs() {
 						Skip("Skipping tests for stash integration. reason: stash operator is not running.")
 					}
@@ -455,7 +469,7 @@ var _ = Describe("Elasticsearch", func() {
 
 					// eventually backupsession succeeded
 					By("Check for Succeeded restoreSession")
-					f.EventuallyRestoreSessionPhase(rs.ObjectMeta).Should(Equal(stashV1beta1.RestoreSessionSucceeded))
+					f.EventuallyRestoreSessionPhase(rs.ObjectMeta).Should(Equal(stashV1beta1.RestoreSucceeded))
 
 					By("Wait for Running elasticsearch")
 					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -469,7 +483,7 @@ var _ = Describe("Elasticsearch", func() {
 					defer f.Tunnel.Close()
 
 					By("Checking indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 				}
 
 				Context("From GCS backend", func() {
@@ -633,7 +647,7 @@ var _ = Describe("Elasticsearch", func() {
 				defer f.Tunnel.Close()
 
 				By("Checking existing indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 			}
 
 			Context("with TerminationPolicyDoNotTerminate", func() {
@@ -730,6 +744,10 @@ var _ = Describe("Elasticsearch", func() {
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
+					By("Wait for elasticsearch services to be deleted")
+					err = f.EventuallyServices(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
+
 					// create elasticsearch object again to resume it
 					By("Create (pause) Elasticsearch: " + elasticsearch.Name)
 					err = f.CreateElasticsearch(elasticsearch)
@@ -747,7 +765,7 @@ var _ = Describe("Elasticsearch", func() {
 					defer f.Tunnel.Close()
 
 					By("Checking existing indices")
-					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+					f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 				}
 
 				It("should create dormantdatabase successfully", shouldRunWithTerminationHalt)
@@ -793,6 +811,10 @@ var _ = Describe("Elasticsearch", func() {
 
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
+
+					By("Wait for elasticsearch services to be deleted")
+					err = f.EventuallyServices(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
 
 					By("Check for deleted PVCs")
 					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
@@ -851,6 +873,10 @@ var _ = Describe("Elasticsearch", func() {
 					By("wait until elasticsearch is deleted")
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
+					By("Wait for elasticsearch services to be deleted")
+					err = f.EventuallyServices(elasticsearch)
+					Expect(err).NotTo(HaveOccurred())
+
 					By("Check for deleted PVCs")
 					f.EventuallyPVCCount(elasticsearch.ObjectMeta).Should(Equal(0))
 
@@ -897,38 +923,26 @@ var _ = Describe("Elasticsearch", func() {
 
 			allowedEnvList := []core.EnvVar{
 				{
-					Name:  "CLUSTER_NAME",
+					Name:  "cluster.name",
 					Value: "kubedb-es-e2e-cluster",
 				},
 				{
 					Name:  "ES_JAVA_OPTS",
 					Value: "-Xms256m -Xmx256m",
 				},
-				{
-					Name:  "REPO_LOCATIONS",
-					Value: "/backup",
-				},
-				{
-					Name:  "MEMORY_LOCK",
-					Value: "true",
-				},
-				{
-					Name:  "HTTP_ENABLE",
-					Value: "true",
-				},
 			}
 
 			forbiddenEnvList := []core.EnvVar{
 				{
-					Name:  "NODE_NAME",
+					Name:  "node.name",
 					Value: "kubedb-es-e2e-node",
 				},
 				{
-					Name:  "NODE_MASTER",
+					Name:  "node.master",
 					Value: "true",
 				},
 				{
-					Name:  "NODE_DATA",
+					Name:  "node.data",
 					Value: "true",
 				},
 			}
@@ -948,6 +962,10 @@ var _ = Describe("Elasticsearch", func() {
 				By("wait until elasticsearch is deleted")
 				f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeFalse())
 
+				By("Wait for elasticsearch services to be deleted")
+				err = f.EventuallyServices(elasticsearch)
+				Expect(err).NotTo(HaveOccurred())
+
 				// create elasticsearch object again to resume it
 				By("Create Elasticsearch: " + elasticsearch.Name)
 				err = f.CreateElasticsearch(elasticsearch)
@@ -965,7 +983,7 @@ var _ = Describe("Elasticsearch", func() {
 				defer f.Tunnel.Close()
 
 				By("Checking new indices")
-				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(f.IndicesCount(elasticsearch, indicesCount)))
+				f.EventuallyElasticsearchIndicesCount(elasticClient).Should(Equal(indicesCount))
 			}
 
 			Context("With allowed Envs", func() {
@@ -1042,7 +1060,7 @@ var _ = Describe("Elasticsearch", func() {
 					_, _, err := util.PatchElasticsearch(context.TODO(), f.ExtClient().KubedbV1alpha1(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
-								Name:  "CLUSTER_NAME",
+								Name:  "cluster.name",
 								Value: "kubedb-es-e2e-cluster-patched",
 							},
 						}
@@ -1059,10 +1077,10 @@ var _ = Describe("Elasticsearch", func() {
 
 			var shouldRunWithCustomConfig = func() {
 				userConfig.Data = map[string]string{
-					"common-config.yaml": f.GetCommonConfig(elasticsearch),
-					"master-config.yaml": f.GetMasterConfig(elasticsearch),
-					"client-config.yaml": f.GetClientConfig(elasticsearch),
-					"data-config.yaml":   f.GetDataConfig(elasticsearch),
+					"common-elasticsearch.yml": f.GetCommonConfig(),
+					"master-elasticsearch.yml": f.GetMasterConfig(),
+					"client-elasticsearch.yml": f.GetClientConfig(),
+					"data-elasticsearch.yml":   f.GetDataConfig(),
 				}
 
 				By("Creating configMap: " + userConfig.Name)

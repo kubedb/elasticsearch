@@ -125,8 +125,8 @@ func (f *Framework) EventuallySnapshotInRepository(meta metav1.ObjectMeta) Gomeg
 
 			return repository.Status.SnapshotCount
 		},
-		time.Minute*10,
-		time.Second*5,
+		WaitLoopTimeout,
+		WaitLoopInterval,
 	)
 }
 
@@ -141,22 +141,16 @@ func (i *Invocation) RestoreSession(dbMeta metav1.ObjectMeta, repo *stashV1alpha
 			},
 		},
 		Spec: stashv1beta1.RestoreSessionSpec{
-			Task: stashv1beta1.TaskRef{
-				Name: i.getStashESRestoreTaskName(),
-			},
 			Repository: core.LocalObjectReference{
 				Name: repo.Name,
 			},
-			Rules: []stashv1beta1.Rule{
-				{
-					Snapshots: []string{"latest"},
-				},
-			},
-			Target: &stashv1beta1.RestoreTarget{
-				Ref: stashv1beta1.TargetRef{
-					APIVersion: v1alpha13.SchemeGroupVersion.String(),
-					Kind:       v1alpha13.ResourceKindApp,
-					Name:       dbMeta.Name,
+			RestoreTargetSpec: stashv1beta1.RestoreTargetSpec{
+				Target: &stashv1beta1.RestoreTarget{
+					Rules: []stashv1beta1.Rule{
+						{
+							Snapshots: []string{"latest"},
+						},
+					},
 				},
 			},
 		},
@@ -174,10 +168,10 @@ func (f Framework) DeleteRestoreSession(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() stashv1beta1.RestoreSessionPhase {
+	return Eventually(func() stashv1beta1.RestorePhase {
 		restoreSession, err := f.stashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(context.TODO(), meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
-		if restoreSession.Status.Phase == stashv1beta1.RestoreSessionFailed {
+		if restoreSession.Status.Phase == stashv1beta1.RestoreFailed {
 			fmt.Println("Restoresession failed. ", restoreSession.Status.Stats)
 		}
 		return restoreSession.Status.Phase
@@ -192,11 +186,4 @@ func (f *Framework) getStashESBackupTaskName() string {
 	Expect(err).NotTo(HaveOccurred())
 
 	return "elasticsearch-backup-" + esVersion.Spec.Version
-}
-
-func (f *Framework) getStashESRestoreTaskName() string {
-	esVersion, err := f.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), DBCatalogName, metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-
-	return "elasticsearch-restore-" + esVersion.Spec.Version
 }
