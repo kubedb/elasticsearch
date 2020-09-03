@@ -9335,17 +9335,6 @@ spec:
                   - name
                   type: object
               type: object
-            updateStrategy:
-              properties:
-                rollingUpdate:
-                  properties:
-                    partition:
-                      format: int32
-                      type: integer
-                  type: object
-                type:
-                  type: string
-              type: object
             version:
               type: string
           required:
