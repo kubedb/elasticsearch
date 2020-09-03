@@ -30,6 +30,8 @@ import (
 )
 
 func TestElasticsearch_getInternalUserConfig(t *testing.T) {
+	t.SkipNow()
+
 	type fields struct {
 		kClient       kubernetes.Interface
 		elasticsearch *api.Elasticsearch
