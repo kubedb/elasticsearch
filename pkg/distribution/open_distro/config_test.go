@@ -18,7 +18,6 @@ package open_distro
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
@@ -30,7 +29,6 @@ import (
 )
 
 func TestElasticsearch_getInternalUserConfig(t *testing.T) {
-	t.SkipNow()
 
 	type fields struct {
 		kClient       kubernetes.Interface
@@ -44,15 +42,25 @@ func TestElasticsearch_getInternalUserConfig(t *testing.T) {
 		{
 			name: "Check output",
 			fields: fields{
-				kClient: &fake.Clientset{},
+				kClient: fake.NewSimpleClientset(),
 				elasticsearch: &api.Elasticsearch{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-jrjwe",
-						Namespace: "test-23wefjds",
+						Name:      "test-es",
+						Namespace: "test",
 					},
 					Spec: api.ElasticsearchSpec{
-						DatabaseSecret: &corev1.SecretVolumeSource{
-							SecretName: "db-secret",
+						InternalUsers: map[string]api.ElasticsearchUserSpec{
+							"user1": {
+								Reserved:                true,
+								Hidden:                  false,
+								BackendRoles:            []string{"role1", "role2"},
+								OpendistroSecurityRoles: []string{"sgRole1", "sgRole2"},
+								Attributes: map[string]string{
+									"attr1": "b",
+									"attr2": "d",
+								},
+								Description: "test user1",
+							},
 						},
 					},
 				},
@@ -68,16 +76,19 @@ func TestElasticsearch_getInternalUserConfig(t *testing.T) {
 			}
 			_, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Create(context.TODO(), &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "db-secret",
-					Namespace: es.elasticsearch.Namespace,
+					Name: "test-es-user1-cred",
 				},
-				Data: map[string][]byte{},
+				Data: map[string][]byte{
+					corev1.BasicAuthUsernameKey: []byte("user1"),
+					corev1.BasicAuthPasswordKey: []byte("password"),
+				},
+				Type: corev1.SecretTypeBasicAuth,
 			}, metav1.CreateOptions{})
 			if err != nil {
 				panic(err)
 			}
-			got, err := es.getInternalUserConfig()
-			fmt.Println(got)
+
+			_, err = es.getInternalUserConfig()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getInternalUserConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
