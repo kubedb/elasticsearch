@@ -28,7 +28,7 @@ type ElasticsearchInterface interface {
 	EnsureDatabaseSecret() error
 	EnsureDefaultConfig() error
 	EnsureMasterNodes() (kutil.VerbType, error)
-	EnsureClientNodes() (kutil.VerbType, error)
+	EnsureIngestNodes() (kutil.VerbType, error)
 	EnsureDataNodes() (kutil.VerbType, error)
 	EnsureCombinedNode() (kutil.VerbType, error)
 	IsAllRequiredSecretAvailable() bool

@@ -32,8 +32,10 @@ func (f *Framework) GetClientPodName(elasticsearch *api.Elasticsearch) string {
 	clientName := elasticsearch.Name
 
 	if elasticsearch.Spec.Topology != nil {
-		if elasticsearch.Spec.Topology.Client.Prefix != "" {
-			clientName = fmt.Sprintf("%v-%v", elasticsearch.Spec.Topology.Client.Prefix, clientName)
+		if elasticsearch.Spec.Topology.Ingest.Prefix != "" {
+			clientName = fmt.Sprintf("%v-%v", elasticsearch.Spec.Topology.Ingest.Prefix, clientName)
+		} else {
+			clientName = fmt.Sprintf("%v-%v", api.ElasticsearchIngestNodePrefix, clientName)
 		}
 	}
 	return fmt.Sprintf("%v-0", clientName)

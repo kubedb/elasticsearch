@@ -182,20 +182,20 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 			return errors.New("doesn't support spec.resources when spec.topology is set")
 		}
 
-		if topology.Client.Prefix == topology.Master.Prefix {
-			return errors.New("client & master node should not have same prefix")
+		if topology.Ingest.Prefix == topology.Master.Prefix {
+			return errors.New("ingest & master node should not have same prefix")
 		}
-		if topology.Client.Prefix == topology.Data.Prefix {
-			return errors.New("client & data node should not have same prefix")
+		if topology.Ingest.Prefix == topology.Data.Prefix {
+			return errors.New("ingest & data node should not have same prefix")
 		}
 		if topology.Master.Prefix == topology.Data.Prefix {
 			return errors.New("master & data node should not have same prefix")
 		}
 
-		if topology.Client.Replicas == nil || *topology.Client.Replicas < 1 {
-			return fmt.Errorf(`topology.client.replicas "%v" invalid. Must be greater than zero`, topology.Client.Replicas)
+		if topology.Ingest.Replicas == nil || *topology.Ingest.Replicas < 1 {
+			return fmt.Errorf(`topology.ingest.replicas "%v" invalid. Must be greater than zero`, topology.Ingest.Replicas)
 		}
-		if err := amv.ValidateStorage(client, elasticsearch.Spec.StorageType, topology.Client.Storage); err != nil {
+		if err := amv.ValidateStorage(client, elasticsearch.Spec.StorageType, topology.Ingest.Storage); err != nil {
 			return err
 		}
 

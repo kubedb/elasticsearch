@@ -109,9 +109,9 @@ func (i *Invocation) DedicatedElasticsearch() *api.Elasticsearch {
 						StorageClassName: types.StringP(i.StorageClass),
 					},
 				},
-				Client: api.ElasticsearchNode{
+				Ingest: api.ElasticsearchNode{
 					Replicas: types.Int32P(2),
-					Prefix:   "client",
+					Prefix:   "ingest",
 					Storage: &core.PersistentVolumeClaimSpec{
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{

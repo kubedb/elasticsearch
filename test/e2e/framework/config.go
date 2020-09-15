@@ -116,13 +116,13 @@ func (f *Invocation) IsUsingProvidedConfig(elasticsearch *v1alpha12.Elasticsearc
 		}
 		if (string_util.Contains(node.Roles, "ingest") &&
 			!string_util.Contains(node.Roles, "master")) ||
-			strings.HasSuffix(node.Name, "client") { // master config has higher precedence
+			strings.HasSuffix(node.Name, "ingest") { // master config has higher precedence
 
-			clientConfig := &es.Setting{}
-			err := yaml.Unmarshal([]byte(f.GetClientConfig()), clientConfig)
+			ingestConfig := &es.Setting{}
+			err := yaml.Unmarshal([]byte(f.GetClientConfig()), ingestConfig)
 			Expect(err).NotTo(HaveOccurred())
 
-			if !string_util.EqualSlice(node.Settings.Path.Data, clientConfig.Path.Data) {
+			if !string_util.EqualSlice(node.Settings.Path.Data, ingestConfig.Path.Data) {
 				return false
 			}
 		}
