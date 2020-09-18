@@ -288,7 +288,7 @@ func sampleElasticsearch() api.Elasticsearch {
 				},
 			},
 			Init: &api.InitSpec{
-				ScriptSource: &api.ScriptSourceSpec{
+				Script: &api.ScriptSourceSpec{
 					VolumeSource: core.VolumeSource{
 						GitRepo: &core.GitRepoVolumeSource{
 							Repository: "https://github.com/kubedb/elasticsearch-init-scripts.git",

@@ -117,7 +117,7 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 	}
 
 	if _, err := meta_util.GetString(elasticsearch.Annotations, api.AnnotationInitialized); err == kutil.ErrNotFound &&
-		elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.StashRestoreSession != nil {
+		elasticsearch.Spec.Init != nil && elasticsearch.Spec.Init.Initializer != nil {
 
 		if elasticsearch.Status.Phase == api.DatabasePhaseInitializing {
 			return nil
@@ -139,8 +139,8 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		elasticsearch.Status = mg.Status
 
 		init := elasticsearch.Spec.Init
-		if init.StashRestoreSession != nil {
-			log.Debugf("Elasticsearch %v/%v is waiting for restoreSession to be succeeded", elasticsearch.Namespace, elasticsearch.Name)
+		if init.Initializer != nil {
+			log.Debugf("Elasticsearch %v/%v is waiting for initializer to complete it's initialization", elasticsearch.Namespace, elasticsearch.Name)
 			return nil
 		}
 	}

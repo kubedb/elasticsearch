@@ -64,7 +64,6 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es.ESClient, error
 		nil,
 		nil,
 		nil,
-		nil,
 		amc.Config{},
 		f.topology,
 		nil,
