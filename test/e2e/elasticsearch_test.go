@@ -455,8 +455,10 @@ var _ = Describe("Elasticsearch", func() {
 					rs = f.RestoreSession(elasticsearch.ObjectMeta, repo)
 					elasticsearch.Spec.DatabaseSecret = oldElasticsearch.Spec.DatabaseSecret
 					elasticsearch.Spec.Init = &api.InitSpec{
-						StashRestoreSession: &core.LocalObjectReference{
-							Name: rs.Name,
+						Initializer: &core.TypedLocalObjectReference{
+							APIGroup: types.StringP(stashV1beta1.SchemeGroupVersion.Group),
+							Kind:     rs.Kind,
+							Name:     rs.Name,
 						},
 					}
 
