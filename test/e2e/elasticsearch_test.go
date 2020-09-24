@@ -257,7 +257,7 @@ var _ = Describe("Elasticsearch", func() {
 
 					Context("Custom Resource", func() {
 						BeforeEach(func() {
-							elasticsearch.Spec.Topology.Client.Resources = core.ResourceRequirements{
+							elasticsearch.Spec.Topology.Ingest.Resources = core.ResourceRequirements{
 								Requests: core.ResourceList{
 									core.ResourceMemory: resource.MustParse("256Mi"),
 								},
@@ -357,11 +357,11 @@ var _ = Describe("Elasticsearch", func() {
 					// create elasticsearch
 					By("Create DB")
 					elasticsearch = f.DedicatedElasticsearch()
-					elasticsearch.Spec.Topology.Client.Replicas = types.Int32P(3)
+					elasticsearch.Spec.Topology.Ingest.Replicas = types.Int32P(3)
 					elasticsearch.Spec.Topology.Master.Replicas = types.Int32P(3)
 					elasticsearch.Spec.Topology.Data.Replicas = types.Int32P(3)
 
-					elasticsearch.Spec.Topology.Client.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
+					elasticsearch.Spec.Topology.Ingest.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 					elasticsearch.Spec.Topology.Data.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 					elasticsearch.Spec.Topology.Master.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 					createAndWaitForRunning()
@@ -1079,9 +1079,9 @@ var _ = Describe("Elasticsearch", func() {
 
 			var shouldRunWithCustomConfig = func() {
 				userConfig.Data = map[string]string{
-					"common-elasticsearch.yml": f.GetCommonConfig(),
+					"elasticsearch.yml":        f.GetCommonConfig(),
 					"master-elasticsearch.yml": f.GetMasterConfig(),
-					"client-elasticsearch.yml": f.GetClientConfig(),
+					"ingest-elasticsearch.yml": f.GetClientConfig(),
 					"data-elasticsearch.yml":   f.GetDataConfig(),
 				}
 
@@ -1190,7 +1190,7 @@ var _ = Describe("Elasticsearch", func() {
 						elasticsearch = f.DedicatedElasticsearch()
 						elasticsearch.Spec.StorageType = api.StorageTypeEphemeral
 						elasticsearch.Spec.Topology.Master.Storage = nil
-						elasticsearch.Spec.Topology.Client.Storage = nil
+						elasticsearch.Spec.Topology.Ingest.Storage = nil
 						elasticsearch.Spec.Topology.Data.Storage = nil
 						elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 					})

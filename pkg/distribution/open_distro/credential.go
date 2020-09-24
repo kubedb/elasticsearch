@@ -209,10 +209,10 @@ func (es *Elasticsearch) setMissingUsersAndRolesMapping() error {
 		// The metrics_exporter user will need to have access to
 		// readall_and_monitor role.
 		// Create rolesMapping if not exists.
-		if value, check := rolesMapping[ReadallMonitorRole]; check {
+		if value, check := rolesMapping[api.ElasticsearchOpendistroReadallMonitorRole]; check {
 			value.Users = upsertStringSlice(value.Users, string(api.ElasticsearchInternalUserMetricsExporter))
 		} else {
-			rolesMapping[ReadallMonitorRole] = api.ElasticsearchRoleMapSpec{
+			rolesMapping[api.ElasticsearchOpendistroReadallMonitorRole] = api.ElasticsearchRoleMapSpec{
 				Users: []string{string(api.ElasticsearchInternalUserMetricsExporter)},
 			}
 		}

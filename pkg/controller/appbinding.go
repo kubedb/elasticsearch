@@ -87,7 +87,7 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 			in.Spec.ClientConfig.Service = &appcat.ServiceReference{
 				Scheme: db.GetConnectionScheme(),
 				Name:   db.ServiceName(),
-				Port:   defaultClientPort.Port,
+				Port:   defaultRestPort.Port,
 			}
 			in.Spec.ClientConfig.CABundle = caBundle
 			in.Spec.ClientConfig.InsecureSkipTLSVerify = false

@@ -225,7 +225,7 @@ func (c *Controller) ensureElasticsearchNode(es *api.Elasticsearch) (*api.Elasti
 	vt := kutil.VerbUnchanged
 	topology := elastic.UpdatedElasticsearch().Spec.Topology
 	if topology != nil {
-		vt1, err := elastic.EnsureClientNodes()
+		vt1, err := elastic.EnsureIngestNodes()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}

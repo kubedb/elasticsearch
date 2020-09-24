@@ -125,8 +125,8 @@ func setDefaultValues(elasticsearch *api.Elasticsearch, clusterTopology *core_ut
 
 	topology := elasticsearch.Spec.Topology
 	if topology != nil {
-		if topology.Client.Replicas == nil {
-			topology.Client.Replicas = types.Int32P(1)
+		if topology.Ingest.Replicas == nil {
+			topology.Ingest.Replicas = types.Int32P(1)
 		}
 
 		if topology.Master.Replicas == nil {

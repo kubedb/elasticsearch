@@ -216,9 +216,9 @@ func (es *Elasticsearch) setMissingUsersAndRolesMapping() error {
 		//	V6        = "sg_readall_and_monitor"
 		var readallMonitor string
 		if string(es.esVersion.Spec.Version[0]) == "6" {
-			readallMonitor = ReadallMonitorRoleV6
+			readallMonitor = api.ElasticsearchSearchGuardReadallMonitorRoleV6
 		} else {
-			readallMonitor = ReadallMonitorRoleV7
+			readallMonitor = api.ElasticsearchSearchGuardReadallMonitorRoleV7
 		}
 
 		// Create rolesMapping if not exists.
