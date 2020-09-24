@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	"kubedb.dev/apimachinery/apis/kubedb"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 
 	"github.com/appscode/go/crypto/rand"
@@ -217,7 +218,7 @@ func (i *Invocation) SecretForDatabaseAuthentication(es *api.Elasticsearch, mang
 	}
 	if mangedByKubeDB {
 		dbObjectMeta.Labels = map[string]string{
-			meta_util.ManagedByLabelKey: api.GenericKey,
+			meta_util.ManagedByLabelKey: kubedb.GroupName,
 		}
 	}
 

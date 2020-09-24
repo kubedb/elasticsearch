@@ -123,7 +123,7 @@ func CreateTransportCertificate(certPath string, elasticsearch *api.Elasticsearc
 // 	- tls.key: http-layer.key
 func CreateHTTPCertificate(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate) error {
 	cfg := cert.Config{
-		CommonName:   elasticsearch.OffshootName() + "-client",
+		CommonName:   elasticsearch.OffshootName() + "-http",
 		Organization: []string{"Elasticsearch Operator"},
 		AltNames: cert.AltNames{
 			DNSNames: []string{
@@ -133,7 +133,6 @@ func CreateHTTPCertificate(certPath string, elasticsearch *api.Elasticsearch, ca
 		},
 		Usages: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageServerAuth,
-			x509.ExtKeyUsageClientAuth,
 		},
 	}
 
@@ -174,7 +173,6 @@ func CreateClientCertificate(alias string, certPath string, elasticsearch *api.E
 		CommonName:   elasticsearch.OffshootName() + "-" + alias,
 		Organization: []string{"Elasticsearch Operator"},
 		Usages: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageServerAuth,
 			x509.ExtKeyUsageClientAuth,
 		},
 	}

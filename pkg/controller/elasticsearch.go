@@ -80,6 +80,27 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		return err
 	}
 
+	// wait for certificates
+	if elasticsearch.Spec.TLS != nil && elasticsearch.Spec.TLS.IssuerRef != nil {
+		ok, err := dynamic_util.ResourcesExists(
+			c.DynamicClient,
+			core.SchemeGroupVersion.WithResource("secrets"),
+			elasticsearch.Namespace,
+			elasticsearch.MustCertSecretName(api.ElasticsearchTransportCert),
+			elasticsearch.MustCertSecretName(api.ElasticsearchHTTPCert),
+			elasticsearch.MustCertSecretName(api.ElasticsearchAdminCert),
+			elasticsearch.MustCertSecretName(api.ElasticsearchArchiverCert),
+			elasticsearch.MustCertSecretName(api.ElasticsearchMetricsExporterCert),
+		)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			log.Infoln(fmt.Sprintf("wait for all necessary secrets for mysql %s/%s", elasticsearch.Namespace, elasticsearch.Name))
+			return nil
+		}
+	}
+
 	// ensure database StatefulSet
 	elasticsearch, vt2, err := c.ensureElasticsearchNode(elasticsearch)
 	if err != nil {

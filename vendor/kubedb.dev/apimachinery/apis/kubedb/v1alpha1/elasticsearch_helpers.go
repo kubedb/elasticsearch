@@ -64,8 +64,8 @@ func (e Elasticsearch) OffshootLabels() map[string]string {
 	out[meta_util.VersionLabelKey] = string(e.Spec.Version)
 	out[meta_util.InstanceLabelKey] = e.Name
 	out[meta_util.ComponentLabelKey] = ComponentDatabase
-	out[meta_util.ManagedByLabelKey] = GenericKey
-	return meta_util.FilterKeys(GenericKey, out, e.Labels)
+	out[meta_util.ManagedByLabelKey] = kubedb.GroupName
+	return meta_util.FilterKeys(kubedb.GroupName, out, e.Labels)
 }
 
 func (e Elasticsearch) ResourceShortCode() string {
@@ -114,6 +114,11 @@ func (e *Elasticsearch) MustCertSecretName(alias ElasticsearchCertificateAlias) 
 		panic(fmt.Errorf("Elasticsearch %s/%s is missing secret name for %s certificate", e.Namespace, e.Name, alias))
 	}
 	return name
+}
+
+// ClientCertificateCN returns the CN for a client certificate
+func (e *Elasticsearch) ClientCertificateCN(alias ElasticsearchCertificateAlias) string {
+	return fmt.Sprintf("%s-%s", e.Name, string(alias))
 }
 
 // returns the volume name for certificate secret.
@@ -202,7 +207,7 @@ func (e Elasticsearch) StatsService() mona.StatsAccessor {
 }
 
 func (e Elasticsearch) StatsServiceLabels() map[string]string {
-	lbl := meta_util.FilterKeys(GenericKey, e.OffshootSelectors(), e.Labels)
+	lbl := meta_util.FilterKeys(kubedb.GroupName, e.OffshootSelectors(), e.Labels)
 	lbl[LabelRole] = RoleStats
 	return lbl
 }
@@ -333,17 +338,53 @@ func (e *Elasticsearch) setDefaultTLSConfig() {
 		tlsConfig = &kmapi.TLSConfig{}
 	}
 	// root
-	tlsConfig.Certificates = kmapi.SetMissingSecretNameForCertificate(tlsConfig.Certificates, string(ElasticsearchRootCert), e.CertificateName(ElasticsearchRootCert))
+	tlsConfig.Certificates = kmapi.SetMissingSpecForCertificate(tlsConfig.Certificates, kmapi.CertificateSpec{
+		Alias:      string(ElasticsearchCACert),
+		SecretName: e.CertificateName(ElasticsearchCACert),
+		Subject: &kmapi.X509Subject{
+			Organizations: []string{KubeDBOrganization},
+		},
+	})
 	// transport
-	tlsConfig.Certificates = kmapi.SetMissingSecretNameForCertificate(tlsConfig.Certificates, string(ElasticsearchTransportCert), e.CertificateName(ElasticsearchTransportCert))
+	tlsConfig.Certificates = kmapi.SetMissingSpecForCertificate(tlsConfig.Certificates, kmapi.CertificateSpec{
+		Alias:      string(ElasticsearchTransportCert),
+		SecretName: e.CertificateName(ElasticsearchTransportCert),
+		Subject: &kmapi.X509Subject{
+			Organizations: []string{KubeDBOrganization},
+		},
+	})
 	// http
-	tlsConfig.Certificates = kmapi.SetMissingSecretNameForCertificate(tlsConfig.Certificates, string(ElasticsearchHTTPCert), e.CertificateName(ElasticsearchHTTPCert))
+	tlsConfig.Certificates = kmapi.SetMissingSpecForCertificate(tlsConfig.Certificates, kmapi.CertificateSpec{
+		Alias:      string(ElasticsearchHTTPCert),
+		SecretName: e.CertificateName(ElasticsearchHTTPCert),
+		Subject: &kmapi.X509Subject{
+			Organizations: []string{KubeDBOrganization},
+		},
+	})
 	// admin
-	tlsConfig.Certificates = kmapi.SetMissingSecretNameForCertificate(tlsConfig.Certificates, string(ElasticsearchAdminCert), e.CertificateName(ElasticsearchAdminCert))
+	tlsConfig.Certificates = kmapi.SetMissingSpecForCertificate(tlsConfig.Certificates, kmapi.CertificateSpec{
+		Alias:      string(ElasticsearchAdminCert),
+		SecretName: e.CertificateName(ElasticsearchAdminCert),
+		Subject: &kmapi.X509Subject{
+			Organizations: []string{KubeDBOrganization},
+		},
+	})
 	// matrics-exporter
-	tlsConfig.Certificates = kmapi.SetMissingSecretNameForCertificate(tlsConfig.Certificates, string(ElasticsearchMetricsExporterCert), e.CertificateName(ElasticsearchMetricsExporterCert))
+	tlsConfig.Certificates = kmapi.SetMissingSpecForCertificate(tlsConfig.Certificates, kmapi.CertificateSpec{
+		Alias:      string(ElasticsearchMetricsExporterCert),
+		SecretName: e.CertificateName(ElasticsearchMetricsExporterCert),
+		Subject: &kmapi.X509Subject{
+			Organizations: []string{KubeDBOrganization},
+		},
+	})
 	// archiver
-	tlsConfig.Certificates = kmapi.SetMissingSecretNameForCertificate(tlsConfig.Certificates, string(ElasticsearchArchiverCert), e.CertificateName(ElasticsearchArchiverCert))
+	tlsConfig.Certificates = kmapi.SetMissingSpecForCertificate(tlsConfig.Certificates, kmapi.CertificateSpec{
+		Alias:      string(ElasticsearchArchiverCert),
+		SecretName: e.CertificateName(ElasticsearchArchiverCert),
+		Subject: &kmapi.X509Subject{
+			Organizations: []string{KubeDBOrganization},
+		},
+	})
 
 	e.Spec.TLS = tlsConfig
 }

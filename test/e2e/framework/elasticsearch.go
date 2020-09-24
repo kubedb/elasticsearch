@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"kubedb.dev/apimachinery/apis/kubedb"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"kubedb.dev/elasticsearch/pkg/util/es"
@@ -293,7 +294,7 @@ func (f *Framework) CleanElasticsearch() {
 func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 	var err error
 	labelSelector := labels.Set{
-		meta_util.ManagedByLabelKey: api.GenericKey,
+		meta_util.ManagedByLabelKey: kubedb.GroupName,
 		api.LabelDatabaseKind:       api.ResourceKindElasticsearch,
 		api.LabelDatabaseName:       meta.GetName(),
 	}

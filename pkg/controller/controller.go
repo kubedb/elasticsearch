@@ -112,6 +112,7 @@ func (c *Controller) EnsureCustomResourceDefinitions() error {
 // InitInformer initializes Elasticsearch, DormantDB amd Snapshot watcher
 func (c *Controller) Init() error {
 	c.initWatcher()
+	c.initSecretWatcher()
 
 	// Initialize Stash initializer
 	stash.NewController(

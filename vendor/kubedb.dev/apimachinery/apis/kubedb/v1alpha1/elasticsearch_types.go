@@ -173,11 +173,11 @@ type ElasticsearchNode struct {
 	MaxUnavailable *intstr.IntOrString `json:"maxUnavailable,omitempty" protobuf:"bytes,5,opt,name=maxUnavailable"`
 }
 
-// +kubebuilder:validation:Enum=root;transport;http;admin;archiver;metrics-exporter
+// +kubebuilder:validation:Enum=ca;transport;http;admin;archiver;metrics-exporter
 type ElasticsearchCertificateAlias string
 
 const (
-	ElasticsearchRootCert            ElasticsearchCertificateAlias = "root"
+	ElasticsearchCACert              ElasticsearchCertificateAlias = "ca"
 	ElasticsearchTransportCert       ElasticsearchCertificateAlias = "transport"
 	ElasticsearchHTTPCert            ElasticsearchCertificateAlias = "http"
 	ElasticsearchAdminCert           ElasticsearchCertificateAlias = "admin"

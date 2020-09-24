@@ -16,31 +16,34 @@ limitations under the License.
 
 package v1alpha1
 
+import "kubedb.dev/apimachinery/apis/kubedb"
+
 const (
+	// Deprecated
 	DatabaseNamePrefix = "kubedb"
 
-	GenericKey = "kubedb.com"
+	KubeDBOrganization = "kubedb"
 
-	LabelDatabaseKind = GenericKey + "/kind"
-	LabelDatabaseName = GenericKey + "/name"
-	LabelRole         = GenericKey + "/role"
+	LabelDatabaseKind = kubedb.GroupName + "/kind"
+	LabelDatabaseName = kubedb.GroupName + "/name"
+	LabelRole         = kubedb.GroupName + "/role"
 
 	ComponentDatabase = "database"
 	RoleStats         = "stats"
 	DefaultStatsPath  = "/metrics"
 
-	PostgresKey      = ResourceSingularPostgres + "." + GenericKey
-	ElasticsearchKey = ResourceSingularElasticsearch + "." + GenericKey
-	MySQLKey         = ResourceSingularMySQL + "." + GenericKey
-	PerconaXtraDBKey = ResourceSingularPerconaXtraDB + "." + GenericKey
-	MongoDBKey       = ResourceSingularMongoDB + "." + GenericKey
-	RedisKey         = ResourceSingularRedis + "." + GenericKey
-	MemcachedKey     = ResourceSingularMemcached + "." + GenericKey
-	EtcdKey          = ResourceSingularEtcd + "." + GenericKey
-	ProxySQLKey      = ResourceSingularProxySQL + "." + GenericKey
+	PostgresKey      = ResourceSingularPostgres + "." + kubedb.GroupName
+	ElasticsearchKey = ResourceSingularElasticsearch + "." + kubedb.GroupName
+	MySQLKey         = ResourceSingularMySQL + "." + kubedb.GroupName
+	PerconaXtraDBKey = ResourceSingularPerconaXtraDB + "." + kubedb.GroupName
+	MongoDBKey       = ResourceSingularMongoDB + "." + kubedb.GroupName
+	RedisKey         = ResourceSingularRedis + "." + kubedb.GroupName
+	MemcachedKey     = ResourceSingularMemcached + "." + kubedb.GroupName
+	EtcdKey          = ResourceSingularEtcd + "." + kubedb.GroupName
+	ProxySQLKey      = ResourceSingularProxySQL + "." + kubedb.GroupName
 
-	AnnotationInitialized = GenericKey + "/initialized"
-	AnnotationJobType     = GenericKey + "/job-type"
+	AnnotationInitialized = kubedb.GroupName + "/initialized"
+	AnnotationJobType     = kubedb.GroupName + "/job-type"
 
 	PrometheusExporterPortNumber = 56790
 	PrometheusExporterPortName   = "prom-http"
