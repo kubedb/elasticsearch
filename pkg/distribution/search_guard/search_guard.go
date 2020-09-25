@@ -52,6 +52,34 @@ func (es *Elasticsearch) UpdatedElasticsearch() *api.Elasticsearch {
 	return es.elasticsearch
 }
 
+func (es *Elasticsearch) RequiredSecretNames() ([]string, error) {
+	if !es.elasticsearch.Spec.DisableSecurity {
+		var sNames []string
+		// transport layer is always secured with certificate
+		sNames = append(sNames, es.elasticsearch.MustCertSecretName(api.ElasticsearchTransportCert))
+
+		// If SSL is enabled for REST layer
+		if es.elasticsearch.Spec.EnableSSL {
+			// http server certificate
+			sNames = append(sNames, es.elasticsearch.MustCertSecretName(api.ElasticsearchHTTPCert))
+			// admin certificate
+			sNames = append(sNames, es.elasticsearch.MustCertSecretName(api.ElasticsearchAdminCert))
+			// archiver certificate
+			sNames = append(sNames, es.elasticsearch.MustCertSecretName(api.ElasticsearchArchiverCert))
+			// metrics exporter certificate, if monitoring is enabled
+			if es.elasticsearch.Spec.Monitor != nil {
+				sNames = append(sNames, es.elasticsearch.MustCertSecretName(api.ElasticsearchMetricsExporterCert))
+			}
+		}
+
+		// add admin-cred secret name
+		sNames = append(sNames, es.elasticsearch.Spec.DatabaseSecret.SecretName)
+
+		for
+	}
+	return nil, nil
+}
+
 func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
 	if !es.elasticsearch.Spec.DisableSecurity {
 		tls := es.elasticsearch.Spec.TLS

@@ -19,6 +19,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gomodules.xyz/cert v1.1.2
 	gomodules.xyz/envsubst v0.1.0
+	gomodules.xyz/password-generator v0.2.0
 	gopkg.in/olivere/elastic.v5 v5.0.85
 	gopkg.in/olivere/elastic.v6 v6.2.31
 	gopkg.in/yaml.v2 v2.3.0

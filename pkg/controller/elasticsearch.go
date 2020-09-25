@@ -37,7 +37,6 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	dynamic_util "kmodules.xyz/client-go/dynamic"
 	meta_util "kmodules.xyz/client-go/meta"
-	"kmodules.xyz/client-go/tools/queue"
 )
 
 func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
@@ -230,7 +229,6 @@ func (c *Controller) ensureElasticsearchNode(es *api.Elasticsearch) (*api.Elasti
 
 	if !elastic.IsAllRequiredSecretAvailable() {
 		log.Warningf("Required secrets for Elasticsearch: %s/%s are not ready yet", es.Namespace, es.Name)
-		queue.EnqueueAfter(c.esQueue.GetQueue(), elastic.UpdatedElasticsearch(), 5*time.Second)
 		return nil, kutil.VerbUnchanged, nil
 	}
 

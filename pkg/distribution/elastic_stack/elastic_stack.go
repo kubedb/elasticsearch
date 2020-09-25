@@ -91,6 +91,10 @@ func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
 	return true
 }
 
+func (es *Elasticsearch) RequiredSecretNames() ([]string, error) {
+
+}
+
 func (es *Elasticsearch) getSecret(name, namespace string) (*corev1.Secret, error) {
 	secret, err := es.kClient.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	return secret, err

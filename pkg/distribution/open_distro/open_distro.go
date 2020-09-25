@@ -52,6 +52,10 @@ func (es *Elasticsearch) UpdatedElasticsearch() *api.Elasticsearch {
 	return es.elasticsearch
 }
 
+func (es *Elasticsearch) RequiredSecretNames() ([]string, error) {
+
+}
+
 func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
 	if !es.elasticsearch.Spec.DisableSecurity {
 		tls := es.elasticsearch.Spec.TLS

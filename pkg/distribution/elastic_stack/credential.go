@@ -23,8 +23,8 @@ import (
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 
-	"github.com/appscode/go/crypto/rand"
 	"github.com/pkg/errors"
+	"gomodules.xyz/password-generator"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -83,7 +83,7 @@ func (es *Elasticsearch) createAdminCredSecret() (*corev1.SecretVolumeSource, er
 	}
 
 	// Create new secret new random password
-	pass := rand.Characters(8)
+	pass := password.Generate(8)
 	var data = map[string][]byte{
 		corev1.BasicAuthUsernameKey: []byte(api.ElasticsearchInternalUserElastic),
 		corev1.BasicAuthPasswordKey: []byte(pass),
