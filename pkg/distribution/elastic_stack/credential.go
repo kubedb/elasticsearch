@@ -45,7 +45,6 @@ func (es *Elasticsearch) EnsureDatabaseSecret() error {
 			return err
 		}
 		es.elasticsearch = newES
-		return nil
 	} else {
 		// Get the secret and validate it.
 		dbSecret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), dbSecretVolume.SecretName, metav1.GetOptions{})

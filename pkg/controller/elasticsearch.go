@@ -79,27 +79,6 @@ func (c *Controller) create(elasticsearch *api.Elasticsearch) error {
 		return err
 	}
 
-	// wait for certificates
-	if elasticsearch.Spec.TLS != nil && elasticsearch.Spec.TLS.IssuerRef != nil {
-		ok, err := dynamic_util.ResourcesExists(
-			c.DynamicClient,
-			core.SchemeGroupVersion.WithResource("secrets"),
-			elasticsearch.Namespace,
-			elasticsearch.MustCertSecretName(api.ElasticsearchTransportCert),
-			elasticsearch.MustCertSecretName(api.ElasticsearchHTTPCert),
-			elasticsearch.MustCertSecretName(api.ElasticsearchAdminCert),
-			elasticsearch.MustCertSecretName(api.ElasticsearchArchiverCert),
-			elasticsearch.MustCertSecretName(api.ElasticsearchMetricsExporterCert),
-		)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			log.Infoln(fmt.Sprintf("wait for all necessary secrets for mysql %s/%s", elasticsearch.Namespace, elasticsearch.Name))
-			return nil
-		}
-	}
-
 	// ensure database StatefulSet
 	elasticsearch, vt2, err := c.ensureElasticsearchNode(elasticsearch)
 	if err != nil {
@@ -219,16 +198,38 @@ func (c *Controller) ensureElasticsearchNode(es *api.Elasticsearch) (*api.Elasti
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to get elasticsearch distribution")
 	}
 
+	// Create/sync certificate secrets
+	// But if  the tls.issuerRef is set, do nothing (i.e. should be handled from enterprise operator).
 	if err = elastic.EnsureCertSecrets(); err != nil {
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to ensure certificates secret")
 	}
 
+	// Create/sync user credential (ie. username, password) secrets
 	if err = elastic.EnsureDatabaseSecret(); err != nil {
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to ensure database credential secret")
 	}
 
-	if !elastic.IsAllRequiredSecretAvailable() {
-		log.Warningf("Required secrets for Elasticsearch: %s/%s are not ready yet", es.Namespace, es.Name)
+	// Get the cert secret names
+	// List varies depending on the elasticsearch distribution & configuration.
+	sNames := elastic.RequiredCertSecretNames()
+	// Check whether the secrets are available or not.
+	ok, err := dynamic_util.ResourcesExists(
+		c.DynamicClient,
+		core.SchemeGroupVersion.WithResource("secrets"),
+		es.Namespace,
+		sNames...,
+	)
+	if err != nil {
+		return nil, kutil.VerbUnchanged, err
+	}
+	if !ok {
+		// If the certificates are managed by the enterprise operator,
+		// It takes some time for the secrets to get ready.
+		// If any required secret is yet to get ready,
+		// drop the elasticsearch object from work queue (i.e. return nil with no error).
+		// When any secret owned by this elasticsearch object is created/updated,
+		// this elasticsearch object will be enqueued again for processing.
+		log.Infoln(fmt.Sprintf("Required secrets for Elasticsearch: %s/%s are not ready yet", es.Namespace, es.Name))
 		return nil, kutil.VerbUnchanged, nil
 	}
 

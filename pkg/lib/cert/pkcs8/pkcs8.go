@@ -39,8 +39,8 @@ import (
 
 // Creates pkcs8 encoded certificates in pem format.
 // Generated secret contains:
-// 	- tls.crt: root-ca.crt (CA: true)
-//	- tls.key: root-ca.key
+// 	- tls.crt: ca.crt (CA: true)
+//	- tls.key: ca.key
 func CreateCaCertificate(certPath string) (*rsa.PrivateKey, *x509.Certificate, error) {
 	cfg := cert.Config{
 		CommonName:   "KubeDB Com. Root CA",
@@ -62,12 +62,12 @@ func CreateCaCertificate(certPath string) (*rsa.PrivateKey, *x509.Certificate, e
 		return nil, nil, errors.Wrap(err, "failed to encode private key")
 	}
 
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.RootCAKey), string(caKeyByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.CAKey), string(caKeyByte)) {
 		return nil, nil, errors.New("failed to write key for CA certificate")
 	}
 
 	caCertByte := cert.EncodeCertPEM(caCert)
-	if !ioutil.WriteString(filepath.Join(certPath, certlib.RootCACert), string(caCertByte)) {
+	if !ioutil.WriteString(filepath.Join(certPath, certlib.CACert), string(caCertByte)) {
 		return nil, nil, errors.New("failed to write CA certificate")
 	}
 

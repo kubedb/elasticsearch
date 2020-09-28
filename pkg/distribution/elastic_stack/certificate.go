@@ -77,9 +77,12 @@ func (es *Elasticsearch) EnsureCertSecrets() error {
 			return errors.Wrap(err, "failed to create/sync http-cert secret")
 		}
 
-		err = es.createExporterCertSecret(caKey, caCert, certPath)
-		if err != nil {
-			return errors.Wrap(err, "failed to create/sync metrics-exporter-cert secret")
+		// Create certificates for metrics exporter, if monitoring is enabled.
+		if es.elasticsearch.Spec.Monitor != nil {
+			err = es.createExporterCertSecret(caKey, caCert, certPath)
+			if err != nil {
+				return errors.Wrap(err, "failed to create/sync metrics-exporter-cert secret")
+			}
 		}
 
 		err = es.createArchiverCertSecret(caKey, caCert, certPath)
@@ -103,11 +106,11 @@ func (es *Elasticsearch) createCACertSecret(cPath string) (*rsa.PrivateKey, *x50
 		if err != nil {
 			return nil, nil, err
 		}
-		rootCa, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
+		rootCa, err := ioutil.ReadFile(filepath.Join(cPath, certlib.CACert))
 		if err != nil {
 			return nil, nil, err
 		}
-		rootKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCAKey))
+		rootKey, err := ioutil.ReadFile(filepath.Join(cPath, certlib.CAKey))
 		if err != nil {
 			return nil, nil, err
 		}
@@ -181,7 +184,7 @@ func (es *Elasticsearch) createTransportCertSecret(caKey *rsa.PrivateKey, caCert
 			return err
 		}
 
-		caCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
+		caCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.CACert))
 		if err != nil {
 			return err
 		}
@@ -251,7 +254,7 @@ func (es *Elasticsearch) createHTTPCertSecret(caKey *rsa.PrivateKey, caCert *x50
 			return err
 		}
 
-		caCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
+		caCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.CACert))
 		if err != nil {
 			return err
 		}
@@ -321,7 +324,7 @@ func (es *Elasticsearch) createExporterCertSecret(caKey *rsa.PrivateKey, caCert 
 			return err
 		}
 
-		caCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
+		caCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.CACert))
 		if err != nil {
 			return err
 		}
@@ -391,7 +394,7 @@ func (es *Elasticsearch) createArchiverCertSecret(caKey *rsa.PrivateKey, caCert 
 			return err
 		}
 
-		caCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.RootCACert))
+		caCert, err := ioutil.ReadFile(filepath.Join(cPath, certlib.CACert))
 		if err != nil {
 			return err
 		}

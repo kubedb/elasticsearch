@@ -27,7 +27,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	api_util "kmodules.xyz/client-go/api/v1"
 )
 
 type Elasticsearch struct {
@@ -52,7 +51,7 @@ func (es *Elasticsearch) UpdatedElasticsearch() *api.Elasticsearch {
 	return es.elasticsearch
 }
 
-func (es *Elasticsearch) RequiredSecretNames() ([]string, error) {
+func (es *Elasticsearch) RequiredCertSecretNames() []string {
 	if !es.elasticsearch.Spec.DisableSecurity {
 		var sNames []string
 		// transport layer is always secured with certificate
@@ -71,78 +70,9 @@ func (es *Elasticsearch) RequiredSecretNames() ([]string, error) {
 				sNames = append(sNames, es.elasticsearch.MustCertSecretName(api.ElasticsearchMetricsExporterCert))
 			}
 		}
-
-		// add admin-cred secret name
-		sNames = append(sNames, es.elasticsearch.Spec.DatabaseSecret.SecretName)
-
-		for
+		return sNames
 	}
-	return nil, nil
-}
-
-func (es *Elasticsearch) IsAllRequiredSecretAvailable() bool {
-	if !es.elasticsearch.Spec.DisableSecurity {
-		tls := es.elasticsearch.Spec.TLS
-
-		// check transport layer cert
-		sName, exist := api_util.GetCertificateSecretName(tls.Certificates, string(api.ElasticsearchTransportCert))
-		if exist {
-			_, err := es.getSecret(sName, es.elasticsearch.Namespace)
-			if err != nil {
-				return false
-			}
-		} else {
-			return false
-		}
-
-		if es.elasticsearch.Spec.EnableSSL {
-			// check http layer cert
-			sName, exist := api_util.GetCertificateSecretName(tls.Certificates, string(api.ElasticsearchHTTPCert))
-			if exist {
-				_, err := es.getSecret(sName, es.elasticsearch.Namespace)
-				if err != nil {
-					return false
-				}
-			} else {
-				return false
-			}
-
-			// check admin cert
-			sName, exist = api_util.GetCertificateSecretName(tls.Certificates, string(api.ElasticsearchAdminCert))
-			if exist {
-				_, err := es.getSecret(sName, es.elasticsearch.Namespace)
-				if err != nil {
-					return false
-				}
-			} else {
-				return false
-			}
-
-		}
-
-		// check user credentials secret
-		// admin credentials
-		_, err := es.getSecret(es.elasticsearch.Spec.DatabaseSecret.SecretName, es.elasticsearch.Namespace)
-		if err != nil {
-			return false
-		}
-
-		// other credentials secrets
-		userList := es.elasticsearch.Spec.InternalUsers
-		for username := range userList {
-			if username == string(api.ElasticsearchInternalUserAdmin) {
-				continue
-			}
-
-			_, err := es.getSecret(es.elasticsearch.UserCredSecretName(username), es.elasticsearch.Namespace)
-			if err != nil {
-				return false
-			}
-		}
-
-	}
-
-	return true
+	return nil
 }
 
 func (es *Elasticsearch) getSecret(name, namespace string) (*corev1.Secret, error) {
