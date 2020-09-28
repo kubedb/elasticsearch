@@ -82,7 +82,7 @@ func (es *Elasticsearch) createAdminCredSecret() (*corev1.SecretVolumeSource, er
 	}
 
 	// Create new secret new random password
-	pass := password.Generate(8)
+	pass := password.Generate(16)
 	var data = map[string][]byte{
 		corev1.BasicAuthUsernameKey: []byte(api.ElasticsearchInternalUserElastic),
 		corev1.BasicAuthPasswordKey: []byte(pass),
