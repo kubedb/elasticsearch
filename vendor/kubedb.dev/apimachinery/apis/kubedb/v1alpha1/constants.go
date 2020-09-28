@@ -28,9 +28,10 @@ const (
 	LabelDatabaseName = kubedb.GroupName + "/name"
 	LabelRole         = kubedb.GroupName + "/role"
 
-	ComponentDatabase = "database"
-	RoleStats         = "stats"
-	DefaultStatsPath  = "/metrics"
+	ComponentDatabase     = "database"
+	RoleStats             = "stats"
+	DefaultStatsPath      = "/metrics"
+	DefaultPasswordLength = 16
 
 	PostgresKey      = ResourceSingularPostgres + "." + kubedb.GroupName
 	ElasticsearchKey = ResourceSingularElasticsearch + "." + kubedb.GroupName

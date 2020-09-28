@@ -45,7 +45,7 @@ func (es *Elasticsearch) EnsureDatabaseSecret() error {
 		// If the secret already exists in the same name,
 		// validate it (ie. it contains username, password as keys).
 		var err error
-		pass := password.Generate(16)
+		pass := password.Generate(api.DefaultPasswordLength)
 		if dbSecretVolume, err = es.createOrSyncUserCredSecret(string(api.ElasticsearchInternalUserAdmin), pass); err != nil {
 			return err
 		}
@@ -81,7 +81,7 @@ func (es *Elasticsearch) EnsureDatabaseSecret() error {
 			continue
 		}
 
-		pass := password.Generate(16)
+		pass := password.Generate(api.DefaultPasswordLength)
 		_, err := es.createOrSyncUserCredSecret(username, pass)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to create credential secret for user: %s", username))
