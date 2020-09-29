@@ -134,11 +134,6 @@ func (a *ElasticsearchValidator) Admit(req *admission.AdmissionRequest) *admissi
 				oldElasticsearch.Spec.DatabaseSecret = elasticsearch.Spec.DatabaseSecret
 			}
 
-			// Allow changing CertificateSecret only if there was no secret have set up yet.
-			if oldElasticsearch.Spec.CertificateSecret == nil {
-				oldElasticsearch.Spec.CertificateSecret = elasticsearch.Spec.CertificateSecret
-			}
-
 			if err := validateUpdate(elasticsearch, oldElasticsearch); err != nil {
 				return hookapi.StatusBadRequest(fmt.Errorf("%v", err))
 			}
@@ -229,13 +224,6 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 		databaseSecret := elasticsearch.Spec.DatabaseSecret
 		if databaseSecret != nil {
 			if _, err := client.CoreV1().Secrets(elasticsearch.Namespace).Get(context.TODO(), databaseSecret.SecretName, metav1.GetOptions{}); err != nil {
-				return err
-			}
-		}
-
-		certificateSecret := elasticsearch.Spec.CertificateSecret
-		if certificateSecret != nil {
-			if _, err := client.CoreV1().Secrets(elasticsearch.Namespace).Get(context.TODO(), certificateSecret.SecretName, metav1.GetOptions{}); err != nil {
 				return err
 			}
 		}

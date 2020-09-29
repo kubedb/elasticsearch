@@ -102,7 +102,7 @@ func (es *Elasticsearch) createCACertSecret(cPath string) (*rsa.PrivateKey, *x50
 
 	if rSecret == nil {
 		// create certs here
-		caKey, caCert, err := pkcs8.CreateCaCertificate(cPath)
+		caKey, caCert, err := pkcs8.CreateCaCertificate(es.elasticsearch.ClientCertificateCN(api.ElasticsearchCACert), cPath)
 		if err != nil {
 			return nil, nil, err
 		}
