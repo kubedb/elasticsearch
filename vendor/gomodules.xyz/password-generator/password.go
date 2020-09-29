@@ -11,8 +11,12 @@ const (
 	Uppercase     Charset = 1 << iota // 1 << 0 which is 00000001
 	Lowercase                         // 1 << 1 which is 00000010
 	Numbers                           // 1 << 2 which is 00000100
-	Symbols                           // 1 << 3 which is 00001000
-	SimpleSymbols                     // 1 << 4 which is 00001000
+	Unreserved                        // 1 << 3 which is 00001000
+	Reserved                          // 1 << 4 which is 00010000
+	SimpleSymbols                     // 1 << 5 which is 00100000
+	Symbols                           // 1 << 6 which is 01000000
+	AlphaNum      = Uppercase | Lowercase | Numbers
+	Default       = Uppercase | Lowercase | Numbers | SimpleSymbols
 )
 
 var (
@@ -22,14 +26,21 @@ var (
 	len_lowercase      = len(lowercase)
 	numbers            = []byte(`0123456789`)
 	len_numbers        = len(numbers)
+	unreserved         = []byte(`-._~`) // ref: https://perishablepress.com/stop-using-unsafe-characters-in-urls/
+	len_unreserved     = len(unreserved)
+	reserved           = []byte(`!#$&'()*+,/:;=?@[]`)
+	len_reserved       = len(reserved)
+	simple_symbols     = []byte(`!$&'()*+,-.:;=@_~`) // ref: https://github.com/golang/go/blob/release-branch.go1.15/src/net/url/url.go#L1158-L1186 ,  missing: Unreserved | Reserved - #/?[]
+	len_simple_symbols = len(simple_symbols)
 	symbols            = []byte(`!"#$%&'()*+,-./:;<=>?@^[\]_{|}~` + "`")
 	len_symbols        = len(symbols)
-	simple_symbols     = []byte(`!#$%&*+-=?@^_|`)
-	len_simple_symbols = len(simple_symbols)
 )
 
 func Generate(n int) string {
-	return GenerateForCharset(n, Uppercase|Lowercase|Numbers|SimpleSymbols)
+	if n <= 2 {
+		return GenerateForCharset(n, AlphaNum)
+	}
+	return GenerateForCharset(1, AlphaNum) + GenerateForCharset(n-2, Default) + GenerateForCharset(1, AlphaNum)
 }
 
 func GenerateForCharset(n int, chset Charset) string {
@@ -45,11 +56,17 @@ func GenerateForCharset(n int, chset Charset) string {
 	if chset&Numbers != 0 {
 		count += len_numbers
 	}
-	if chset&Symbols != 0 {
-		count += len_symbols
+	if chset&Unreserved != 0 {
+		count += len_unreserved
+	}
+	if chset&Reserved != 0 {
+		count += len_reserved
 	}
 	if chset&SimpleSymbols != 0 {
 		count += len_simple_symbols
+	}
+	if chset&Symbols != 0 {
+		count += len_symbols
 	}
 	max := big.NewInt(int64(count))
 
@@ -84,12 +101,20 @@ func GenerateForCharset(n int, chset Charset) string {
 				idx -= len_numbers
 			}
 		}
-		if chset&Symbols != 0 {
-			if idx < len_symbols {
-				buf[i] = symbols[idx]
+		if chset&Unreserved != 0 {
+			if idx < len_unreserved {
+				buf[i] = unreserved[idx]
 				continue
 			} else {
-				idx -= len_symbols
+				idx -= len_unreserved
+			}
+		}
+		if chset&Reserved != 0 {
+			if idx < len_reserved {
+				buf[i] = reserved[idx]
+				continue
+			} else {
+				idx -= len_reserved
 			}
 		}
 		if chset&SimpleSymbols != 0 {
@@ -98,6 +123,14 @@ func GenerateForCharset(n int, chset Charset) string {
 				continue
 			} else {
 				idx -= len_simple_symbols
+			}
+		}
+		if chset&Symbols != 0 {
+			if idx < len_symbols {
+				buf[i] = symbols[idx]
+				continue
+			} else {
+				idx -= len_symbols
 			}
 		}
 	}

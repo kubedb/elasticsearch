@@ -19,7 +19,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gomodules.xyz/cert v1.1.2
 	gomodules.xyz/envsubst v0.1.0
-	gomodules.xyz/password-generator v0.2.0
+	gomodules.xyz/password-generator v0.2.3
 	gopkg.in/olivere/elastic.v5 v5.0.85
 	gopkg.in/olivere/elastic.v6 v6.2.31
 	gopkg.in/yaml.v2 v2.3.0
@@ -36,7 +36,7 @@ require (
 	kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41
 	kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab
 	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
-	kubedb.dev/apimachinery v0.14.0-beta.3.0.20200928052311-eef32760f219
+	kubedb.dev/apimachinery v0.14.0-beta.3.0.20200928132258-608659fec998
 	sigs.k8s.io/yaml v1.2.0
 	stash.appscode.dev/apimachinery v0.11.2
 )
