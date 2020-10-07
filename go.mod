@@ -3,8 +3,8 @@ module kubedb.dev/elasticsearch
 go 1.14
 
 require (
-	github.com/appscode/go v0.0.0-20200928211031-cc0c23082d91
-	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
+	github.com/appscode/go v0.0.0-20201006035845-a0302ac8e3d3
+	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
 	github.com/olivere/elastic/v7 v7.0.15
 	github.com/onsi/ginkgo v1.11.0
@@ -31,11 +31,11 @@ require (
 	kmodules.xyz/client-go v0.0.0-20201007024140-3223988adf40
 	kmodules.xyz/constants v0.0.0-20200923054614-6b87dbbae4d6
 	kmodules.xyz/custom-resources v0.0.0-20200922210108-70f2815a43bb
-	kmodules.xyz/monitoring-agent-api v0.0.0-20200922204510-b8b5610e5385
+	kmodules.xyz/monitoring-agent-api v0.0.0-20201007104803-408a1ff2de8d
 	kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41
 	kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab
 	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
-	kubedb.dev/apimachinery v0.14.0-beta.3.0.20200923235913-10aca81a056d
+	kubedb.dev/apimachinery v0.14.0-beta.3.0.20201007105016-e562def953d6
 	sigs.k8s.io/yaml v1.2.0
 	stash.appscode.dev/apimachinery v0.11.2
 )
