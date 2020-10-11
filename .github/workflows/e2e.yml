@@ -30,7 +30,7 @@ jobs:
       - id: set-matrix
         name: Generate test matrix
         run: |
-          k8s=(v1.12.10 v1.14.10 v1.16.9 v1.18.4)
+          k8s=(v1.14.10 v1.16.9 v1.18.8 v1.19.1)
           db=(1.0.2-opendistro 1.1.0-opendistro 1.2.1-opendistro 1.3.0-opendistro 1.4.0-opendistro 1.6.0-opendistro 1.7.0-opendistro 1.8.0-opendistro 1.9.0-opendistro 6.8.1-searchguard 6.8.10-xpack 7.0.1-searchguard 7.0.1-xpack 7.1.1-searchguard 7.1.1-xpack 7.2.1-xpack 7.3.2-xpack 7.4.2-xpack 7.5.2-searchguard 7.5.2-xpack 7.6.2-xpack 7.7.1-xpack 7.8.0-xpack)
 
           IFS=' '
