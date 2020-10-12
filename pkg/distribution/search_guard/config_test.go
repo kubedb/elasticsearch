@@ -20,9 +20,9 @@ import (
 	"context"
 	"testing"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 
-	corev1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -74,15 +74,15 @@ func TestElasticsearch_getInternalUserConfig(t *testing.T) {
 				kClient:       tt.fields.kClient,
 				elasticsearch: tt.fields.elasticsearch,
 			}
-			_, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Create(context.TODO(), &corev1.Secret{
+			_, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Create(context.TODO(), &core.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-es-user1-cred",
 				},
 				Data: map[string][]byte{
-					corev1.BasicAuthUsernameKey: []byte("user1"),
-					corev1.BasicAuthPasswordKey: []byte("password"),
+					core.BasicAuthUsernameKey: []byte("user1"),
+					core.BasicAuthPasswordKey: []byte("password"),
 				},
-				Type: corev1.SecretTypeBasicAuth,
+				Type: core.SecretTypeBasicAuth,
 			}, metav1.CreateOptions{})
 			if err != nil {
 				panic(err)

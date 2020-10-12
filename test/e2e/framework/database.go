@@ -19,7 +19,7 @@ package framework
 import (
 	"fmt"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	amc "kubedb.dev/apimachinery/pkg/controller"
 	"kubedb.dev/elasticsearch/pkg/controller"
 	"kubedb.dev/elasticsearch/pkg/util/es"
@@ -70,5 +70,5 @@ func (f *Framework) GetElasticClient(meta metav1.ObjectMeta) (es.ESClient, error
 		f.topology,
 		nil,
 	)
-	return es.GetElasticClient(c.Client, c.ExtClient, db, url)
+	return es.GetElasticClient(c.Client, c.DBClient, db, url)
 }

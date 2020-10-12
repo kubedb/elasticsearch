@@ -30,7 +30,7 @@ func (f *Framework) EventuallyCRD() GomegaAsyncAssertion {
 	return Eventually(
 		func() error {
 			// Check Elasticsearch TPR
-			if _, err := f.dbClient.KubedbV1alpha1().Elasticsearches(core.NamespaceAll).List(context.TODO(), metav1.ListOptions{}); err != nil {
+			if _, err := f.dbClient.KubedbV1alpha2().Elasticsearches(core.NamespaceAll).List(context.TODO(), metav1.ListOptions{}); err != nil {
 				return errors.New("CRD Elasticsearch is not ready")
 			}
 

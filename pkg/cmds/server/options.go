@@ -23,6 +23,7 @@ import (
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 	kubedbinformers "kubedb.dev/apimachinery/client/informers/externalversions"
 	"kubedb.dev/apimachinery/pkg/controller/initializer/stash"
+	sts "kubedb.dev/apimachinery/pkg/controller/statefulset"
 	"kubedb.dev/apimachinery/pkg/eventer"
 	"kubedb.dev/elasticsearch/pkg/controller"
 
@@ -49,6 +50,7 @@ type ExtraOptions struct {
 	QPS                         float64
 	Burst                       int
 	ResyncPeriod                time.Duration
+	ReadinessProbeInterval      time.Duration
 	MaxNumRequeues              int
 	NumThreads                  int
 	EnableMutatingWebhook       bool
@@ -64,11 +66,12 @@ func (s ExtraOptions) WatchNamespace() string {
 
 func NewExtraOptions() *ExtraOptions {
 	return &ExtraOptions{
-		OperatorNamespace: meta.Namespace(),
-		GoverningService:  "kubedb",
-		ResyncPeriod:      10 * time.Minute,
-		MaxNumRequeues:    5,
-		NumThreads:        2,
+		OperatorNamespace:      meta.Namespace(),
+		GoverningService:       "kubedb",
+		ResyncPeriod:           10 * time.Minute,
+		ReadinessProbeInterval: 10 * time.Second,
+		MaxNumRequeues:         5,
+		NumThreads:             2,
 		// ref: https://github.com/kubernetes/ingress-nginx/blob/e4d53786e771cc6bdd55f180674b79f5b692e552/pkg/ingress/controller/launch.go#L252-L259
 		// High enough QPS to fit all expected use cases. QPS=0 is not set here, because client code is overriding it.
 		QPS: 1e6,
@@ -83,8 +86,8 @@ func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
-	fs.DurationVar(&s.ResyncPeriod, "resync-period", s.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
-
+	fs.DurationVar(&s.ResyncPeriod, "resync-period", s.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed as long as possible (until the upstream source closes the watch or times out.")
+	fs.DurationVar(&s.ReadinessProbeInterval, "readiness-probe-interval", s.ReadinessProbeInterval, "The time between two consecutive health checks that the operator performs to the database.")
 	fs.BoolVar(&s.RestrictToOperatorNamespace, "restrict-to-operator-namespace", s.RestrictToOperatorNamespace, "If true, KubeDB operator will only handle Kubernetes objects in its own namespace.")
 
 	fs.BoolVar(&s.EnableMutatingWebhook, "enable-mutating-webhook", s.EnableMutatingWebhook, "If true, enables mutating webhooks for KubeDB CRDs.")
@@ -111,6 +114,7 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.OperatorConfig) error {
 	cfg.ClientConfig.QPS = float32(s.QPS)
 	cfg.ClientConfig.Burst = s.Burst
 	cfg.ResyncPeriod = s.ResyncPeriod
+	cfg.ReadinessProbeInterval = s.ReadinessProbeInterval
 	cfg.MaxNumRequeues = s.MaxNumRequeues
 	cfg.NumThreads = s.NumThreads
 	cfg.WatchNamespace = s.WatchNamespace()
@@ -148,6 +152,10 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.OperatorConfig) error {
 	cfg.SecretLister = corelisters.NewSecretLister(cfg.SecretInformer.GetIndexer())
 	// Create event recorder
 	cfg.Recorder = eventer.NewEventRecorder(cfg.KubeClient, "Elasticsearch operator")
+
+	// Initialize StatefulSet watcher
+	sts.NewController(&cfg.Config, cfg.KubeClient, cfg.DBClient, cfg.DynamicClient).InitStsWatcher()
+
 	// Configure Stash initializer
 	return stash.Configure(cfg.ClientConfig, &cfg.Initializers.Stash, cfg.ResyncPeriod)
 }

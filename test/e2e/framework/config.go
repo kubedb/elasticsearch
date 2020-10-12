@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	v1alpha12 "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	v1alpha12 "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	"kubedb.dev/elasticsearch/pkg/util/es"
 
 	string_util "github.com/appscode/go/strings"
