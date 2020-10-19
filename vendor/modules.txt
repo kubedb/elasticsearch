@@ -1142,7 +1142,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20201007024140-3223988adf40
+# kmodules.xyz/client-go v0.0.0-20201013083546-b17c1e15f1a3
 ## explicit
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1
@@ -1172,7 +1172,7 @@ kmodules.xyz/constants/aws
 kmodules.xyz/constants/azure
 kmodules.xyz/constants/google
 kmodules.xyz/constants/openstack
-# kmodules.xyz/custom-resources v0.0.0-20200922210108-70f2815a43bb
+# kmodules.xyz/custom-resources v0.0.0-20201008012351-6d8090f759d4
 ## explicit
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
@@ -1186,7 +1186,7 @@ kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alp
 kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
 kmodules.xyz/custom-resources/client/listers/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/crds
-# kmodules.xyz/monitoring-agent-api v0.0.0-20200922204510-b8b5610e5385
+# kmodules.xyz/monitoring-agent-api v0.0.0-20201007104803-408a1ff2de8d
 ## explicit
 kmodules.xyz/monitoring-agent-api/agents
 kmodules.xyz/monitoring-agent-api/agents/prometheus

@@ -28,10 +28,10 @@ require (
 	k8s.io/apiserver v0.18.9
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-aggregator v0.18.9
-	kmodules.xyz/client-go v0.0.0-20201007024140-3223988adf40
+	kmodules.xyz/client-go v0.0.0-20201013083546-b17c1e15f1a3
 	kmodules.xyz/constants v0.0.0-20200923054614-6b87dbbae4d6
-	kmodules.xyz/custom-resources v0.0.0-20200922210108-70f2815a43bb
-	kmodules.xyz/monitoring-agent-api v0.0.0-20200922204510-b8b5610e5385
+	kmodules.xyz/custom-resources v0.0.0-20201008012351-6d8090f759d4
+	kmodules.xyz/monitoring-agent-api v0.0.0-20201007104803-408a1ff2de8d
 	kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41
 	kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab
 	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
