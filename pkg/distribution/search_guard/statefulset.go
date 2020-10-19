@@ -230,10 +230,14 @@ func (es *Elasticsearch) getVolumes(esNode *api.ElasticsearchNode, nodeRole stri
 	// Upsert Volume for user provided custom configuration.
 	// These configuration will be merged to default config yaml (ie. elasticsearch.yaml)
 	// from config-merger initContainer.
-	if es.elasticsearch.Spec.ConfigSource != nil {
+	if es.elasticsearch.Spec.ConfigSecret != nil {
 		volumes = core_util.UpsertVolume(volumes, core.Volume{
-			Name:         "custom-config",
-			VolumeSource: *es.elasticsearch.Spec.ConfigSource,
+			Name: "custom-config",
+			VolumeSource: core.VolumeSource{
+				Secret: &core.SecretVolumeSource{
+					SecretName: es.elasticsearch.Spec.ConfigSecret.Name,
+				},
+			},
 		})
 	}
 
@@ -490,7 +494,7 @@ func (es *Elasticsearch) upsertConfigMergerInitContainer(initCon []core.Containe
 	}
 
 	// mount path for custom configuration
-	if es.elasticsearch.Spec.ConfigSource != nil {
+	if es.elasticsearch.Spec.ConfigSecret != nil {
 		volumeMounts = core_util.UpsertVolumeMount(volumeMounts, core.VolumeMount{
 			Name:      "custom-config",
 			MountPath: api.ElasticsearchCustomConfigDir,

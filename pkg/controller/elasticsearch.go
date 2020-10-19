@@ -204,7 +204,7 @@ func (c *Controller) ensureElasticsearchNode(es *api.Elasticsearch) (*api.Elasti
 	}
 
 	// Create/sync user credential (ie. username, password) secrets
-	if err = elastic.EnsureDatabaseSecret(); err != nil {
+	if err = elastic.EnsureAuthSecret(); err != nil {
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to ensure database credential secret")
 	}
 

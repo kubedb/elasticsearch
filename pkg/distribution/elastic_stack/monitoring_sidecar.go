@@ -77,7 +77,7 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []core.Container) 
 					ValueFrom: &core.EnvVarSource{
 						SecretKeyRef: &core.SecretKeySelector{
 							LocalObjectReference: core.LocalObjectReference{
-								Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
+								Name: es.elasticsearch.Spec.AuthSecret.Name,
 							},
 							Key: core.BasicAuthUsernameKey,
 						},
@@ -88,7 +88,7 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []core.Container) 
 					ValueFrom: &core.EnvVarSource{
 						SecretKeyRef: &core.SecretKeySelector{
 							LocalObjectReference: core.LocalObjectReference{
-								Name: es.elasticsearch.Spec.DatabaseSecret.SecretName,
+								Name: es.elasticsearch.Spec.AuthSecret.Name,
 							},
 							Key: core.BasicAuthPasswordKey,
 						},

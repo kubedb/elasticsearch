@@ -229,9 +229,9 @@ func (es *Elasticsearch) getInternalUserConfig() (string, error) {
 		var err error
 
 		if username == string(api.ElasticsearchInternalUserAdmin) {
-			pass, err = es.getPasswordFromSecret(es.elasticsearch.Spec.DatabaseSecret.SecretName)
+			pass, err = es.getPasswordFromSecret(es.elasticsearch.Spec.AuthSecret.Name)
 			if err != nil {
-				return "", errors.Wrap(err, fmt.Sprintf("failed to get password from secret: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Spec.DatabaseSecret.SecretName))
+				return "", errors.Wrap(err, fmt.Sprintf("failed to get password from secret: %s/%s", es.elasticsearch.Namespace, es.elasticsearch.Spec.AuthSecret.Name))
 			}
 		} else {
 			pass, err = es.getPasswordFromSecret(es.elasticsearch.UserCredSecretName(username))
