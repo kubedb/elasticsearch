@@ -93,13 +93,13 @@ func (f *Invocation) GetDataConfig() string {
 	return string(data)
 }
 
-func (f *Invocation) GetCustomConfig() *core.ConfigMap {
-	return &core.ConfigMap{
+func (f *Invocation) GetCustomConfig() *core.Secret {
+	return &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      f.app,
 			Namespace: f.namespace,
 		},
-		Data: map[string]string{},
+		StringData: map[string]string{},
 	}
 }
 

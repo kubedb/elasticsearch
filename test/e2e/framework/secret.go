@@ -204,7 +204,7 @@ func (f *Framework) CheckSecret(secret *corev1.Secret) error {
 	return err
 }
 
-func (i *Invocation) SecretForDatabaseAuthentication(es *api.Elasticsearch, mangedByKubeDB bool) *corev1.Secret {
+func (i *Invocation) GetAuthSecret(es *api.Elasticsearch, mangedByKubeDB bool) *corev1.Secret {
 	esVersion, err := i.dbClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), string(es.Spec.Version), metav1.GetOptions{})
 	Expect(err).NotTo(HaveOccurred())
 

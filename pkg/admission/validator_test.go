@@ -162,7 +162,7 @@ var cases = []struct {
 		false,
 		false,
 	},
-	{"Edit Elasticsearch Spec.DatabaseSecret with Existing Secret",
+	{"Edit Elasticsearch Spec.AuthSecret with Existing Secret",
 		requestKind,
 		"foo",
 		"default",
@@ -172,7 +172,7 @@ var cases = []struct {
 		false,
 		true,
 	},
-	{"Edit Elasticsearch Spec.DatabaseSecret with non Existing Secret",
+	{"Edit Elasticsearch Spec.AuthSecret with non Existing Secret",
 		requestKind,
 		"foo",
 		"default",
@@ -323,15 +323,15 @@ func getAwkwardElasticsearch() api.Elasticsearch {
 }
 
 func editExistingSecret(old api.Elasticsearch) api.Elasticsearch {
-	old.Spec.DatabaseSecret = &core.SecretVolumeSource{
-		SecretName: "foo-auth",
+	old.Spec.AuthSecret = &core.LocalObjectReference{
+		Name: "foo-auth",
 	}
 	return old
 }
 
 func editNonExistingSecret(old api.Elasticsearch) api.Elasticsearch {
-	old.Spec.DatabaseSecret = &core.SecretVolumeSource{
-		SecretName: "foo-auth-fused",
+	old.Spec.AuthSecret = &core.LocalObjectReference{
+		Name: "foo-auth-fused",
 	}
 	return old
 }

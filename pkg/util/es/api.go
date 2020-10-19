@@ -70,7 +70,7 @@ type NodeInfo struct {
 }
 
 func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.Elasticsearch, url string) (ESClient, error) {
-	secret, err := kc.CoreV1().Secrets(db.Namespace).Get(context.TODO(), db.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
+	secret, err := kc.CoreV1().Secrets(db.Namespace).Get(context.TODO(), db.Spec.AuthSecret.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

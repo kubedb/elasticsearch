@@ -228,7 +228,7 @@ func (es *Elasticsearch) getInternalUserConfig() (string, error) {
 		var err error
 
 		if username == string(api.ElasticsearchInternalUserAdmin) {
-			pass, err = es.getPasswordFromSecret(es.elasticsearch.Spec.DatabaseSecret.SecretName)
+			pass, err = es.getPasswordFromSecret(es.elasticsearch.Spec.AuthSecret.Name)
 			if err != nil {
 				return "", err
 			}

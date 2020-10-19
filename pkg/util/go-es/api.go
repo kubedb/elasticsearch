@@ -42,10 +42,10 @@ var response map[string]interface{}
 
 func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, url string) (ESClient, error) {
 	var username, password string
-	if !db.Spec.DisableSecurity && db.Spec.DatabaseSecret != nil {
-		secret, err := kc.CoreV1().Secrets(db.Namespace).Get(context.TODO(), db.Spec.DatabaseSecret.SecretName, metav1.GetOptions{})
+	if !db.Spec.DisableSecurity && db.Spec.AuthSecret != nil {
+		secret, err := kc.CoreV1().Secrets(db.Namespace).Get(context.TODO(), db.Spec.AuthSecret.Name, metav1.GetOptions{})
 		if err != nil {
-			glog.Errorf("Failed to get secret: %s for Elasticsearch: %s/%s with: %s", db.Spec.DatabaseSecret.SecretName, db.Namespace, db.Name, err.Error())
+			glog.Errorf("Failed to get secret: %s for Elasticsearch: %s/%s with: %s", db.Spec.AuthSecret.Name, db.Namespace, db.Name, err.Error())
 			return nil, errors.Wrap(err, "failed to get the secret")
 		}
 

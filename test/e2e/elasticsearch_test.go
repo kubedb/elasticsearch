@@ -291,11 +291,11 @@ var _ = Describe("Elasticsearch", func() {
 
 			Context("with custom SA Name", func() {
 				BeforeEach(func() {
-					customSecret := f.SecretForDatabaseAuthentication(elasticsearch, false)
-					elasticsearch.Spec.DatabaseSecret = &core.SecretVolumeSource{
-						SecretName: customSecret.Name,
+					authSecret := f.GetAuthSecret(elasticsearch, false)
+					elasticsearch.Spec.AuthSecret = &core.LocalObjectReference{
+						Name: authSecret.Name,
 					}
-					err := f.CreateSecret(customSecret)
+					err := f.CreateSecret(authSecret)
 					Expect(err).NotTo(HaveOccurred())
 					elasticsearch.Spec.PodTemplate.Spec.ServiceAccountName = "my-custom-sa"
 					elasticsearch.Spec.TerminationPolicy = api.TerminationPolicyHalt
@@ -454,7 +454,7 @@ var _ = Describe("Elasticsearch", func() {
 					By("Create elasticsearch from stash")
 					*elasticsearch = *f.CombinedElasticsearch()
 					rs = f.RestoreSession(elasticsearch.ObjectMeta, repo)
-					elasticsearch.Spec.DatabaseSecret = oldElasticsearch.Spec.DatabaseSecret
+					elasticsearch.Spec.AuthSecret = oldElasticsearch.Spec.AuthSecret
 					elasticsearch.Spec.Init = &api.InitSpec{
 						WaitForInitialRestore: true,
 					}
@@ -1072,26 +1072,22 @@ var _ = Describe("Elasticsearch", func() {
 
 		Context("Custom Configuration", func() {
 
-			var userConfig *core.ConfigMap
+			var userConfig *core.Secret
 
 			var shouldRunWithCustomConfig = func() {
-				userConfig.Data = map[string]string{
+				userConfig.StringData = map[string]string{
 					"elasticsearch.yml":        f.GetCommonConfig(),
 					"master-elasticsearch.yml": f.GetMasterConfig(),
 					"ingest-elasticsearch.yml": f.GetClientConfig(),
 					"data-elasticsearch.yml":   f.GetDataConfig(),
 				}
 
-				By("Creating configMap: " + userConfig.Name)
-				err := f.CreateConfigMap(userConfig)
+				By("Creating secret: " + userConfig.Name)
+				err := f.CreateSecret(userConfig)
 				Expect(err).NotTo(HaveOccurred())
 
-				elasticsearch.Spec.ConfigSource = &core.VolumeSource{
-					ConfigMap: &core.ConfigMapVolumeSource{
-						LocalObjectReference: core.LocalObjectReference{
-							Name: userConfig.Name,
-						},
-					},
+				elasticsearch.Spec.ConfigSecret = &core.LocalObjectReference{
+					Name: userConfig.Name,
 				}
 
 				// create elasticsearch
@@ -1117,8 +1113,8 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				AfterEach(func() {
-					By("Deleting configMap: " + userConfig.Name)
-					err := f.DeleteConfigMap(userConfig.ObjectMeta)
+					By("Deleting secret: " + userConfig.Name)
+					err := f.DeleteSecret(userConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -1139,8 +1135,8 @@ var _ = Describe("Elasticsearch", func() {
 				})
 
 				AfterEach(func() {
-					By("Deleting configMap: " + userConfig.Name)
-					err := f.DeleteConfigMap(userConfig.ObjectMeta)
+					By("Deleting secret: " + userConfig.Name)
+					err := f.DeleteSecret(userConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 				})
 

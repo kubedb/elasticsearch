@@ -31,7 +31,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 )
 
-func (es *Elasticsearch) EnsureDatabaseSecret() error {
+func (es *Elasticsearch) EnsureAuthSecret() error {
 
 	err := es.setMissingUsersAndRolesMapping()
 	if err != nil {
@@ -39,21 +39,21 @@ func (es *Elasticsearch) EnsureDatabaseSecret() error {
 	}
 
 	// For admin user
-	dbSecretVolume := es.elasticsearch.Spec.DatabaseSecret
-	if dbSecretVolume == nil {
+	authSecret := es.elasticsearch.Spec.AuthSecret
+	if authSecret == nil {
 		// create admin credential secret.
 		// If the secret already exists in the same name,
 		// validate it (ie. it contains username, password as keys).
 		var err error
 		pass := password.Generate(api.DefaultPasswordLength)
-		if dbSecretVolume, err = es.createOrSyncUserCredSecret(string(api.ElasticsearchInternalUserAdmin), pass); err != nil {
+		if authSecret, err = es.createOrSyncUserCredSecret(string(api.ElasticsearchInternalUserAdmin), pass); err != nil {
 			return err
 		}
 
 		// update the ES object,
-		// Add admin credential secret name to Spec.DatabaseSecret.
+		// Add admin credential secret name to Spec.AuthSecret.
 		newES, _, err := util.PatchElasticsearch(context.TODO(), es.extClient.KubedbV1alpha2(), es.elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
-			in.Spec.DatabaseSecret = dbSecretVolume
+			in.Spec.AuthSecret = authSecret
 			return in
 		}, metav1.PatchOptions{})
 		if err != nil {
@@ -63,9 +63,9 @@ func (es *Elasticsearch) EnsureDatabaseSecret() error {
 		es.elasticsearch = newES
 	} else {
 		// Get the secret and validate it.
-		dbSecret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), dbSecretVolume.SecretName, metav1.GetOptions{})
+		dbSecret, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Get(context.TODO(), authSecret.Name, metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to get credential secret: %s/%s", es.elasticsearch.Namespace, dbSecretVolume.SecretName))
+			return errors.Wrap(err, fmt.Sprintf("failed to get credential secret: %s/%s", es.elasticsearch.Namespace, authSecret.Name))
 		}
 
 		err = es.validateAndSyncLabels(dbSecret)
@@ -90,7 +90,7 @@ func (es *Elasticsearch) EnsureDatabaseSecret() error {
 	return nil
 }
 
-func (es *Elasticsearch) createOrSyncUserCredSecret(username, password string) (*core.SecretVolumeSource, error) {
+func (es *Elasticsearch) createOrSyncUserCredSecret(username, password string) (*core.LocalObjectReference, error) {
 
 	dbSecret, err := es.findSecret(es.elasticsearch.UserCredSecretName(username))
 	if err != nil {
@@ -109,8 +109,8 @@ func (es *Elasticsearch) createOrSyncUserCredSecret(username, password string) (
 			return nil, errors.Wrap(err, fmt.Sprintf("failed to validate/sync secret: %s/%s", dbSecret.Namespace, dbSecret.Name))
 		}
 
-		return &core.SecretVolumeSource{
-			SecretName: dbSecret.Name,
+		return &core.LocalObjectReference{
+			Name: dbSecret.Name,
 		}, nil
 	}
 
@@ -137,8 +137,8 @@ func (es *Elasticsearch) createOrSyncUserCredSecret(username, password string) (
 		return nil, err
 	}
 
-	return &core.SecretVolumeSource{
-		SecretName: secret.Name,
+	return &core.LocalObjectReference{
+		Name: secret.Name,
 	}, nil
 }
 
