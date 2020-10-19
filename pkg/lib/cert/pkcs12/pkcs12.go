@@ -30,7 +30,7 @@ import (
 	"path/filepath"
 	"time"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
 	"kubedb.dev/elasticsearch/pkg/lib/keytool"
 

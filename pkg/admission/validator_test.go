@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	extFake "kubedb.dev/apimachinery/client/clientset/versioned/fake"
 	"kubedb.dev/apimachinery/client/clientset/versioned/scheme"
 
@@ -38,6 +38,7 @@ import (
 	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
@@ -104,7 +105,7 @@ func TestElasticsearchValidator_Admit(t *testing.T) {
 			req.OldObject.Raw = oldObjJS
 
 			if c.heatUp {
-				if _, err := validator.extClient.KubedbV1alpha1().Elasticsearches(c.namespace).Create(context.TODO(), &c.object, metaV1.CreateOptions{}); err != nil && !kerr.IsAlreadyExists(err) {
+				if _, err := validator.extClient.KubedbV1alpha2().Elasticsearches(c.namespace).Create(context.TODO(), &c.object, metaV1.CreateOptions{}); err != nil && !kerr.IsAlreadyExists(err) {
 					t.Errorf(err.Error())
 				}
 			}
@@ -251,6 +252,26 @@ var cases = []struct {
 		false,
 		true,
 	},
+	{"Edit spec.Init before provisioning complete",
+		requestKind,
+		"foo",
+		"default",
+		admission.Update,
+		updateInit(sampleElasticsearch()),
+		sampleElasticsearch(),
+		true,
+		true,
+	},
+	{"Edit spec.Init after provisioning complete",
+		requestKind,
+		"foo",
+		"default",
+		admission.Update,
+		updateInit(completeProvisioning(sampleElasticsearch())),
+		sampleElasticsearch(),
+		true,
+		false,
+	},
 }
 
 func sampleElasticsearch() api.Elasticsearch {
@@ -288,14 +309,7 @@ func sampleElasticsearch() api.Elasticsearch {
 				},
 			},
 			Init: &api.InitSpec{
-				Script: &api.ScriptSourceSpec{
-					VolumeSource: core.VolumeSource{
-						GitRepo: &core.GitRepoVolumeSource{
-							Repository: "https://github.com/kubedb/elasticsearch-init-scripts.git",
-							Directory:  ".",
-						},
-					},
-				},
+				WaitForInitialRestore: true,
 			},
 			TerminationPolicy: api.TerminationPolicyDoNotTerminate,
 		},
@@ -324,7 +338,7 @@ func editNonExistingSecret(old api.Elasticsearch) api.Elasticsearch {
 
 func editStatus(old api.Elasticsearch) api.Elasticsearch {
 	old.Status = api.ElasticsearchStatus{
-		Phase: api.DatabasePhaseCreating,
+		Phase: api.DatabasePhaseReady,
 	}
 	return old
 }
@@ -333,7 +347,7 @@ func editSpecMonitor(old api.Elasticsearch) api.Elasticsearch {
 	old.Spec.Monitor = &mona.AgentSpec{
 		Agent: mona.AgentPrometheusBuiltin,
 		Prometheus: &mona.PrometheusSpec{
-			Exporter: &mona.PrometheusExporterSpec{
+			Exporter: mona.PrometheusExporterSpec{
 				Port: 1289,
 			},
 		},
@@ -351,5 +365,20 @@ func editSpecInvalidMonitor(old api.Elasticsearch) api.Elasticsearch {
 
 func haltDatabase(old api.Elasticsearch) api.Elasticsearch {
 	old.Spec.TerminationPolicy = api.TerminationPolicyHalt
+	return old
+}
+
+func completeProvisioning(old api.Elasticsearch) api.Elasticsearch {
+	old.Status.Conditions = []kmapi.Condition{
+		{
+			Type:   api.DatabaseProvisioned,
+			Status: core.ConditionTrue,
+		},
+	}
+	return old
+}
+
+func updateInit(old api.Elasticsearch) api.Elasticsearch {
+	old.Spec.Init.WaitForInitialRestore = false
 	return old
 }

@@ -23,13 +23,13 @@ import (
 	"net/http"
 	"strings"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 
 	esv7 "github.com/olivere/elastic/v7"
 	esv5 "gopkg.in/olivere/elastic.v5"
 	esv6 "gopkg.in/olivere/elastic.v6"
-	corev1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -92,7 +92,7 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 					},
 				},
 			}),
-			esv5.SetBasicAuth(string(secret.Data[corev1.BasicAuthUsernameKey]), string(secret.Data[corev1.BasicAuthPasswordKey])),
+			esv5.SetBasicAuth(string(secret.Data[core.BasicAuthUsernameKey]), string(secret.Data[core.BasicAuthPasswordKey])),
 			esv5.SetURL(url),
 			esv5.SetHealthcheck(false), // don't check health here. otherwise error message can be misleading for invalid credentials
 			esv5.SetSniff(false),
@@ -120,7 +120,7 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 					},
 				},
 			}),
-			esv6.SetBasicAuth(string(secret.Data[corev1.BasicAuthUsernameKey]), string(secret.Data[corev1.BasicAuthPasswordKey])),
+			esv6.SetBasicAuth(string(secret.Data[core.BasicAuthUsernameKey]), string(secret.Data[core.BasicAuthPasswordKey])),
 			esv6.SetURL(url),
 			esv6.SetHealthcheck(false), // don't check health here. otherwise error message can be misleading for invalid credentials
 			esv6.SetSniff(false),
@@ -148,7 +148,7 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 					},
 				},
 			}),
-			esv7.SetBasicAuth(string(secret.Data[corev1.BasicAuthUsernameKey]), string(secret.Data[corev1.BasicAuthPasswordKey])),
+			esv7.SetBasicAuth(string(secret.Data[core.BasicAuthUsernameKey]), string(secret.Data[core.BasicAuthPasswordKey])),
 			esv7.SetURL(url),
 			esv7.SetHealthcheck(false), // don't check health here. otherwise error message can be misleading for invalid credentials
 			esv7.SetSniff(false),

@@ -100,6 +100,5 @@ func (c *OperatorConfig) New() (*Controller, error) {
 	if err := ctrl.Init(); err != nil {
 		return nil, err
 	}
-
 	return ctrl, nil
 }

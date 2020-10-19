@@ -17,14 +17,11 @@ limitations under the License.
 package controller
 
 import (
-	"context"
-
 	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
-	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	catalog_lister "kubedb.dev/apimachinery/client/listers/catalog/v1alpha1"
-	api_listers "kubedb.dev/apimachinery/client/listers/kubedb/v1alpha1"
+	api_listers "kubedb.dev/apimachinery/client/listers/kubedb/v1alpha2"
 	amc "kubedb.dev/apimachinery/pkg/controller"
 	"kubedb.dev/apimachinery/pkg/controller/initializer/stash"
 	"kubedb.dev/apimachinery/pkg/eventer"
@@ -34,7 +31,6 @@ import (
 	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -55,8 +51,8 @@ type Controller struct {
 
 	// Prometheus client
 	promClient pcm.MonitoringV1Interface
-	// labelselector for event-handler of Snapshot, Dormant and Job
-	selector labels.Selector
+	// LabelSelector to filter Stash restore invokers only for this database
+	selector metav1.LabelSelector
 
 	// Elasticsearch
 	esQueue         *queue.Worker
@@ -65,17 +61,15 @@ type Controller struct {
 	esVersionLister catalog_lister.ElasticsearchVersionLister
 }
 
-var _ amc.DBHelper = &Controller{}
-
 func New(
 	restConfig *restclient.Config,
 	client kubernetes.Interface,
 	crdClient crd_cs.Interface,
-	extClient cs.Interface,
+	dbClient cs.Interface,
 	dc dynamic.Interface,
 	appCatalogClient appcat_cs.Interface,
 	promClient pcm.MonitoringV1Interface,
-	opt amc.Config,
+	amcConfig amc.Config,
 	topology *core_util.Topology,
 	recorder record.EventRecorder,
 ) *Controller {
@@ -83,18 +77,20 @@ func New(
 		Controller: &amc.Controller{
 			ClientConfig:     restConfig,
 			Client:           client,
-			ExtClient:        extClient,
+			DBClient:         dbClient,
 			CRDClient:        crdClient,
 			DynamicClient:    dc,
 			AppCatalogClient: appCatalogClient,
 			ClusterTopology:  topology,
 			Recorder:         recorder,
 		},
-		Config:     opt,
+		Config:     amcConfig,
 		promClient: promClient,
-		selector: labels.SelectorFromSet(map[string]string{
-			api.LabelDatabaseKind: api.ResourceKindElasticsearch,
-		}),
+		selector: metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				api.LabelDatabaseKind: api.ResourceKindElasticsearch,
+			},
+		},
 	}
 }
 
@@ -112,23 +108,17 @@ func (c *Controller) EnsureCustomResourceDefinitions() error {
 // InitInformer initializes Elasticsearch, DormantDB amd Snapshot watcher
 func (c *Controller) Init() error {
 	c.initWatcher()
-
-	// Initialize Stash initializer
-	stash.NewController(
-		c.Controller,
-		&c.Config.Initializers.Stash,
-		c,
-		c.Recorder,
-		c.WatchNamespace,
-	).InitWatcher(c.MaxNumRequeues, c.NumThreads, c.selector)
-
+	c.initSecretWatcher()
 	return nil
 }
 
 // RunControllers runs queue.worker
 func (c *Controller) RunControllers(stopCh <-chan struct{}) {
-	// Watch x  TPR objects
+	// Start Elasticsearch controller
 	c.esQueue.Run(stopCh)
+
+	// Start Elasticsearch health checker
+	c.RunHealthChecker(stopCh)
 }
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -146,15 +136,6 @@ func (c *Controller) StartAndRunControllers(stopCh <-chan struct{}) {
 	c.KubeInformerFactory.Start(stopCh)
 	c.KubedbInformerFactory.Start(stopCh)
 
-	// Start Stash initializer controllers
-	go stash.NewController(
-		c.Controller,
-		&c.Config.Initializers.Stash,
-		c,
-		c.Recorder,
-		c.WatchNamespace,
-	).StartController(stopCh)
-
 	// Wait for all involved caches to be synced, before processing items from the queue is started
 	for t, v := range c.KubeInformerFactory.WaitForCacheSync(stopCh) {
 		if !v {
@@ -169,6 +150,13 @@ func (c *Controller) StartAndRunControllers(stopCh <-chan struct{}) {
 		}
 	}
 
+	// Start StatefulSet controller
+	c.StsQueue.Run(stopCh)
+
+	// Initialize and start Stash controllers
+	go stash.NewController(c.Controller, &c.Config.Initializers.Stash, c.WatchNamespace).StartAfterStashInstalled(c.MaxNumRequeues, c.NumThreads, c.selector, stopCh)
+
+	// Start Elasticsearch controller
 	c.RunControllers(stopCh)
 
 	if c.EnableMutatingWebhook {
@@ -193,21 +181,4 @@ func (c *Controller) pushFailureEvent(elasticsearch *api.Elasticsearch, reason s
 		elasticsearch.Name,
 		reason,
 	)
-
-	es, err := util.UpdateElasticsearchStatus(context.TODO(), c.ExtClient.KubedbV1alpha1(), elasticsearch.ObjectMeta, func(in *api.ElasticsearchStatus) *api.ElasticsearchStatus {
-		in.Phase = api.DatabasePhaseFailed
-		in.Reason = reason
-		in.ObservedGeneration = elasticsearch.Generation
-		return in
-	}, metav1.UpdateOptions{})
-	if err != nil {
-		c.Recorder.Eventf(
-			elasticsearch,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToUpdate,
-			err.Error(),
-		)
-
-	}
-	elasticsearch.Status = es.Status
 }

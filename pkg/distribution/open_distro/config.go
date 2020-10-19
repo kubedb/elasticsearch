@@ -20,13 +20,13 @@ import (
 	"context"
 	"fmt"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
 	"kubedb.dev/elasticsearch/pkg/lib/user"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
-	corev1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	api_util "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -109,7 +109,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 			ctrl.Kind == api.ResourceKindElasticsearch && ctrl.Name == es.elasticsearch.Name {
 
 			// sync labels
-			if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secret.ObjectMeta, func(in *corev1.Secret) *corev1.Secret {
+			if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secret.ObjectMeta, func(in *core.Secret) *core.Secret {
 				in.Labels = core_util.UpsertMap(in.Labels, es.elasticsearch.OffshootLabels())
 				return in
 			}, metav1.PatchOptions{}); err != nil {
@@ -201,7 +201,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		config = opendistro_security_disabled
 	}
 
-	if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *corev1.Secret) *corev1.Secret {
+	if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *core.Secret) *core.Secret {
 		in.Labels = core_util.UpsertMap(in.Labels, es.elasticsearch.OffshootLabels())
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		in.Data = map[string][]byte{
@@ -276,7 +276,7 @@ func (es *Elasticsearch) getPasswordFromSecret(sName string) (string, error) {
 		return "", err
 	}
 
-	if value, exist := secret.Data[corev1.BasicAuthPasswordKey]; exist && len(value) != 0 {
+	if value, exist := secret.Data[core.BasicAuthPasswordKey]; exist && len(value) != 0 {
 		return string(value), nil
 	}
 

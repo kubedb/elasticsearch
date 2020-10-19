@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"os"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha2/util"
 	"kubedb.dev/elasticsearch/test/e2e/framework"
 	"kubedb.dev/elasticsearch/test/e2e/matcher"
 
@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	exec_util "kmodules.xyz/client-go/tools/exec"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	stashV1alpha1 "stash.appscode.dev/apimachinery/apis/stash/v1alpha1"
@@ -67,7 +68,7 @@ var _ = Describe("Elasticsearch", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Wait for Running elasticsearch")
-		f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+		f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 		By("Wait for AppBinding to create")
 		f.EventuallyAppBinding(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -198,7 +199,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for Running elasticsearch")
-					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+					f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Check for Elastic client")
 					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -408,7 +409,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for Initializing elasticsearch")
-					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseInitializing))
+					f.EventuallyElasticsearchPhase(elasticsearch.ObjectMeta).Should(Equal(api.DatabasePhaseDataRestoring))
 
 					By("Wait for AppBinding to create")
 					f.EventuallyAppBinding(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -455,11 +456,7 @@ var _ = Describe("Elasticsearch", func() {
 					rs = f.RestoreSession(elasticsearch.ObjectMeta, repo)
 					elasticsearch.Spec.DatabaseSecret = oldElasticsearch.Spec.DatabaseSecret
 					elasticsearch.Spec.Init = &api.InitSpec{
-						Initializer: &core.TypedLocalObjectReference{
-							APIGroup: types.StringP(stashV1beta1.SchemeGroupVersion.Group),
-							Kind:     rs.Kind,
-							Name:     rs.Name,
-						},
+						WaitForInitialRestore: true,
 					}
 
 					// create and wait for running Elasticsearch
@@ -474,7 +471,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyRestoreSessionPhase(rs.ObjectMeta).Should(Equal(stashV1beta1.RestoreSucceeded))
 
 					By("Wait for Running elasticsearch")
-					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+					f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Check for Elastic client")
 					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -573,15 +570,15 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Wait for Running elasticsearch")
-				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+				f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 				es, err := f.GetElasticsearch(elasticsearch.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				*elasticsearch = *es
 				if usedInitialized {
-					_, ok := elasticsearch.Annotations[api.AnnotationInitialized]
-					Expect(ok).Should(BeTrue())
+					By("Checking Elasticsearch crd does not have DataRestored condition")
+					Expect(kmapi.HasCondition(elasticsearch.Status.Conditions, api.DatabaseDataRestored)).To(BeTrue())
 				}
 			}
 
@@ -638,7 +635,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Wait for Running elasticsearch")
-				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+				f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 				By("Check for Elastic client")
 				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -670,7 +667,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Check for Running elasticsearch")
-					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+					f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Halt Elasticsearch: Update elasticsearch to set spec.halted = true")
 					_, err = f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -683,7 +680,7 @@ var _ = Describe("Elasticsearch", func() {
 					f.EventuallyElasticsearch(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Check for Running elasticsearch")
-					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+					f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Update elasticsearch to set spec.terminationPolicy = halt")
 					_, err := f.PatchElasticsearch(elasticsearch.ObjectMeta, func(in *api.Elasticsearch) *api.Elasticsearch {
@@ -710,7 +707,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for Running elasticsearch")
-					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+					f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 				})
 			})
 
@@ -737,7 +734,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for Running elasticsearch")
-					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+					f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Delete elasticsearch")
 					err = f.DeleteElasticsearch(elasticsearch.ObjectMeta)
@@ -756,7 +753,7 @@ var _ = Describe("Elasticsearch", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for Running elasticsearch")
-					f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+					f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 					By("Check for Elastic client")
 					f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -974,7 +971,7 @@ var _ = Describe("Elasticsearch", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Wait for Running elasticsearch")
-				f.EventuallyElasticsearchRunning(elasticsearch.ObjectMeta).Should(BeTrue())
+				f.EventuallyElasticsearchReady(elasticsearch.ObjectMeta).Should(BeTrue())
 
 				By("Check for Elastic client")
 				f.EventuallyElasticsearchClientReady(elasticsearch.ObjectMeta).Should(BeTrue())
@@ -1059,7 +1056,7 @@ var _ = Describe("Elasticsearch", func() {
 					shouldRunSuccessfully()
 
 					By("Updating Envs")
-					_, _, err := util.PatchElasticsearch(context.TODO(), f.ExtClient().KubedbV1alpha1(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
+					_, _, err := util.PatchElasticsearch(context.TODO(), f.ExtClient().KubedbV1alpha2(), elasticsearch, func(in *api.Elasticsearch) *api.Elasticsearch {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "cluster.name",
