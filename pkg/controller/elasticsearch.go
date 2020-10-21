@@ -304,7 +304,7 @@ func (c *Controller) halt(db *api.Elasticsearch) error {
 				kmapi.Condition{
 					Type:               api.DatabaseAcceptingConnection,
 					Status:             core.ConditionFalse,
-					Reason:             api.DatabaseNotAcceptingConnectionRequest,
+					Reason:             api.DatabaseHaltedSuccessfully,
 					ObservedGeneration: db.Generation,
 					Message:            fmt.Sprintf("The Elasticsearch: %s/%s is not accepting client requests.", db.Namespace, db.Name),
 				})
@@ -312,7 +312,7 @@ func (c *Controller) halt(db *api.Elasticsearch) error {
 				kmapi.Condition{
 					Type:               api.DatabaseReady,
 					Status:             core.ConditionFalse,
-					Reason:             api.ReadinessCheckFailed,
+					Reason:             api.DatabaseHaltedSuccessfully,
 					ObservedGeneration: db.Generation,
 					Message:            fmt.Sprintf("The Elasticsearch: %s/%s is not ready.", db.Namespace, db.Name),
 				})
