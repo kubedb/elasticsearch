@@ -267,7 +267,7 @@ var cases = []struct {
 		"default",
 		admission.Update,
 		updateInit(completeInitialization(sampleElasticsearch())),
-		sampleElasticsearch(),
+		completeInitialization(sampleElasticsearch()),
 		true,
 		false,
 	},
