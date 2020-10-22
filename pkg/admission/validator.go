@@ -269,7 +269,7 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 }
 
 func validateUpdate(obj, oldObj *api.Elasticsearch) error {
-	preconditions := getPreconditionFunc(obj)
+	preconditions := getPreconditionFunc(oldObj)
 	_, err := meta_util.CreateStrategicPatch(oldObj, obj, preconditions...)
 	if err != nil {
 		if mergepatch.IsPreconditionFailed(err) {
