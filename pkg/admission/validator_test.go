@@ -266,7 +266,7 @@ var cases = []struct {
 		"foo",
 		"default",
 		admission.Update,
-		updateInit(completeProvisioning(sampleElasticsearch())),
+		updateInit(completeInitialization(sampleElasticsearch())),
 		sampleElasticsearch(),
 		true,
 		false,
@@ -367,7 +367,7 @@ func haltDatabase(old api.Elasticsearch) api.Elasticsearch {
 	return old
 }
 
-func completeProvisioning(old api.Elasticsearch) api.Elasticsearch {
+func completeInitialization(old api.Elasticsearch) api.Elasticsearch {
 	old.Spec.Init.Initialized = true
 	return old
 }
