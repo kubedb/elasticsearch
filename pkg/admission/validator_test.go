@@ -38,7 +38,6 @@ import (
 	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
-	kmapi "kmodules.xyz/client-go/api/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
@@ -267,8 +266,8 @@ var cases = []struct {
 		"foo",
 		"default",
 		admission.Update,
-		updateInit(completeProvisioning(sampleElasticsearch())),
-		sampleElasticsearch(),
+		updateInit(completeInitialization(sampleElasticsearch())),
+		completeInitialization(sampleElasticsearch()),
 		true,
 		false,
 	},
@@ -368,13 +367,8 @@ func haltDatabase(old api.Elasticsearch) api.Elasticsearch {
 	return old
 }
 
-func completeProvisioning(old api.Elasticsearch) api.Elasticsearch {
-	old.Status.Conditions = []kmapi.Condition{
-		{
-			Type:   api.DatabaseProvisioned,
-			Status: core.ConditionTrue,
-		},
-	}
+func completeInitialization(old api.Elasticsearch) api.Elasticsearch {
+	old.Spec.Init.Initialized = true
 	return old
 }
 
