@@ -8,7 +8,7 @@ require (
 	github.com/elastic/go-elasticsearch/v6 v6.8.10
 	github.com/elastic/go-elasticsearch/v7 v7.9.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/olivere/elastic v6.2.31+incompatible // indirect
+	github.com/olivere/elastic v6.2.35+incompatible // indirect
 	github.com/olivere/elastic/v7 v7.0.15
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
