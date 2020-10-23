@@ -265,7 +265,7 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 github.com/munnerz/goautoneg
-# github.com/olivere/elastic v6.2.31+incompatible
+# github.com/olivere/elastic v6.2.35+incompatible
 ## explicit
 github.com/olivere/elastic/config
 github.com/olivere/elastic/uritemplates
