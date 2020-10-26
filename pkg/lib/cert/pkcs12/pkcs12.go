@@ -76,9 +76,9 @@ func CreateCaCertificateJKS(certPath string) (*rsa.PrivateKey, *x509.Certificate
 	return caKey, caCert, pass, nil
 }
 
-func CreateNodeCertificateJKS(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate, pass string) error {
+func CreateNodeCertificateJKS(certPath string, db *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate, pass string) error {
 	cfg := cert.Config{
-		CommonName:   elasticsearch.OffshootName(),
+		CommonName:   db.OffshootName(),
 		Organization: []string{"Elasticsearch Operator"},
 		Usages: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageServerAuth,
@@ -185,14 +185,14 @@ func CreateSGAdminCertificateJKS(certPath string, caKey *rsa.PrivateKey, caCert 
 	return nil
 }
 
-func CreateClientCertificateJKS(certPath string, elasticsearch *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate, pass string) error {
+func CreateClientCertificateJKS(certPath string, db *api.Elasticsearch, caKey *rsa.PrivateKey, caCert *x509.Certificate, pass string) error {
 	cfg := cert.Config{
-		CommonName:   elasticsearch.OffshootName(),
+		CommonName:   db.OffshootName(),
 		Organization: []string{"Elasticsearch Operator"},
 		AltNames: cert.AltNames{
 			DNSNames: []string{
 				"localhost",
-				fmt.Sprintf("%v.%v.svc", elasticsearch.OffshootName(), elasticsearch.Namespace),
+				fmt.Sprintf("%v.%v.svc", db.OffshootName(), db.Namespace),
 			},
 		},
 		Usages: []x509.ExtKeyUsage{
