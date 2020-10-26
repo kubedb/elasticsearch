@@ -31,8 +31,8 @@ import (
 func TestElasticsearch_getInternalUserConfig(t *testing.T) {
 
 	type fields struct {
-		kClient       kubernetes.Interface
-		elasticsearch *api.Elasticsearch
+		kClient kubernetes.Interface
+		db      *api.Elasticsearch
 	}
 	tests := []struct {
 		name    string
@@ -43,7 +43,7 @@ func TestElasticsearch_getInternalUserConfig(t *testing.T) {
 			name: "Check output",
 			fields: fields{
 				kClient: fake.NewSimpleClientset(),
-				elasticsearch: &api.Elasticsearch{
+				db: &api.Elasticsearch{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-es",
 						Namespace: "test",
@@ -71,10 +71,10 @@ func TestElasticsearch_getInternalUserConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			es := &Elasticsearch{
-				kClient:       tt.fields.kClient,
-				elasticsearch: tt.fields.elasticsearch,
+				kClient: tt.fields.kClient,
+				db:      tt.fields.db,
 			}
-			_, err := es.kClient.CoreV1().Secrets(es.elasticsearch.Namespace).Create(context.TODO(), &core.Secret{
+			_, err := es.kClient.CoreV1().Secrets(es.db.Namespace).Create(context.TODO(), &core.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-es-user1-cred",
 				},
