@@ -53,6 +53,7 @@ func (c *Controller) ensureGoverningService(db *api.Elasticsearch) error {
 		in.Spec.Ports = []core.ServicePort{
 			{
 				Name:       api.ElasticsearchRestPortName,
+				Protocol:   core.ProtocolTCP,
 				Port:       api.ElasticsearchRestPort,
 				TargetPort: intstr.FromString(api.ElasticsearchRestPortName),
 			},
@@ -130,6 +131,7 @@ func (c *Controller) createService(db *api.Elasticsearch) (kutil.VerbType, error
 			core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
 				{
 					Name:       api.ElasticsearchRestPortName,
+					Protocol:   core.ProtocolTCP,
 					Port:       api.ElasticsearchRestPort,
 					TargetPort: intstr.FromString(api.ElasticsearchRestPortName),
 				},
@@ -176,6 +178,7 @@ func (c *Controller) createMasterService(db *api.Elasticsearch) (kutil.VerbType,
 			core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
 				{
 					Name:       api.ElasticsearchTransportPortName,
+					Protocol:   core.ProtocolTCP,
 					Port:       api.ElasticsearchTransportPort,
 					TargetPort: intstr.FromString(api.ElasticsearchTransportPortName),
 				},
