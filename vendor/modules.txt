@@ -1222,7 +1222,7 @@ kmodules.xyz/prober/api/v1
 ## explicit
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-# kubedb.dev/apimachinery v0.14.1-0.20201029213229-a0cc0f912b4c
+# kubedb.dev/apimachinery v0.14.1-0.20201030200006-92af33bde233
 ## explicit
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/autoscaling
