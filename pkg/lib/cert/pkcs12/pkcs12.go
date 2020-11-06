@@ -34,10 +34,10 @@ import (
 	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
 	"kubedb.dev/elasticsearch/pkg/lib/keytool"
 
-	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/go/ioutil"
 	"github.com/pkg/errors"
 	"gomodules.xyz/cert"
+	"gomodules.xyz/x/crypto/rand"
+	"gomodules.xyz/x/ioutil"
 )
 
 func CreateCaCertificateJKS(certPath string) (*rsa.PrivateKey, *x509.Certificate, string, error) {
