@@ -25,8 +25,8 @@ import (
 	v1alpha12 "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	"kubedb.dev/elasticsearch/pkg/util/es"
 
-	string_util "github.com/appscode/go/strings"
 	. "github.com/onsi/gomega"
+	string_util "gomodules.xyz/x/strings"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

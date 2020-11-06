@@ -26,10 +26,10 @@ import (
 	"kubedb.dev/elasticsearch/test/e2e/framework"
 	"kubedb.dev/elasticsearch/test/e2e/matcher"
 
-	"github.com/appscode/go/log"
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
+	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -345,7 +345,7 @@ var _ = Describe("Elasticsearch", func() {
 				It("should run eviction successfully", func() {
 					// create elasticsearch
 					By("Create DB")
-					elasticsearch.Spec.Replicas = types.Int32P(3)
+					elasticsearch.Spec.Replicas = pointer.Int32P(3)
 					elasticsearch.Spec.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 					createAndWaitForRunning()
 					//Evict a Elasticsearch pod
@@ -358,9 +358,9 @@ var _ = Describe("Elasticsearch", func() {
 					// create elasticsearch
 					By("Create DB")
 					elasticsearch = f.DedicatedElasticsearch()
-					elasticsearch.Spec.Topology.Ingest.Replicas = types.Int32P(3)
-					elasticsearch.Spec.Topology.Master.Replicas = types.Int32P(3)
-					elasticsearch.Spec.Topology.Data.Replicas = types.Int32P(3)
+					elasticsearch.Spec.Topology.Ingest.Replicas = pointer.Int32P(3)
+					elasticsearch.Spec.Topology.Master.Replicas = pointer.Int32P(3)
+					elasticsearch.Spec.Topology.Data.Replicas = pointer.Int32P(3)
 
 					elasticsearch.Spec.Topology.Ingest.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 					elasticsearch.Spec.Topology.Data.MaxUnavailable = &intstr.IntOrString{IntVal: 1}

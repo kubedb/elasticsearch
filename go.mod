@@ -3,7 +3,6 @@ module kubedb.dev/elasticsearch
 go 1.14
 
 require (
-	github.com/appscode/go v0.0.0-20201006035845-a0302ac8e3d3
 	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
 	github.com/elastic/go-elasticsearch/v6 v6.8.10
 	github.com/elastic/go-elasticsearch/v7 v7.9.0
@@ -23,7 +22,10 @@ require (
 	gomodules.xyz/cert v1.1.2
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/password-generator v0.2.6
+	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
+	gomodules.xyz/runtime v0.0.0-20201104200926-d838b09dda8b
 	gomodules.xyz/sets v0.0.0-20200930152147-4f4543544799
+	gomodules.xyz/x v0.0.0-20201105065653-91c568df6331
 	gopkg.in/olivere/elastic.v5 v5.0.85
 	gopkg.in/olivere/elastic.v6 v6.2.31
 	gopkg.in/yaml.v2 v2.3.0

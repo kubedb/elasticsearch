@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/appscode/go/crypto/rand"
+	"gomodules.xyz/x/crypto/rand"
 	esv5 "gopkg.in/olivere/elastic.v5"
 	"sigs.k8s.io/yaml"
 )
