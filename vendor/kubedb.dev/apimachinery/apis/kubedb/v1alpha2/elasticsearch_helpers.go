@@ -89,7 +89,7 @@ func (e Elasticsearch) ServiceName() string {
 	return e.OffshootName()
 }
 
-func (e *Elasticsearch) MasterServiceName() string {
+func (e *Elasticsearch) MasterDiscoveryServiceName() string {
 	return meta_util.NameWithSuffix(e.ServiceName(), "master")
 }
 

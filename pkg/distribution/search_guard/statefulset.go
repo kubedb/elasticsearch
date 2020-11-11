@@ -555,12 +555,12 @@ func (es *Elasticsearch) upsertContainerEnv(envList []core.EnvVar) []core.EnvVar
 	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
 			Name:  "discovery.seed_hosts",
-			Value: es.db.MasterServiceName(),
+			Value: es.db.MasterDiscoveryServiceName(),
 		})
 	} else {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
 			Name:  "discovery.zen.ping.unicast.hosts",
-			Value: es.db.MasterServiceName(),
+			Value: es.db.MasterDiscoveryServiceName(),
 		})
 	}
 
