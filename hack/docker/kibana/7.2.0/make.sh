@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-
-
 set -xeou pipefail
 
 GOPATH=$(go env GOPATH)
@@ -26,7 +23,6 @@ source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 IMG=kibana
 TAG=7.2.0
-
 
 docker pull "docker.elastic.co/kibana/kibana:$TAG"
 

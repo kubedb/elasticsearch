@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-
-
 set -xeou pipefail
 
 GOPATH=$(go env GOPATH)
@@ -31,7 +28,8 @@ build() {
     pushd "$REPO_ROOT/hack/docker/$IMG/$TAG"
 
     local cmd="docker build --pull -t $DOCKER_REGISTRY/$IMG:$TAG ."
-    echo $cmd; $cmd
+    echo $cmd
+    $cmd
 
     popd
 }
