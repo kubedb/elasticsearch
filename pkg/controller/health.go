@@ -162,10 +162,8 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 						glog.Errorf("Failed to update status for Elasticsearch: %s/%s", db.Namespace, db.Name)
 					}
 				}
-
 			}()
 		}
-
 		wg.Wait()
 	}, c.ReadinessProbeInterval, stopCh)
 
