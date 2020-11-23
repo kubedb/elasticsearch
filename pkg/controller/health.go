@@ -165,6 +165,8 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 
 			}()
 		}
+
+		wg.Wait()
 	}, c.ReadinessProbeInterval, stopCh)
 
 	// will wait here until stopCh is closed.
