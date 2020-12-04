@@ -271,6 +271,19 @@ var cases = []struct {
 		true,
 		false,
 	},
+	{
+		testName:   "Create elasticsearch with low resource request",
+		kind:       requestKind,
+		objectName: "foo",
+		namespace:  "default",
+		operation:  admission.Create,
+		object: transformElasticsearch(sampleElasticsearch(), func(in api.Elasticsearch) api.Elasticsearch {
+			in.Spec.PodTemplate.Spec.Resources.Requests[core.ResourceMemory] = resource.MustParse("250Mi")
+			return in
+		}),
+		heatUp: true,
+		result: false,
+	},
 }
 
 func sampleElasticsearch() api.Elasticsearch {
@@ -302,7 +315,7 @@ func sampleElasticsearch() api.Elasticsearch {
 				Spec: ofst.PodSpec{
 					Resources: core.ResourceRequirements{
 						Requests: core.ResourceList{
-							core.ResourceMemory: resource.MustParse("128Mi"),
+							core.ResourceMemory: resource.MustParse("256Mi"),
 						},
 					},
 				},
@@ -326,6 +339,10 @@ func editExistingSecret(old api.Elasticsearch) api.Elasticsearch {
 		Name: "foo-auth",
 	}
 	return old
+}
+
+func transformElasticsearch(es api.Elasticsearch, transform func(in api.Elasticsearch) api.Elasticsearch) api.Elasticsearch {
+	return transform(es)
 }
 
 func editNonExistingSecret(old api.Elasticsearch) api.Elasticsearch {
