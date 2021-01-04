@@ -282,6 +282,10 @@ message ElasticsearchSpec {
   // TerminationPolicy controls the delete operation for database
   // +optional
   optional string terminationPolicy = 19;
+
+  // DisableSysctlInitContainer specifies whether to disable sysctl initContainer or not
+  // +optional
+  optional bool disableSysctlInitContainer = 20;
 }
 
 message ElasticsearchStatus {

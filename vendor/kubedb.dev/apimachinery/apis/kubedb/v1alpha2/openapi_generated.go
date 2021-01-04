@@ -19255,6 +19255,13 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ElasticsearchSpec(ref common.Refer
 							Format:      "",
 						},
 					},
+					"disableSysctlInitContainer": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DisableSysctlInitContainer specifies whether to disable sysctl initContainer or not",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"version"},
 			},

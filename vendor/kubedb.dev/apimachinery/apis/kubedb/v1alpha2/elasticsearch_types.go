@@ -135,6 +135,10 @@ type ElasticsearchSpec struct {
 	// TerminationPolicy controls the delete operation for database
 	// +optional
 	TerminationPolicy TerminationPolicy `json:"terminationPolicy,omitempty" protobuf:"bytes,19,opt,name=terminationPolicy,casttype=TerminationPolicy"`
+
+	// DisableSysctlInitContainer specifies whether to disable sysctl initContainer or not
+	// +optional
+	DisableSysctlInitContainer bool `json:"disableSysctlInitContainer,omitempty" protobuf:"varint,20,opt,name=disableSysctlInitContainer"`
 }
 
 type ElasticsearchClusterTopology struct {

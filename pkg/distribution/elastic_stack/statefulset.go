@@ -447,16 +447,19 @@ func (es *Elasticsearch) getInitContainers(esNode *api.ElasticsearchNode, envLis
 		return nil, errors.New("ElasticsearchNode is empty")
 	}
 
-	initContainers := []core.Container{
-		{
-			Name:            api.ElasticsearchInitSysctlContainerName,
-			Image:           es.esVersion.Spec.InitContainer.Image,
-			ImagePullPolicy: core.PullIfNotPresent,
-			Command:         []string{"sysctl", "-w", "vm.max_map_count=262144"},
-			SecurityContext: &core.SecurityContext{
-				Privileged: pointer.BoolP(true),
+	var initContainers []core.Container
+	if !es.db.Spec.DisableSysctlInitContainer {
+		initContainers = []core.Container{
+			{
+				Name:            api.ElasticsearchInitSysctlContainerName,
+				Image:           es.esVersion.Spec.InitContainer.Image,
+				ImagePullPolicy: core.PullIfNotPresent,
+				Command:         []string{"sysctl", "-w", "vm.max_map_count=262144"},
+				SecurityContext: &core.SecurityContext{
+					Privileged: pointer.BoolP(true),
+				},
 			},
-		},
+		}
 	}
 
 	initContainers = es.upsertConfigMergerInitContainer(initContainers, envList)

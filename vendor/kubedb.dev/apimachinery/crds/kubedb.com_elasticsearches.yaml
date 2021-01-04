@@ -61,6 +61,8 @@ spec:
               type: object
             disableSecurity:
               type: boolean
+            disableSysctlInitContainer:
+              type: boolean
             enableSSL:
               type: boolean
             halted:
