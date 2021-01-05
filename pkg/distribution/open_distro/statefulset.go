@@ -24,6 +24,7 @@ import (
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	certlib "kubedb.dev/elasticsearch/pkg/lib/cert"
+	"kubedb.dev/elasticsearch/pkg/lib/kernel"
 
 	"github.com/pkg/errors"
 	"gomodules.xyz/envsubst"
@@ -458,16 +459,30 @@ func (es *Elasticsearch) getInitContainers(esNode *api.ElasticsearchNode, envLis
 		return nil, errors.New("ElasticsearchNode is empty")
 	}
 
+	var privileged bool
+	var command string
 	var initContainers []core.Container
-	if !es.db.Spec.DisableSysctlInitContainer {
+	if es.db.Spec.KernelSettings != nil {
+		if es.db.Spec.KernelSettings.Privileged {
+			privileged = true
+		}
+		if es.db.Spec.KernelSettings.Sysctls != nil {
+			// Use separator `;` for sh
+			command = kernel.GetSysctlCommandString(es.db.Spec.KernelSettings.Sysctls, ';')
+		}
+	}
+
+	// If commands exist, add sysctl init container.
+	// Otherwise skip it.
+	if command != "" {
 		initContainers = []core.Container{
 			{
 				Name:            api.ElasticsearchInitSysctlContainerName,
 				Image:           es.esVersion.Spec.InitContainer.Image,
 				ImagePullPolicy: core.PullIfNotPresent,
-				Command:         []string{"sysctl", "-w", "vm.max_map_count=262144"},
+				Command:         []string{"sh", "-c", command},
 				SecurityContext: &core.SecurityContext{
-					Privileged: pointer.BoolP(true),
+					Privileged: pointer.BoolP(privileged),
 				},
 			},
 		}

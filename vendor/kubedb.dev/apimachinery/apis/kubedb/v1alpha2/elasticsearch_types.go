@@ -136,9 +136,9 @@ type ElasticsearchSpec struct {
 	// +optional
 	TerminationPolicy TerminationPolicy `json:"terminationPolicy,omitempty" protobuf:"bytes,19,opt,name=terminationPolicy,casttype=TerminationPolicy"`
 
-	// DisableSysctlInitContainer specifies whether to disable sysctl initContainer or not
+	// KernelSettings contains the additional kernel settings.
 	// +optional
-	DisableSysctlInitContainer bool `json:"disableSysctlInitContainer,omitempty" protobuf:"varint,20,opt,name=disableSysctlInitContainer"`
+	KernelSettings *KernelSettings `json:"kernelSettings,omitempty" protobuf:"bytes,20,opt,name=kernelSettings"`
 }
 
 type ElasticsearchClusterTopology struct {

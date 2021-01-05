@@ -61,8 +61,6 @@ spec:
               type: object
             disableSecurity:
               type: boolean
-            disableSysctlInitContainer:
-              type: boolean
             enableSSL:
               type: boolean
             halted:
@@ -1351,6 +1349,23 @@ spec:
                       type: string
                     type: array
                 type: object
+              type: object
+            kernelSettings:
+              properties:
+                privileged:
+                  type: boolean
+                sysctls:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: string
+                    required:
+                    - name
+                    - value
+                    type: object
+                  type: array
               type: object
             maxUnavailable:
               anyOf:

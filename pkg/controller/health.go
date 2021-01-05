@@ -134,12 +134,13 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 				}
 
 				// Update to "Ready" condition to "true" only if the status is "green".
-				// For standalone cluster, consider status "yellow".
+				// For standalone data node cluster (could be combined/topology), consider status "yellow".
+				// check if:
+				//	( status == green ) || ( status == yellow && (standalone-data-topology || standalone-data-combined))
 				if status == api.ElasticsearchStatusGreen ||
 					(status == api.ElasticsearchStatusYellow &&
-						db.Spec.Topology == nil &&
-						(db.Spec.Replicas == nil || (db.Spec.Replicas != nil && *db.Spec.Replicas == int32(1)))) {
-
+						((db.Spec.Topology != nil && db.Spec.Topology.Data.Replicas != nil && *db.Spec.Topology.Data.Replicas == int32(1)) ||
+							(db.Spec.Topology == nil && db.Spec.Replicas != nil && *db.Spec.Replicas == int32(1)))) {
 					// Update "Ready" to "true".
 					_, err = util.UpdateElasticsearchStatus(
 						context.TODO(),
@@ -153,6 +154,28 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 									Reason:             api.ReadinessCheckSucceeded,
 									ObservedGeneration: db.Generation,
 									Message:            fmt.Sprintf("The Elasticsearch: %s/%s is ready.", db.Namespace, db.Name),
+								})
+							return db.UID, in
+						},
+						metav1.UpdateOptions{},
+					)
+					if err != nil {
+						glog.Errorf("Failed to update status for Elasticsearch: %s/%s", db.Namespace, db.Name)
+					}
+				} else {
+					// Update "Ready" to "false".
+					_, err = util.UpdateElasticsearchStatus(
+						context.TODO(),
+						c.DBClient.KubedbV1alpha2(),
+						db.ObjectMeta,
+						func(in *api.ElasticsearchStatus) (types.UID, *api.ElasticsearchStatus) {
+							in.Conditions = kmapi.SetCondition(in.Conditions,
+								kmapi.Condition{
+									Type:               api.DatabaseReady,
+									Status:             core.ConditionFalse,
+									Reason:             api.ReadinessCheckFailed,
+									ObservedGeneration: db.Generation,
+									Message:            fmt.Sprintf("The Elasticsearch: %s/%s is not ready with cluster status: %s", db.Namespace, db.Name, status),
 								})
 							return db.UID, in
 						},
