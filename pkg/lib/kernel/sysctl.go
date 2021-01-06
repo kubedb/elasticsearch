@@ -1,11 +1,11 @@
 /*
 Copyright AppsCode Inc. and Contributors
 
-Licensed under the Apache License, Version 2.0 (the "License");
+Licensed under the AppsCode Community License 1.0.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://github.com/appscode/licenses/raw/1.0.0/AppsCode-Community-1.0.0.md
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,21 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apis
+package kernel
 
 import (
-	"kmodules.xyz/client-go/apiextensions"
+	"fmt"
+	"strings"
+
+	core "k8s.io/api/core/v1"
 )
 
-const (
-	Finalizer = "kubedb.com"
-)
-
-type ResourceInfo interface {
-	ResourceFQN() string
-	ResourceShortCode() string
-	ResourceKind() string
-	ResourceSingular() string
-	ResourcePlural() string
-	CustomResourceDefinition() *apiextensions.CustomResourceDefinition
+func GetSysctlCommandString(commands []core.Sysctl, separator rune) string {
+	var cmd []string
+	for _, c := range commands {
+		cmd = append(cmd, fmt.Sprintf("sysctl -w %s=%s", c.Name, c.Value))
+	}
+	return strings.Join(cmd, string(separator))
 }
