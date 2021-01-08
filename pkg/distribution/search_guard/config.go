@@ -111,7 +111,12 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		Namespace: es.db.Namespace,
 	}
 
-	var config, inUserConfig, rolesMapping string
+	var config, inUserConfig, oldInUserConfig, rolesMapping string
+	if secret != nil {
+		if value, ok := secret.Data[InternalUserFileName]; ok {
+			oldInUserConfig = string(value)
+		}
+	}
 
 	if !es.db.Spec.DisableSecurity {
 		config = searchguard_security_enabled
@@ -184,16 +189,26 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		config = searchguard_security_disabled
 	}
 
-	data := map[string][]byte{
-		ConfigFileName:       []byte(config),
-		InternalUserFileName: []byte(inUserConfig),
-		RolesMappingFileName: []byte(rolesMapping),
+	// Every time we create internalUser
+	// It varies, even if the userSpec is same.
+	// It is because of the bcrypt hash generator.
+	// Let's check, whether the userSpec is changed or not.
+	equalConfig, err := user.InUserConfigCompareEqual(inUserConfig, oldInUserConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to compare internal user config file")
 	}
 
 	if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *core.Secret) *core.Secret {
 		in.Labels = core_util.UpsertMap(in.Labels, es.db.OffshootLabels())
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
-		in.Data = data
+		if in.Data == nil {
+			in.Data = make(map[string][]byte)
+		}
+		in.Data[ConfigFileName] = []byte(config)
+		in.Data[RolesMappingFileName] = []byte(rolesMapping)
+		if !equalConfig {
+			in.Data[InternalUserFileName] = []byte(inUserConfig)
+		}
 		return in
 	}, metav1.PatchOptions{}); err != nil {
 		return err

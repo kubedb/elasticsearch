@@ -6,6 +6,7 @@ require (
 	github.com/elastic/go-elasticsearch/v6 v6.8.10
 	github.com/elastic/go-elasticsearch/v7 v7.9.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/google/go-cmp v0.5.4
 	github.com/olivere/elastic v6.2.35+incompatible // indirect
 	github.com/olivere/elastic/v7 v7.0.15
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
@@ -31,6 +32,7 @@ require (
 	k8s.io/apimachinery v0.18.9
 	k8s.io/apiserver v0.18.9
 	k8s.io/client-go v0.18.9
+	k8s.io/klog v1.0.0
 	kmodules.xyz/client-go v0.0.0-20201230092550-8ca15cfcbefa
 	kmodules.xyz/custom-resources v0.0.0-20201124062543-bd8d35c21b0c
 	kmodules.xyz/monitoring-agent-api v0.0.0-20201105074044-be7a1044891a
