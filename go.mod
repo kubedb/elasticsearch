@@ -7,8 +7,7 @@ require (
 	github.com/elastic/go-elasticsearch/v7 v7.9.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/google/go-cmp v0.5.4
-	github.com/olivere/elastic v6.2.35+incompatible // indirect
-	github.com/olivere/elastic/v7 v7.0.15
+	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator v0.42.0
@@ -24,8 +23,6 @@ require (
 	gomodules.xyz/runtime v0.0.0-20201104200926-d838b09dda8b
 	gomodules.xyz/sets v0.0.0-20200930152147-4f4543544799
 	gomodules.xyz/x v0.0.0-20201105065653-91c568df6331
-	gopkg.in/olivere/elastic.v5 v5.0.85
-	gopkg.in/olivere/elastic.v6 v6.2.31
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.9
 	k8s.io/apiextensions-apiserver v0.18.9
@@ -39,7 +36,6 @@ require (
 	kmodules.xyz/offshoot-api v0.0.0-20201105074700-8675f5f686f2
 	kmodules.xyz/webhook-runtime v0.0.0-20201105073856-2dc7382b88c6
 	kubedb.dev/apimachinery v0.16.0-rc.0.0.20210106185329-7a3dd5ee0094
-	sigs.k8s.io/yaml v1.2.0
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
