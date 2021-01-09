@@ -65,8 +65,8 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, url string
 	}
 
 	switch {
-	// 6.x for searchguard & x-pack, 0.x for opendistro
-	case strings.HasPrefix(string(db.Spec.Version), "6."), strings.HasPrefix(string(db.Spec.Version), "0."):
+	// 6.x for searchguard & x-pack
+	case strings.HasPrefix(string(db.Spec.Version), "6."):
 		client, err := esv6.NewClient(esv6.Config{
 			Addresses:         []string{url},
 			Username:          username,
@@ -95,8 +95,8 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, url string
 		}
 		return &ESClientV6{client: client}, nil
 
-	// 7.x for searchguard & x-pack, 1.x for opendistro
-	case strings.HasPrefix(string(db.Spec.Version), "7."), strings.HasPrefix(string(db.Spec.Version), "1."):
+	// 7.x for searchguard & x-pack & opendistro
+	case strings.HasPrefix(string(db.Spec.Version), "7."):
 		client, err := esv7.NewClient(esv7.Config{
 			Addresses:         []string{url},
 			Username:          username,

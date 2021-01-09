@@ -72,7 +72,7 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 	// These Env are only required for master nodes to bootstrap
 	// for the vary first time. Need to remove from EnvList as
 	// soon as the cluster is up and running.
-	if strings.HasPrefix(es.esVersion.Spec.Version, "1.") {
+	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
 			Name:  "cluster.initial_master_nodes",
 			Value: es.getInitialMasterNodes(),
@@ -286,7 +286,7 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 	// These Env are only required for master nodes to bootstrap
 	// for the vary first time. Need to remove from EnvList as
 	// soon as the cluster is up and running.
-	if strings.HasPrefix(es.esVersion.Spec.Version, "1.") {
+	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
 			Name:  "cluster.initial_master_nodes",
 			Value: es.getInitialMasterNodes(),
