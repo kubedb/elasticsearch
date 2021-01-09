@@ -108,8 +108,8 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 		}
 
 		return &ESClientV5{client: client}, nil
-	// 6.x for searchguard & x-pack, 0.x for opendistro
-	case strings.HasPrefix(string(elasicsearchversion.Spec.Version), "6."), strings.HasPrefix(string(elasicsearchversion.Spec.Version), "0."):
+	// 6.x for searchguard & x-pack
+	case strings.HasPrefix(string(elasicsearchversion.Spec.Version), "6."):
 		client, err := esv6.NewClient(
 			esv6.SetHttpClient(&http.Client{
 				Timeout: 0,
@@ -136,8 +136,8 @@ func GetElasticClient(kc kubernetes.Interface, extClient cs.Interface, db *api.E
 		}
 
 		return &ESClientV6{client: client}, nil
-	// 7.x for searchguard & x-pack, 1.x for opendistro
-	case strings.HasPrefix(string(elasicsearchversion.Spec.Version), "7."), strings.HasPrefix(string(elasicsearchversion.Spec.Version), "1."):
+	// 7.x for searchguard & x-pack & opendistro
+	case strings.HasPrefix(string(elasicsearchversion.Spec.Version), "7."):
 		client, err := esv7.NewClient(
 			esv7.SetHttpClient(&http.Client{
 				Timeout: 0,
