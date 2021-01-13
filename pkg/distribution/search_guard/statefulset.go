@@ -630,10 +630,10 @@ func (es *Elasticsearch) getInitialMasterNodes() string {
 
 		// If master.prefix is provided, name will be "GivenPrefix-ESName".
 		// The master.prefix is default to "master".
-		if es.db.Spec.Topology.Master.Prefix != "" {
-			stsName = fmt.Sprintf("%s-%s", es.db.Spec.Topology.Master.Prefix, stsName)
+		if es.db.Spec.Topology.Master.Suffix != "" {
+			stsName = fmt.Sprintf("%s-%s", stsName, es.db.Spec.Topology.Master.Suffix)
 		} else {
-			stsName = fmt.Sprintf("%s-%s", api.ElasticsearchMasterNodePrefix, stsName)
+			stsName = fmt.Sprintf("%s-%s", stsName, api.ElasticsearchMasterNodeSuffix)
 		}
 	}
 

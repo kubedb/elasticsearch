@@ -183,24 +183,24 @@ func (e *Elasticsearch) CombinedStatefulSetName() string {
 }
 
 func (e *Elasticsearch) MasterStatefulSetName() string {
-	if e.Spec.Topology.Master.Prefix != "" {
-		return fmt.Sprintf("%s-%s", e.Spec.Topology.Master.Prefix, e.OffshootName())
+	if e.Spec.Topology.Master.Suffix != "" {
+		return fmt.Sprintf("%s-%s", e.OffshootName(), e.Spec.Topology.Master.Suffix)
 	}
-	return fmt.Sprintf("%s-%s", ElasticsearchMasterNodePrefix, e.OffshootName())
+	return fmt.Sprintf("%s-%s", e.OffshootName(), ElasticsearchMasterNodeSuffix)
 }
 
 func (e *Elasticsearch) DataStatefulSetName() string {
-	if e.Spec.Topology.Data.Prefix != "" {
-		return fmt.Sprintf("%s-%s", e.Spec.Topology.Data.Prefix, e.OffshootName())
+	if e.Spec.Topology.Data.Suffix != "" {
+		return fmt.Sprintf("%s-%s", e.OffshootName(), e.Spec.Topology.Data.Suffix)
 	}
-	return fmt.Sprintf("%s-%s", ElasticsearchDataNodePrefix, e.OffshootName())
+	return fmt.Sprintf("%s-%s", e.OffshootName(), ElasticsearchDataNodeSuffix)
 }
 
 func (e *Elasticsearch) IngestStatefulSetName() string {
-	if e.Spec.Topology.Ingest.Prefix != "" {
-		return fmt.Sprintf("%s-%s", e.Spec.Topology.Ingest.Prefix, e.OffshootName())
+	if e.Spec.Topology.Ingest.Suffix != "" {
+		return fmt.Sprintf("%s-%s", e.OffshootName(), e.Spec.Topology.Ingest.Suffix)
 	}
-	return fmt.Sprintf("%s-%s", ElasticsearchIngestNodePrefix, e.OffshootName())
+	return fmt.Sprintf("%s-%s", e.OffshootName(), ElasticsearchIngestNodeSuffix)
 }
 
 type elasticsearchApp struct {
@@ -296,20 +296,20 @@ func (e *Elasticsearch) SetDefaults(esVersion *v1alpha1.ElasticsearchVersion, to
 	if e.Spec.Topology != nil {
 
 		// Default to "ingest"
-		if e.Spec.Topology.Ingest.Prefix == "" {
-			e.Spec.Topology.Ingest.Prefix = ElasticsearchIngestNodePrefix
+		if e.Spec.Topology.Ingest.Suffix == "" {
+			e.Spec.Topology.Ingest.Suffix = ElasticsearchIngestNodeSuffix
 		}
 		setDefaultResourceLimits(&e.Spec.Topology.Ingest.Resources, defaultResourceLimits, defaultResourceLimits)
 
 		// Default to "data"
-		if e.Spec.Topology.Data.Prefix == "" {
-			e.Spec.Topology.Data.Prefix = ElasticsearchDataNodePrefix
+		if e.Spec.Topology.Data.Suffix == "" {
+			e.Spec.Topology.Data.Suffix = ElasticsearchDataNodeSuffix
 		}
 		setDefaultResourceLimits(&e.Spec.Topology.Data.Resources, defaultResourceLimits, defaultResourceLimits)
 
 		// Default to "master"
-		if e.Spec.Topology.Master.Prefix == "" {
-			e.Spec.Topology.Master.Prefix = ElasticsearchMasterNodePrefix
+		if e.Spec.Topology.Master.Suffix == "" {
+			e.Spec.Topology.Master.Suffix = ElasticsearchMasterNodeSuffix
 		}
 		setDefaultResourceLimits(&e.Spec.Topology.Master.Resources, defaultResourceLimits, defaultResourceLimits)
 	} else {
