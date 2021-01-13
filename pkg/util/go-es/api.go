@@ -40,7 +40,7 @@ type ESClient interface {
 
 var response map[string]interface{}
 
-func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, url string) (ESClient, error) {
+func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion, url string) (ESClient, error) {
 	var username, password string
 	if !db.Spec.DisableSecurity && db.Spec.AuthSecret != nil {
 		secret, err := kc.CoreV1().Secrets(db.Namespace).Get(context.TODO(), db.Spec.AuthSecret.Name, metav1.GetOptions{})
@@ -65,8 +65,8 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, url string
 	}
 
 	switch {
-	// 6.x for searchguard & x-pack
-	case strings.HasPrefix(string(db.Spec.Version), "6."):
+	// for Elasticsearch 6.x.x
+	case strings.HasPrefix(esVersion, "6."):
 		client, err := esv6.NewClient(esv6.Config{
 			Addresses:         []string{url},
 			Username:          username,
@@ -95,8 +95,8 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, url string
 		}
 		return &ESClientV6{client: client}, nil
 
-	// 7.x for searchguard & x-pack & opendistro
-	case strings.HasPrefix(string(db.Spec.Version), "7."):
+	// for Elasticsearch 7.x.x
+	case strings.HasPrefix(esVersion, "7."):
 		client, err := esv7.NewClient(esv7.Config{
 			Addresses:         []string{url},
 			Username:          username,

@@ -26,6 +26,7 @@ import (
 	go_es "kubedb.dev/elasticsearch/pkg/util/go-es"
 
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -63,6 +64,7 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 				// Create database client
 				dbClient, err := c.GetElasticsearchClient(db)
 				if err != nil {
+					glog.Warningf("The Elasticsearch: %s/%s client is not ready with %s", db.Namespace, db.Name, err.Error())
 					// Since the client was unable to connect the database,
 					// update "AcceptingConnection" to "false".
 					// update "Ready" to "false"
@@ -92,7 +94,7 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 						metav1.UpdateOptions{},
 					)
 					if err != nil {
-						glog.Errorf("Failed to update status for Elasticsearch: %s/%s", db.Namespace, db.Name)
+						glog.Errorf("Failed to update status for Elasticsearch: %s/%s with %s", db.Namespace, db.Name, err.Error())
 					}
 					// Since the client isn't created, skip rest operations.
 					return
@@ -120,7 +122,7 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 					metav1.UpdateOptions{},
 				)
 				if err != nil {
-					glog.Errorf("Failed to update status for Elasticsearch: %s/%s", db.Namespace, db.Name)
+					glog.Errorf("Failed to update status for Elasticsearch: %s/%s with %s", db.Namespace, db.Name, err.Error())
 					// Since condition update failed, skip remaining operations.
 					return
 				}
@@ -160,7 +162,7 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 						metav1.UpdateOptions{},
 					)
 					if err != nil {
-						glog.Errorf("Failed to update status for Elasticsearch: %s/%s", db.Namespace, db.Name)
+						glog.Errorf("Failed to update status for Elasticsearch: %s/%s with %s", db.Namespace, db.Name, err.Error())
 					}
 				} else {
 					// Update "Ready" to "false".
@@ -182,7 +184,7 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 						metav1.UpdateOptions{},
 					)
 					if err != nil {
-						glog.Errorf("Failed to update status for Elasticsearch: %s/%s", db.Namespace, db.Name)
+						glog.Errorf("Failed to update status for Elasticsearch: %s/%s with %s", db.Namespace, db.Name, err.Error())
 					}
 				}
 			}()
@@ -197,7 +199,14 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 
 func (c *Controller) GetElasticsearchClient(db *api.Elasticsearch) (go_es.ESClient, error) {
 	url := fmt.Sprintf("%v://%s.%s.svc:%d", db.GetConnectionScheme(), db.ServiceName(), db.GetNamespace(), api.ElasticsearchRestPort)
-	dbClient, err := go_es.GetElasticClient(c.Client, db, url)
+
+	// Get original Elasticsearch version, since the client is version specific
+	esVersion, err := c.DBClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), db.Spec.Version, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get elasticsearchVersion")
+	}
+
+	dbClient, err := go_es.GetElasticClient(c.Client, db, esVersion.Spec.Version, url)
 	if err != nil {
 		return nil, err
 	}
