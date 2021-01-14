@@ -107,7 +107,7 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 		},
 	}
 
-	return es.ensureStatefulSet(&masterNode, statefulSetName, labels, replicas, api.ElasticsearchMasterNodePrefix, envList, initEnvList)
+	return es.ensureStatefulSet(&masterNode, statefulSetName, labels, replicas, api.ElasticsearchNodeRoleMaster, envList, initEnvList)
 }
 
 func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
