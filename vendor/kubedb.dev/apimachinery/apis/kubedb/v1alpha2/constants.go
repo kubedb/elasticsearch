@@ -287,7 +287,7 @@ const (
 )
 
 var (
-	defaultResourceLimits = core.ResourceList{
+	DefaultResourceLimits = core.ResourceList{
 		core.ResourceCPU:    resource.MustParse(".500"),
 		core.ResourceMemory: resource.MustParse("1024Mi"),
 	}
