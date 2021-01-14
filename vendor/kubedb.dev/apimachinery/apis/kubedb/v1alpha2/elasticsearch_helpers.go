@@ -184,23 +184,23 @@ func (e *Elasticsearch) CombinedStatefulSetName() string {
 
 func (e *Elasticsearch) MasterStatefulSetName() string {
 	if e.Spec.Topology.Master.Suffix != "" {
-		return fmt.Sprintf("%s-%s", e.OffshootName(), e.Spec.Topology.Master.Suffix)
+		return meta_util.NameWithSuffix(e.OffshootName(), e.Spec.Topology.Master.Suffix)
 	}
-	return fmt.Sprintf("%s-%s", e.OffshootName(), ElasticsearchMasterNodeSuffix)
+	return meta_util.NameWithSuffix(e.OffshootName(), ElasticsearchMasterNodeSuffix)
 }
 
 func (e *Elasticsearch) DataStatefulSetName() string {
 	if e.Spec.Topology.Data.Suffix != "" {
-		return fmt.Sprintf("%s-%s", e.OffshootName(), e.Spec.Topology.Data.Suffix)
+		return meta_util.NameWithSuffix(e.OffshootName(), e.Spec.Topology.Data.Suffix)
 	}
-	return fmt.Sprintf("%s-%s", e.OffshootName(), ElasticsearchDataNodeSuffix)
+	return meta_util.NameWithSuffix(e.OffshootName(), ElasticsearchDataNodeSuffix)
 }
 
 func (e *Elasticsearch) IngestStatefulSetName() string {
 	if e.Spec.Topology.Ingest.Suffix != "" {
-		return fmt.Sprintf("%s-%s", e.OffshootName(), e.Spec.Topology.Ingest.Suffix)
+		return meta_util.NameWithSuffix(e.OffshootName(), e.Spec.Topology.Ingest.Suffix)
 	}
-	return fmt.Sprintf("%s-%s", e.OffshootName(), ElasticsearchIngestNodeSuffix)
+	return meta_util.NameWithSuffix(e.OffshootName(), ElasticsearchIngestNodeSuffix)
 }
 
 type elasticsearchApp struct {
