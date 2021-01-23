@@ -7,14 +7,13 @@ require (
 	github.com/elastic/go-elasticsearch/v7 v7.9.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/google/go-cmp v0.5.4
-	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator v0.42.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.5.1
-	go.bytebuilders.dev/license-verifier/kubernetes v0.5.1
+	go.bytebuilders.dev/license-verifier v0.6.1
+	go.bytebuilders.dev/license-verifier/kubernetes v0.6.1
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gomodules.xyz/cert v1.1.2
 	gomodules.xyz/envsubst v0.1.0
@@ -30,7 +29,7 @@ require (
 	k8s.io/apiserver v0.18.9
 	k8s.io/client-go v0.18.9
 	k8s.io/klog v1.0.0
-	kmodules.xyz/client-go v0.0.0-20201230092550-8ca15cfcbefa
+	kmodules.xyz/client-go v0.0.0-20210118094617-273ba20ad7ca
 	kmodules.xyz/custom-resources v0.0.0-20201124062543-bd8d35c21b0c
 	kmodules.xyz/monitoring-agent-api v0.0.0-20201105074044-be7a1044891a
 	kmodules.xyz/offshoot-api v0.0.0-20201105074700-8675f5f686f2
