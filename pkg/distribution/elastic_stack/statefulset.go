@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
 	"strings"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
@@ -389,6 +390,14 @@ func (es *Elasticsearch) getContainers(esNode *api.ElasticsearchNode, nodeRole s
 			Name:      "temp",
 			MountPath: "/tmp",
 		},
+	}
+
+	// Mount user provided custom configuration to "elasticsearch_config_directory/custom_config"
+	if es.db.Spec.ConfigSecret != nil {
+		volumeMount = core_util.UpsertVolumeMount(volumeMount, core.VolumeMount{
+			Name:      "custom-config",
+			MountPath: path.Join(api.ElasticsearchConfigDir, api.DBCustomConfigName),
+		})
 	}
 
 	if !es.db.Spec.DisableSecurity {
