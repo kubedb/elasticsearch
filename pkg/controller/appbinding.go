@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"kubedb.dev/apimachinery/apis/kubedb"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
@@ -99,6 +100,15 @@ func (c *Controller) ensureAppBinding(db *api.Elasticsearch) (kutil.VerbType, er
 			}
 			in.Spec.ClientConfig.CABundle = caBundle
 			in.Spec.ClientConfig.InsecureSkipTLSVerify = false
+			in.Spec.Parameters = &runtime.RawExtension{
+				Object: &appcat.StashAddon{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       appcat.SchemeGroupVersion.String(),
+						APIVersion: "StashAddon",
+					},
+					Stash: elasticsearchVersion.Spec.Stash,
+				},
+			}
 
 			in.Spec.Secret = &core.LocalObjectReference{
 				Name: db.Spec.AuthSecret.Name,
