@@ -75,7 +75,7 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
 			Name:  "cluster.initial_master_nodes",
-			Value: es.getInitialMasterNodes(),
+			Value: strings.Join(es.db.InitialMasterNodes(), ","),
 		})
 	} else {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
@@ -289,7 +289,7 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
 			Name:  "cluster.initial_master_nodes",
-			Value: es.getInitialMasterNodes(),
+			Value: strings.Join(es.db.InitialMasterNodes(), ","),
 		})
 	} else {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
