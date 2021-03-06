@@ -145,6 +145,9 @@ func (es *Elasticsearch) ensureStatefulSet(
 		in.Spec.Template.Spec.ImagePullSecrets = es.db.Spec.PodTemplate.Spec.ImagePullSecrets
 		in.Spec.Template.Spec.PriorityClassName = es.db.Spec.PodTemplate.Spec.PriorityClassName
 		in.Spec.Template.Spec.Priority = es.db.Spec.PodTemplate.Spec.Priority
+		in.Spec.Template.Spec.HostNetwork = es.db.Spec.PodTemplate.Spec.HostNetwork
+		in.Spec.Template.Spec.HostPID = es.db.Spec.PodTemplate.Spec.HostPID
+		in.Spec.Template.Spec.HostIPC = es.db.Spec.PodTemplate.Spec.HostIPC
 		in.Spec.Template.Spec.SecurityContext = es.db.Spec.PodTemplate.Spec.SecurityContext
 
 		if in.Spec.Template.Spec.SecurityContext == nil {
@@ -433,18 +436,13 @@ func (es *Elasticsearch) getContainers(esNode *api.ElasticsearchNode, nodeRole s
 			// But it is set for all type of nodes, so that our controller can
 			// communicate with each nodes specifically.
 			// The DBA controller uses the restPort to check health of a node.
-			Ports: []core.ContainerPort{defaultRestPort, defaultTransportPort},
-			SecurityContext: &core.SecurityContext{
-				Privileged: pointer.BoolP(false),
-				Capabilities: &core.Capabilities{
-					Add: []core.Capability{"IPC_LOCK", "SYS_RESOURCE"},
-				},
-			},
-			Resources:      esNode.Resources,
-			VolumeMounts:   volumeMount,
-			LivenessProbe:  es.db.Spec.PodTemplate.Spec.LivenessProbe,
-			ReadinessProbe: es.db.Spec.PodTemplate.Spec.ReadinessProbe,
-			Lifecycle:      es.db.Spec.PodTemplate.Spec.Lifecycle,
+			Ports:           []core.ContainerPort{defaultRestPort, defaultTransportPort},
+			SecurityContext: es.db.Spec.PodTemplate.Spec.Container.SecurityContext,
+			Resources:       esNode.Resources,
+			VolumeMounts:    volumeMount,
+			LivenessProbe:   es.db.Spec.PodTemplate.Spec.Container.LivenessProbe,
+			ReadinessProbe:  es.db.Spec.PodTemplate.Spec.Container.ReadinessProbe,
+			Lifecycle:       es.db.Spec.PodTemplate.Spec.Container.Lifecycle,
 		},
 	}
 
