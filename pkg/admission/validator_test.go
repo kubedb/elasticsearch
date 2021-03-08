@@ -278,7 +278,7 @@ var cases = []struct {
 		namespace:  "default",
 		operation:  admission.Create,
 		object: transformElasticsearch(sampleElasticsearch(), func(in api.Elasticsearch) api.Elasticsearch {
-			in.Spec.PodTemplate.Spec.Container.Resources.Requests[core.ResourceMemory] = resource.MustParse("250Mi")
+			in.Spec.PodTemplate.Spec.Resources.Requests[core.ResourceMemory] = resource.MustParse("250Mi")
 			return in
 		}),
 		heatUp: true,
@@ -313,11 +313,9 @@ func sampleElasticsearch() api.Elasticsearch {
 			},
 			PodTemplate: ofst.PodTemplateSpec{
 				Spec: ofst.PodSpec{
-					Container: ofst.ContainerTemplate{
-						Resources: core.ResourceRequirements{
-							Requests: core.ResourceList{
-								core.ResourceMemory: resource.MustParse("256Mi"),
-							},
+					Resources: core.ResourceRequirements{
+						Requests: core.ResourceList{
+							core.ResourceMemory: resource.MustParse("256Mi"),
 						},
 					},
 				},
