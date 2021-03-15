@@ -71,7 +71,7 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []core.Container) 
 		}
 
 		if !es.db.Spec.DisableSecurity {
-			sName, err := es.db.GetUserCredSecretName(api.ElasticsearchInternalUserMetricsExporter)
+			sName, err := es.db.GetUserCredSecretName(string(api.ElasticsearchInternalUserMetricsExporter))
 			if err != nil {
 				return nil, err
 			}

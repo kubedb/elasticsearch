@@ -165,7 +165,7 @@ func (e *Elasticsearch) DefaultUserCredSecretName(userName string) string {
 
 // Return the secret name for the given user.
 // Return error, if the secret name is missing.
-func (e *Elasticsearch) GetUserCredSecretName(username ElasticsearchInternalUser) (string, error) {
+func (e *Elasticsearch) GetUserCredSecretName(username string) (string, error) {
 	userSpec, err := getElasticsearchUser(e.Spec.InternalUsers, username)
 	if err != nil {
 		return "", err
@@ -435,14 +435,14 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 		}
 
 		// "Kibanaserver", "Kibanaro", "Logstash", "Readall", "Snapshotrestore"
-		setMissingElasticsearchUser(inUsers, ElasticsearchInternalUserKibanaserver, ElasticsearchUserSpec{Reserved: true})
-		setMissingElasticsearchUser(inUsers, ElasticsearchInternalUserKibanaro, ElasticsearchUserSpec{})
-		setMissingElasticsearchUser(inUsers, ElasticsearchInternalUserLogstash, ElasticsearchUserSpec{})
-		setMissingElasticsearchUser(inUsers, ElasticsearchInternalUserReadall, ElasticsearchUserSpec{})
-		setMissingElasticsearchUser(inUsers, ElasticsearchInternalUserSnapshotrestore, ElasticsearchUserSpec{})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserKibanaserver), ElasticsearchUserSpec{Reserved: true})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserKibanaro), ElasticsearchUserSpec{})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserLogstash), ElasticsearchUserSpec{})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserReadall), ElasticsearchUserSpec{})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserSnapshotrestore), ElasticsearchUserSpec{})
 		// "MetricsExporter", Only if the monitoring is enabled.
 		if e.Spec.Monitor != nil {
-			setMissingElasticsearchUser(inUsers, ElasticsearchInternalUserMetricsExporter, ElasticsearchUserSpec{})
+			setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserMetricsExporter), ElasticsearchUserSpec{})
 		}
 
 		// Set missing user secret names
@@ -609,7 +609,8 @@ func (e *Elasticsearch) GetPersistentSecrets() []string {
 			if user == string(ElasticsearchInternalUserAdmin) || user == string(ElasticsearchInternalUserElastic) {
 				continue
 			}
-			secrets = append(secrets, e.DefaultUserCredSecretName(user))
+			secretName, _ := e.GetUserCredSecretName(user)
+			secrets = append(secrets, secretName)
 		}
 	}
 	return secrets
@@ -626,26 +627,26 @@ func (e *Elasticsearch) ReplicasAreReady(lister appslister.StatefulSetLister) (b
 
 // returns true if the user exists.
 // otherwise false.
-func hasElasticsearchUser(userList map[string]ElasticsearchUserSpec, username ElasticsearchInternalUser) bool {
-	if _, exist := userList[string(username)]; exist {
+func hasElasticsearchUser(userList map[string]ElasticsearchUserSpec, username string) bool {
+	if _, exist := userList[username]; exist {
 		return true
 	}
 	return false
 }
 
 // Set user if missing
-func setMissingElasticsearchUser(userList map[string]ElasticsearchUserSpec, username ElasticsearchInternalUser, userSpec ElasticsearchUserSpec) {
+func setMissingElasticsearchUser(userList map[string]ElasticsearchUserSpec, username string, userSpec ElasticsearchUserSpec) {
 	if hasElasticsearchUser(userList, username) {
 		return
 	}
-	userList[string(username)] = userSpec
+	userList[username] = userSpec
 }
 
 // Returns userSpec if exists
-func getElasticsearchUser(userList map[string]ElasticsearchUserSpec, username ElasticsearchInternalUser) (*ElasticsearchUserSpec, error) {
+func getElasticsearchUser(userList map[string]ElasticsearchUserSpec, username string) (*ElasticsearchUserSpec, error) {
 	if !hasElasticsearchUser(userList, username) {
 		return nil, errors.New("user is missing")
 	}
-	userSpec, _ := userList[string(username)]
+	userSpec, _ := userList[username]
 	return &userSpec, nil
 }

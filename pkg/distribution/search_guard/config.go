@@ -229,7 +229,7 @@ func (es *Elasticsearch) getInternalUserConfig() (string, error) {
 		var pass string
 		var err error
 
-		secretName, err := es.db.GetUserCredSecretName(api.ElasticsearchInternalUser(username))
+		secretName, err := es.db.GetUserCredSecretName(username)
 		if err != nil {
 			return "", err
 		}
