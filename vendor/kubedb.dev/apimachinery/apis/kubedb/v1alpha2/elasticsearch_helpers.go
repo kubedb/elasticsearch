@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -155,11 +156,24 @@ func (e *Elasticsearch) CertSecretVolumeMountPath(configDir string, alias Elasti
 	return filepath.Join(configDir, "certs", string(alias))
 }
 
-// returns the secret name for the  user credentials (ie. username, password)
+// returns the default secret name for the  user credentials (ie. username, password)
 // If username contains underscore (_), it will be replaced by hyphen (‐) for
 // the Kubernetes naming convention.
-func (e *Elasticsearch) UserCredSecretName(userName string) string {
+func (e *Elasticsearch) DefaultUserCredSecretName(userName string) string {
 	return meta_util.NameWithSuffix(e.Name, strings.ReplaceAll(fmt.Sprintf("%s-cred", userName), "_", "-"))
+}
+
+// Return the secret name for the given user.
+// Return error, if the secret name is missing.
+func (e *Elasticsearch) GetUserCredSecretName(username ElasticsearchInternalUser) (string, error) {
+	userSpec, err := getElasticsearchUser(e.Spec.InternalUsers, username)
+	if err != nil {
+		return "", err
+	}
+	if userSpec.SecretName == "" {
+		return "", errors.New("secretName cannot be empty")
+	}
+	return userSpec.SecretName, nil
 }
 
 // returns the secret name for the default elasticsearch configuration
@@ -401,8 +415,6 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 	if esVersion.Spec.Distribution == catalog.ElasticsearchDistroOpenDistro ||
 		esVersion.Spec.Distribution == catalog.ElasticsearchDistroSearchGuard {
 
-		// Here, map[] is shallow copied.
-		// Making changes in "inUsers" is the same as making changes in "e.spec.InternalUsers".
 		inUsers := e.Spec.InternalUsers
 		// If not set, create empty map
 		if inUsers == nil {
@@ -439,7 +451,7 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 			if username == string(ElasticsearchInternalUserAdmin) && e.Spec.AuthSecret != nil && e.Spec.AuthSecret.Name != "" {
 				userSpec.SecretName = e.Spec.AuthSecret.Name
 			} else if userSpec.SecretName == "" {
-				userSpec.SecretName = e.UserCredSecretName(username)
+				userSpec.SecretName = e.DefaultUserCredSecretName(username)
 			}
 			inUsers[username] = userSpec
 		}
@@ -447,8 +459,6 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 		// If monitoring is enabled,
 		// The "metric_exporter" user needs to have "readall_monitor" role mapped to itself.
 		if e.Spec.Monitor != nil {
-			// Here, map[] is shallow copied.
-			// Making changes in "roleMapping" is the same as making changes in "e.spec.roleMapping".
 			rolesMapping := e.Spec.RolesMapping
 			if rolesMapping == nil {
 				rolesMapping = make(map[string]ElasticsearchRoleMapSpec)
@@ -481,7 +491,9 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 					Users: []string{string(ElasticsearchInternalUserMetricsExporter)},
 				}
 			}
+			e.Spec.RolesMapping = rolesMapping
 		}
+		e.Spec.InternalUsers = inUsers
 	}
 }
 
@@ -597,7 +609,7 @@ func (e *Elasticsearch) GetPersistentSecrets() []string {
 			if user == string(ElasticsearchInternalUserAdmin) || user == string(ElasticsearchInternalUserElastic) {
 				continue
 			}
-			secrets = append(secrets, e.UserCredSecretName(user))
+			secrets = append(secrets, e.DefaultUserCredSecretName(user))
 		}
 	}
 	return secrets
@@ -627,4 +639,13 @@ func setMissingElasticsearchUser(userList map[string]ElasticsearchUserSpec, user
 		return
 	}
 	userList[string(username)] = userSpec
+}
+
+// Returns userSpec if exists
+func getElasticsearchUser(userList map[string]ElasticsearchUserSpec, username ElasticsearchInternalUser) (*ElasticsearchUserSpec, error) {
+	if !hasElasticsearchUser(userList, username) {
+		return nil, errors.New("user is missing")
+	}
+	userSpec, _ := userList[string(username)]
+	return &userSpec, nil
 }

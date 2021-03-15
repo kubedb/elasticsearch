@@ -54,7 +54,7 @@ func (es *Elasticsearch) EnsureAuthSecret() error {
 
 		// If secret already exist;
 		// Validate the secret, if owned, synced the labels too.
-		if secret != nil {
+		if err == nil {
 			err = es.validateAndSyncCredSecret(secret, username)
 			if err != nil {
 				return errors.Wrapf(err, "failed to validate or sync secret: %s/%s", es.db.Namespace, secretName)
