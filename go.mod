@@ -1,6 +1,6 @@
 module kubedb.dev/elasticsearch
 
-go 1.14
+go 1.15
 
 require (
 	github.com/elastic/go-elasticsearch/v6 v6.8.10
@@ -34,7 +34,7 @@ require (
 	kmodules.xyz/monitoring-agent-api v0.0.0-20201105074044-be7a1044891a
 	kmodules.xyz/offshoot-api v0.0.0-20210308072215-581e7685cd02
 	kmodules.xyz/webhook-runtime v0.0.0-20210220081624-75da115ae653
-	kubedb.dev/apimachinery v0.17.0
+	kubedb.dev/apimachinery v0.17.1-0.20210315122425-1025f84e514a
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

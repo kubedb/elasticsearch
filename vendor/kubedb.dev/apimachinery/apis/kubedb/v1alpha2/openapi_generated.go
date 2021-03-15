@@ -19497,6 +19497,13 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ElasticsearchUserSpec(ref common.R
 				Description: "Specifies the security plugin internal user structure. Both 'json' and 'yaml' tags are used in structure metadata. The `json` tags (camel case) are used while taking input from users. The `yaml` tags (snake case) are used by the operator to generate internal_users.yml file.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"secretName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specifies the k8s secret name that holds the user credentials. Default to \"<resource-name>-<username>-cred\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"reserved": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies the reserved status. Resources that have this set to true can’t be changed using the REST API or Kibana. Default to \"false\".",

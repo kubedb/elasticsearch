@@ -686,6 +686,8 @@ spec:
                     items:
                       type: string
                     type: array
+                  secretName:
+                    type: string
                 type: object
               type: object
             kernelSettings:
