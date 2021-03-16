@@ -53,6 +53,7 @@ func TestElasticsearch_getInternalUserConfig(t *testing.T) {
 							"user1": {
 								Reserved:         true,
 								Hidden:           false,
+								SecretName:       "test-es-user1-cred",
 								BackendRoles:     []string{"role1", "role2"},
 								SearchGuardRoles: []string{"sgRole1", "sgRole2"},
 								Attributes: map[string]string{
