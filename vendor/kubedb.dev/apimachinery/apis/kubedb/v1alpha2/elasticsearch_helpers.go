@@ -647,6 +647,6 @@ func getElasticsearchUser(userList map[string]ElasticsearchUserSpec, username st
 	if !hasElasticsearchUser(userList, username) {
 		return nil, errors.New("user is missing")
 	}
-	userSpec, _ := userList[username]
+	userSpec := userList[username]
 	return &userSpec, nil
 }
