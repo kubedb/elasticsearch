@@ -30,13 +30,13 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
-func (c *Controller) ensureRole(db *api.Elasticsearch, name string, pspName string) error {
+func (r *Reconciler) ensureRole(db *api.Elasticsearch, name string, pspName string) error {
 	owner := metav1.NewControllerRef(db, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
 
 	// Create new Roles
 	_, _, err := rbac_util.CreateOrPatchRole(
 		context.TODO(),
-		c.Client,
+		r.Client,
 		metav1.ObjectMeta{
 			Name:      name,
 			Namespace: db.Namespace,
@@ -61,13 +61,13 @@ func (c *Controller) ensureRole(db *api.Elasticsearch, name string, pspName stri
 	return err
 }
 
-func (c *Controller) createRoleBinding(db *api.Elasticsearch, roleName string, saName string) error {
+func (r *Reconciler) createRoleBinding(db *api.Elasticsearch, roleName string, saName string) error {
 	owner := metav1.NewControllerRef(db, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
 
 	// Ensure new RoleBindings
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(
 		context.TODO(),
-		c.Client,
+		r.Client,
 		metav1.ObjectMeta{
 			Name:      roleName,
 			Namespace: db.Namespace,
@@ -94,13 +94,13 @@ func (c *Controller) createRoleBinding(db *api.Elasticsearch, roleName string, s
 	return err
 }
 
-func (c *Controller) createServiceAccount(db *api.Elasticsearch, saName string) error {
+func (r *Reconciler) createServiceAccount(db *api.Elasticsearch, saName string) error {
 	owner := metav1.NewControllerRef(db, api.SchemeGroupVersion.WithKind(api.ResourceKindElasticsearch))
 
 	// Create new ServiceAccount
 	_, _, err := core_util.CreateOrPatchServiceAccount(
 		context.TODO(),
-		c.Client,
+		r.Client,
 		metav1.ObjectMeta{
 			Name:      saName,
 			Namespace: db.Namespace,
@@ -115,8 +115,8 @@ func (c *Controller) createServiceAccount(db *api.Elasticsearch, saName string) 
 	return err
 }
 
-func (c *Controller) getPolicyNames(db *api.Elasticsearch) (string, error) {
-	dbVersion, err := c.esVersionLister.Get(string(db.Spec.Version))
+func (r *Reconciler) getPolicyNames(db *api.Elasticsearch) (string, error) {
+	dbVersion, err := r.DBClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), string(db.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -125,17 +125,17 @@ func (c *Controller) getPolicyNames(db *api.Elasticsearch) (string, error) {
 	return dbPolicyName, nil
 }
 
-func (c *Controller) ensureDatabaseRBAC(db *api.Elasticsearch) error {
+func (r *Reconciler) ensureDatabaseRBAC(db *api.Elasticsearch) error {
 	saName := db.Spec.PodTemplate.Spec.ServiceAccountName
 	if saName == "" {
 		saName = db.OffshootName()
 		db.Spec.PodTemplate.Spec.ServiceAccountName = saName
 	}
 
-	sa, err := c.Client.CoreV1().ServiceAccounts(db.Namespace).Get(context.TODO(), saName, metav1.GetOptions{})
+	sa, err := r.Client.CoreV1().ServiceAccounts(db.Namespace).Get(context.TODO(), saName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		// create service account, since it does not exist
-		if err = c.createServiceAccount(db, saName); err != nil {
+		if err = r.createServiceAccount(db, saName); err != nil {
 			if !kerr.IsAlreadyExists(err) {
 				return err
 			}
@@ -148,16 +148,16 @@ func (c *Controller) ensureDatabaseRBAC(db *api.Elasticsearch) error {
 	}
 
 	// Create New Role
-	pspName, err := c.getPolicyNames(db)
+	pspName, err := r.getPolicyNames(db)
 	if err != nil {
 		return err
 	}
-	if err := c.ensureRole(db, db.OffshootName(), pspName); err != nil {
+	if err := r.ensureRole(db, db.OffshootName(), pspName); err != nil {
 		return err
 	}
 
 	// Create New RoleBinding
-	if err := c.createRoleBinding(db, db.OffshootName(), saName); err != nil {
+	if err := r.createRoleBinding(db, db.OffshootName(), saName); err != nil {
 		return err
 	}
 
