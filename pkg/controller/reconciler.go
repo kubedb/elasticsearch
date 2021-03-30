@@ -42,7 +42,7 @@ func NewReconciler(config amc.Config, controller *amc.Controller) *Reconciler {
 	}
 }
 
-func (r *Reconciler) ensureElasticsearchNode(db *api.Elasticsearch) (*api.Elasticsearch, kutil.VerbType, error) {
+func (r *Reconciler) ReconcileNodes(db *api.Elasticsearch) (*api.Elasticsearch, kutil.VerbType, error) {
 	if db == nil {
 		return nil, kutil.VerbUnchanged, errors.New("Elasticsearch object is empty")
 	}

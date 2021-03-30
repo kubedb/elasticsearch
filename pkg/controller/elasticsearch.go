@@ -62,7 +62,7 @@ func (c *Controller) create(db *api.Elasticsearch) error {
 
 	// ensure database StatefulSet
 	reconciler := NewReconciler(c.Config, c.Controller)
-	db, vt2, err := reconciler.ensureElasticsearchNode(db)
+	db, vt2, err := reconciler.ReconcileNodes(db)
 	if err != nil {
 		return err
 	}
