@@ -60,6 +60,11 @@ func (c *Controller) create(db *api.Elasticsearch) error {
 		return err
 	}
 
+	// Ensure Service account, role, rolebinding, and PSP for database statefulsets
+	if err := c.ensureDatabaseRBAC(db); err != nil {
+		return errors.Wrap(err, "failed to create RBAC role or roleBinding")
+	}
+
 	// ensure database StatefulSet
 	reconciler := NewReconciler(c.Config, c.Controller)
 	db, vt2, err := reconciler.ReconcileNodes(db)

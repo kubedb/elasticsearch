@@ -91,11 +91,6 @@ func (r *Reconciler) ReconcileNodes(db *api.Elasticsearch) (*api.Elasticsearch, 
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to ensure default configuration for elasticsearch")
 	}
 
-	// Ensure Service account, role, rolebinding, and PSP for database statefulsets
-	if err := r.ensureDatabaseRBAC(elastic.UpdatedElasticsearch()); err != nil {
-		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to create RBAC role or roleBinding")
-	}
-
 	vt := kutil.VerbUnchanged
 	topology := elastic.UpdatedElasticsearch().Spec.Topology
 	if topology != nil {
