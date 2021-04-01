@@ -113,8 +113,6 @@ func (es *Elasticsearch) upsertMonitoringContainer(containers []core.Container) 
 
 			// upsert container Args
 			container.Args = meta_util.UpsertArgumentList(container.Args, esCaFlags)
-		} else {
-			container.VolumeMounts = nil
 		}
 		containers = core_util.UpsertContainer(containers, container)
 	} else {
