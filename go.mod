@@ -12,8 +12,8 @@ require (
 	github.com/prometheus-operator/prometheus-operator v0.42.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
-	go.bytebuilders.dev/license-verifier v0.7.1
-	go.bytebuilders.dev/license-verifier/kubernetes v0.7.1
+	go.bytebuilders.dev/license-verifier v0.8.0
+	go.bytebuilders.dev/license-verifier/kubernetes v0.8.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gomodules.xyz/cert v1.1.2
 	gomodules.xyz/envsubst v0.1.0
