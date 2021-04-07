@@ -63,6 +63,7 @@ const (
 	ProxySQLKey      = ResourceSingularProxySQL + "." + kubedb.GroupName
 
 	// =========================== Elasticsearch Constants ============================
+	ElasticsearchDefaultUID                      = 1000
 	ElasticsearchRestPort                        = 9200
 	ElasticsearchRestPortName                    = "http"
 	ElasticsearchTransportPort                   = 9300
@@ -234,8 +235,6 @@ const (
 	PostgresKeyFileSecretSuffix = "key"
 	PostgresPEMSecretSuffix     = "pem"
 	PostgresDefaultUsername     = "postgres"
-
-	PostgresUID = 70
 
 	// =========================== ProxySQL Constants ============================
 	LabelProxySQLName        = ProxySQLKey + "/name"
