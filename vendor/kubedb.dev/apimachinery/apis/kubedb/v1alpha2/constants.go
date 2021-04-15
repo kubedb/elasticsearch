@@ -63,7 +63,6 @@ const (
 	ProxySQLKey      = ResourceSingularProxySQL + "." + kubedb.GroupName
 
 	// =========================== Elasticsearch Constants ============================
-	ElasticsearchDefaultUID                      = 1000
 	ElasticsearchRestPort                        = 9200
 	ElasticsearchRestPortName                    = "http"
 	ElasticsearchTransportPort                   = 9300
