@@ -25,13 +25,13 @@ import (
 	"kubedb.dev/apimachinery/pkg/eventer"
 	validator "kubedb.dev/elasticsearch/pkg/admission"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"gomodules.xyz/x/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	dynamic_util "kmodules.xyz/client-go/dynamic"
@@ -197,14 +197,14 @@ func (c *Controller) halt(db *api.Elasticsearch) error {
 	if db.Spec.Halted && db.Spec.TerminationPolicy != api.TerminationPolicyHalt {
 		return errors.New("can't halt db. 'spec.terminationPolicy' is not 'Halt'")
 	}
-	glog.Infof("Elasticsearch %v/%v is halting...", db.Namespace, db.Name)
+	klog.Infof("Elasticsearch %v/%v is halting...", db.Namespace, db.Name)
 	if err := c.haltDatabase(db); err != nil {
 		return err
 	}
 	if err := c.waitUntilHalted(db); err != nil {
 		return err
 	}
-	glog.Infof("Elasticsearch %v/%v is Halted.", db.Namespace, db.Name)
+	klog.Infof("Elasticsearch %v/%v is Halted.", db.Namespace, db.Name)
 	if _, err := util.UpdateElasticsearchStatus(
 		context.TODO(),
 		c.DBClient.KubedbV1alpha2(),
