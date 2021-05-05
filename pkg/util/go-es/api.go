@@ -20,8 +20,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 
@@ -72,7 +74,12 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion,
 			Username:          username,
 			Password:          password,
 			EnableDebugLogger: true,
+			DisableRetry:      true,
 			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
 					MaxVersion:         tls.VersionTLS12,
@@ -102,7 +109,12 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion,
 			Username:          username,
 			Password:          password,
 			EnableDebugLogger: true,
+			DisableRetry:      true,
 			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
 					MaxVersion:         tls.VersionTLS12,
