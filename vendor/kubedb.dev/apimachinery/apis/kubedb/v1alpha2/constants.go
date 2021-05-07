@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"time"
+
 	"kubedb.dev/apimachinery/apis/kubedb"
 
 	core "k8s.io/api/core/v1"
@@ -39,6 +41,7 @@ const (
 	RoleStats             = "stats"
 	DefaultStatsPath      = "/metrics"
 	DefaultPasswordLength = 16
+	HealthCheckInterval   = 10 * time.Second
 
 	ContainerExporterName = "exporter"
 	LocalHost             = "localhost"
