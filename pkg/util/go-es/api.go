@@ -40,34 +40,33 @@ type ESClient interface {
 	ClusterStatus() (string, error)
 }
 
-var response map[string]interface{}
-
-func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion, url string) (ESClient, error) {
+// GetElasticClient returns Elasticsearch Client, Health Check Status Code, and Error
+func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion, url string) (ESClient, int, error) {
 	var username, password string
 	if !db.Spec.DisableSecurity && db.Spec.AuthSecret != nil {
 		secret, err := kc.CoreV1().Secrets(db.Namespace).Get(context.TODO(), db.Spec.AuthSecret.Name, metav1.GetOptions{})
 		if err != nil {
 			klog.Errorf("Failed to get secret: %s for Elasticsearch: %s/%s with: %s", db.Spec.AuthSecret.Name, db.Namespace, db.Name, err.Error())
-			return nil, errors.Wrap(err, "failed to get the secret")
+			return nil, -1, errors.Wrap(err, "failed to get the secret")
 		}
 
 		if value, ok := secret.Data[core.BasicAuthUsernameKey]; ok {
 			username = string(value)
 		} else {
 			klog.Errorf("Failed for secret: %s/%s, username is missing", secret.Namespace, secret.Name)
-			return nil, errors.New("username is missing")
+			return nil, -1, errors.New("username is missing")
 		}
 
 		if value, ok := secret.Data[core.BasicAuthPasswordKey]; ok {
 			password = string(value)
 		} else {
 			klog.Errorf("Failed for secret: %s/%s, password is missing", secret.Namespace, secret.Name)
-			return nil, errors.New("password is missing")
+			return nil, -1, errors.New("password is missing")
 		}
 	}
 
 	switch {
-	// for Elasticsearch 6.x.x
+	// 6.x for searchGuard & x-pack & openDistro
 	case strings.HasPrefix(esVersion, "6."):
 		client, err := esv6.NewClient(esv6.Config{
 			Addresses:         []string{url},
@@ -88,21 +87,21 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion,
 		})
 		if err != nil {
 			klog.Errorf("Failed to create HTTP client for Elasticsearch: %s/%s with: %s", db.Namespace, db.Name, err.Error())
-			return nil, err
+			return nil, -1, err
 		}
 		// do a manual health check to test client
 		res, err := client.Cluster.Health(
 			client.Cluster.Health.WithPretty(),
 		)
 		if err != nil {
-			return nil, err
+			return nil, -1, errors.Wrap(err, "failed to perform health check")
 		}
 		if res.IsError() {
-			return nil, fmt.Errorf("health check failed with status code: %d", res.StatusCode)
+			return &ESClientV6{client: client}, res.StatusCode, fmt.Errorf("health check failed with status code: %d", res.StatusCode)
 		}
-		return &ESClientV6{client: client}, nil
+		return &ESClientV6{client: client}, res.StatusCode, nil
 
-	// for Elasticsearch 7.x.x
+	// 7.x for searchGuard & x-pack & openDistro
 	case strings.HasPrefix(esVersion, "7."):
 		client, err := esv7.NewClient(esv7.Config{
 			Addresses:         []string{url},
@@ -123,20 +122,20 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion,
 		})
 		if err != nil {
 			klog.Errorf("Failed to create HTTP client for Elasticsearch: %s/%s with: %s", db.Namespace, db.Name, err.Error())
-			return nil, err
+			return nil, -1, err
 		}
 		// do a manual health check to test client
 		res, err := client.Cluster.Health(
 			client.Cluster.Health.WithPretty(),
 		)
 		if err != nil {
-			return nil, err
+			return nil, -1, errors.Wrap(err, "failed to perform health check")
 		}
 		if res.IsError() {
-			return nil, fmt.Errorf("health check failed with status code: %d", res.StatusCode)
+			return &ESClientV7{client: client}, res.StatusCode, fmt.Errorf("health check failed with status code: %d", res.StatusCode)
 		}
-		return &ESClientV7{client: client}, nil
+		return &ESClientV7{client: client}, res.StatusCode, nil
 	}
 
-	return nil, fmt.Errorf("unknown database verseion: %s", db.Spec.Version)
+	return nil, -1, fmt.Errorf("unknown database verseion: %s", esVersion)
 }

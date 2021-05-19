@@ -36,6 +36,7 @@ func (es *ESClientV6) ClusterStatus() (string, error) {
 	}
 	defer res.Body.Close()
 
+	response := make(map[string]interface{})
 	if err2 := json.NewDecoder(res.Body).Decode(&response); err2 != nil {
 		return "", errors.Wrap(err2, "failed to parse the response body")
 	}

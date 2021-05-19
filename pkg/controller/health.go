@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	core_util "kmodules.xyz/client-go/core/v1"
+
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha2/util"
 	go_es "kubedb.dev/elasticsearch/pkg/util/go-es"
@@ -77,8 +79,14 @@ func (c *Controller) CheckElasticsearchHealthOnce() {
 				wg.Done()
 			}()
 
+			err := c.UpdateReadinessGateCondition(db)
+			if err != nil {
+				klog.Warningf("failed to update pod's condition for Elasticsearch: %s/%s with %s", db.Namespace, db.Name, err.Error())
+				return
+			}
+
 			// Create database client
-			dbClient, err := c.GetElasticsearchClient(db)
+			dbClient, err := c.GetServiceSpecificESClient(db)
 			if err != nil {
 				klog.Warningf("The Elasticsearch: %s/%s client is not ready with %s", db.Namespace, db.Name, err.Error())
 				// Since the client was unable to connect the database,
@@ -210,18 +218,58 @@ func (c *Controller) CheckElasticsearchHealthOnce() {
 	wg.Wait()
 }
 
-func (c *Controller) GetElasticsearchClient(db *api.Elasticsearch) (go_es.ESClient, error) {
-	url := fmt.Sprintf("%v://%s.%s.svc:%d", db.GetConnectionScheme(), db.ServiceName(), db.GetNamespace(), api.ElasticsearchRestPort)
+func (c *Controller) UpdateReadinessGateCondition(db *api.Elasticsearch) error {
+	podList, err := c.Client.CoreV1().Pods(db.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.Set(db.OffshootSelectors()).String(),
+	})
+	if err != nil {
+		return err
+	}
 
+	for _, pod := range podList.Items {
+		if core_util.IsPodConditionTrue(pod.Status.Conditions, core_util.PodConditionTypeReady) {
+			continue
+		}
+		esClient, statusCode, err := c.GetPodSpecificESClient(db, pod.Name)
+
+	}
+
+	return nil
+}
+
+func (c *Controller) GetServiceSpecificESClient(db *api.Elasticsearch) (go_es.ESClient, error) {
 	// Get original Elasticsearch version, since the client is version specific
 	esVersion, err := c.DBClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), db.Spec.Version, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get elasticsearchVersion")
 	}
 
-	dbClient, err := go_es.GetElasticClient(c.Client, db, esVersion.Spec.Version, url)
+	dbClient, _, err := go_es.GetElasticClient(c.Client, db, esVersion.Spec.Version, serviceURL(db))
 	if err != nil {
 		return nil, err
 	}
 	return dbClient, nil
+}
+
+// GetPodSpecificESClient returns Elasticsearch Client, Health Check Status Code, and Error
+func (c *Controller) GetPodSpecificESClient(db *api.Elasticsearch, podName string) (go_es.ESClient, int, error) {
+	// Get original Elasticsearch version, since the client is version specific
+	esVersion, err := c.DBClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), db.Spec.Version, metav1.GetOptions{})
+	if err != nil {
+		return nil, -1, errors.Wrap(err, "failed to get elasticsearchVersion")
+	}
+
+	dbClient, statusCode, err := go_es.GetElasticClient(c.Client, db, esVersion.Spec.Version, podURL(db, podName))
+	if err != nil {
+		return nil, statusCode, err
+	}
+	return dbClient, statusCode, nil
+}
+
+func podURL(db *api.Elasticsearch, podName string) string {
+	return fmt.Sprintf("%v://%s.%s.%s:%d", db.GetConnectionScheme(), podName, db.GoverningServiceName(), db.Namespace, api.ElasticsearchRestPort)
+}
+
+func serviceURL(db *api.Elasticsearch) string {
+	return fmt.Sprintf("%v://%s.%s.svc:%d", db.GetConnectionScheme(), db.ServiceName(), db.GetNamespace(), api.ElasticsearchRestPort)
 }

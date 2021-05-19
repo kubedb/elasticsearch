@@ -178,6 +178,8 @@ func (es *Elasticsearch) ensureStatefulSet(
 			Type: apps.OnDeleteStatefulSetStrategyType,
 		}
 
+		in.Spec.Template.Spec.ReadinessGates = core_util.UpsertPodReadinessGateConditionType(in.Spec.Template.Spec.ReadinessGates, core_util.PodConditionTypeReady)
+
 		return in
 	}, metav1.PatchOptions{})
 
