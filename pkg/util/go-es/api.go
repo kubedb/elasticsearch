@@ -40,8 +40,6 @@ type ESClient interface {
 	ClusterStatus() (string, error)
 }
 
-var response map[string]interface{}
-
 func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion, url string) (ESClient, error) {
 	var username, password string
 	if !db.Spec.DisableSecurity && db.Spec.AuthSecret != nil {
