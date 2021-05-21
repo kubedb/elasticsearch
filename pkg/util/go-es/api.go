@@ -95,6 +95,8 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion,
 		if err != nil {
 			return nil, err
 		}
+		defer res.Body.Close()
+
 		if res.IsError() {
 			return nil, fmt.Errorf("health check failed with status code: %d", res.StatusCode)
 		}
@@ -130,6 +132,8 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion,
 		if err != nil {
 			return nil, err
 		}
+		defer res.Body.Close()
+
 		if res.IsError() {
 			return nil, fmt.Errorf("health check failed with status code: %d", res.StatusCode)
 		}
