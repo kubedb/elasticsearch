@@ -1130,7 +1130,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20210505231546-fa4fb8e1d04e
+# kmodules.xyz/client-go v0.0.0-20210514054158-27e164b43474
 ## explicit
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration/v1beta1

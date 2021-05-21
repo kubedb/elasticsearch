@@ -29,7 +29,7 @@ require (
 	k8s.io/apiserver v0.21.0
 	k8s.io/client-go v0.21.0
 	k8s.io/klog/v2 v2.8.0
-	kmodules.xyz/client-go v0.0.0-20210505231546-fa4fb8e1d04e
+	kmodules.xyz/client-go v0.0.0-20210514054158-27e164b43474
 	kmodules.xyz/custom-resources v0.0.0-20210504034124-54c54fcdb690
 	kmodules.xyz/monitoring-agent-api v0.0.0-20210504040241-261c2428d207
 	kmodules.xyz/offshoot-api v0.0.0-20210504040651-7951e351f0f5
