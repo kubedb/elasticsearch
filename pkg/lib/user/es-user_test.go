@@ -16,12 +16,16 @@ limitations under the License.
 
 package user
 
-import "testing"
+import (
+	"testing"
+
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+)
 
 func TestInUserConfigCompareEqual(t *testing.T) {
 	type args struct {
-		x string
-		y string
+		x map[string]api.ElasticsearchUserSpec
+		y map[string]api.ElasticsearchUserSpec
 	}
 	tests := []struct {
 		name    string
@@ -32,82 +36,64 @@ func TestInUserConfigCompareEqual(t *testing.T) {
 		{
 			name: "first one",
 			args: args{
-				x: `admin:
-  hash: $2a$12$Ll.V9nq.tudAV8F1c3r5xeAdR2x7iyBNym2gCp/tqggxBUCdFqchK
-  reserved: true
-  backend_roles:
-  - admin
-kibanaro:
-  hash: $2a$12$u/Tz5OP2wqJ6cA5WRLiwy.FuUsytPSS0TCbD/G7iEedSLSOflYhea
-kibanaserver:
-  hash: $2a$12$EneEDJ8Q5rt5SWrOxUcb.uDR3CmLRzgfpbsaGDvUfL6OooN8y8qxC
-  reserved: true
-logstash:
-  hash: $2a$12$OFtdp97X.FbsYFgUSq3GT.XPBH3Y3Gtzo4iP2KzAocaidCoVdoD52
-readall:
-  hash: $2a$12$NXBWGLcSwpvCCcW9c2cPIuFYeelJKSieY7QuiRkQ78GeDQ03qGATK
-snapshotrestore:
-  hash: $2a$12$URDJvuKvRQfNA1fEgrUKSeeL9XeCFKegO7AjX7yrOW8KuUR9zoI/G
-`,
-				y: `admin:
-  hash: $2a$12$Ll.V9nq.tudAV8F1c3r5xeAdR2x7iyBNym2gCp/tqggxBUCdFqchK
-  reserved: true
-  backend_roles:
-  - admin
-kibanaro:
-  hash: $2a$12$u/Tz5OP2wqJ6cA5WRLiwy.FuUsytPSS0TCbD/G7iEedSLSOflYhea
-kibanaserver:
-  hash: $2a$12$EneEDJ8Q5rt5SWrOxUcb.uDR3CmLRzgfpbsaGDvUfL6OooN8y8qxC
-  reserved: true
-logstash:
-  hash: $2a$12$OFtdp97X.FbsYFgUSq3GT.XPBH3Y3Gtzo4iP2KzAocaidCoVdoD52
-readall:
-  hash: $2a$12$NXBWGLcSwpvCCcW9c2cPIuFYeelJKSieY7QuiRkQ78GeDQ03qGATK
-snapshotrestore:
-  hash: $2a$12$URDJvuKvRQfNA1fEgrUKSeeL9XeCFKegO7AjX7yrOW8KuUR9zoI/G
-`,
+				x: map[string]api.ElasticsearchUserSpec{
+					"admin": {
+						Hash:       "$2a$12$Ll.V9nq.tudAV8F1c3r5xeAdR2x7iyBNym2gCp/tqggxBUCdFqchK",
+						SecretName: "admin-cred",
+						Reserved:   true,
+						Hidden:     false,
+					},
+				},
+				y: map[string]api.ElasticsearchUserSpec{
+					"admin": {
+						Hash:       "$2a$12$Ll",
+						SecretName: "admin-cred",
+						Reserved:   true,
+						Hidden:     false,
+					},
+				},
 			},
 			want:    true,
 			wantErr: false,
 		},
 		{
-			name: "first one",
+			name: "second one",
 			args: args{
-				x: `admin:
-  hash: $2a$12$Ll.V9nq.tudAV8F1c3r5xeAdR2x7iyBNym2gCp/tqggxBUCdFqchK
-  reserved: true
-  backend_roles:
-  - admin
-kibanaro:
-  hash: $2a$12$u/Tz5OP2wqJ6cA5WRLiwy.FuUsytPSS0TCbD/G7iEedSLSOflYhea
-kibanaserver:
-  hash: $2a$12$EneEDJ8Q5rt5SWrOxUcb.uDR3CmLRzgfpbsaGDvUfL6OooN8y8qxC
-  reserved: true
-logstash:
-  hash: $2a$12$OFtdp97X.FbsYFgUSq3GT.XPBH3Y3Gtzo4iP2KzAocaidCoVdoD52
-readall:
-  hash: $2a$12$NXBWGLcSwpvCCcW9c2cPIuFYeelJKSieY7QuiRkQ78GeDQ03qGATK
-snapshotrestore:
-  hash: $2a$12$URDJvuKvRQfNA1fEgrUKSeeL9XeCFKegO7AjX7yrOW8KuUR9zoI/G
-`,
-				y: `admin:
-  hash: $2a$12$Ll.V9nq.tudAV8F1c3r5xeAdR2x7iyBNym2gCp/tqggxBUCdFqchK
-  reserved: true
-  backend_roles:
-  - admin
-  - demo
-kibanaro:
-  hash: $2a$12$u/Tz5OP2wqJ6cA5WRLiwy.FuUsytPSS0TCbD/G7iEedSLSOflYhea
-kibanaserver:
-  hash: $2a$12$EneEDJ8Q5rt5SWrOxUcb.uDR3CmLRzgfpbsaGDvUfL6OooN8y8qxC
-  reserved: true
-logstash:
-  hash: $2a$12$OFtdp97X.FbsYFgUSq3GT.XPBH3Y3Gtzo4iP2KzAocaidCoVdoD52
-readall:
-  hash: $2a$12$NXBWGLcSwpvCCcW9c2cPIuFYeelJKSieY7QuiRkQ78GeDQ03qGATK
-snapshotrestore:
-  hash: $2a$12$URDJvuKvRQfNA1fEgrUKSeeL9XeCFKegO7AjX7yrOW8KuUR9zoI/G
-`,
+				x: map[string]api.ElasticsearchUserSpec{
+					"admin": {
+						Hash:       "$2a$12$Ll.V9nq.tudAV8F1c3r5xeAdR2x7iyBNym2gCp/tqggxBUCdFqchK",
+						SecretName: "admin-cred-2",
+						Reserved:   true,
+						Hidden:     false,
+					},
+				},
+				y: map[string]api.ElasticsearchUserSpec{
+					"admin": {
+						Hash:       "$2a$12$Ll",
+						SecretName: "admin-cred",
+						Reserved:   true,
+						Hidden:     false,
+					},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "third one",
+			args: args{
+				x: map[string]api.ElasticsearchUserSpec{
+					"admin": {
+						Reserved: false,
+						Hidden:   false,
+					},
+				},
+				y: map[string]api.ElasticsearchUserSpec{
+					"admin": {
+						Reserved: true,
+						Hidden:   false,
+					},
+				},
 			},
 			want:    false,
 			wantErr: false,
