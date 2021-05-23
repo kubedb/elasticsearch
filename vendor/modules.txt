@@ -459,6 +459,7 @@ gomodules.xyz/stow/s3
 # gomodules.xyz/version v0.1.0
 gomodules.xyz/version
 # gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545
+## explicit
 gomodules.xyz/wait
 # gomodules.xyz/x v0.0.4
 ## explicit

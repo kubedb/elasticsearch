@@ -21,6 +21,7 @@ require (
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
 	gomodules.xyz/runtime v0.2.0
 	gomodules.xyz/sets v0.0.0-20210218105342-2efe2fb519a2
+	gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545
 	gomodules.xyz/x v0.0.4
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.21.0
