@@ -17,6 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"net/http"
+	_ "net/http/pprof"
+
 	_ "kubedb.dev/apimachinery/client/clientset/versioned/scheme"
 	"kubedb.dev/elasticsearch/pkg/cmds"
 
@@ -30,6 +33,9 @@ import (
 func main() {
 	kglog.InitLogs()
 	defer kglog.FlushLogs()
+	go func() {
+		_ = http.ListenAndServe(":6060", nil)
+	}()
 	if err := cmds.NewRootCmd(Version).Execute(); err != nil {
 		klog.Fatal(err)
 	}
