@@ -1051,8 +1051,9 @@ gomodules.xyz/homedir v0.0.0-20201104190528-bcd4d5d94b84/go.mod h1:rNt5O0KsgdJjA
 gomodules.xyz/jsonpatch/v2 v2.0.1/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
 gomodules.xyz/jsonpatch/v2 v2.1.0 h1:Phva6wqu+xR//Njw6iorylFFgn/z547tw5Ne3HZPQ+k=
 gomodules.xyz/jsonpatch/v2 v2.1.0/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
-gomodules.xyz/kglog v0.0.1 h1:uB5HcipJvTDR5OLi3XiLzyvGzZbmAh37LO4TZGeur6c=
 gomodules.xyz/kglog v0.0.1/go.mod h1:+zsiQO9SrbeUeqI5fYEIl/96o5dNoWUM0J69BUMEmDc=
+gomodules.xyz/kglog v0.0.2 h1:rmj7pbc4xZtPeXT+ZvDwjeHT+C1BzTQHXrWEN+Ct7Nc=
+gomodules.xyz/kglog v0.0.2/go.mod h1:+zsiQO9SrbeUeqI5fYEIl/96o5dNoWUM0J69BUMEmDc=
 gomodules.xyz/password-generator v0.2.6/go.mod h1:TvwYYTx9+P1pPwKQKfZgB/wr2Id9MqAQ3B5auY7reNg=
 gomodules.xyz/password-generator v0.2.7 h1:xUCiIKji8JYOkyTsvi/2nArbVevsHMOnoJVMaShbzqI=
 gomodules.xyz/password-generator v0.2.7/go.mod h1:TvwYYTx9+P1pPwKQKfZgB/wr2Id9MqAQ3B5auY7reNg=

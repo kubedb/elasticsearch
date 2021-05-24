@@ -24,7 +24,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
-	utilruntime "gomodules.xyz/runtime"
 	"gomodules.xyz/wait"
 	"k8s.io/klog/v2"
 )
@@ -65,8 +64,7 @@ func InitLogs() {
 }
 
 func ParseFlags() {
-	// ref: https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
-	utilruntime.Must(flag.CommandLine.Parse([]string{}))
+	flag.Parse()
 
 	klogFlags := flag.NewFlagSet("klog", flag.ExitOnError)
 	klog.InitFlags(klogFlags)
