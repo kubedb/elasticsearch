@@ -436,7 +436,7 @@ gomodules.xyz/envsubst/path
 gomodules.xyz/homedir
 # gomodules.xyz/jsonpatch/v2 v2.1.0
 gomodules.xyz/jsonpatch/v2
-# gomodules.xyz/kglog v0.0.2
+# gomodules.xyz/kglog v0.0.3-0.20210525075817-854dec512adf
 ## explicit
 gomodules.xyz/kglog
 # gomodules.xyz/password-generator v0.2.7
@@ -1097,6 +1097,7 @@ k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
 # k8s.io/component-base v0.21.0 => k8s.io/component-base v0.21.0
+## explicit
 k8s.io/component-base/cli/flag
 k8s.io/component-base/featuregate
 k8s.io/component-base/metrics

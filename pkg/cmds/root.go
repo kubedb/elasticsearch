@@ -17,7 +17,6 @@ limitations under the License.
 package cmds
 
 import (
-	"flag"
 	"os"
 
 	"kubedb.dev/apimachinery/client/clientset/versioned/scheme"
@@ -44,12 +43,8 @@ func NewRootCmd(version string) *cobra.Command {
 			utilRuntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))
 			utilRuntime.Must(appcatscheme.AddToScheme(clientsetscheme.Scheme))
 			cli.LoggerOptions = kglog.GetOptions(c.Flags())
-			// ref: https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
-			kglog.ParseFlags()
 		},
 	}
-	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-
 	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
 
 	rootCmd.AddCommand(v.NewCmdVersion())

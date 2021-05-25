@@ -16,7 +16,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/envsubst v0.1.0
-	gomodules.xyz/kglog v0.0.2
+	gomodules.xyz/kglog v0.0.3-0.20210525075817-854dec512adf
 	gomodules.xyz/password-generator v0.2.7
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
 	gomodules.xyz/runtime v0.2.0
@@ -28,6 +28,7 @@ require (
 	k8s.io/apimachinery v0.21.0
 	k8s.io/apiserver v0.21.0
 	k8s.io/client-go v0.21.0
+	k8s.io/component-base v0.21.0
 	k8s.io/klog/v2 v2.8.0
 	kmodules.xyz/client-go v0.0.0-20210505231546-fa4fb8e1d04e
 	kmodules.xyz/custom-resources v0.0.0-20210504034124-54c54fcdb690
