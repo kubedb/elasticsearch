@@ -446,8 +446,8 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/klauspost/cpuid v1.2.0/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
 github.com/kmodules/apimachinery v0.21.1-rc.0.0.20210405112358-ad4c2289ba4c h1:J3i6IoacAXGxtvjNUSjk99/spZRoIUAYjvjv/kBHVYg=
 github.com/kmodules/apimachinery v0.21.1-rc.0.0.20210405112358-ad4c2289ba4c/go.mod h1:jbreFvJo3ov9rj7eWT7+sYiRx+qZuCYXwWT1bcDswPY=
-github.com/kmodules/apiserver v0.21.1-0.20210427013338-53dee545b83c h1:2ULQ+Ly71hNdYdf91b+t/fjbOfDqb96KavX4RuMrkos=
-github.com/kmodules/apiserver v0.21.1-0.20210427013338-53dee545b83c/go.mod h1:w2YSn4/WIwYuxG5zJmcqtRdtqgW/J2JRgFAqps3bBpg=
+github.com/kmodules/apiserver v0.21.1-0.20210525165825-102cf43e00fa h1:serY9VKpc96L81YLe0vnQ2kLdJHGHIFFWPkA8ZXmq6U=
+github.com/kmodules/apiserver v0.21.1-0.20210525165825-102cf43e00fa/go.mod h1:w2YSn4/WIwYuxG5zJmcqtRdtqgW/J2JRgFAqps3bBpg=
 github.com/kmodules/cert-manager v1.3.1-0.20210429172957-c5436c14ce0e h1:13FVlbGhy4sawZquf4cJ2p9EufjBPuQhtY7FK6QIm60=
 github.com/kmodules/cert-manager v1.3.1-0.20210429172957-c5436c14ce0e/go.mod h1:KOBwiZdxgjvh/0gq2ESQ3L7Gb3SKpgr0ih30V+/mZvU=
 github.com/kmodules/kubernetes v1.22.0-alpha.0.0.20210427080452-22d2e66bae50 h1:fyb2Kjm/4Ca5tduALxZGchZbReWXPIOGGtJ+A+dk95E=

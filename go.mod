@@ -127,7 +127,7 @@ replace k8s.io/api => k8s.io/api v0.21.0
 
 replace k8s.io/apimachinery => github.com/kmodules/apimachinery v0.21.1-rc.0.0.20210405112358-ad4c2289ba4c
 
-replace k8s.io/apiserver => github.com/kmodules/apiserver v0.21.1-0.20210427013338-53dee545b83c
+replace k8s.io/apiserver => github.com/kmodules/apiserver v0.21.1-0.20210525165825-102cf43e00fa
 
 replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.21.0
 
