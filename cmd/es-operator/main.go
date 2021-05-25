@@ -29,7 +29,7 @@ import (
 
 func main() {
 	rootCmd := cmds.NewRootCmd(Version)
-	kglog.Init(rootCmd)
+	kglog.Init(rootCmd, true)
 	defer kglog.FlushLogs()
 
 	if err := rootCmd.Execute(); err != nil {

@@ -23,7 +23,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"gomodules.xyz/kglog"
-	"gomodules.xyz/x/flags"
 	v "gomodules.xyz/x/version"
 	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -37,7 +36,6 @@ func NewRootCmd(version string) *cobra.Command {
 		Use:               "es-operator",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
-			flags.DumpAll(c.Flags())
 			cli.SendAnalytics(c, version)
 
 			utilRuntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))

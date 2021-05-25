@@ -436,7 +436,7 @@ gomodules.xyz/envsubst/path
 gomodules.xyz/homedir
 # gomodules.xyz/jsonpatch/v2 v2.1.0
 gomodules.xyz/jsonpatch/v2
-# gomodules.xyz/kglog v0.0.3-0.20210525075817-854dec512adf
+# gomodules.xyz/kglog v0.0.3-0.20210525090944-df53fef199e7
 ## explicit
 gomodules.xyz/kglog
 # gomodules.xyz/password-generator v0.2.7
@@ -465,7 +465,6 @@ gomodules.xyz/wait
 gomodules.xyz/x/analytics
 gomodules.xyz/x/arrays
 gomodules.xyz/x/crypto/rand
-gomodules.xyz/x/flags
 gomodules.xyz/x/ioutil
 gomodules.xyz/x/version
 # google.golang.org/api v0.26.0 => google.golang.org/api v0.20.0
@@ -1097,7 +1096,6 @@ k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
 # k8s.io/component-base v0.21.0 => k8s.io/component-base v0.21.0
-## explicit
 k8s.io/component-base/cli/flag
 k8s.io/component-base/featuregate
 k8s.io/component-base/metrics
