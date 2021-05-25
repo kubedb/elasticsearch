@@ -16,7 +16,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	gomodules.xyz/cert v1.2.0
 	gomodules.xyz/envsubst v0.1.0
-	gomodules.xyz/kglog v0.0.3-0.20210525090944-df53fef199e7
+	gomodules.xyz/kglog v0.0.3
 	gomodules.xyz/password-generator v0.2.7
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
 	gomodules.xyz/runtime v0.2.0

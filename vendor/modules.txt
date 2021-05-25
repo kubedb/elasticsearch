@@ -436,7 +436,7 @@ gomodules.xyz/envsubst/path
 gomodules.xyz/homedir
 # gomodules.xyz/jsonpatch/v2 v2.1.0
 gomodules.xyz/jsonpatch/v2
-# gomodules.xyz/kglog v0.0.3-0.20210525090944-df53fef199e7
+# gomodules.xyz/kglog v0.0.3
 ## explicit
 gomodules.xyz/kglog
 # gomodules.xyz/password-generator v0.2.7

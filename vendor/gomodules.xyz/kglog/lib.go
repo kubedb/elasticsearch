@@ -59,24 +59,34 @@ func (writer KlogWriter) Write(data []byte) (n int, err error) {
 }
 
 // Init initializes logs the way we want for AppsCode codebase.
-func Init(cmd *cobra.Command, printFlags bool) {
+func Init(rootCmd *cobra.Command, printFlags bool) {
 	pflag.CommandLine.SetNormalizeFunc(WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	InitLogs()
-	if cmd == nil {
+
+	if rootCmd == nil {
+		// This branch only makes sense if Cobra is NOT used
+		// If Cobra is used, set the rootCmd
+		pflag.Parse()
+		fs := pflag.CommandLine
+		InitKlog(fs)
+		if printFlags {
+			PrintFlags(fs)
+		}
 		return
 	}
-	fs := cmd.Flags()
-	if fn := cmd.PersistentPreRunE; fn != nil {
-		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+
+	fs := rootCmd.Flags()
+	if fn := rootCmd.PersistentPreRunE; fn != nil {
+		rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 			InitKlog(fs)
 			if printFlags {
 				PrintFlags(fs)
 			}
 			return fn(cmd, args)
 		}
-	} else if fn := cmd.PersistentPreRun; fn != nil {
-		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+	} else if fn := rootCmd.PersistentPreRun; fn != nil {
+		rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 			InitKlog(fs)
 			if printFlags {
 				PrintFlags(fs)
@@ -84,7 +94,7 @@ func Init(cmd *cobra.Command, printFlags bool) {
 			fn(cmd, args)
 		}
 	} else {
-		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 			InitKlog(fs)
 			if printFlags {
 				PrintFlags(fs)
