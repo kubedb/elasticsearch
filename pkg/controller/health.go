@@ -47,7 +47,7 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 		select {
 		case <-stopCh:
 			klog.Info("Shutting down Elasticsearch health checker...")
-			break
+			return
 		default:
 			c.CheckElasticsearchHealthOnce()
 			time.Sleep(api.HealthCheckInterval)
