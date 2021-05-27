@@ -74,9 +74,9 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion,
 			EnableDebugLogger: true,
 			DisableRetry:      true,
 			Transport: &http.Transport{
+				IdleConnTimeout: 1 * time.Millisecond,
 				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
+					Timeout: 30 * time.Second,
 				}).DialContext,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
@@ -111,9 +111,9 @@ func GetElasticClient(kc kubernetes.Interface, db *api.Elasticsearch, esVersion,
 			EnableDebugLogger: true,
 			DisableRetry:      true,
 			Transport: &http.Transport{
+				IdleConnTimeout: 1 * time.Millisecond,
 				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
+					Timeout: 30 * time.Second,
 				}).DialContext,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,

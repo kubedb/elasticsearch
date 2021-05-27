@@ -72,7 +72,7 @@ func (c *Controller) CheckElasticsearchHealthOnce() {
 		}
 
 		wg.Add(1)
-		go func() {
+		go func(db *api.Elasticsearch) {
 			defer func() {
 				wg.Done()
 			}()
@@ -203,7 +203,7 @@ func (c *Controller) CheckElasticsearchHealthOnce() {
 					klog.Errorf("Failed to update status for Elasticsearch: %s/%s with %s", db.Namespace, db.Name, err.Error())
 				}
 			}
-		}()
+		}(db)
 	}
 
 	// Wait until all go-routine complete executions
