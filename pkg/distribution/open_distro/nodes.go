@@ -336,3 +336,26 @@ func (es *Elasticsearch) getCombinedNode() *api.ElasticsearchNode {
 		MaxUnavailable: es.db.Spec.MaxUnavailable,
 	}
 }
+
+func (es *Elasticsearch) EnsureDataContentNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}
+
+func (es *Elasticsearch) EnsureDataHotNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}
+func (es *Elasticsearch) EnsureDataWarmNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}
+func (es *Elasticsearch) EnsureDataColdNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}
+func (es *Elasticsearch) EnsureDataFrozenNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}
+func (es *Elasticsearch) EnsureMLNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}
+func (es *Elasticsearch) EnsureTransformNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}

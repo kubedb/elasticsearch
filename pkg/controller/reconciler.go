@@ -106,10 +106,42 @@ func (r *Reconciler) ReconcileNodes(db *api.Elasticsearch) (*api.Elasticsearch, 
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		vt4, err := elastic.EnsureDataContentNode()
+		if err != nil {
+			return nil, kutil.VerbUnchanged, err
+		}
+		vt5, err := elastic.EnsureDataHotNode()
+		if err != nil {
+			return nil, kutil.VerbUnchanged, err
+		}
+		vt6, err := elastic.EnsureDataWarmNode()
+		if err != nil {
+			return nil, kutil.VerbUnchanged, err
+		}
+		vt7, err := elastic.EnsureDataColdNode()
+		if err != nil {
+			return nil, kutil.VerbUnchanged, err
+		}
+		vt8, err := elastic.EnsureDataFrozenNode()
+		if err != nil {
+			return nil, kutil.VerbUnchanged, err
+		}
+		vt9, err := elastic.EnsureMLNode()
+		if err != nil {
+			return nil, kutil.VerbUnchanged, err
+		}
+		vt10, err := elastic.EnsureTransformNode()
+		if err != nil {
+			return nil, kutil.VerbUnchanged, err
+		}
 
-		if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated && vt3 == kutil.VerbCreated {
+		if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated && vt3 == kutil.VerbCreated && vt4 == kutil.VerbCreated &&
+			vt5 == kutil.VerbCreated && vt6 == kutil.VerbCreated && vt7 == kutil.VerbCreated && vt8 == kutil.VerbCreated &&
+			vt9 == kutil.VerbCreated && vt10 == kutil.VerbCreated {
 			vt = kutil.VerbCreated
-		} else if vt1 == kutil.VerbPatched || vt2 == kutil.VerbPatched || vt3 == kutil.VerbPatched {
+		} else if vt1 == kutil.VerbPatched || vt2 == kutil.VerbPatched || vt3 == kutil.VerbPatched || vt4 == kutil.VerbPatched ||
+			vt5 == kutil.VerbPatched || vt6 == kutil.VerbPatched || vt7 == kutil.VerbPatched ||
+			vt8 == kutil.VerbPatched || vt9 == kutil.VerbPatched || vt10 == kutil.VerbPatched {
 			vt = kutil.VerbPatched
 		}
 	} else {
