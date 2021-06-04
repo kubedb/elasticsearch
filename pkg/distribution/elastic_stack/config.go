@@ -99,7 +99,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 	}
 
 	if !es.db.Spec.DisableSecurity {
-		config = xpack_security_enabled
+		config += xpack_security_enabled
 
 		// If rest layer is secured with certs
 		if es.db.Spec.EnableSSL {
@@ -109,7 +109,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 		}
 
 	} else {
-		config = xpack_security_disabled
+		config += xpack_security_disabled
 	}
 
 	if _, _, err := core_util.CreateOrPatchSecret(context.TODO(), es.kClient, secretMeta, func(in *core.Secret) *core.Secret {

@@ -20292,16 +20292,15 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ElasticsearchClusterTopology(ref c
 							Ref:     ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ElasticsearchNode"),
 						},
 					},
-					"data": {
+					"ingest": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
 							Ref:     ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ElasticsearchNode"),
 						},
 					},
-					"ingest": {
+					"data": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ElasticsearchNode"),
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ElasticsearchNode"),
 						},
 					},
 					"dataContent": {
@@ -20340,7 +20339,7 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ElasticsearchClusterTopology(ref c
 						},
 					},
 				},
-				Required: []string{"master", "data", "ingest"},
+				Required: []string{"master", "ingest"},
 			},
 		},
 		Dependencies: []string{

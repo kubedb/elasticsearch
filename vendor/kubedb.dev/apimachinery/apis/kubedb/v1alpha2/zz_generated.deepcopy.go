@@ -149,8 +149,12 @@ func (in *Elasticsearch) DeepCopyObject() runtime.Object {
 func (in *ElasticsearchClusterTopology) DeepCopyInto(out *ElasticsearchClusterTopology) {
 	*out = *in
 	in.Master.DeepCopyInto(&out.Master)
-	in.Data.DeepCopyInto(&out.Data)
 	in.Ingest.DeepCopyInto(&out.Ingest)
+	if in.Data != nil {
+		in, out := &in.Data, &out.Data
+		*out = new(ElasticsearchNode)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.DataContent != nil {
 		in, out := &in.DataContent, &out.DataContent
 		*out = new(ElasticsearchNode)

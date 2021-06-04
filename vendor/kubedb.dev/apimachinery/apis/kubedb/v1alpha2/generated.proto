@@ -129,9 +129,9 @@ message Elasticsearch {
 message ElasticsearchClusterTopology {
   optional ElasticsearchNode master = 1;
 
-  optional ElasticsearchNode data = 2;
+  optional ElasticsearchNode ingest = 2;
 
-  optional ElasticsearchNode ingest = 3;
+  optional ElasticsearchNode data = 3;
 
   optional ElasticsearchNode dataContent = 4;
 

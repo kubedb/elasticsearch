@@ -3671,7 +3671,6 @@ spec:
                       type: string
                   type: object
               required:
-              - data
               - ingest
               - master
               type: object
