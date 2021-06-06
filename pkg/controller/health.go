@@ -47,7 +47,7 @@ func (c *Controller) CheckElasticsearchHealth(stopCh <-chan struct{}) {
 		select {
 		case <-stopCh:
 			klog.Info("Shutting down Elasticsearch health checker...")
-			break
+			return
 		default:
 			c.CheckElasticsearchHealthOnce()
 			time.Sleep(api.HealthCheckInterval)
@@ -66,13 +66,13 @@ func (c *Controller) CheckElasticsearchHealthOnce() {
 	for idx := range dbList {
 		db := dbList[idx]
 
-		// If the DB object is deleted, no need to perform health check.
-		if db.DeletionTimestamp != nil {
+		// If the DB object is deleted or halted, no need to perform health check.
+		if db.DeletionTimestamp != nil || db.Spec.Halted {
 			continue
 		}
 
 		wg.Add(1)
-		go func() {
+		go func(db *api.Elasticsearch) {
 			defer func() {
 				wg.Done()
 			}()
@@ -203,7 +203,7 @@ func (c *Controller) CheckElasticsearchHealthOnce() {
 					klog.Errorf("Failed to update status for Elasticsearch: %s/%s with %s", db.Namespace, db.Name, err.Error())
 				}
 			}
-		}()
+		}(db)
 	}
 
 	// Wait until all go-routine complete executions
