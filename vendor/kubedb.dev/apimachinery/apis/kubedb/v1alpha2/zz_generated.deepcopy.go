@@ -190,6 +190,11 @@ func (in *ElasticsearchClusterTopology) DeepCopyInto(out *ElasticsearchClusterTo
 		*out = new(ElasticsearchNode)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Coordinating != nil {
+		in, out := &in.Coordinating, &out.Coordinating
+		*out = new(ElasticsearchNode)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

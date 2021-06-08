@@ -146,6 +146,8 @@ message ElasticsearchClusterTopology {
   optional ElasticsearchNode ml = 9;
 
   optional ElasticsearchNode transform = 10;
+
+  optional ElasticsearchNode coordinating = 11;
 }
 
 message ElasticsearchList {

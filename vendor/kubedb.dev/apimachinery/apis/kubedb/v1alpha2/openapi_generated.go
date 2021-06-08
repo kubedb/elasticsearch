@@ -20338,6 +20338,11 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ElasticsearchClusterTopology(ref c
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ElasticsearchNode"),
 						},
 					},
+					"coordinating": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ElasticsearchNode"),
+						},
+					},
 				},
 				Required: []string{"master", "ingest"},
 			},

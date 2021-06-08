@@ -38,5 +38,6 @@ type ElasticsearchInterface interface {
 	EnsureDataFrozenNode() (kutil.VerbType, error)
 	EnsureMLNode() (kutil.VerbType, error)
 	EnsureTransformNode() (kutil.VerbType, error)
+	EnsureCoordinatingNode() (kutil.VerbType, error)
 	RequiredCertSecretNames() []string
 }

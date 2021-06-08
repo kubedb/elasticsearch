@@ -43,8 +43,8 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := masterNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := masterNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -123,8 +123,8 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := dataNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := dataNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -188,8 +188,8 @@ func (es *Elasticsearch) EnsureIngestNodes() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := ingestNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := ingestNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -262,8 +262,8 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := combinedNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := combinedNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -362,5 +362,9 @@ func (es *Elasticsearch) EnsureMLNode() (kutil.VerbType, error) {
 	return kutil.VerbUnchanged, nil
 }
 func (es *Elasticsearch) EnsureTransformNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}
+
+func (es *Elasticsearch) EnsureCoordinatingNode() (kutil.VerbType, error) {
 	return kutil.VerbUnchanged, nil
 }

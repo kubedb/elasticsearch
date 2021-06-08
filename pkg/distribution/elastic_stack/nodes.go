@@ -45,8 +45,8 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := masterNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := masterNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -152,8 +152,8 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := dataNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := dataNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -243,8 +243,8 @@ func (es *Elasticsearch) EnsureIngestNodes() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := ingestNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := ingestNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -343,8 +343,8 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := combinedNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := combinedNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -458,8 +458,8 @@ func (es *Elasticsearch) EnsureDataHotNode() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := dataHotNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := dataHotNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -523,8 +523,8 @@ func (es *Elasticsearch) EnsureDataWarmNode() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := dataWarmNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := dataWarmNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -588,8 +588,8 @@ func (es *Elasticsearch) EnsureDataColdNode() (kutil.VerbType, error) {
 	}
 
 	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
-	if request, found := dataColdNode.Resources.Requests[core.ResourceMemory]; found && request.Value() > 0 {
-		heapSize = heap.GetHeapSizeFromMemory(request.Value())
+	if limit, found := dataColdNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
 	}
 
 	// Environment variable list for main container.
@@ -632,12 +632,165 @@ func (es *Elasticsearch) EnsureDataColdNode() (kutil.VerbType, error) {
 	return es.ensureStatefulSet(dataColdNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeDataCold), envList, initEnvList)
 }
 func (es *Elasticsearch) EnsureDataFrozenNode() (kutil.VerbType, error) {
-	return kutil.VerbUnchanged, nil
+	// If missing, do nothing
+	if es.db.Spec.Topology.DataFrozen == nil {
+		return kutil.VerbUnchanged, nil
+	}
+	dbVersion, err := semver.Parse(es.esVersion.Spec.Version)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+	// Data-Frozen node is introduced at ES version 7.12
+	// Otherwise return error
+	if !(dbVersion.Major >= 7 && dbVersion.Minor >= 12) {
+		return kutil.VerbUnchanged, errors.New("data-frozen node isn't supported; The data-frozen node is introduced at version 7.12")
+	}
+
+	statefulSetName := es.db.DataFrozenStatefulSetName()
+	dataFrozenNode := es.db.Spec.Topology.DataFrozen
+	labels := map[string]string{
+		es.db.NodeRoleSpecificLabelKey(api.ElasticsearchNodeRoleTypeDataFrozen): api.ElasticsearchNodeRoleSet,
+	}
+
+	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
+	if limit, found := dataFrozenNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
+	}
+
+	// Environment variable list for main container.
+	// These are node specific, i.e. changes depending on node type.
+	// Following are for Data-Frozen node:
+	envList := []core.EnvVar{
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
+		},
+	}
+
+	// Set "NODE_ROLES" env,
+	// It is used while generating elasticsearch.yml file.
+	envList = core_util.UpsertEnvVars(envList, core.EnvVar{
+		Name:  "NODE_ROLES",
+		Value: "data_frozen",
+	})
+
+	// Upsert common environment variables.
+	// These are same for all type of node.
+	envList = es.upsertContainerEnv(envList)
+
+	// add/overwrite user provided env; these are provided via crd spec
+	envList = core_util.UpsertEnvVars(envList, es.db.Spec.PodTemplate.Spec.Env...)
+
+	// Environment variables for init container (i.e. config-merger)
+	initEnvList := []core.EnvVar{
+		{
+			Name:  "NODE_DATA_FROZEN",
+			Value: "true",
+		},
+	}
+
+	replicas := pointer.Int32P(1)
+	if dataFrozenNode.Replicas != nil {
+		replicas = dataFrozenNode.Replicas
+	}
+
+	return es.ensureStatefulSet(dataFrozenNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeDataFrozen), envList, initEnvList)
 }
+
 func (es *Elasticsearch) EnsureMLNode() (kutil.VerbType, error) {
-	return kutil.VerbUnchanged, nil
+	// If missing, do nothing
+	if es.db.Spec.Topology.ML == nil {
+		return kutil.VerbUnchanged, nil
+	}
+	dbVersion, err := semver.Parse(es.esVersion.Spec.Version)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
+	statefulSetName := es.db.MLStatefulSetName()
+	mlNode := es.db.Spec.Topology.ML
+	labels := map[string]string{
+		es.db.NodeRoleSpecificLabelKey(api.ElasticsearchNodeRoleTypeML): api.ElasticsearchNodeRoleSet,
+	}
+
+	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
+	if limit, found := mlNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
+	}
+
+	// Environment variable list for main container.
+	// These are node specific, i.e. changes depending on node type.
+	// Following are for ML node:
+	envList := []core.EnvVar{
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
+		},
+	}
+
+	// For Elasticsearch version >= 7.9.x
+	// The legacy node role setting is deprecated.
+	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+		// Set "NODE_ROLES" env,
+		// It is used while generating elasticsearch.yml file.
+		// The remote_cluster_client role is optional but strongly recommended.
+		// Otherwise, cross-cluster search fails when used in machine learning jobs or datafeeds.
+		//	Ref:
+		//		- https://www.elastic.co/guide/en/elasticsearch/reference/7.13/modules-node.html#ml-node
+		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
+			Name:  "NODE_ROLES",
+			Value: "ml, remote_cluster_client",
+		})
+
+	} else {
+		// For Elasticsearch version >=6.8.0, <7.9.x
+		// For data node, only ml role is true.
+		envList = core_util.UpsertEnvVars(envList, []core.EnvVar{
+			{
+				Name:  "node.ingest",
+				Value: "false",
+			},
+			{
+				Name:  "node.master",
+				Value: "false",
+			},
+			{
+				Name:  "node.data",
+				Value: "false",
+			},
+			{
+				Name:  "node.ml",
+				Value: "true",
+			},
+		}...)
+	}
+	// Upsert common environment variables.
+	// These are same for all type of node.
+	envList = es.upsertContainerEnv(envList)
+
+	// add/overwrite user provided env; these are provided via crd spec
+	envList = core_util.UpsertEnvVars(envList, es.db.Spec.PodTemplate.Spec.Env...)
+
+	// Environment variables for init container (i.e. config-merger)
+	initEnvList := []core.EnvVar{
+		{
+			Name:  "NODE_ML",
+			Value: "true",
+		},
+	}
+
+	replicas := pointer.Int32P(1)
+	if mlNode.Replicas != nil {
+		replicas = mlNode.Replicas
+	}
+
+	return es.ensureStatefulSet(mlNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeML), envList, initEnvList)
 }
 func (es *Elasticsearch) EnsureTransformNode() (kutil.VerbType, error) {
+	return kutil.VerbUnchanged, nil
+}
+
+func (es *Elasticsearch) EnsureCoordinatingNode() (kutil.VerbType, error) {
 	return kutil.VerbUnchanged, nil
 }
 
