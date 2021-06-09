@@ -319,4 +319,5 @@ const (
 	ElasticsearchNodeRoleTypeML                  ElasticsearchNodeRoleType = "ml"
 	ElasticsearchNodeRoleTypeRemoteClusterClient ElasticsearchNodeRoleType = "remote-cluster-client"
 	ElasticsearchNodeRoleTypeTransform           ElasticsearchNodeRoleType = "transform"
+	ElasticsearchNodeRoleTypeCoordinating        ElasticsearchNodeRoleType = "coordinating"
 )

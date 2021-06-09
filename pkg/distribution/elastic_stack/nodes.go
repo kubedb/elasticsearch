@@ -433,7 +433,69 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 }
 
 func (es *Elasticsearch) EnsureDataContentNode() (kutil.VerbType, error) {
-	return kutil.VerbUnchanged, nil
+	// If missing, do nothing
+	if es.db.Spec.Topology.DataContent == nil {
+		return kutil.VerbUnchanged, nil
+	}
+	dbVersion, err := semver.Parse(es.esVersion.Spec.Version)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+	// Data-Content node is introduced at ES version 7.10
+	// Otherwise return error
+	if !(dbVersion.Major >= 7 && dbVersion.Minor >= 10) {
+		return kutil.VerbUnchanged, errors.New("data-content node isn't supported; The data-content node is introduced at version 7.10")
+	}
+
+	statefulSetName := es.db.DataContentStatefulSetName()
+	dataContentNode := es.db.Spec.Topology.DataContent
+	labels := map[string]string{
+		es.db.NodeRoleSpecificLabelKey(api.ElasticsearchNodeRoleTypeDataContent): api.ElasticsearchNodeRoleSet,
+	}
+
+	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
+	if limit, found := dataContentNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
+	}
+
+	// Environment variable list for main container.
+	// These are node specific, i.e. changes depending on node type.
+	// Following are for Data-Content node:
+	envList := []core.EnvVar{
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
+		},
+	}
+
+	// Set "NODE_ROLES" env,
+	// It is used while generating elasticsearch.yml file.
+	envList = core_util.UpsertEnvVars(envList, core.EnvVar{
+		Name:  "NODE_ROLES",
+		Value: "data_content",
+	})
+
+	// Upsert common environment variables.
+	// These are same for all type of node.
+	envList = es.upsertContainerEnv(envList)
+
+	// add/overwrite user provided env; these are provided via crd spec
+	envList = core_util.UpsertEnvVars(envList, es.db.Spec.PodTemplate.Spec.Env...)
+
+	// Environment variables for init container (i.e. config-merger)
+	initEnvList := []core.EnvVar{
+		{
+			Name:  "NODE_DATA_CONTENT",
+			Value: "true",
+		},
+	}
+
+	replicas := pointer.Int32P(1)
+	if dataContentNode.Replicas != nil {
+		replicas = dataContentNode.Replicas
+	}
+
+	return es.ensureStatefulSet(dataContentNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeDataContent), envList, initEnvList)
 }
 
 func (es *Elasticsearch) EnsureDataHotNode() (kutil.VerbType, error) {
@@ -501,6 +563,7 @@ func (es *Elasticsearch) EnsureDataHotNode() (kutil.VerbType, error) {
 
 	return es.ensureStatefulSet(dataHotNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeDataHot), envList, initEnvList)
 }
+
 func (es *Elasticsearch) EnsureDataWarmNode() (kutil.VerbType, error) {
 	// If missing, do nothing
 	if es.db.Spec.Topology.DataWarm == nil {
@@ -566,6 +629,7 @@ func (es *Elasticsearch) EnsureDataWarmNode() (kutil.VerbType, error) {
 
 	return es.ensureStatefulSet(dataWarmNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeDataWarm), envList, initEnvList)
 }
+
 func (es *Elasticsearch) EnsureDataColdNode() (kutil.VerbType, error) {
 	// If missing, do nothing
 	if es.db.Spec.Topology.DataCold == nil {
@@ -631,6 +695,7 @@ func (es *Elasticsearch) EnsureDataColdNode() (kutil.VerbType, error) {
 
 	return es.ensureStatefulSet(dataColdNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeDataCold), envList, initEnvList)
 }
+
 func (es *Elasticsearch) EnsureDataFrozenNode() (kutil.VerbType, error) {
 	// If missing, do nothing
 	if es.db.Spec.Topology.DataFrozen == nil {
@@ -786,12 +851,169 @@ func (es *Elasticsearch) EnsureMLNode() (kutil.VerbType, error) {
 
 	return es.ensureStatefulSet(mlNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeML), envList, initEnvList)
 }
+
 func (es *Elasticsearch) EnsureTransformNode() (kutil.VerbType, error) {
-	return kutil.VerbUnchanged, nil
+	// If missing, do nothing
+	if es.db.Spec.Topology.Transform == nil {
+		return kutil.VerbUnchanged, nil
+	}
+	dbVersion, err := semver.Parse(es.esVersion.Spec.Version)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+	// Transform node is introduced at ES version 7.11
+	// Otherwise return error
+	if !(dbVersion.Major >= 7 && dbVersion.Minor >= 11) {
+		return kutil.VerbUnchanged, errors.New("transform node isn't supported; The transform node is introduced at version 7.11")
+	}
+
+	statefulSetName := es.db.TransformStatefulSetName()
+	transformNode := es.db.Spec.Topology.Transform
+	labels := map[string]string{
+		es.db.NodeRoleSpecificLabelKey(api.ElasticsearchNodeRoleTypeTransform): api.ElasticsearchNodeRoleSet,
+	}
+
+	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
+	if limit, found := transformNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
+	}
+
+	// Environment variable list for main container.
+	// These are node specific, i.e. changes depending on node type.
+	// Following are for Transform node:
+	envList := []core.EnvVar{
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
+		},
+	}
+
+	// Set "NODE_ROLES" env,
+	// It is used while generating elasticsearch.yml file.
+	// The remote_cluster_client role is optional but strongly recommended.
+	// Otherwise, cross-cluster search fails when used in transforms.
+	envList = core_util.UpsertEnvVars(envList, core.EnvVar{
+		Name:  "NODE_ROLES",
+		Value: "transform, remote_cluster_client",
+	})
+
+	// Upsert common environment variables.
+	// These are same for all type of node.
+	envList = es.upsertContainerEnv(envList)
+
+	// add/overwrite user provided env; these are provided via crd spec
+	envList = core_util.UpsertEnvVars(envList, es.db.Spec.PodTemplate.Spec.Env...)
+
+	// Environment variables for init container (i.e. config-merger)
+	initEnvList := []core.EnvVar{
+		{
+			Name:  "NODE_TRANSFORM",
+			Value: "true",
+		},
+	}
+
+	replicas := pointer.Int32P(1)
+	if transformNode.Replicas != nil {
+		replicas = transformNode.Replicas
+	}
+
+	return es.ensureStatefulSet(transformNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeTransform), envList, initEnvList)
 }
 
 func (es *Elasticsearch) EnsureCoordinatingNode() (kutil.VerbType, error) {
-	return kutil.VerbUnchanged, nil
+	// If missing, do nothing
+	if es.db.Spec.Topology.Coordinating == nil {
+		return kutil.VerbUnchanged, nil
+	}
+	dbVersion, err := semver.Parse(es.esVersion.Spec.Version)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+	// Transform node is introduced at ES version 7.11
+	// Otherwise return error
+	if !(dbVersion.Major >= 7 && dbVersion.Minor >= 11) {
+		return kutil.VerbUnchanged, errors.New("transform node isn't supported; The transform node is introduced at version 7.11")
+	}
+
+	statefulSetName := es.db.CoordinatingStatefulSetName()
+	coordinatingNode := es.db.Spec.Topology.Coordinating
+	labels := map[string]string{
+		es.db.NodeRoleSpecificLabelKey(api.ElasticsearchNodeRoleTypeCoordinating): api.ElasticsearchNodeRoleSet,
+	}
+
+	heapSize := int64(api.ElasticsearchMinHeapSize) // 128mb
+	if limit, found := coordinatingNode.Resources.Limits[core.ResourceMemory]; found && limit.Value() > 0 {
+		heapSize = heap.GetHeapSizeFromMemory(limit.Value())
+	}
+
+	// Environment variable list for main container.
+	// These are node specific, i.e. changes depending on node type.
+	// Following are for Transform node:
+	envList := []core.EnvVar{
+		{
+			Name:  "ES_JAVA_OPTS",
+			Value: fmt.Sprintf("-Xms%v -Xmx%v", heapSize, heapSize),
+		},
+	}
+
+	// For Elasticsearch version >= 7.9.x
+	// The legacy node role setting is deprecated.
+	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+		// Set "NODE_ROLES" env,
+		// It is used while generating elasticsearch.yml file.
+		// Every node is implicitly a coordinating node. This means that a node that has
+		// an explicit empty list of roles via node.roles will only act as a coordinating node, which cannot be disabled.
+		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
+			Name:  "NODE_ROLES",
+			Value: "",
+		})
+
+	} else {
+		// For Elasticsearch version >=6.8.0, <7.9.x
+		// Every node is implicitly a coordinating node.
+		// This means that a node that has all three node.master, node.data and node.ingest set to false
+		// will only act as a coordinating node, which cannot be disabled.
+		envList = core_util.UpsertEnvVars(envList, []core.EnvVar{
+			{
+				Name:  "node.ingest",
+				Value: "false",
+			},
+			{
+				Name:  "node.master",
+				Value: "false",
+			},
+			{
+				Name:  "node.data",
+				Value: "false",
+			},
+			{
+				Name:  "node.ml",
+				Value: "false",
+			},
+		}...)
+	}
+
+	// Upsert common environment variables.
+	// These are same for all type of node.
+	envList = es.upsertContainerEnv(envList)
+
+	// add/overwrite user provided env; these are provided via crd spec
+	envList = core_util.UpsertEnvVars(envList, es.db.Spec.PodTemplate.Spec.Env...)
+
+	// Environment variables for init container (i.e. config-merger)
+	initEnvList := []core.EnvVar{
+		{
+			Name:  "NODE_COORDINATING",
+			Value: "true",
+		},
+	}
+
+	replicas := pointer.Int32P(1)
+	if coordinatingNode.Replicas != nil {
+		replicas = coordinatingNode.Replicas
+	}
+
+	return es.ensureStatefulSet(coordinatingNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeCoordinating), envList, initEnvList)
 }
 
 // Use ElasticsearchNode struct for combined nodes too,

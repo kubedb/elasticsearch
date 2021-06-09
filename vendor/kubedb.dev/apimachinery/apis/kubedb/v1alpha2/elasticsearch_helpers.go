@@ -275,6 +275,13 @@ func (e *Elasticsearch) TransformStatefulSetName() string {
 	return meta_util.NameWithSuffix(e.OffshootName(), string(ElasticsearchNodeRoleTypeTransform))
 }
 
+func (e *Elasticsearch) CoordinatingStatefulSetName() string {
+	if e.Spec.Topology.Coordinating.Suffix != "" {
+		return meta_util.NameWithSuffix(e.OffshootName(), e.Spec.Topology.Coordinating.Suffix)
+	}
+	return meta_util.NameWithSuffix(e.OffshootName(), string(ElasticsearchNodeRoleTypeCoordinating))
+}
+
 func (e *Elasticsearch) InitialMasterNodes() []string {
 	// For combined clusters
 	stsName := e.CombinedStatefulSetName()
