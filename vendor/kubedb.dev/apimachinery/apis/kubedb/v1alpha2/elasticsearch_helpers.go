@@ -385,6 +385,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			e.Spec.Topology.Ingest.Suffix = ElasticsearchIngestNodeSuffix
 		}
 		SetDefaultResourceLimits(&e.Spec.Topology.Ingest.Resources, DefaultResourceLimits)
+		if e.Spec.Topology.Ingest.Replicas != nil {
+			e.Spec.Topology.Ingest.Replicas = pointer.Int32P(1)
+		}
 
 		// Required nodes, must exist!
 		// Default to "master"
@@ -392,6 +395,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			e.Spec.Topology.Master.Suffix = string(ElasticsearchNodeRoleTypeMaster)
 		}
 		SetDefaultResourceLimits(&e.Spec.Topology.Master.Resources, DefaultResourceLimits)
+		if e.Spec.Topology.Master.Replicas != nil {
+			e.Spec.Topology.Master.Replicas = pointer.Int32P(1)
+		}
 
 		// Optional nodes, when other type of data nodes are not empty.
 		// Otherwise required nodes.
@@ -401,6 +407,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 				e.Spec.Topology.Data.Suffix = string(ElasticsearchNodeRoleTypeData)
 			}
 			SetDefaultResourceLimits(&e.Spec.Topology.Data.Resources, DefaultResourceLimits)
+			if e.Spec.Topology.Data.Replicas == nil {
+				e.Spec.Topology.Data.Replicas = pointer.Int32P(1)
+			}
 		}
 
 		// Optional, can be empty
@@ -410,6 +419,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 				e.Spec.Topology.DataHot.Suffix = string(ElasticsearchNodeRoleTypeDataHot)
 			}
 			SetDefaultResourceLimits(&e.Spec.Topology.DataHot.Resources, DefaultResourceLimits)
+			if e.Spec.Topology.DataHot.Replicas == nil {
+				e.Spec.Topology.DataHot.Replicas = pointer.Int32P(1)
+			}
 		}
 
 		// Optional, can be empty
@@ -419,6 +431,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 				e.Spec.Topology.DataWarm.Suffix = string(ElasticsearchNodeRoleTypeDataWarm)
 			}
 			SetDefaultResourceLimits(&e.Spec.Topology.DataWarm.Resources, DefaultResourceLimits)
+			if e.Spec.Topology.DataWarm.Replicas == nil {
+				e.Spec.Topology.DataWarm.Replicas = pointer.Int32P(1)
+			}
 		}
 
 		// Optional, can be empty
@@ -428,6 +443,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 				e.Spec.Topology.DataCold.Suffix = string(ElasticsearchNodeRoleTypeDataCold)
 			}
 			SetDefaultResourceLimits(&e.Spec.Topology.DataCold.Resources, DefaultResourceLimits)
+			if e.Spec.Topology.DataCold.Replicas == nil {
+				e.Spec.Topology.DataCold.Replicas = pointer.Int32P(1)
+			}
 		}
 
 		// Optional, can be empty
@@ -437,6 +455,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 				e.Spec.Topology.DataFrozen.Suffix = string(ElasticsearchNodeRoleTypeDataFrozen)
 			}
 			SetDefaultResourceLimits(&e.Spec.Topology.DataFrozen.Resources, DefaultResourceLimits)
+			if e.Spec.Topology.DataFrozen.Replicas == nil {
+				e.Spec.Topology.DataFrozen.Replicas = pointer.Int32P(1)
+			}
 		}
 
 		// Optional, can be empty
@@ -446,6 +467,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 				e.Spec.Topology.DataContent.Suffix = string(ElasticsearchNodeRoleTypeDataContent)
 			}
 			SetDefaultResourceLimits(&e.Spec.Topology.DataContent.Resources, DefaultResourceLimits)
+			if e.Spec.Topology.DataContent.Replicas == nil {
+				e.Spec.Topology.DataContent.Replicas = pointer.Int32P(1)
+			}
 		}
 
 		// Optional, can be empty
@@ -455,6 +479,9 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 				e.Spec.Topology.ML.Suffix = string(ElasticsearchNodeRoleTypeML)
 			}
 			SetDefaultResourceLimits(&e.Spec.Topology.ML.Resources, DefaultResourceLimits)
+			if e.Spec.Topology.ML.Replicas == nil {
+				e.Spec.Topology.ML.Replicas = pointer.Int32P(1)
+			}
 		}
 
 		// Optional, can be empty
@@ -464,10 +491,16 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 				e.Spec.Topology.Transform.Suffix = string(ElasticsearchNodeRoleTypeTransform)
 			}
 			SetDefaultResourceLimits(&e.Spec.Topology.Transform.Resources, DefaultResourceLimits)
+			if e.Spec.Topology.Transform.Replicas == nil {
+				e.Spec.Topology.Transform.Replicas = pointer.Int32P(1)
+			}
 		}
 
 	} else {
 		SetDefaultResourceLimits(&e.Spec.PodTemplate.Spec.Resources, DefaultResourceLimits)
+		if e.Spec.Replicas == nil {
+			e.Spec.Replicas = pointer.Int32P(1)
+		}
 	}
 
 	// set default kernel settings
@@ -788,4 +821,39 @@ func getElasticsearchUser(userList map[string]ElasticsearchUserSpec, username st
 	}
 	userSpec := userList[username]
 	return &userSpec, nil
+}
+
+// ToMap returns ClusterTopology in a Map
+func (esTopology *ElasticsearchClusterTopology) ToMap() map[ElasticsearchNodeRoleType]ElasticsearchNode {
+	topology := make(map[ElasticsearchNodeRoleType]ElasticsearchNode)
+	topology[ElasticsearchNodeRoleTypeMaster] = esTopology.Master
+	topology[ElasticsearchNodeRoleTypeIngest] = esTopology.Ingest
+	if esTopology.Data != nil {
+		topology[ElasticsearchNodeRoleTypeData] = *esTopology.Data
+	}
+	if esTopology.DataHot != nil {
+		topology[ElasticsearchNodeRoleTypeDataHot] = *esTopology.DataHot
+	}
+	if esTopology.DataWarm != nil {
+		topology[ElasticsearchNodeRoleTypeDataWarm] = *esTopology.DataWarm
+	}
+	if esTopology.DataCold != nil {
+		topology[ElasticsearchNodeRoleTypeDataCold] = *esTopology.DataCold
+	}
+	if esTopology.DataFrozen != nil {
+		topology[ElasticsearchNodeRoleTypeDataFrozen] = *esTopology.DataFrozen
+	}
+	if esTopology.DataContent != nil {
+		topology[ElasticsearchNodeRoleTypeDataContent] = *esTopology.DataContent
+	}
+	if esTopology.ML != nil {
+		topology[ElasticsearchNodeRoleTypeML] = *esTopology.ML
+	}
+	if esTopology.Transform != nil {
+		topology[ElasticsearchNodeRoleTypeTransform] = *esTopology.Transform
+	}
+	if esTopology.Coordinating != nil {
+		topology[ElasticsearchNodeRoleTypeCoordinating] = *esTopology.Coordinating
+	}
+	return topology
 }

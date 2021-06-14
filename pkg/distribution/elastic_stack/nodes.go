@@ -123,16 +123,8 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_MASTER",
-			Value: "true",
-		},
-		{
-			Name:  "NODE_DATA",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_INGEST",
-			Value: "false",
+			Name:  "NODE_ROLES",
+			Value: "master",
 		},
 	}
 
@@ -213,16 +205,8 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_MASTER",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_DATA",
-			Value: "true",
-		},
-		{
-			Name:  "NODE_INGEST",
-			Value: "false",
+			Name:  "NODE_ROLES",
+			Value: "data",
 		},
 	}
 
@@ -304,16 +288,8 @@ func (es *Elasticsearch) EnsureIngestNodes() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_MASTER",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_DATA",
-			Value: "false",
-		},
-		{
-			Name:  "NODE_INGEST",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "ingest",
 		},
 	}
 
@@ -414,16 +390,8 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_MASTER",
-			Value: "true",
-		},
-		{
-			Name:  "NODE_DATA",
-			Value: "true",
-		},
-		{
-			Name:  "NODE_INGEST",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "master, data, ingest",
 		},
 	}
 
@@ -485,8 +453,8 @@ func (es *Elasticsearch) EnsureDataContentNode() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_DATA_CONTENT",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "data_content",
 		},
 	}
 
@@ -551,8 +519,8 @@ func (es *Elasticsearch) EnsureDataHotNode() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_DATA_HOT",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "data_hot",
 		},
 	}
 
@@ -617,8 +585,8 @@ func (es *Elasticsearch) EnsureDataWarmNode() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_DATA_HOT",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "data_warm",
 		},
 	}
 
@@ -683,8 +651,8 @@ func (es *Elasticsearch) EnsureDataColdNode() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_DATA_COLD",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "data_cold",
 		},
 	}
 
@@ -839,8 +807,8 @@ func (es *Elasticsearch) EnsureMLNode() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_ML",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "ml,remote_cluster_client",
 		},
 	}
 
@@ -907,8 +875,8 @@ func (es *Elasticsearch) EnsureTransformNode() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_TRANSFORM",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "transform, remote_cluster_client",
 		},
 	}
 
@@ -920,6 +888,10 @@ func (es *Elasticsearch) EnsureTransformNode() (kutil.VerbType, error) {
 	return es.ensureStatefulSet(transformNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeTransform), envList, initEnvList)
 }
 
+// TODO:
+//		- Why CoordinatingNode is not supported?
+// 			- https://discuss.elastic.co/t/how-to-set-default-value-while-using-env-in-elasticsearch-yml-config-file/275440
+//			- https://stackoverflow.com/questions/67936479/how-to-set-default-value-while-using-env-in-elasticsearch-yml-config-file
 func (es *Elasticsearch) EnsureCoordinatingNode() (kutil.VerbType, error) {
 	// If missing, do nothing
 	if es.db.Spec.Topology.Coordinating == nil {
@@ -1003,8 +975,8 @@ func (es *Elasticsearch) EnsureCoordinatingNode() (kutil.VerbType, error) {
 	// Environment variables for init container (i.e. config-merger)
 	initEnvList := []core.EnvVar{
 		{
-			Name:  "NODE_COORDINATING",
-			Value: "true",
+			Name:  "NODE_ROLES",
+			Value: "",
 		},
 	}
 
