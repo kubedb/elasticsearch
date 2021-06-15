@@ -126,6 +126,21 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 			Name:  "NODE_ROLES",
 			Value: "master",
 		},
+		// TODO:
+		// 		For supporting old config-merger version,
+		// 		Should be removed soon.
+		{
+			Name:  "NODE_MASTER",
+			Value: "true",
+		},
+		{
+			Name:  "NODE_DATA",
+			Value: "false",
+		},
+		{
+			Name:  "NODE_INGEST",
+			Value: "false",
+		},
 	}
 
 	return es.ensureStatefulSet(&masterNode, statefulSetName, labels, replicas, string(api.ElasticsearchNodeRoleTypeMaster), envList, initEnvList)
@@ -207,6 +222,21 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 		{
 			Name:  "NODE_ROLES",
 			Value: "data",
+		},
+		// TODO:
+		// 		For supporting old config-merger version,
+		// 		Should be removed soon.
+		{
+			Name:  "NODE_MASTER",
+			Value: "false",
+		},
+		{
+			Name:  "NODE_DATA",
+			Value: "true",
+		},
+		{
+			Name:  "NODE_INGEST",
+			Value: "false",
 		},
 	}
 
@@ -290,6 +320,21 @@ func (es *Elasticsearch) EnsureIngestNodes() (kutil.VerbType, error) {
 		{
 			Name:  "NODE_ROLES",
 			Value: "ingest",
+		},
+		// TODO:
+		// 		For supporting old config-merger version,
+		// 		Should be removed soon.
+		{
+			Name:  "NODE_MASTER",
+			Value: "false",
+		},
+		{
+			Name:  "NODE_DATA",
+			Value: "false",
+		},
+		{
+			Name:  "NODE_INGEST",
+			Value: "true",
 		},
 	}
 
@@ -392,6 +437,21 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 		{
 			Name:  "NODE_ROLES",
 			Value: "master, data, ingest",
+		},
+		// TODO:
+		// 		For supporting old config-merger version,
+		// 		Should be removed soon.
+		{
+			Name:  "NODE_MASTER",
+			Value: "true",
+		},
+		{
+			Name:  "NODE_DATA",
+			Value: "true",
+		},
+		{
+			Name:  "NODE_INGEST",
+			Value: "true",
 		},
 	}
 
