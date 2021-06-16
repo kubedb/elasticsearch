@@ -3,6 +3,7 @@ module kubedb.dev/elasticsearch
 go 1.15
 
 require (
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/elastic/go-elasticsearch/v6 v6.8.10
 	github.com/elastic/go-elasticsearch/v7 v7.12.0
 	github.com/google/go-cmp v0.5.5
@@ -35,7 +36,7 @@ require (
 	kmodules.xyz/monitoring-agent-api v0.0.0-20210504040241-261c2428d207
 	kmodules.xyz/offshoot-api v0.0.0-20210504040651-7951e351f0f5
 	kmodules.xyz/webhook-runtime v0.0.0-20210504042742-3a9911e3dcdc
-	kubedb.dev/apimachinery v0.18.1-0.20210606081947-27cc118e5a02
+	kubedb.dev/apimachinery v0.18.1-0.20210615141115-33031495b8bd
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
