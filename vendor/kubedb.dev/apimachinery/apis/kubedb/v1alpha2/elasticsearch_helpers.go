@@ -583,6 +583,11 @@ func (e *Elasticsearch) setDefaultAffinity(podTemplate *ofst.PodTemplateSpec, la
 
 // Set Default internal users settings
 func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalog.ElasticsearchVersion) {
+	// If security is disabled (ie. DisableSecurity: true), ignore.
+	if e.Spec.DisableSecurity {
+		return
+	}
+
 	// The internalUsers feature only works with searchGuard and openDistro
 	if esVersion.Spec.Distribution == catalog.ElasticsearchDistroOpenDistro ||
 		esVersion.Spec.Distribution == catalog.ElasticsearchDistroSearchGuard {
@@ -620,8 +625,17 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 		// Set missing user secret names
 		for username, userSpec := range inUsers {
 			// For admin user, spec.authSecret.Name must have high precedence over default field
-			if username == string(ElasticsearchInternalUserAdmin) && e.Spec.AuthSecret != nil && e.Spec.AuthSecret.Name != "" {
-				userSpec.SecretName = e.Spec.AuthSecret.Name
+			if username == string(ElasticsearchInternalUserAdmin) {
+				if e.Spec.AuthSecret != nil && e.Spec.AuthSecret.Name != "" {
+					userSpec.SecretName = e.Spec.AuthSecret.Name
+				} else {
+					if userSpec.SecretName == "" {
+						userSpec.SecretName = e.DefaultUserCredSecretName(username)
+					}
+					e.Spec.AuthSecret = &core.LocalObjectReference{
+						Name: userSpec.SecretName,
+					}
+				}
 			} else if userSpec.SecretName == "" {
 				userSpec.SecretName = e.DefaultUserCredSecretName(username)
 			}
