@@ -91,7 +91,7 @@ func (r *Reconciler) ReconcileNodes(db *api.Elasticsearch) (*api.Elasticsearch, 
 		return nil, kutil.VerbUnchanged, errors.Wrap(err, "failed to ensure default configuration for elasticsearch")
 	}
 
-	vt := kutil.VerbUnchanged
+	var vt kutil.VerbType
 	topology := elastic.UpdatedElasticsearch().Spec.Topology
 	if topology != nil {
 		vt1, err := elastic.EnsureIngestNodes()
