@@ -82,7 +82,7 @@ func (es *Elasticsearch) EnsureMasterNodes() (kutil.VerbType, error) {
 
 	// For Elasticsearch version >= 7.9.x
 	// The legacy node role setting is deprecated.
-	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+	if dbVersion.Major > 7 || (dbVersion.Major == 7 && dbVersion.Minor >= 9) {
 		// Set "NODE_ROLES" env,
 		// It is used while generating elasticsearch.yml file.
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
@@ -179,7 +179,7 @@ func (es *Elasticsearch) EnsureDataNodes() (kutil.VerbType, error) {
 
 	// For Elasticsearch version >= 7.9.x
 	// The legacy node role setting is deprecated.
-	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+	if dbVersion.Major > 7 || (dbVersion.Major == 7 && dbVersion.Minor >= 9) {
 		// Set "NODE_ROLES" env,
 		// It is used while generating elasticsearch.yml file.
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
@@ -277,7 +277,7 @@ func (es *Elasticsearch) EnsureIngestNodes() (kutil.VerbType, error) {
 
 	// For Elasticsearch version >= 7.9.x
 	// The legacy node role setting is deprecated.
-	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+	if dbVersion.Major > 7 || (dbVersion.Major == 7 && dbVersion.Minor >= 9) {
 		// Set "NODE_ROLES" env,
 		// It is used in elasticsearch.yml file.
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
@@ -399,7 +399,7 @@ func (es *Elasticsearch) EnsureCombinedNode() (kutil.VerbType, error) {
 
 	// For Elasticsearch version >= 7.9.x
 	// The legacy node role setting is deprecated.
-	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+	if dbVersion.Major > 7 || (dbVersion.Major == 7 && dbVersion.Minor >= 9) {
 		// Set "NODE_ROLES" env,
 		// It is used in elasticsearch.yml file.
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
@@ -823,7 +823,7 @@ func (es *Elasticsearch) EnsureMLNode() (kutil.VerbType, error) {
 
 	// For Elasticsearch version >= 7.9.x
 	// The legacy node role setting is deprecated.
-	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+	if dbVersion.Major > 7 || (dbVersion.Major == 7 && dbVersion.Minor >= 9) {
 		// Set "NODE_ROLES" env,
 		// It is used while generating elasticsearch.yml file.
 		// The remote_cluster_client role is optional but strongly recommended.
@@ -990,7 +990,7 @@ func (es *Elasticsearch) EnsureCoordinatingNode() (kutil.VerbType, error) {
 
 	// For Elasticsearch version >= 7.9.x
 	// The legacy node role setting is deprecated.
-	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+	if dbVersion.Major > 7 || (dbVersion.Major == 7 && dbVersion.Minor >= 9) {
 		// Set "NODE_ROLES" env,
 		// It is used while generating elasticsearch.yml file.
 		// Every node is implicitly a coordinating node. This means that a node that has

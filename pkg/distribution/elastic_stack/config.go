@@ -94,7 +94,7 @@ func (es *Elasticsearch) EnsureDefaultConfig() error {
 	if err != nil {
 		return err
 	}
-	if dbVersion.Major >= 7 && dbVersion.Minor >= 9 {
+	if dbVersion.Major > 7 || (dbVersion.Major == 7 && dbVersion.Minor >= 9) {
 		config += elasticsearch_node_roles
 	}
 
