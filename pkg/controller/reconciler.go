@@ -98,52 +98,80 @@ func (r *Reconciler) ReconcileNodes(db *api.Elasticsearch) (*api.Elasticsearch, 
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		vt = vt1
+
 		vt2, err := elastic.EnsureMasterNodes()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		if vt != kutil.VerbPatched {
+			vt = vt2
+		}
+
 		vt3, err := elastic.EnsureDataNodes()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		if vt != kutil.VerbPatched && topology.Data != nil {
+			vt = vt3
+		}
+
 		vt4, err := elastic.EnsureDataContentNode()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		if vt != kutil.VerbPatched && topology.DataContent != nil {
+			vt = vt4
+		}
+
 		vt5, err := elastic.EnsureDataHotNode()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		if vt != kutil.VerbPatched && topology.DataHot != nil {
+			vt = vt5
+		}
+
 		vt6, err := elastic.EnsureDataWarmNode()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		if vt != kutil.VerbPatched && topology.DataWarm != nil {
+			vt = vt6
+		}
+
 		vt7, err := elastic.EnsureDataColdNode()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		if vt != kutil.VerbPatched && topology.DataCold != nil {
+			vt = vt7
+		}
+
 		vt8, err := elastic.EnsureDataFrozenNode()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		if vt != kutil.VerbPatched && topology.DataFrozen != nil {
+			vt = vt8
+		}
+
 		vt9, err := elastic.EnsureMLNode()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
+		if vt != kutil.VerbPatched && topology.ML != nil {
+			vt = vt9
+		}
+
 		vt10, err := elastic.EnsureTransformNode()
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
-
-		if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated && vt3 == kutil.VerbCreated && vt4 == kutil.VerbCreated &&
-			vt5 == kutil.VerbCreated && vt6 == kutil.VerbCreated && vt7 == kutil.VerbCreated && vt8 == kutil.VerbCreated &&
-			vt9 == kutil.VerbCreated && vt10 == kutil.VerbCreated {
-			vt = kutil.VerbCreated
-		} else if vt1 == kutil.VerbPatched || vt2 == kutil.VerbPatched || vt3 == kutil.VerbPatched || vt4 == kutil.VerbPatched ||
-			vt5 == kutil.VerbPatched || vt6 == kutil.VerbPatched || vt7 == kutil.VerbPatched ||
-			vt8 == kutil.VerbPatched || vt9 == kutil.VerbPatched || vt10 == kutil.VerbPatched {
-			vt = kutil.VerbPatched
+		if vt != kutil.VerbPatched && topology.Transform != nil {
+			vt = vt10
 		}
+
 	} else {
 		vt, err = elastic.EnsureCombinedNode()
 		if err != nil {
