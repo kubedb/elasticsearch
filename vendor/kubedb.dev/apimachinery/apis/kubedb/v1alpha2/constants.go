@@ -71,12 +71,6 @@ const (
 	ElasticsearchTransportPort                   = 9300
 	ElasticsearchTransportPortName               = "transport"
 	ElasticsearchMetricsPort                     = 9600
-	ElasticsearchIngestNodeSuffix                = "ingest"
-	ElasticsearchDataNodeSuffix                  = "data"
-	ElasticsearchMasterNodeSuffix                = "master"
-	ElasticsearchNodeRoleMaster                  = kubedb.GroupName + "/" + "role-master"
-	ElasticsearchNodeRoleIngest                  = kubedb.GroupName + "/" + "role-ingest"
-	ElasticsearchNodeRoleData                    = kubedb.GroupName + "/" + "role-data"
 	ElasticsearchNodeRoleSet                     = "set"
 	ElasticsearchConfigDir                       = "/usr/share/elasticsearch/config"
 	ElasticsearchTempConfigDir                   = "/elasticsearch/temp-config"
