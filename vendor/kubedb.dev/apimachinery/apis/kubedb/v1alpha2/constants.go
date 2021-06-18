@@ -196,8 +196,9 @@ const (
 	MariaDBDataMountPath                = "/var/lib/mysql"
 	MariaDBDataLostFoundPath            = MariaDBDataMountPath + "lost+found"
 	MariaDBInitDBMountPath              = "/docker-entrypoint-initdb.d"
-	MariaDBCustomConfigMountPath        = "/etc/percona-server.conf.d/"
-	MariaDBClusterCustomConfigMountPath = "/etc/percona-xtradb-cluster.conf.d/"
+	MariaDBCustomConfigMountPath        = "/etc/mysql/conf.d/"
+	MariaDBClusterCustomConfigMountPath = "/etc/mysql/custom.conf.d/"
+	MariaDBCustomConfigVolumeName       = "custom-config"
 	MariaDBTLSConfigCustom              = "custom"
 	MariaDBInitContainerName            = "mariadb-init"
 
