@@ -233,18 +233,39 @@ func ValidateElasticsearch(client kubernetes.Interface, extClient cs.Interface, 
 	}
 
 	if strictValidation {
-		authSecret := db.Spec.AuthSecret
-		if authSecret != nil {
-			if _, err := client.CoreV1().Secrets(db.Namespace).Get(context.TODO(), authSecret.Name, metav1.GetOptions{}); err != nil {
-				return err
-			}
-		}
-
 		// Check if elasticsearchVersion is deprecated.
 		// If deprecated, return error
 		elasticsearchVersion, err := extClient.CatalogV1alpha1().ElasticsearchVersions().Get(context.TODO(), string(db.Spec.Version), metav1.GetOptions{})
 		if err != nil {
 			return err
+		}
+
+		if elasticsearchVersion.Spec.Distribution == catalog.ElasticsearchDistroSearchGuard ||
+			elasticsearchVersion.Spec.Distribution == catalog.ElasticsearchDistroOpenDistro {
+			// Check, spec.internalUsers[]
+			if db.Spec.InternalUsers != nil {
+				for username := range db.Spec.InternalUsers {
+					secretName, err := db.GetUserCredSecretName(username)
+					if err != nil {
+						return err
+					}
+					// If provided secret name doesn't match the default one.
+					// Check for the existence.
+					if secretName != db.DefaultUserCredSecretName(username) {
+						if _, err := client.CoreV1().Secrets(db.Namespace).Get(context.TODO(), secretName, metav1.GetOptions{}); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		} else {
+			// For ElasticStack check, db.spec.authSecret
+			authSecret := db.Spec.AuthSecret
+			if authSecret != nil {
+				if _, err := client.CoreV1().Secrets(db.Namespace).Get(context.TODO(), authSecret.Name, metav1.GetOptions{}); err != nil {
+					return err
+				}
+			}
 		}
 
 		if elasticsearchVersion.Spec.Deprecated {
