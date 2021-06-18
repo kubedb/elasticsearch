@@ -565,29 +565,34 @@ func (es *Elasticsearch) upsertContainerEnv(envList []core.EnvVar) []core.EnvVar
 			Name:  "network.host",
 			Value: "0.0.0.0",
 		},
-		{
-			Name: "ELASTIC_USER",
-			ValueFrom: &core.EnvVarSource{
-				SecretKeyRef: &core.SecretKeySelector{
-					LocalObjectReference: core.LocalObjectReference{
-						Name: es.db.Spec.AuthSecret.Name,
-					},
-					Key: core.BasicAuthUsernameKey,
-				},
-			},
-		},
-		{
-			Name: "ELASTIC_PASSWORD",
-			ValueFrom: &core.EnvVarSource{
-				SecretKeyRef: &core.SecretKeySelector{
-					LocalObjectReference: core.LocalObjectReference{
-						Name: es.db.Spec.AuthSecret.Name,
-					},
-					Key: core.BasicAuthPasswordKey,
-				},
-			},
-		},
 	}...)
+
+	if !es.db.Spec.DisableSecurity {
+		envList = core_util.UpsertEnvVars(envList, []core.EnvVar{
+			{
+				Name: "ELASTIC_USER",
+				ValueFrom: &core.EnvVarSource{
+					SecretKeyRef: &core.SecretKeySelector{
+						LocalObjectReference: core.LocalObjectReference{
+							Name: es.db.Spec.AuthSecret.Name,
+						},
+						Key: core.BasicAuthUsernameKey,
+					},
+				},
+			},
+			{
+				Name: "ELASTIC_PASSWORD",
+				ValueFrom: &core.EnvVarSource{
+					SecretKeyRef: &core.SecretKeySelector{
+						LocalObjectReference: core.LocalObjectReference{
+							Name: es.db.Spec.AuthSecret.Name,
+						},
+						Key: core.BasicAuthPasswordKey,
+					},
+				},
+			},
+		}...)
+	}
 
 	if strings.HasPrefix(es.esVersion.Spec.Version, "7.") {
 		envList = core_util.UpsertEnvVars(envList, core.EnvVar{
