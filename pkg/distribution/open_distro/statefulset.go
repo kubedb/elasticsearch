@@ -57,9 +57,9 @@ var (
 		ContainerPort: api.ElasticsearchTransportPort,
 		Protocol:      core.ProtocolTCP,
 	}
-	defaultMetricsPort = core.ContainerPort{
-		Name:          mona.PrometheusExporterPortName,
-		ContainerPort: api.ElasticsearchMetricsPort,
+	defaultPerformanceAnalyzerPort = core.ContainerPort{
+		Name:          api.ElasticsearchPerformanceAnalyzerPortName,
+		ContainerPort: api.ElasticsearchPerformanceAnalyzerPort,
 		Protocol:      core.ProtocolTCP,
 	}
 )
@@ -441,7 +441,7 @@ func (es *Elasticsearch) getContainers(esNode *api.ElasticsearchNode, nodeRole s
 			// But it is set for all type of nodes, so that our controller can
 			// communicate with each nodes specifically.
 			// The DBA controller uses the restPort to check health of a node.
-			Ports:           []core.ContainerPort{defaultRestPort, defaultTransportPort, defaultMetricsPort},
+			Ports:           []core.ContainerPort{defaultRestPort, defaultTransportPort, defaultPerformanceAnalyzerPort},
 			SecurityContext: es.db.Spec.PodTemplate.Spec.ContainerSecurityContext,
 			Resources:       esNode.Resources,
 			VolumeMounts:    volumeMount,
