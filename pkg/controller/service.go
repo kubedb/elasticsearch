@@ -209,7 +209,7 @@ func (c *Controller) ensureStatsService(db *api.Elasticsearch) (kutil.VerbType, 
 		in.Labels = db.StatsServiceLabels()
 		in.Annotations = meta_util.OverwriteKeys(in.Annotations, svcTemplate.Annotations)
 
-		in.Spec.Selector = db.OffshootSelectors()
+		in.Spec.Selector = db.IngestSelectors()
 		in.Spec.Ports = ofst.PatchServicePorts(
 			core_util.MergeServicePorts(in.Spec.Ports, []core.ServicePort{
 				{
