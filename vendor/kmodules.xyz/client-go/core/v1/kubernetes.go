@@ -19,8 +19,8 @@ package v1
 import (
 	"sort"
 
-	"github.com/imdario/mergo"
 	jsoniter "github.com/json-iterator/go"
+	"gomodules.xyz/mergo"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -102,7 +102,10 @@ func UpsertVolume(volumes []core.Volume, nv ...core.Volume) []core.Volume {
 	upsert := func(v core.Volume) {
 		for i, vol := range volumes {
 			if vol.Name == v.Name {
-				volumes[i] = v
+				err := mergo.Merge(&volumes[i], v, mergo.WithOverride)
+				if err != nil {
+					panic(err)
+				}
 				return
 			}
 		}
@@ -113,13 +116,16 @@ func UpsertVolume(volumes []core.Volume, nv ...core.Volume) []core.Volume {
 		upsert(volume)
 	}
 	return volumes
-
 }
 
 func UpsertVolumeClaim(volumeClaims []core.PersistentVolumeClaim, upsert core.PersistentVolumeClaim) []core.PersistentVolumeClaim {
 	for i, vc := range volumeClaims {
 		if vc.Name == upsert.Name {
-			volumeClaims[i] = upsert
+			volumeClaims[i].Labels = upsert.Labels
+			volumeClaims[i].Annotations = upsert.Annotations
+			if err := mergo.Merge(&volumeClaims[i].Spec, upsert.Spec, mergo.WithOverride); err != nil {
+				panic(err)
+			}
 			return volumeClaims
 		}
 	}
@@ -184,6 +190,11 @@ func UpsertEnvVars(vars []core.EnvVar, nv ...core.EnvVar) []core.EnvVar {
 	upsert := func(env core.EnvVar) {
 		for i, v := range vars {
 			if v.Name == env.Name {
+				if env.ValueFrom != nil &&
+					env.ValueFrom.FieldRef != nil &&
+					env.ValueFrom.FieldRef.APIVersion == "" {
+					env.ValueFrom.FieldRef.APIVersion = "v1"
+				}
 				vars[i] = env
 				return
 			}
