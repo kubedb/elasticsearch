@@ -1283,8 +1283,8 @@ kmodules.xyz/resource-metadata v0.5.7 h1:5xjq5pEp5hZK+jdkY/4wGk/FMtTyvQ9LlErh7lQ
 kmodules.xyz/resource-metadata v0.5.7/go.mod h1:Jdi7zBXRwwFTOR0CxwKxqJhsDVIilhrgNipPjnKLyrs=
 kmodules.xyz/webhook-runtime v0.0.0-20210618013329-0accb929102b h1:aUZw6p8qeZN23DdjpzvseY/oXYwhXCzgvFjIc9ufuQc=
 kmodules.xyz/webhook-runtime v0.0.0-20210618013329-0accb929102b/go.mod h1:MFZFmJk9IXNHwq8JlF/mukwBDbopFQj4swaB2MWHc/U=
-kubedb.dev/apimachinery v0.19.1-0.20210628145703-7c236005fc3c h1:SJ6kBBzrj4esj9MdRsgIQCca3vm4wRrEKyrsc3uxUJk=
-kubedb.dev/apimachinery v0.19.1-0.20210628145703-7c236005fc3c/go.mod h1:EsDnTm5D9VBJiZjBfx9JMDgOldvtKcRP7Y52AFzsMTg=
+kubedb.dev/apimachinery v0.19.1-0.20210702095231-64a70a7c8beb h1:NBGRcM8YKLidXPLk6omkt1kLKGdGLZw5DZ3j2pP2N0g=
+kubedb.dev/apimachinery v0.19.1-0.20210702095231-64a70a7c8beb/go.mod h1:EsDnTm5D9VBJiZjBfx9JMDgOldvtKcRP7Y52AFzsMTg=
 modernc.org/cc v1.0.0/go.mod h1:1Sk4//wdnYJiUIxnW8ddKpaOJCF37yAdqYnkxUpaYxw=
 modernc.org/golex v1.0.0/go.mod h1:b/QX9oBD/LhixY6NDh+IdGv17hgB+51fET1i2kPSmvk=
 modernc.org/mathutil v1.0.0/go.mod h1:wU0vUrJsVWBZ4P6e7xtFJEhFSNsfRLJ8H458uRjg03k=
