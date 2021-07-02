@@ -1253,7 +1253,7 @@ kmodules.xyz/resource-metadata/pkg/graph
 ## explicit
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1
-# kubedb.dev/apimachinery v0.19.1-0.20210628143636-4b29333f4ebb
+# kubedb.dev/apimachinery v0.19.1-0.20210628145703-7c236005fc3c
 ## explicit
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/autoscaling
