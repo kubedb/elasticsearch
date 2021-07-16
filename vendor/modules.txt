@@ -1179,15 +1179,16 @@ k8s.io/utils/pointer
 k8s.io/utils/trace
 # kmodules.xyz/apiversion v0.2.0
 kmodules.xyz/apiversion
-# kmodules.xyz/client-go v0.0.0-20210702123511-a25836cf4332
+# kmodules.xyz/client-go v0.0.0-20210715065708-d4f0cc74ead1
 ## explicit
 kmodules.xyz/client-go
-kmodules.xyz/client-go/admissionregistration/v1beta1
+kmodules.xyz/client-go/admissionregistration
+kmodules.xyz/client-go/admissionregistration/v1
 kmodules.xyz/client-go/api/v1
 kmodules.xyz/client-go/apiextensions
 kmodules.xyz/client-go/apiextensions/v1
 kmodules.xyz/client-go/apiextensions/v1beta1
-kmodules.xyz/client-go/apiregistration/v1beta1
+kmodules.xyz/client-go/apiregistration/v1
 kmodules.xyz/client-go/apps/v1
 kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/discovery
@@ -1203,7 +1204,7 @@ kmodules.xyz/client-go/tools/clientcache
 kmodules.xyz/client-go/tools/clientcmd
 kmodules.xyz/client-go/tools/clusterid
 kmodules.xyz/client-go/tools/queue
-# kmodules.xyz/custom-resources v0.0.0-20210618003440-c6bb400da153
+# kmodules.xyz/custom-resources v0.0.0-20210715200638-d7eae69a48fb
 ## explicit
 kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
