@@ -406,8 +406,12 @@ func validateNodeReplicas(topology *api.ElasticsearchClusterTopology) error {
 }
 
 func validateNodeRoles(topology *api.ElasticsearchClusterTopology, esVersion *catalog.ElasticsearchVersion) error {
-	if esVersion.Spec.Distribution == catalog.ElasticsearchDistroOpenDistro ||
-		esVersion.Spec.Distribution == catalog.ElasticsearchDistroSearchGuard {
+	if esVersion.Spec.Distribution == catalog.ElasticsearchDistroOpenDistro {
+		if topology.ML != nil || topology.DataContent != nil || topology.DataCold != nil || topology.DataFrozen != nil ||
+			topology.Coordinating != nil || topology.Transform != nil {
+			return errors.Errorf("node role: ml, data_cold, data_frozen, data_content, transform, coordinating are not supported for ElasticsearchVersion %s", esVersion.Name)
+		}
+	} else if esVersion.Spec.Distribution == catalog.ElasticsearchDistroSearchGuard {
 		if topology.Data == nil {
 			return errors.New("topology.data cannot be empty")
 		}
